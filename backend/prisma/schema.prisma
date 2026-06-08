@@ -1,0 +1,123 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id             Int    @id @default(autoincrement())
+  username       String @unique
+  passwordHash   String @map("password_hash")
+  businessName   String @default("") @map("business_name")
+  cnpj           String @default("")
+  phone          String @default("")
+  description    String @default("")
+  photoUrl       String @default("") @map("photo_url")
+  address        String @default("")
+  operatingHours String @default("") @map("operating_hours")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  links          SchedulingLink[]
+  transactions   Transaction[]
+  services       Service[]
+  subscription   Subscription?
+
+  @@map("admin")
+}
+
+model Subscription {
+  id             Int      @id @default(autoincrement())
+  adminId        Int      @unique @map("admin_id")
+  admin          Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  plan           String   @default("mensal") // "mensal" ou "anual"
+  status         String   @default("inactive") // "active", "inactive", "pending"
+  externalId     String?  @map("external_id") // ID no Mercado Pago
+  expiresAt      DateTime? @map("expires_at")
+  
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}
+
+model Service {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String?
+  price       Float
+  duration    Int      // duration in minutes
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  links       SchedulingLink[]
+
+  @@map("services")
+}
+
+model SchedulingLink {
+  id        Int        @id @default(autoincrement())
+  token     String     @unique
+  title     String     @default("Agendamento")
+  createdAt DateTime   @default(now()) @map("created_at")
+  
+  adminId   Int        @map("admin_id")
+  admin     Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  serviceId Int?       @map("service_id")
+  service   Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
+  
+  deletedAt DateTime?   @map("deleted_at")
+  
+  timeSlots TimeSlot[]
+
+  @@map("scheduling_links")
+}
+
+model TimeSlot {
+  id          Int            @id @default(autoincrement())
+  date        String
+  time        String
+  isAvailable Boolean        @default(true) @map("is_available")
+  linkId      Int            @map("link_id")
+  link        SchedulingLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  booking     Booking?
+
+  @@map("time_slots")
+}
+
+model Booking {
+  id          Int      @id @default(autoincrement())
+  clientName  String   @map("client_name")
+  clientPhone String   @map("client_phone")
+  status      String   @default("PENDENTE")
+  timeSlotId  Int      @unique @map("time_slot_id")
+  timeSlot    TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("bookings")
+}
+
+model Transaction {
+  id          Int      @id @default(autoincrement())
+  type        String   // "receivable" or "payable"
+  description String
+  amount      Float
+  dueDate     String   @map("due_date")
+  paid        Boolean  @default(false)
+  paidAt      String?  @map("paid_at")
+  clientName  String   @default("") @map("client_name")
+  category    String   @default("")
+  notes       String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("transactions")
+}
