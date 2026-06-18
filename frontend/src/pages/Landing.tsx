@@ -17,6 +17,7 @@ export default function Landing() {
   }, [isDark])
 
   const handleSubscribeClick = (plan: 'mensal' | 'anual') => {
+    console.log('handleSubscribeClick called with plan:', plan)
     setSelectedPlan(plan)
     setShowTrialModal(true)
   }
@@ -41,17 +42,14 @@ export default function Landing() {
       {/* ═══ Trial Modal ═══ */}
       {showTrialModal && (
         <div 
-          className="fixed inset-0 z-[999] flex items-center justify-center p-4"
-          onClick={(e) => { if (e.target === e.currentTarget) setShowTrialModal(false) }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm"
+          onClick={(e) => { 
+            console.log('Backdrop clicked')
+            if (e.target === e.currentTarget) setShowTrialModal(false) 
+          }}
         >
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" style={{ animation: 'fadeIn 0.2s ease-out' }} />
-          
           {/* Modal */}
-          <div 
-            className="relative w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl"
-            style={{ animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
-          >
+          <div className="relative w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl bg-[#131826] border border-slate-800 animate-scale-in">
             {/* Gradient Top Banner */}
             <div className="bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 px-8 pt-10 pb-16 text-center relative overflow-hidden">
               {/* Decorative Circles */}
@@ -59,7 +57,10 @@ export default function Landing() {
               <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
               
               <button 
-                onClick={() => setShowTrialModal(false)}
+                onClick={() => {
+                  console.log('Close button clicked')
+                  setShowTrialModal(false)
+                }}
                 className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all"
               >
                 <X className="w-4 h-4" />
@@ -115,7 +116,10 @@ export default function Landing() {
 
               {/* CTA Button */}
               <button 
-                onClick={() => navigate('/register')}
+                onClick={() => {
+                  console.log('Starting trial checkout...')
+                  navigate('/register')
+                }}
                 className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-500/30 flex items-center justify-center gap-3 group"
               >
                 Começar 7 Dias Grátis
