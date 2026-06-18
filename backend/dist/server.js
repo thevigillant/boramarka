@@ -11,6 +11,7 @@ const admin_1 = __importDefault(require("./routes/admin"));
 const schedule_1 = __importDefault(require("./routes/schedule"));
 const finance_1 = __importDefault(require("./routes/finance"));
 const services_1 = __importDefault(require("./routes/services"));
+const billing_1 = __importDefault(require("./routes/billing"));
 const app = (0, fastify_1.default)({
     logger: {
         transport: {
@@ -21,7 +22,9 @@ const app = (0, fastify_1.default)({
 });
 // CORS
 app.register(cors_1.default, {
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: process.env.CORS_ORIGIN
+        ? process.env.CORS_ORIGIN.split(',')
+        : ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
 });
 // JWT
@@ -34,6 +37,7 @@ app.register(admin_1.default, { prefix: '/api/admin' });
 app.register(schedule_1.default, { prefix: '/api/schedule' });
 app.register(finance_1.default, { prefix: '/api/finance' });
 app.register(services_1.default, { prefix: '/api/services' });
+app.register(billing_1.default, { prefix: '/api/billing' });
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 // Start server

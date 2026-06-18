@@ -18,9 +18,15 @@ Ele permite que profissionais gerenciem seus horários, ofereçam links público
 - **Perfil Público para Clientes:** Página gerada dinamicamente via `boramarka.com/p/@username` onde clientes veem o catálogo de serviços e escolhem um horário.
 - **Agendamento pelo Cliente:** Interface para o cliente final agendar o horário fornecendo Nome e WhatsApp.
 - **Fluxo de Caixa:** Gestão financeira (contas a pagar/receber) com listagem detalhada e baixa automática/manual de pagamentos.
-- **Integração de Pagamento (SaaS):**
-  - Módulo Mercado Pago implementado para cobrança de assinaturas (Planos Mensal e Anual).
-  - Overlay de bloqueio no painel para usuários com a assinatura inativa/vencida.
+- **Integração de Pagamento & Cobrança (SaaS):**
+  - Módulo Mercado Pago integrado para assinatura dos planos Mensal e Anual.
+- **Período de Experiência (7 Dias Grátis):**
+  - Ativação automática de 7 dias grátis de trial no momento do cadastro.
+  - Banner dinâmico com contagem regressiva ao vivo em tempo real (dias, horas, minutos, segundos) exibido no painel de controle do profissional.
+- **Dashboard em Modo de Visualização (View-Only):**
+  - Após a expiração do trial ou plano, o profissional pode navegar no painel e visualizar seus serviços criados, porém todas as ações de edição, criação e demais abas mostram um modal elegante de checkout (Paywall).
+- **Suspensão de Agendamentos Públicos:**
+  - Bloqueio automático de novas reservas de clientes nos links públicos do profissional caso a conta esteja suspensa ou com trial expirado. A página exibe um aviso claro e oculta os meios de contato do profissional.
 
 ## 🛠️ Stack Tecnológica
 

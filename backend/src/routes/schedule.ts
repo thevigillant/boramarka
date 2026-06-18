@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { sendWhatsAppMessage, generateBookingMessage } from '../services/whatsapp';
+import { checkAndUpdateSubscription } from '../services/subscription';
 
 export default async function scheduleRoutes(app: FastifyInstance) {
   // GET /api/schedule/p/:username — Get public profile + services catalog
@@ -32,13 +33,17 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Profissional não encontrado' });
     }
 
+    const sub = await checkAndUpdateSubscription(admin.id);
+    const isInactive = sub.status === 'inactive';
+
     return {
       businessName: admin.businessName,
       description: admin.description,
       photoUrl: admin.photoUrl,
-      phone: admin.phone,
+      phone: isInactive ? '' : admin.phone,
       address: admin.address,
-      services: admin.services
+      services: admin.services,
+      isInactive
     };
   });
 
@@ -63,6 +68,11 @@ export default async function scheduleRoutes(app: FastifyInstance) {
 
     if (!link) {
       return reply.status(404).send({ error: 'Link de agendamento não encontrado' });
+    }
+
+    const sub = await checkAndUpdateSubscription(link.adminId);
+    if (sub.status === 'inactive') {
+      return reply.status(403).send({ error: 'Os agendamentos deste profissional estão suspensos temporariamente devido à assinatura pendente.' });
     }
 
     // Group slots by date
@@ -111,6 +121,11 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     });
     if (!link) {
       return reply.status(404).send({ error: 'Link não encontrado' });
+    }
+
+    const sub = await checkAndUpdateSubscription(link.adminId);
+    if (sub.status === 'inactive') {
+      return reply.status(403).send({ error: 'Os agendamentos deste profissional estão suspensos temporariamente devido à assinatura pendente.' });
     }
 
     // Verify slot exists, belongs to this link, and is available

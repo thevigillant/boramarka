@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
+import { checkAndUpdateSubscription } from '../services/subscription';
 import { authenticate } from '../plugins/auth';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
@@ -13,30 +14,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // Rota para pegar o status atual da assinatura do usuário
   app.get('/status', { preHandler: [authenticate] }, async (request, reply) => {
     const user = request.user as { id: number };
-    
-    // Busca a assinatura, se não existir, cria uma padrão inativa
-    let subscription = await prisma.subscription.findUnique({
-      where: { adminId: user.id }
-    });
-
-    if (!subscription) {
-      subscription = await prisma.subscription.create({
-        data: {
-          adminId: user.id,
-          status: 'inactive',
-          plan: 'mensal'
-        }
-      });
-    }
-
-    // Se estiver ativa mas a data expirou, muda pra inativa
-    if (subscription.status === 'active' && subscription.expiresAt && new Date() > subscription.expiresAt) {
-      subscription = await prisma.subscription.update({
-        where: { id: subscription.id },
-        data: { status: 'inactive' }
-      });
-    }
-
+    const subscription = await checkAndUpdateSubscription(user.id);
     return subscription;
   });
 
@@ -106,8 +84,9 @@ export default async function billingRoutes(app: FastifyInstance) {
     reply.status(200).send();
 
     const query = request.query as any;
-    const type = query.type || request.body?.type;
-    const dataId = query['data.id'] || request.body?.data?.id;
+    const body = request.body as any;
+    const type = query.type || body?.type;
+    const dataId = query['data.id'] || body?.data?.id;
 
     if (type === 'payment' && dataId) {
       try {

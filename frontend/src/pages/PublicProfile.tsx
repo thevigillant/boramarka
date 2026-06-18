@@ -21,6 +21,7 @@ interface PublicProfileData {
   phone: string
   address: string
   services: ServiceData[]
+  isInactive?: boolean
 }
 
 export default function PublicProfile() {
@@ -77,6 +78,13 @@ export default function PublicProfile() {
 
       <div className="max-w-4xl mx-auto px-6 pb-20 -mt-20 relative z-10">
         
+        {profile.isInactive && (
+          <div className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-4 rounded-3xl mb-8 flex items-center justify-center gap-3 shadow-lg font-bold">
+            <AlertCircle className="w-6 h-6 flex-shrink-0 animate-pulse" />
+            <span>Agendamentos temporariamente suspensos neste estabelecimento.</span>
+          </div>
+        )}
+
         {/* Profile Card */}
         <div className="bg-white dark:bg-[#131826] rounded-3xl p-6 sm:p-10 shadow-2xl shadow-pink-500/10 border border-slate-100 dark:border-slate-800 text-center animate-slide-up">
           <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full mx-auto mb-6 shadow-xl shadow-pink-500/30 flex items-center justify-center text-white text-5xl font-black overflow-hidden border-4 border-white dark:border-[#131826]">

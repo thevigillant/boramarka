@@ -45,6 +45,17 @@ async function authRoutes(app) {
             }
             throw error;
         }
+        // Cria a assinatura com 7 dias de trial grátis
+        const trialEndsAt = new Date();
+        trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+        await db_1.prisma.subscription.create({
+            data: {
+                adminId: admin.id,
+                status: 'trialing',
+                plan: 'mensal',
+                trialEndsAt: trialEndsAt,
+            }
+        });
         const token = app.jwt.sign({ id: admin.id, username: admin.username }, { expiresIn: '24h' });
         return reply.status(201).send({
             token,

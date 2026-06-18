@@ -274,16 +274,15 @@ export const api = {
       businessName: string;
       description: string;
       photoUrl: string;
-      links: Array<{
+      phone: string;
+      address: string;
+      isInactive?: boolean;
+      services: Array<{
         id: number;
-        token: string;
-        title: string;
-        service: {
-          name: string;
-          price: number;
-          duration: number;
-          description: string | null;
-        } | null;
+        name: string;
+        price: number;
+        duration: number;
+        description: string | null;
       }>;
     }>(`/schedule/p/${username}`),
 
@@ -308,8 +307,9 @@ export const api = {
     request<{
       id: number;
       plan: 'mensal' | 'anual';
-      status: 'active' | 'inactive' | 'pending';
+      status: 'active' | 'inactive' | 'pending' | 'trialing';
       expiresAt: string | null;
+      trialEndsAt: string | null;
     }>('/billing/status'),
 
   createCheckout: (plan: 'mensal' | 'anual') =>
