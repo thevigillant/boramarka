@@ -39,12 +39,24 @@ async function adminRoutes(app) {
             operatingHours: admin.operatingHours,
         };
     });
-    app.put('/profile', async (request) => {
+    app.put('/profile', async (request, reply) => {
         const user = request.user;
-        const { businessName, cnpj, phone, description, photoUrl, address, operatingHours } = request.body;
+        const { username, businessName, cnpj, phone, description, photoUrl, address, operatingHours } = request.body;
+        let newUsername;
+        if (username !== undefined) {
+            newUsername = username.trim().toLowerCase();
+            const currentAdmin = await db_1.prisma.admin.findUnique({ where: { id: user.id } });
+            if (currentAdmin && newUsername !== currentAdmin.username) {
+                const existing = await db_1.prisma.admin.findUnique({ where: { username: newUsername } });
+                if (existing) {
+                    return reply.status(400).send({ error: 'Este @ já está em uso por outra conta.' });
+                }
+            }
+        }
         const admin = await db_1.prisma.admin.update({
             where: { id: user.id },
             data: {
+                ...(newUsername !== undefined && { username: newUsername }),
                 ...(businessName !== undefined && { businessName: businessName.trim() }),
                 ...(cnpj !== undefined && { cnpj: cnpj.trim() }),
                 ...(phone !== undefined && { phone: phone.trim() }),
@@ -311,18 +323,44 @@ async function adminRoutes(app) {
     app.put('/bookings/:id/confirm', async (request, reply) => {
         const user = request.user;
         const { id } = request.params;
+        // Fetch booking with related service price
         const booking = await db_1.prisma.booking.findFirst({
             where: {
                 id: parseInt(id),
                 timeSlot: { link: { adminId: user.id } }
+            },
+            include: {
+                timeSlot: {
+                    include: {
+                        link: {
+                            include: { service: true }
+                        }
+                    }
+                }
             }
         });
         if (!booking) {
             return reply.status(404).send({ error: 'Agendamento não encontrado' });
         }
+        // Update booking status to CONFIRMADO
         const updated = await db_1.prisma.booking.update({
             where: { id: parseInt(id) },
             data: { status: 'CONFIRMADO' }
+        });
+        // Create a receivable transaction for the service price
+        const service = booking.timeSlot.link.service;
+        const amount = service?.price ?? 0;
+        await db_1.prisma.transaction.create({
+            data: {
+                type: 'receivable',
+                description: `${service?.name ?? 'Serviço'} - ${booking.clientName}`,
+                amount: amount,
+                dueDate: new Date().toISOString().split('T')[0],
+                paid: false,
+                clientName: booking.clientName,
+                category: service?.name ?? 'Serviço',
+                adminId: user.id
+            }
         });
         return updated;
     });

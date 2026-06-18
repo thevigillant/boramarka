@@ -159,6 +159,150 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 }
 
 // ════════════════════════════════════════════
+// Trial Countdown Banner
+// ════════════════════════════════════════════
+function TrialBanner({ trialEndsAt, onCheckout }: { trialEndsAt: string; onCheckout: (plan: 'mensal' | 'anual') => void }) {
+  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+  const [expired, setExpired] = useState(false)
+
+  useEffect(() => {
+    const calc = () => {
+      const now = new Date().getTime()
+      const end = new Date(trialEndsAt).getTime()
+      const diff = end - now
+
+      if (diff <= 0) {
+        setExpired(true)
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 })
+        return
+      }
+
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
+        minutes: Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60)),
+        seconds: Math.floor((diff % (1000 * 60)) / 1000),
+      })
+    }
+    calc()
+    const interval = setInterval(calc, 1000)
+    return () => clearInterval(interval)
+  }, [trialEndsAt])
+
+  if (expired) return null
+
+  const isUrgent = timeLeft.days <= 1
+
+  return (
+    <div className={`fixed top-0 left-0 right-0 z-[60] ${isUrgent ? 'bg-gradient-to-r from-red-600 to-pink-600' : 'bg-gradient-to-r from-orange-500 to-pink-500'} text-white shadow-lg`}>
+      <div className="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-bold">⏳ Período Grátis</span>
+          <div className="flex items-center gap-1.5">
+            <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-center min-w-[40px]">
+              <span className="text-lg font-black leading-none">{timeLeft.days}</span>
+              <p className="text-[8px] font-bold uppercase opacity-80">dias</p>
+            </div>
+            <span className="font-black text-lg">:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-center min-w-[40px]">
+              <span className="text-lg font-black leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
+              <p className="text-[8px] font-bold uppercase opacity-80">hrs</p>
+            </div>
+            <span className="font-black text-lg">:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-center min-w-[40px]">
+              <span className="text-lg font-black leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <p className="text-[8px] font-bold uppercase opacity-80">min</p>
+            </div>
+            <span className="font-black text-lg">:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-2 py-1 rounded-lg text-center min-w-[40px]">
+              <span className="text-lg font-black leading-none">{String(timeLeft.seconds).padStart(2, '0')}</span>
+              <p className="text-[8px] font-bold uppercase opacity-80">seg</p>
+            </div>
+          </div>
+        </div>
+        <button
+          onClick={() => onCheckout('mensal')}
+          className="bg-white text-pink-600 px-4 py-1.5 rounded-xl text-xs font-black hover:bg-white/90 transition-all hover:scale-105 shadow-md"
+        >
+          Assinar Agora
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════
+// Inactive Account Warning Banner
+// ════════════════════════════════════════════
+function InactiveBanner({ onSubscribe }: { onSubscribe: () => void }) {
+  return (
+    <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 text-white shadow-lg">
+      <div className="max-w-6xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-bold flex items-center gap-1.5">
+            ⚠️ Assinatura Inativa
+          </span>
+          <span className="text-xs opacity-90 hidden sm:inline">— Seu catálogo está visível, mas novas marcações e edições estão suspensas.</span>
+        </div>
+        <button
+          onClick={onSubscribe}
+          className="bg-white text-red-600 px-4 py-1.5 rounded-xl text-xs font-black hover:bg-white/90 transition-all hover:scale-105 shadow-md"
+        >
+          Ativar Conta
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════
+// Subscription Paywall Modal
+// ════════════════════════════════════════════
+function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClose: () => void; onCheckout: (plan: 'mensal' | 'anual') => void }) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center p-6 text-center animate-fade-in" style={{ position: 'fixed' }}>
+      <div className="bg-[#131826] border border-slate-800 p-8 rounded-3xl max-w-md w-full shadow-2xl relative animate-scale-up">
+        <button 
+          onClick={onClose} 
+          className="absolute top-4 right-4 text-slate-400 hover:text-white text-xl font-bold bg-slate-800/50 hover:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition-all"
+        >
+          &times;
+        </button>
+        
+        <div className="w-16 h-16 bg-pink-500/20 text-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
+          <Store className="w-8 h-8" />
+        </div>
+        
+        <h2 className="text-2xl font-black text-white mb-2">Assinatura Necessária</h2>
+        <p className="text-slate-400 mb-8 text-sm font-medium leading-relaxed">
+          Sua conta está no modo de visualização. Para reativar sua agenda online, gerenciar seus horários e continuar recebendo agendamentos automáticos, escolha um de nossos planos.
+        </p>
+        
+        <div className="space-y-4">
+          <button 
+            onClick={() => onCheckout('mensal')}
+            className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 border border-slate-750 hover:scale-[1.02]"
+          >
+            <CreditCard className="w-5 h-5" />
+            Plano Mensal — R$ 30/mês
+          </button>
+          
+          <button 
+            onClick={() => onCheckout('anual')}
+            className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/25 flex items-center justify-center gap-2"
+          >
+            <CreditCard className="w-5 h-5" />
+            Plano Anual — R$ 260/ano <span className="text-xs opacity-80 ml-1">(economize R$ 100)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════
 // Stat Card
 // ════════════════════════════════════════════
 function StatCard({ title, value, icon: Icon, color, trend }: { title: string; value: string | number; icon: any; color: string; trend?: { val: string; up: boolean } }) {
@@ -248,6 +392,7 @@ function CalendarWidget({ selectedDate, onSelectDate, currentMonth, setCurrentMo
 export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash'>('overview')
+  const [showPaywall, setShowPaywall] = useState(false)
   const [financeFilter, setFinanceFilter] = useState<'all' | 'receivable' | 'payable'>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -421,7 +566,7 @@ export default function Dashboard() {
   }, [])
 
   // ═══ Data Fetching ═══
-  const [subscription, setSubscription] = useState<{ plan: string; status: string; expiresAt: string | null } | null>(null)
+  const [subscription, setSubscription] = useState<{ plan: string; status: string; expiresAt: string | null; trialEndsAt: string | null } | null>(null)
   
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
@@ -476,6 +621,13 @@ export default function Dashboard() {
       api.getSlots(selectedLinkId).then(setSlots)
     }
   }, [activeTab, selectedLinkId])
+
+  useEffect(() => {
+    if (subscription?.status === 'inactive') {
+      setActiveTab('servicos')
+      setShowPaywall(true)
+    }
+  }, [subscription?.status])
 
   // ═══ Handlers ═══
   const handleLogout = () => {
@@ -671,37 +823,18 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 pb-20 transition-colors duration-300 relative">
-      {/* Subscription Overlay */}
-      {subscription && subscription.status !== 'active' && (
-        <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-6 text-center" style={{ position: 'fixed' }}>
-          <div className="bg-[#131826] border border-slate-800 p-8 rounded-3xl max-w-md w-full shadow-2xl">
-            <div className="w-16 h-16 bg-pink-500/20 text-pink-500 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Store className="w-8 h-8" />
-            </div>
-            <h2 className="text-2xl font-black text-white mb-2">Assinatura Inativa</h2>
-            <p className="text-slate-400 mb-8 font-medium">
-              Sua agenda online está pausada. Ative sua assinatura para continuar recebendo clientes e gerenciar seus horários.
-            </p>
-            
-            <div className="space-y-4">
-              <button 
-                onClick={() => handleCheckout('mensal')}
-                className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2"
-              >
-                <CreditCard className="w-5 h-5" />
-                Assinar Mensal (R$ 30)
-              </button>
-              <button 
-                onClick={() => handleCheckout('anual')}
-                className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/25 flex items-center justify-center gap-2"
-              >
-                <CreditCard className="w-5 h-5" />
-                Assinar Anual (R$ 260)
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Trial Countdown Banner (during trial) */}
+      {subscription && subscription.status === 'trialing' && subscription.trialEndsAt && (
+        <TrialBanner trialEndsAt={subscription.trialEndsAt} onCheckout={handleCheckout} />
       )}
+
+      {/* Inactive Account Banner (when expired/inactive) */}
+      {subscription && subscription.status === 'inactive' && (
+        <InactiveBanner onSubscribe={() => setShowPaywall(true)} />
+      )}
+
+      {/* Paywall Modal */}
+      <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} onCheckout={handleCheckout} />
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
@@ -748,14 +881,14 @@ export default function Dashboard() {
                  <div className="text-right hidden sm:block">
                    <div className="flex items-center justify-end gap-2">
                      <p className="text-sm font-black text-slate-900 dark:text-white leading-none">{adminInfo.businessName || adminInfo.username}</p>
-                     <button onClick={openEditProfile} className="text-slate-400 hover:text-orange-500 transition-colors" title="Editar Perfil">
+                     <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-slate-400 hover:text-orange-500 transition-colors" title="Editar Perfil">
                        <Pencil className="w-3.5 h-3.5" />
                      </button>
                    </div>
                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">@{adminInfo.username.toLowerCase()}</p>
                  </div>
                  <button 
-                   onClick={() => avatarInputRef.current?.click()}
+                   onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : avatarInputRef.current?.click()}
                    className="w-10 h-10 rounded-full relative group cursor-pointer shrink-0"
                    title="Clique para trocar a foto"
                  >
@@ -808,7 +941,13 @@ export default function Dashboard() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => {
+                  if (subscription?.status === 'inactive') {
+                    setShowPaywall(true)
+                  } else {
+                    setActiveTab(tab.id)
+                  }
+                }}
                 className={`relative flex items-center justify-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all ${
                   isActive
                     ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-md shadow-orange-500/30'
@@ -1256,7 +1395,15 @@ export default function Dashboard() {
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">Catálogo de Serviços</h2>
                 <button 
-                  onClick={() => { setEditingService(null); setServiceForm({ name: '', description: '', price: '', duration: '30' }); setShowNewService(true) }} 
+                  onClick={() => {
+                    if (subscription?.status === 'inactive') {
+                      setShowPaywall(true)
+                    } else {
+                      setEditingService(null)
+                      setServiceForm({ name: '', description: '', price: '', duration: '30' })
+                      setShowNewService(true)
+                    }
+                  }} 
                   className="btn-primary-simple py-2.5 px-6 flex items-center gap-2 font-black text-sm"
                 >
                   <Plus className="w-5 h-5" /> NOVO SERVIÇO
@@ -1279,21 +1426,31 @@ export default function Dashboard() {
                     <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
                       <button 
                         onClick={() => {
-                          setEditingService(service)
-                          setServiceForm({
-                            name: service.name,
-                            description: service.description || '',
-                            price: service.price.toString(),
-                            duration: service.duration.toString()
-                          })
-                          setShowNewService(true)
+                          if (subscription?.status === 'inactive') {
+                            setShowPaywall(true)
+                          } else {
+                            setEditingService(service)
+                            setServiceForm({
+                              name: service.name,
+                              description: service.description || '',
+                              price: service.price.toString(),
+                              duration: service.duration.toString()
+                            })
+                            setShowNewService(true)
+                          }
                         }}
                         className="flex-1 text-center py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 bg-slate-50 dark:bg-slate-800 rounded-lg transition-all"
                       >
                         EDITAR
                       </button>
                       <button 
-                        onClick={() => handleDeleteService(service.id)}
+                        onClick={() => {
+                          if (subscription?.status === 'inactive') {
+                            setShowPaywall(true)
+                          } else {
+                            handleDeleteService(service.id)
+                          }
+                        }}
                         className="flex-1 text-center py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all"
                       >
                         EXCLUIR

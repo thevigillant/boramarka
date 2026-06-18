@@ -34,9 +34,10 @@ model Subscription {
   admin          Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
   plan           String   @default("mensal") // "mensal" ou "anual"
-  status         String   @default("inactive") // "active", "inactive", "pending"
+  status         String   @default("trialing") // "active", "inactive", "pending", "trialing"
   externalId     String?  @map("external_id") // ID no Mercado Pago
   expiresAt      DateTime? @map("expires_at")
+  trialEndsAt    DateTime? @map("trial_ends_at") // Data de fim do trial de 7 dias
   
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")

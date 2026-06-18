@@ -3,8 +3,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = scheduleRoutes;
 const db_1 = require("../db");
 const whatsapp_1 = require("../services/whatsapp");
+const subscription_1 = require("../services/subscription");
 async function scheduleRoutes(app) {
-    // GET /api/schedule/p/:username — Get all links for an admin profile
+    // GET /api/schedule/p/:username — Get public profile + services catalog
     app.get('/p/:username', async (request, reply) => {
         const { username } = request.params;
         const admin = await db_1.prisma.admin.findUnique({
@@ -16,23 +17,6 @@ async function scheduleRoutes(app) {
                 photoUrl: true,
                 phone: true,
                 address: true,
-                links: {
-                    where: { deletedAt: null },
-                    select: {
-                        id: true,
-                        token: true,
-                        title: true,
-                        service: {
-                            select: {
-                                id: true,
-                                name: true,
-                                price: true,
-                                duration: true,
-                                description: true
-                            }
-                        }
-                    }
-                },
                 services: {
                     select: {
                         id: true,
@@ -47,24 +31,16 @@ async function scheduleRoutes(app) {
         if (!admin) {
             return reply.status(404).send({ error: 'Profissional não encontrado' });
         }
-        // Build a unified service list: services that have links use the link token,
-        // services without links are still shown but without a booking link
-        const linkedServiceIds = new Set(admin.links.filter(l => l.service).map(l => l.service.id));
-        const unlinkedServices = admin.services
-            .filter(s => !linkedServiceIds.has(s.id))
-            .map(s => ({
-            id: null,
-            token: null,
-            title: s.name,
-            service: s
-        }));
+        const sub = await (0, subscription_1.checkAndUpdateSubscription)(admin.id);
+        const isInactive = sub.status === 'inactive';
         return {
             businessName: admin.businessName,
             description: admin.description,
             photoUrl: admin.photoUrl,
-            phone: admin.phone,
+            phone: isInactive ? '' : admin.phone,
             address: admin.address,
-            links: [...admin.links, ...unlinkedServices]
+            services: admin.services,
+            isInactive
         };
     });
     // GET /api/schedule/:token — Get available slots for a scheduling link
@@ -86,6 +62,10 @@ async function scheduleRoutes(app) {
         });
         if (!link) {
             return reply.status(404).send({ error: 'Link de agendamento não encontrado' });
+        }
+        const sub = await (0, subscription_1.checkAndUpdateSubscription)(link.adminId);
+        if (sub.status === 'inactive') {
+            return reply.status(403).send({ error: 'Os agendamentos deste profissional estão suspensos temporariamente devido à assinatura pendente.' });
         }
         // Group slots by date
         const slotsByDate = {};
@@ -124,6 +104,10 @@ async function scheduleRoutes(app) {
         });
         if (!link) {
             return reply.status(404).send({ error: 'Link não encontrado' });
+        }
+        const sub = await (0, subscription_1.checkAndUpdateSubscription)(link.adminId);
+        if (sub.status === 'inactive') {
+            return reply.status(403).send({ error: 'Os agendamentos deste profissional estão suspensos temporariamente devido à assinatura pendente.' });
         }
         // Verify slot exists, belongs to this link, and is available
         const slot = await db_1.prisma.timeSlot.findFirst({
