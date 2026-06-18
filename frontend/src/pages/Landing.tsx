@@ -3,7 +3,8 @@ import { Link, useNavigate } from 'react-router-dom'
 import { 
   Moon, Sun, Check, Sparkles, Clock, Shield, Zap, 
   ArrowRight, Smartphone, Calendar, DollarSign, Users, 
-  MessageSquare, Play, RotateCcw, Award, CheckCircle2 
+  RotateCcw, CheckCircle2, Wifi, Battery, Signal, 
+  ChevronRight, Scissors, Droplet, Star, User, Phone
 } from 'lucide-react'
 
 export default function Landing() {
@@ -20,15 +21,23 @@ export default function Landing() {
 
   // --- 1. SIMULADOR DE AGENDAMENTO ---
   const [simStep, setSimStep] = useState(1) // 1: serviço, 2: horário, 3: dados, 4: sucesso
-  const [simService, setSimService] = useState<{ name: string; price: number; duration: number } | null>(null)
+  const [simService, setSimService] = useState<{ name: string; price: number; duration: number; icon: any } | null>(null)
+  const [selectedDay, setSelectedDay] = useState('Qui, 18')
   const [simTime, setSimTime] = useState('')
   const [simName, setSimName] = useState('')
   const [simPhone, setSimPhone] = useState('')
 
   const mockServices = [
-    { name: 'Corte Degradê Moderno', price: 45, duration: 30 },
-    { name: 'Barba Premium + Toalha Quente', price: 35, duration: 30 },
-    { name: 'Combo BoraCabelo & Barba', price: 70, duration: 60 }
+    { name: 'Corte Degradê Moderno', price: 45, duration: 30, icon: Scissors },
+    { name: 'Barba Premium + Toalha Quente', price: 35, duration: 30, icon: Droplet },
+    { name: 'Combo BoraCabelo & Barba', price: 70, duration: 60, icon: Star }
+  ]
+
+  const mockDays = [
+    { label: 'Qui, 18', status: 'Disponível' },
+    { label: 'Sex, 19', status: 'Disponível' },
+    { label: 'Sáb, 20', status: 'Últimas vagas' },
+    { label: 'Seg, 22', status: 'Disponível' }
   ]
 
   const mockTimes = ['09:00', '10:30', '14:00', '15:30', '17:00']
@@ -46,7 +55,7 @@ export default function Landing() {
         setWaMessages(prev => [
           ...prev,
           { 
-            text: `✅ *BoraMarka informa:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* está CONFIRMADO para amanhã às *${simTime}* no BoraMarka Barber. 🗓️`, 
+            text: `✅ *BoraMarka Barber:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* está CONFIRMADO para ${selectedDay} às *${simTime}*. 🗓️`, 
             isUser: false, 
             time: '09:41' 
           }
@@ -156,7 +165,7 @@ export default function Landing() {
               <span className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-500 bg-clip-text text-transparent">automático</span>
             </h2>
 
-            <p className={`text-base md:text-lg mb-8 font-medium ${isDark ? 'text-slate-400' : 'text-slate-6:00'}`}>
+            <p className={`text-base md:text-lg mb-8 font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-600'}`}>
               Chega de perder horas respondendo clientes no WhatsApp. Seus clientes escolhem o serviço e agendam sozinhos em menos de 1 minuto. Simule no celular ao lado!
             </p>
 
@@ -192,56 +201,95 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Coluna Direita: Simulador de Agendamento Interativo */}
+          {/* Coluna Direita: SIMULADOR DE CELULAR PREMIUM */}
           <div className="lg:col-span-6 flex justify-center relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 to-orange-500/20 rounded-[2.5rem] blur-3xl -z-10 pointer-events-none" />
+            {/* Efeito Glow atrás do celular */}
+            <div className="absolute inset-0 bg-gradient-to-br from-pink-500/30 to-orange-500/30 rounded-[3.5rem] blur-3xl -z-10 pointer-events-none" />
             
-            {/* Telefone Mockup */}
-            <div className="w-full max-w-[350px] bg-[#0E1321] rounded-[2.5rem] p-3.5 border-4 border-slate-800 shadow-2xl relative">
-              {/* Speaker / Notch */}
-              <div className="absolute top-6 left-1/2 -translate-x-1/2 w-24 h-4 bg-slate-800 rounded-full z-20 flex items-center justify-center">
-                <div className="w-8 h-1 bg-slate-700 rounded-full" />
-              </div>
+            {/* Celular Realista */}
+            <div className="relative w-full max-w-[340px] aspect-[9/18.8] bg-[#1C1F2E] rounded-[3.2rem] p-3.5 shadow-2xl border-4 border-[#2D3142] ring-1 ring-white/15 overflow-hidden flex flex-col">
               
-              {/* Inner Screen Content */}
-              <div className="bg-[#080C14] rounded-[2rem] overflow-hidden min-h-[500px] p-5 pt-8 text-left flex flex-col justify-between relative">
+              {/* Botões Laterais Simulados */}
+              <div className="absolute top-24 -left-1 w-[3px] h-12 bg-[#2D3142] rounded-r-md" />
+              <div className="absolute top-40 -left-1 w-[3px] h-12 bg-[#2D3142] rounded-r-md" />
+              <div className="absolute top-32 -right-1 w-[3px] h-16 bg-[#2D3142] rounded-l-md" />
+
+              {/* Dynamic Island Notch */}
+              <div className="absolute top-5 left-1/2 -translate-x-1/2 w-28 h-6 bg-black rounded-full z-40 flex items-center justify-between px-3">
+                <div className="w-2.5 h-2.5 bg-slate-900 rounded-full border border-slate-800" />
+                <div className="w-8 h-1 bg-slate-900 rounded-full" />
+              </div>
+
+              {/* Reflexo Vidro Diagonal */}
+              <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/5 to-transparent z-30" />
+
+              {/* Tela do Aparelho */}
+              <div className="w-full h-full bg-[#080C14] rounded-[2.6rem] overflow-hidden flex flex-col justify-between border border-slate-900 relative z-10 select-none">
                 
+                {/* Barra de Status */}
+                <div className="flex justify-between items-center text-[9px] font-black text-slate-400 px-6 pt-2 pb-1 bg-[#080C14] z-20">
+                  <span>09:41</span>
+                  <div className="flex items-center gap-1.5">
+                    <Signal className="w-3 h-3 text-slate-400" />
+                    <Wifi className="w-3 h-3 text-slate-400" />
+                    <Battery className="w-3.5 h-3.5 text-slate-400" />
+                  </div>
+                </div>
+
                 {/* Header Mockup */}
-                <div className="flex items-center justify-between border-b border-slate-900 pb-3 mb-4">
+                <div className="flex items-center justify-between border-b border-slate-900 px-5 py-3 mb-2.5 bg-[#080C14]/90 backdrop-blur-md">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white text-xs font-bold">B</div>
+                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white text-xs font-black shadow-md shadow-pink-500/10">
+                      B
+                    </div>
                     <div>
                       <h4 className="text-[11px] font-black text-white leading-none">BoraMarka Barber</h4>
-                      <span className="text-[8px] text-emerald-400 font-bold flex items-center gap-1">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping inline-block" /> Online
+                      <span className="text-[8px] text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block" /> Online
                       </span>
                     </div>
                   </div>
-                  <Smartphone className="w-4 h-4 text-slate-500" />
+                  <div className="flex items-center gap-2 text-slate-500">
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                  </div>
                 </div>
 
-                {/* SIMULATOR STEPS */}
-                <div className="flex-1 flex flex-col">
+                {/* Conteúdo dos Passos */}
+                <div className="flex-1 flex flex-col px-5 overflow-y-auto no-scrollbar pb-6">
                   {simStep === 1 && (
                     <div className="animate-scale-in flex flex-col flex-1">
-                      <h5 className="text-xs font-black text-slate-400 mb-3 uppercase tracking-wider">Passo 1: Selecione o Serviço</h5>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 text-center">
+                        Passo 1: Escolha o Serviço
+                      </p>
                       <div className="space-y-2.5 flex-1">
-                        {mockServices.map((service, idx) => (
-                          <button
-                            key={idx}
-                            onClick={() => {
-                              setSimService(service)
-                              setSimStep(2)
-                            }}
-                            className="w-full p-3 rounded-xl bg-[#0E1321] hover:bg-[#151D33] border border-slate-800/80 hover:border-pink-500/50 text-left transition-all flex justify-between items-center group active:scale-[0.98]"
-                          >
-                            <div>
-                              <p className="text-xs font-bold text-white group-hover:text-pink-400 transition-colors">{service.name}</p>
-                              <p className="text-[10px] text-slate-500 font-semibold">{service.duration} min</p>
-                            </div>
-                            <span className="text-xs font-black text-slate-200">R$ {service.price}</span>
-                          </button>
-                        ))}
+                        {mockServices.map((service, idx) => {
+                          const IconComp = service.icon
+                          return (
+                            <button
+                              key={idx}
+                              onClick={() => {
+                                setSimService(service)
+                                setSimStep(2)
+                              }}
+                              className="w-full p-3.5 rounded-2xl bg-[#0E1321] hover:bg-[#151D33] border border-slate-800/80 hover:border-pink-500/50 text-left transition-all flex justify-between items-center group active:scale-[0.98] shadow-sm"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-orange-500/10 to-pink-500/10 border border-orange-500/10 flex items-center justify-center text-orange-400 group-hover:text-pink-400 transition-colors">
+                                  <IconComp className="w-4 h-4" />
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-white group-hover:text-pink-400 transition-colors">{service.name}</p>
+                                  <p className="text-[10px] text-slate-500 font-semibold">{service.duration} min</p>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs font-black text-slate-200">R$ {service.price}</span>
+                                <ChevronRight className="w-3.5 h-3.5 text-slate-600 group-hover:text-pink-500 transition-colors" />
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     </div>
                   )}
@@ -249,17 +297,36 @@ export default function Landing() {
                   {simStep === 2 && (
                     <div className="animate-scale-in flex flex-col flex-1">
                       <div className="flex justify-between items-center mb-3">
-                        <h5 className="text-xs font-black text-slate-400 uppercase tracking-wider">Passo 2: Horário</h5>
-                        <button onClick={() => setSimStep(1)} className="text-[10px] font-bold text-pink-500">Voltar</button>
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Passo 2: Horário</span>
+                        <button onClick={() => setSimStep(1)} className="text-[10px] font-bold text-pink-500 hover:underline">Voltar</button>
                       </div>
                       
-                      <div className="p-2.5 rounded-lg bg-[#0E1321] border border-slate-800 text-[10px] font-bold text-slate-300 mb-4 flex items-center justify-between">
-                        <span>Serviço: {simService?.name}</span>
-                        <span className="text-pink-500">R$ {simService?.price}</span>
+                      <div className="p-3 rounded-2xl bg-[#0E1321] border border-slate-800 text-[10px] font-bold text-slate-300 mb-4 flex items-center justify-between">
+                        <span className="flex items-center gap-1.5"><Scissors className="w-3.5 h-3.5 text-orange-400" /> {simService?.name}</span>
+                        <span className="text-pink-500 font-black">R$ {simService?.price}</span>
                       </div>
 
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-wider mb-2">Horários para Amanhã</p>
-                      
+                      {/* Seletor de Dia */}
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Selecione o Dia</p>
+                      <div className="grid grid-cols-4 gap-1.5 mb-4">
+                        {mockDays.map((day, idx) => (
+                          <button
+                            key={idx}
+                            onClick={() => setSelectedDay(day.label)}
+                            className={`p-2 rounded-xl text-center border transition-all ${
+                              selectedDay === day.label 
+                                ? 'bg-gradient-to-br from-orange-500 to-pink-500 border-transparent text-white font-black scale-105' 
+                                : 'bg-[#0E1321] border-slate-800 text-slate-400 font-bold hover:border-slate-700'
+                            }`}
+                          >
+                            <p className="text-[10px] uppercase leading-none">{day.label.split(',')[0]}</p>
+                            <p className="text-xs font-black mt-1">{day.label.split(',')[1]}</p>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Seletor de Hora */}
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-2">Horários Disponíveis</p>
                       <div className="grid grid-cols-3 gap-2">
                         {mockTimes.map((time, idx) => (
                           <button
@@ -268,7 +335,7 @@ export default function Landing() {
                               setSimTime(time)
                               setSimStep(3)
                             }}
-                            className="p-2 rounded-lg bg-[#0E1321] hover:bg-[#151D33] border border-slate-800 hover:border-orange-500 text-center font-black text-xs text-white transition-all active:scale-[0.98]"
+                            className="p-2.5 rounded-xl bg-[#0E1321] hover:bg-[#151D33] border border-slate-800 hover:border-orange-500 text-center font-black text-xs text-white transition-all active:scale-[0.98] hover:scale-102"
                           >
                             {time}
                           </button>
@@ -280,41 +347,53 @@ export default function Landing() {
                   {simStep === 3 && (
                     <div className="animate-scale-in flex flex-col flex-1">
                       <div className="flex justify-between items-center mb-3">
-                        <h5 className="text-xs font-black text-slate-400 uppercase tracking-wider">Passo 3: Seus Dados</h5>
-                        <button onClick={() => setSimStep(2)} className="text-[10px] font-bold text-pink-500">Voltar</button>
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Passo 3: Seus Dados</span>
+                        <button onClick={() => setSimStep(2)} className="text-[10px] font-bold text-pink-500 hover:underline">Voltar</button>
                       </div>
 
-                      <div className="p-2.5 rounded-lg bg-[#0E1321] border border-slate-800 text-[10px] font-bold text-slate-300 mb-4 flex justify-between">
-                        <span>{simService?.name}</span>
-                        <span className="text-orange-400">Amanhã às {simTime}</span>
+                      <div className="p-3 rounded-2xl bg-[#0E1321] border border-slate-800 text-[10px] font-bold text-slate-300 mb-4 flex flex-col gap-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Serviço:</span>
+                          <span className="text-white font-black">{simService?.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Data/Hora:</span>
+                          <span className="text-orange-400 font-black">{selectedDay} às {simTime}</span>
+                        </div>
                       </div>
 
                       <div className="space-y-3">
                         <div>
                           <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider block mb-1">Seu Nome</label>
-                          <input 
-                            type="text" 
-                            placeholder="Ex: João Silva" 
-                            value={simName}
-                            onChange={(e) => setSimName(e.target.value)}
-                            className="w-full bg-[#0E1321] border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-xs focus:outline-none text-white transition-all"
-                          />
+                          <div className="relative">
+                            <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input 
+                              type="text" 
+                              placeholder="Ex: João Silva" 
+                              value={simName}
+                              onChange={(e) => setSimName(e.target.value)}
+                              className="w-full bg-[#0E1321] border border-slate-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none text-white transition-all font-semibold"
+                            />
+                          </div>
                         </div>
                         <div>
                           <label className="text-[9px] font-black uppercase text-slate-500 tracking-wider block mb-1">Seu Celular (WhatsApp)</label>
-                          <input 
-                            type="text" 
-                            placeholder="Ex: (11) 99999-9999" 
-                            value={simPhone}
-                            onChange={(e) => setSimPhone(e.target.value)}
-                            className="w-full bg-[#0E1321] border border-slate-800 focus:border-pink-500 rounded-xl px-3 py-2 text-xs focus:outline-none text-white transition-all"
-                          />
+                          <div className="relative">
+                            <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                            <input 
+                              type="text" 
+                              placeholder="Ex: (11) 99999-9999" 
+                              value={simPhone}
+                              onChange={(e) => setSimPhone(e.target.value)}
+                              className="w-full bg-[#0E1321] border border-slate-800 focus:border-pink-500 focus:ring-1 focus:ring-pink-500 rounded-xl pl-10 pr-4 py-2.5 text-xs focus:outline-none text-white transition-all font-semibold"
+                            />
+                          </div>
                         </div>
 
                         <button
                           onClick={() => setSimStep(4)}
                           disabled={!simName || !simPhone}
-                          className="w-full py-3 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 disabled:opacity-55 disabled:cursor-not-allowed rounded-xl text-white font-black text-xs transition-all flex items-center justify-center gap-1.5"
+                          className="w-full py-3.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 disabled:opacity-55 disabled:cursor-not-allowed rounded-2xl text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/20 active:scale-[0.98] mt-2"
                         >
                           Confirmar Agendamento <Check className="w-3.5 h-3.5" />
                         </button>
@@ -323,30 +402,45 @@ export default function Landing() {
                   )}
 
                   {simStep === 4 && (
-                    <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-4">
-                      <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 animate-bounce">
-                        <CheckCircle2 className="w-6 h-6" />
+                    <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                      <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 animate-bounce">
+                        <CheckCircle2 className="w-7 h-7" />
                       </div>
                       
-                      <h4 className="text-sm font-black text-white mb-2">Horário Agendado!</h4>
-                      <p className="text-[10px] text-slate-400 font-semibold mb-6 max-w-[200px]">
-                        Olhe o painel do WhatsApp abaixo para ver o lembrete instantâneo chegando.
-                      </p>
+                      <h4 className="text-sm font-black text-white mb-2">Horário Confirmado!</h4>
+                      
+                      {/* Recibo Simulado */}
+                      <div className="w-full bg-[#0E1321] rounded-2xl p-4 border border-slate-800 text-left text-[10px] space-y-2 mb-6">
+                        <div className="flex justify-between border-b border-slate-800/50 pb-2">
+                          <span className="text-slate-500">Cliente:</span>
+                          <span className="text-white font-bold">{simName}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-800/50 pb-2">
+                          <span className="text-slate-500">Serviço:</span>
+                          <span className="text-white font-bold">{simService?.name}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-800/50 pb-2">
+                          <span className="text-slate-500">Horário:</span>
+                          <span className="text-orange-400 font-bold">{selectedDay} às {simTime}</span>
+                        </div>
+                        <div className="flex justify-between font-black">
+                          <span className="text-slate-400">Total:</span>
+                          <span className="text-emerald-400 text-xs">R$ {simService?.price}</span>
+                        </div>
+                      </div>
 
                       <button
                         onClick={resetSimulator}
-                        className="flex items-center gap-1 px-4 py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
+                        className="flex items-center gap-1.5 px-4 py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
                       >
-                        <RotateCcw className="w-3 h-3" /> Simular novamente
+                        <RotateCcw className="w-3.5 h-3.5" /> Agendar Outro
                       </button>
                     </div>
                   )}
                 </div>
 
-                {/* Footer branding */}
-                <div className="text-center text-[8px] font-bold text-slate-600 tracking-wider border-t border-slate-900/60 pt-2.5">
-                  Powered by BoraMarka
-                </div>
+                {/* Home Indicator Bar */}
+                <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 w-28 h-1 bg-slate-800 rounded-full z-30" />
 
               </div>
             </div>
@@ -431,7 +525,7 @@ export default function Landing() {
             <div className="lg:col-span-6">
               <span className="text-xs font-black text-orange-500 uppercase tracking-widest">Calculadora de Produtividade</span>
               <h3 className="text-3xl font-black mt-2 mb-4">Veja quanto tempo e dinheiro você está deixando na mesa</h3>
-              <p className={`text-sm mb-8 font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-505'}`}>
+              <p className={`text-sm mb-8 font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Responda no WhatsApp, marque no caderno, reagende no bate-papo... Isso gasta seu tempo de atendimento e custa caro! Ajuste os valores abaixo para calcular.
               </p>
 
@@ -500,7 +594,7 @@ export default function Landing() {
           <div className="text-center max-w-2xl mx-auto mb-16">
             <span className="text-xs font-black text-purple-500 uppercase tracking-widest">Tudo o que você precisa</span>
             <h3 className="text-3xl font-black mt-2">Um ecossistema completo para prosperar</h3>
-            <p className={`text-sm mt-3 ${isDark ? 'text-slate-400' : 'text-slate-505'}`}>
+            <p className={`text-sm mt-3 ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
               Esqueça planilhas, anotações perdidas e controles paralelos. Unifique sua gestão.
             </p>
           </div>
@@ -515,7 +609,7 @@ export default function Landing() {
                 <Calendar className="w-5 h-5" />
               </div>
               <h4 className="text-lg font-black mb-3">Link de Agendamento</h4>
-              <p className={`text-xs leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-505'}`}>
+              <p className={`text-xs leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Seu cliente escolhe o serviço, profissional, dia e horário. Tudo atualizado em tempo real na sua agenda.
               </p>
             </div>
@@ -528,7 +622,7 @@ export default function Landing() {
                 <DollarSign className="w-5 h-5" />
               </div>
               <h4 className="text-lg font-black mb-3">Fluxo de Caixa Rápido</h4>
-              <p className={`text-xs leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>
+              <p className={`text-xs leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Controle financeiro simples integrado. Lançamento automático dos valores dos agendamentos efetuados.
               </p>
             </div>
@@ -541,7 +635,7 @@ export default function Landing() {
                 <Users className="w-5 h-5" />
               </div>
               <h4 className="text-lg font-black mb-3">Histórico de Clientes</h4>
-              <p className={`text-xs leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-550'}`}>
+              <p className={`text-xs leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
                 Veja quantas vezes cada cliente agendou, os serviços preferidos dele e faturamento gerado.
               </p>
             </div>
@@ -699,7 +793,7 @@ export default function Landing() {
       </main>
 
       {/* Footer */}
-      <footer className={`py-10 border-t text-center ${isDark ? 'border-slate-950 bg-[#06080E]' : 'border-slate-200 bg-slate-100'}`}>
+      <footer className={`py-10 border-t text-center ${isDark ? 'border-slate-955 bg-[#06080E]' : 'border-slate-200 bg-slate-100'}`}>
         <p className={`text-xs font-medium ${isDark ? 'text-slate-500' : 'text-slate-400'}`}>
           BoraMarka S.A. &copy; 2026. Todos os direitos reservados. Sua agenda na velocidade do seu negócio.
         </p>
