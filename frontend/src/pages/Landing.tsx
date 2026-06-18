@@ -202,9 +202,57 @@ export default function Landing() {
           </div>
 
           {/* Coluna Direita: SIMULADOR DE CELULAR PREMIUM */}
-          <div className="lg:col-span-6 flex justify-center relative">
+          <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
+            
+            {/* Cabeçalho do Simulador para destacar o que é */}
+            <div className="text-center mb-8 max-w-sm relative z-20 px-4">
+              <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider mb-3 animate-pulse border ${
+                isDark 
+                  ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' 
+                  : 'bg-orange-50 text-orange-600 border-orange-200'
+              }`}>
+                📲 Link de Agendamento do Profissional
+              </span>
+              <h3 className={`text-xl font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>
+                Experimente a visão do seu cliente
+              </h3>
+              <p className={`text-xs mt-1.5 font-medium leading-relaxed ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Toque nos botões do celular abaixo para simular um agendamento em tempo real. Veja como é rápido e prático!
+              </p>
+            </div>
+
             {/* Efeito Glow atrás do celular */}
             <div className="absolute inset-0 bg-gradient-to-br from-pink-500/30 to-orange-500/30 rounded-[3.5rem] blur-3xl -z-10 pointer-events-none" />
+
+            {/* Balão Explicativo Esquerdo (Telas Grandes) */}
+            <div className={`hidden xl:flex absolute left-[-60px] top-[35%] w-52 p-4 rounded-2xl backdrop-blur-md border shadow-2xl flex-col gap-2 text-left transform -translate-x-12 hover:-translate-x-10 transition-all duration-300 z-20 ${
+              isDark 
+                ? 'bg-[#0E1321]/95 border-slate-800/80 shadow-black/80' 
+                : 'bg-white/95 border-slate-200/80 shadow-slate-200/50'
+            }`}>
+              <div className="w-8 h-8 rounded-xl bg-orange-500/10 flex items-center justify-center text-orange-500 border border-orange-500/20">
+                <Smartphone className="w-4.5 h-4.5" />
+              </div>
+              <h5 className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>Sem Complicação</h5>
+              <p className={`text-[10px] leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                Seu cliente abre o link direto no navegador (Instagram, WhatsApp). Sem baixar apps ou criar senhas.
+              </p>
+            </div>
+
+            {/* Balão Explicativo Direito (Telas Grandes) */}
+            <div className={`hidden xl:flex absolute right-[-60px] top-[50%] w-52 p-4 rounded-2xl backdrop-blur-md border shadow-2xl flex-col gap-2 text-left transform translate-x-12 hover:translate-x-10 transition-all duration-300 z-20 ${
+              isDark 
+                ? 'bg-[#0E1321]/95 border-slate-800/80 shadow-black/80' 
+                : 'bg-white/95 border-slate-200/80 shadow-slate-200/50'
+            }`}>
+              <div className="w-8 h-8 rounded-xl bg-pink-500/10 flex items-center justify-center text-pink-500 border border-pink-500/20">
+                <Zap className="w-4.5 h-4.5" />
+              </div>
+              <h5 className={`text-xs font-black ${isDark ? 'text-white' : 'text-slate-800'}`}>Piloto Automático</h5>
+              <p className={`text-[10px] leading-relaxed font-semibold ${isDark ? 'text-slate-400' : 'text-slate-500'}`}>
+                O cliente escolhe o serviço, dia e hora em segundos. Notificação automática via WhatsApp.
+              </p>
+            </div>
             
             {/* Celular Realista */}
             <div className="relative w-full max-w-[340px] aspect-[9/18.8] bg-[#1C1F2E] rounded-[3.2rem] p-3.5 shadow-2xl border-4 border-[#2D3142] ring-1 ring-white/15 overflow-hidden flex flex-col">
