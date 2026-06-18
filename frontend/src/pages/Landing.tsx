@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Moon, Sun, Check, ArrowRight } from 'lucide-react'
+import { Moon, Sun, Check, ArrowRight, Sparkles, Clock, Shield, Zap, X } from 'lucide-react'
 
 export default function Landing() {
   const [isDark, setIsDark] = useState(true) // Default to dark mode as per screenshot
+  const [showTrialModal, setShowTrialModal] = useState(false)
+  const [selectedPlan, setSelectedPlan] = useState<'mensal' | 'anual'>('mensal')
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -14,6 +16,11 @@ export default function Landing() {
     }
   }, [isDark])
 
+  const handleSubscribeClick = (plan: 'mensal' | 'anual') => {
+    setSelectedPlan(plan)
+    setShowTrialModal(true)
+  }
+
   const features = [
     'Agendamentos Ilimitados',
     'Links de agendamento próprios',
@@ -21,9 +28,108 @@ export default function Landing() {
     'Fluxo de Caixa integrado'
   ]
 
+  const trialPerks = [
+    { icon: Zap, text: 'Acesso completo a todas as funcionalidades' },
+    { icon: Clock, text: '7 dias grátis sem compromisso' },
+    { icon: Shield, text: 'Sem cartão de crédito para começar' },
+    { icon: Sparkles, text: 'Cancele quando quiser, sem burocracia' },
+  ]
+
   return (
     <div className={`min-h-screen font-sans transition-colors duration-300 ${isDark ? 'bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-900'}`}>
       
+      {/* ═══ Trial Modal ═══ */}
+      {showTrialModal && (
+        <div 
+          className="fixed inset-0 z-[999] flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) setShowTrialModal(false) }}
+        >
+          {/* Backdrop */}
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" style={{ animation: 'fadeIn 0.2s ease-out' }} />
+          
+          {/* Modal */}
+          <div 
+            className="relative w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl"
+            style={{ animation: 'scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1)' }}
+          >
+            {/* Gradient Top Banner */}
+            <div className="bg-gradient-to-br from-orange-500 via-pink-500 to-purple-600 px-8 pt-10 pb-16 text-center relative overflow-hidden">
+              {/* Decorative Circles */}
+              <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+              
+              <button 
+                onClick={() => setShowTrialModal(false)}
+                className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              <div className="relative z-10">
+                <div className="inline-flex items-center gap-2 bg-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full text-white text-xs font-black uppercase tracking-widest mb-5">
+                  <Sparkles className="w-3.5 h-3.5" />
+                  Oferta Especial
+                </div>
+                
+                <h2 className="text-3xl sm:text-4xl font-black text-white mb-3 leading-tight">
+                  Comece com <span className="underline decoration-wavy decoration-yellow-300 underline-offset-4">7 dias grátis</span>
+                </h2>
+                
+                <p className="text-white/80 text-sm font-medium max-w-xs mx-auto">
+                  Teste tudo sem pagar nada. Sua assinatura só começa depois do período de teste.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="bg-[#131826] px-8 pt-0 pb-8 -mt-8 rounded-t-[2rem] relative z-10">
+              
+              {/* Perks List */}
+              <div className="space-y-4 mb-8 pt-8">
+                {trialPerks.map((perk, idx) => (
+                  <div key={idx} className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500/20 to-pink-500/20 flex items-center justify-center shrink-0 border border-orange-500/10">
+                      <perk.icon className="w-5 h-5 text-orange-400" />
+                    </div>
+                    <span className="text-sm font-bold text-slate-200">{perk.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Selected Plan Summary */}
+              <div className="bg-[#1A2235] rounded-2xl p-4 mb-6 border border-slate-800 flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-0.5">Plano escolhido</p>
+                  <p className="text-white font-black text-lg">
+                    {selectedPlan === 'anual' ? 'BoraAnual' : 'BoraMensal'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-slate-500 text-xs font-bold line-through">
+                    {selectedPlan === 'anual' ? 'R$ 260/ano' : 'R$ 30/mês'}
+                  </p>
+                  <p className="text-emerald-400 font-black text-lg">R$ 0,00</p>
+                  <p className="text-emerald-400/70 text-[10px] font-bold">por 7 dias</p>
+                </div>
+              </div>
+
+              {/* CTA Button */}
+              <button 
+                onClick={() => navigate('/register')}
+                className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all hover:scale-[1.02] hover:shadow-xl hover:shadow-pink-500/30 flex items-center justify-center gap-3 group"
+              >
+                Começar 7 Dias Grátis
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+
+              <p className="text-center text-slate-600 text-[11px] font-medium mt-4">
+                Sem cartão de crédito • Cancele a qualquer momento
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className={`px-6 py-4 flex flex-col sm:flex-row justify-between items-center gap-4 border-b ${isDark ? 'border-slate-800' : 'border-slate-200'}`}>
         <div className="flex items-center gap-3">
@@ -120,7 +226,7 @@ export default function Landing() {
             </p>
             
             <button 
-              onClick={() => navigate('/register')}
+              onClick={() => handleSubscribeClick('mensal')}
               className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/25"
             >
               Assinar BoraMensal
@@ -151,7 +257,7 @@ export default function Landing() {
             </p>
             
             <button 
-              onClick={() => navigate('/register')}
+              onClick={() => handleSubscribeClick('anual')}
               className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/25"
             >
               Assinar BoraAnual
