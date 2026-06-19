@@ -4,7 +4,7 @@ import {
   Moon, Sun, Check, Sparkles, Clock, Shield, Zap, 
   ArrowRight, Smartphone, Calendar, DollarSign, Users, 
   RotateCcw, CheckCircle2, Wifi, Battery, Signal, 
-  ChevronRight, Scissors, Droplet, Star, User, Phone
+  ChevronRight, Scissors, Droplet, Star, User, Phone, AlertCircle
 } from 'lucide-react'
 
 export default function Landing() {
@@ -504,7 +504,14 @@ export default function Landing() {
                         </button>
                         
                         <button
-                          onClick={() => setSimStep(5)}
+                          onClick={() => {
+                            const isCloseToBooking = selectedDay === 'Qui, 18' && (simTime === '09:00' || simTime === '10:30');
+                            if (isCloseToBooking) {
+                              setSimStep(7);
+                            } else {
+                              setSimStep(5);
+                            }
+                          }}
                           className="flex items-center justify-center gap-1.5 w-full py-2 border border-red-500/30 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 transition-all active:scale-[0.98]"
                         >
                           Cancelar Agendamento
@@ -559,6 +566,39 @@ export default function Landing() {
                       >
                         Novo Agendamento
                       </button>
+                    </div>
+                  )}
+
+                  {simStep === 7 && (
+                    <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                      <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 mb-4 animate-bounce">
+                        <AlertCircle className="w-6 h-6" />
+                      </div>
+                      
+                      <h4 className="text-xs font-black text-white mb-2">Prazo Expirado!</h4>
+                      <p className="text-[10px] text-slate-400 mb-4 font-semibold max-w-[240px] leading-relaxed">
+                        Cancelamentos online só são permitidos com até <span className="text-white font-bold">2 horas</span> de antecedência.
+                        <br /><br />
+                        Para cancelar seu horário de hoje às <span className="text-orange-400 font-bold">{simTime}</span>, fale direto com o profissional.
+                      </p>
+                      
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <a
+                          href={`https://wa.me/5511999999999?text=Olá,%20gostaria%20de%20cancelar%20meu%20horário%20de%20hoje%20às%20${simTime}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full py-2.5 bg-emerald-500 hover:bg-emerald-600 rounded-xl text-white font-black text-xs transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20"
+                        >
+                          <Phone className="w-3.5 h-3.5" /> Falar no WhatsApp
+                        </a>
+                        
+                        <button
+                          onClick={() => setSimStep(4)}
+                          className="w-full py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
+                        >
+                          Voltar
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>

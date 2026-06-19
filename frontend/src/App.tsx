@@ -4,6 +4,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import BookingPage from './pages/BookingPage'
 import BookingSuccess from './pages/BookingSuccess'
+import BookingCancel from './pages/BookingCancel'
 import PublicProfile from './pages/PublicProfile'
 import Landing from './pages/Landing'
 
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/p/:username" element={<PublicProfile />} />
         <Route path="/agendar/:token" element={<BookingPage />} />
         <Route path="/agendar/:token/sucesso" element={<BookingSuccess />} />
+        <Route path="/agendar/:token/cancelar/:bookingId" element={<BookingCancel />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

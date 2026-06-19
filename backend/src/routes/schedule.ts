@@ -197,4 +197,117 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       whatsapp: whatsappResult,
     });
   });
+
+  // GET /api/schedule/booking/:id — Get details of a booking
+  app.get('/booking/:id', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: {
+                admin: {
+                  select: {
+                    businessName: true,
+                    phone: true
+                  }
+                },
+                service: {
+                  select: {
+                    name: true,
+                    price: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    return {
+      id: booking.id,
+      clientName: booking.clientName,
+      clientPhone: booking.clientPhone,
+      date: booking.timeSlot.date,
+      time: booking.timeSlot.time,
+      businessName: booking.timeSlot.link.admin.businessName,
+      businessPhone: booking.timeSlot.link.admin.phone,
+      serviceName: booking.timeSlot.link.service?.name || 'Serviço',
+      price: booking.timeSlot.link.service?.price || 0,
+    };
+  });
+
+  // POST /api/schedule/booking/:id/cancel — Public cancellation with 2-hour deadline check
+  app.post('/booking/:id/cancel', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: {
+                admin: {
+                  select: {
+                    businessName: true,
+                    phone: true
+                  }
+                },
+                service: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    // Check cancellation policy (2-hour limit)
+    // Parse date and time in Brazilian timezone (-03:00)
+    const appointmentDate = new Date(`${booking.timeSlot.date}T${booking.timeSlot.time}:00-03:00`);
+    const now = new Date();
+    const diffMs = appointmentDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours < 2) {
+      return reply.status(400).send({
+        error: 'PRAZO_LIMITE_EXPIRADO',
+        message: 'Cancelamentos online só são permitidos com até 2 horas de antecedência. Por favor, entre em contato direto com o profissional.',
+        businessPhone: booking.timeSlot.link.admin.phone
+      });
+    }
+
+    // Cancel booking: Restore slot and delete booking
+    await prisma.$transaction(async (tx) => {
+      await tx.timeSlot.update({
+        where: { id: booking.timeSlotId },
+        data: { isAvailable: true },
+      });
+      await tx.booking.delete({
+        where: { id: booking.id }
+      });
+    });
+
+    // Send WhatsApp notification
+    const cancelMessage = `❌ *Cancelamento automático:* Olá ${booking.clientName}, seu agendamento para *${booking.timeSlot.link.service?.name || 'Serviço'}* no dia ${booking.timeSlot.date} às *${booking.timeSlot.time}* foi CANCELADO com sucesso.`;
+    await sendWhatsAppMessage(booking.clientPhone, cancelMessage);
+
+    return { success: true };
+  });
 }
