@@ -29,8 +29,9 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 
   if (!response.ok) {
     // If unauthorized, clear token and redirect
-    if (response.status === 401 && window.location.pathname.startsWith('/dashboard')) {
+    if (response.status === 401 && (window.location.pathname.startsWith('/dashboard') || window.location.pathname.startsWith('/superadmin'))) {
       localStorage.removeItem('token');
+      localStorage.removeItem('role');
       window.location.href = '/login';
     }
     throw new Error(data.error || data.message || 'Erro desconhecido');
@@ -55,13 +56,13 @@ export const api = {
     address?: string;
     operatingHours?: string;
   }) =>
-    request<{ token: string; username: string; businessName: string }>('/auth/register', {
+    request<{ token: string; username: string; businessName: string; role?: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   login: (username: string, password: string) =>
-    request<{ token: string; username: string }>('/auth/login', {
+    request<{ token: string; username: string; role?: string }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password }),
     }),
@@ -334,5 +335,47 @@ export const api = {
     request<{ init_point: string }>('/billing/checkout', {
       method: 'POST',
       body: JSON.stringify({ plan }),
+    }),
+
+  // ═══ Super Admin ═══
+  getSuperAdminStats: () =>
+    request<{
+      totalUsers: number;
+      totalBookings: number;
+      activeSubscriptions: number;
+      trialingSubscriptions: number;
+      estimatedMonthlyRevenue: number;
+    }>('/superadmin/stats'),
+
+  getSuperAdminUsers: () =>
+    request<Array<{
+      id: number;
+      username: string;
+      businessName: string;
+      cnpj: string;
+      phone: string;
+      createdAt: string;
+      bookingsCount: number;
+      subscription: {
+        plan: string;
+        status: string;
+        expiresAt: string | null;
+        trialEndsAt: string | null;
+      } | null;
+      _count: {
+        links: number;
+        services: number;
+      }
+    }>>('/superadmin/users'),
+
+  updateUserSubscription: (id: number, data: { plan?: string; status?: string; expiresAt?: string | null }) =>
+    request(`/superadmin/users/${id}/subscription`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteUser: (id: number) =>
+    request<{ success: boolean; message: string }>(`/superadmin/users/${id}`, {
+      method: 'DELETE',
     }),
 };

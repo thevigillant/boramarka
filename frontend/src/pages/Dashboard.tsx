@@ -632,6 +632,7 @@ export default function Dashboard() {
   // ═══ Handlers ═══
   const handleLogout = () => {
     localStorage.removeItem('token')
+    localStorage.removeItem('role')
     navigate('/login')
   }
 
