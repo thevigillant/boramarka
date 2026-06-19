@@ -77,6 +77,15 @@ export default function BookingSuccess() {
           </div>
         ) : null}
 
+        <div className="mb-6">
+          <Link
+            to={`/agendar/${token}/cancelar/${booking.id}`}
+            className="text-xs text-red-500 hover:text-red-600 font-bold hover:underline"
+          >
+            Precisa cancelar este horário? Clique aqui
+          </Link>
+        </div>
+
         <Link
           to={`/agendar/${token}`}
           className="inline-flex items-center gap-2 text-slate-400 hover:text-pink-500 font-bold text-sm transition-colors"

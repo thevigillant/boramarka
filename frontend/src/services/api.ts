@@ -302,6 +302,24 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
+  getPublicBookingDetails: (id: number) =>
+    request<{
+      id: number;
+      clientName: string;
+      clientPhone: string;
+      date: string;
+      time: string;
+      businessName: string;
+      businessPhone: string;
+      serviceName: string;
+      price: number;
+    }>(`/schedule/booking/${id}`),
+
+  cancelPublicBooking: (id: number) =>
+    request<{ success: boolean }>(`/schedule/booking/${id}/cancel`, {
+      method: 'POST'
+    }),
+
   // ═══ Billing (Assinaturas) ═══
   getSubscriptionStatus: () =>
     request<{
