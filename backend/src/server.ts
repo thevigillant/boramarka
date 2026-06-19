@@ -7,12 +7,13 @@ import scheduleRoutes from './routes/schedule';
 import financeRoutes from './routes/finance';
 import serviceRoutes from './routes/services';
 import billingRoutes from './routes/billing';
+import superadminRoutes from './routes/superadmin';
 
 // Augment Fastify JWT types
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: { id: number; username: string };
-    user: { id: number; username: string };
+    payload: { id: number; username: string; role: string };
+    user: { id: number; username: string; role: string };
   }
 }
 
@@ -45,6 +46,7 @@ app.register(scheduleRoutes, { prefix: '/api/schedule' });
 app.register(financeRoutes, { prefix: '/api/finance' });
 app.register(serviceRoutes, { prefix: '/api/services' });
 app.register(billingRoutes, { prefix: '/api/billing' });
+app.register(superadminRoutes, { prefix: '/api/superadmin' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));

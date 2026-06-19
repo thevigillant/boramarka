@@ -33,7 +33,12 @@ export default function Login() {
     try {
       const res = await api.login(username, password)
       localStorage.setItem('token', res.token)
-      navigate('/dashboard')
+      localStorage.setItem('role', res.role || 'user')
+      if (res.role === 'superadmin') {
+        navigate('/superadmin')
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err: any) {
       setError(err.message || 'Erro ao entrar. Verifique seus dados.')
     } finally {

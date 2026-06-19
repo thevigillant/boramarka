@@ -80,7 +80,7 @@ export default async function authRoutes(app: FastifyInstance) {
     });
 
     const token = app.jwt.sign(
-      { id: admin.id, username: admin.username },
+      { id: admin.id, username: admin.username, role: admin.role },
       { expiresIn: '24h' }
     );
 
@@ -88,6 +88,7 @@ export default async function authRoutes(app: FastifyInstance) {
       token,
       username: admin.username,
       businessName: admin.businessName,
+      role: admin.role,
     });
   });
 
@@ -116,13 +117,14 @@ export default async function authRoutes(app: FastifyInstance) {
     }
 
     const token = app.jwt.sign(
-      { id: admin.id, username: admin.username },
+      { id: admin.id, username: admin.username, role: admin.role },
       { expiresIn: '24h' }
     );
 
     return {
       token,
       username: admin.username,
+      role: admin.role,
     };
   });
 

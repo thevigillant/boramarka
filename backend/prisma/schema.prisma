@@ -11,6 +11,7 @@ model Admin {
   id             Int    @id @default(autoincrement())
   username       String @unique
   passwordHash   String @map("password_hash")
+  role           String @default("user")
   businessName   String @default("") @map("business_name")
   cnpj           String @default("")
   phone          String @default("")
