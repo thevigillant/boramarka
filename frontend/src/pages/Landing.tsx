@@ -47,7 +47,7 @@ export default function Landing() {
     { text: 'Olá! Gostaria de agendar um horário para esta semana.', isUser: true, time: '09:40' }
   ])
 
-  // Triga nova mensagem de WhatsApp ao agendar
+  // Triga nova mensagem de WhatsApp ao agendar ou cancelar
   useEffect(() => {
     if (simStep === 4) {
       // Mensagem de confirmação imediata
@@ -79,7 +79,25 @@ export default function Landing() {
         clearTimeout(timer2)
       }
     }
-  }, [simStep])
+
+    if (simStep === 6) {
+      // Mensagem de cancelamento imediata
+      const timerCancel = setTimeout(() => {
+        setWaMessages(prev => [
+          ...prev,
+          { 
+            text: `❌ *Cancelamento automático:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* no dia ${selectedDay} às *${simTime}* foi CANCELADO com sucesso e a vaga foi liberada.`, 
+            isUser: false, 
+            time: '13:32' 
+          }
+        ])
+      }, 800)
+
+      return () => {
+        clearTimeout(timerCancel)
+      }
+    }
+  }, [simStep, simName, simService, selectedDay, simTime])
 
   const resetSimulator = () => {
     setSimStep(1)
@@ -477,11 +495,69 @@ export default function Landing() {
                         </div>
                       </div>
 
+                      <div className="flex flex-col gap-2 w-full mt-2">
+                        <button
+                          onClick={resetSimulator}
+                          className="flex items-center justify-center gap-1.5 w-full py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 rounded-xl text-xs font-black text-white transition-all active:scale-[0.98] shadow-lg shadow-pink-500/20"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" /> Agendar Outro
+                        </button>
+                        
+                        <button
+                          onClick={() => setSimStep(5)}
+                          className="flex items-center justify-center gap-1.5 w-full py-2 border border-red-500/30 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 transition-all active:scale-[0.98]"
+                        >
+                          Cancelar Agendamento
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {simStep === 5 && (
+                    <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                      <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4 animate-pulse">
+                        <Shield className="w-6 h-6" />
+                      </div>
+                      
+                      <h4 className="text-xs font-black text-white mb-2">Cancelar Agendamento?</h4>
+                      <p className="text-[10px] text-slate-400 mb-4 font-semibold max-w-[240px]">
+                        Deseja mesmo cancelar o horário de <span className="text-white font-bold">{simService?.name}</span> para <span className="text-orange-400 font-bold">{selectedDay} às {simTime}</span>?
+                      </p>
+                      
+                      <div className="flex flex-col gap-1.5 w-full">
+                        <button
+                          onClick={() => setSimStep(6)}
+                          className="w-full py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-white font-black text-xs transition-all active:scale-[0.98] shadow-lg shadow-red-500/20"
+                        >
+                          Sim, Cancelar Horário
+                        </button>
+                        
+                        <button
+                          onClick={() => setSimStep(4)}
+                          className="w-full py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
+                        >
+                          Não, Voltar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {simStep === 6 && (
+                    <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                      <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mb-4">
+                        <Check className="w-6 h-6" />
+                      </div>
+                      
+                      <h4 className="text-xs font-black text-white mb-2">Agendamento Cancelado</h4>
+                      <p className="text-[10px] text-slate-400 mb-5 font-semibold max-w-[240px]">
+                        A vaga foi liberada na agenda do profissional. O aviso de cancelamento foi enviado via WhatsApp.
+                      </p>
+                      
                       <button
                         onClick={resetSimulator}
-                        className="flex items-center gap-1.5 px-4 py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
+                        className="w-full py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 rounded-xl text-xs font-black text-white transition-all active:scale-[0.98] shadow-lg shadow-pink-500/20"
                       >
-                        <RotateCcw className="w-3.5 h-3.5" /> Agendar Outro
+                        Novo Agendamento
                       </button>
                     </div>
                   )}
