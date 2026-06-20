@@ -8,8 +8,22 @@ export default function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
   const [checking, setChecking] = useState(true)
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+    const role = localStorage.getItem('role') || sessionStorage.getItem('role')
+    if (token) {
+      if (role === 'superadmin') {
+        navigate('/superadmin', { replace: true })
+      } else {
+        navigate('/dashboard', { replace: true })
+      }
+    }
+  }, [navigate])
 
   // Check if account exists on mount
   useEffect(() => {
@@ -32,8 +46,16 @@ export default function Login() {
 
     try {
       const res = await api.login(username, password)
-      localStorage.setItem('token', res.token)
-      localStorage.setItem('role', res.role || 'user')
+      
+      localStorage.removeItem('token')
+      localStorage.removeItem('role')
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('role')
+
+      const storage = rememberMe ? localStorage : sessionStorage
+      storage.setItem('token', res.token)
+      storage.setItem('role', res.role || 'user')
+
       if (res.role === 'superadmin') {
         navigate('/superadmin')
       } else {
@@ -108,6 +130,20 @@ export default function Login() {
                   className="input-simple pl-12"
                 />
               </div>
+            </div>
+
+            <div className="flex items-center justify-between py-1">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-slate-300 dark:border-slate-800 text-pink-500 focus:ring-pink-500 w-4 h-4 cursor-pointer accent-pink-500"
+                />
+                <span className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                  Lembrar de mim
+                </span>
+              </label>
             </div>
 
             <button

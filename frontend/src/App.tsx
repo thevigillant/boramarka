@@ -10,14 +10,14 @@ import Landing from './pages/Landing'
 import SuperAdminDashboard from './pages/SuperAdminDashboard'
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (!token) return <Navigate to="/login" replace />
   return <>{children}</>
 }
 
 function SuperAdminProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem('token')
-  const role = localStorage.getItem('role')
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token')
+  const role = localStorage.getItem('role') || sessionStorage.getItem('role')
   if (!token) return <Navigate to="/login" replace />
   if (role !== 'superadmin') return <Navigate to="/dashboard" replace />
   return <>{children}</>
