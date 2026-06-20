@@ -219,7 +219,13 @@ export default function Register() {
         operatingHours,
       })
 
+      localStorage.removeItem('token')
+      localStorage.removeItem('role')
+      sessionStorage.removeItem('token')
+      sessionStorage.removeItem('role')
+
       localStorage.setItem('token', res.token)
+      localStorage.setItem('role', 'user')
       navigate('/dashboard')
     } catch (err: any) {
       const msg = err.message || 'Erro ao criar conta'

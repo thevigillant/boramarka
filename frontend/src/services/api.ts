@@ -1,7 +1,7 @@
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 function getToken(): string | null {
-  return localStorage.getItem('token');
+  return localStorage.getItem('token') || sessionStorage.getItem('token');
 }
 
 async function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
@@ -32,6 +32,8 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
     if (response.status === 401 && (window.location.pathname.startsWith('/dashboard') || window.location.pathname.startsWith('/superadmin'))) {
       localStorage.removeItem('token');
       localStorage.removeItem('role');
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('role');
       window.location.href = '/login';
     }
     throw new Error(data.error || data.message || 'Erro desconhecido');
