@@ -4,7 +4,7 @@ import { api } from '../services/api'
 import {
   Store, User, Lock, Phone, FileText, MapPin, Clock,
   ChevronRight, ChevronLeft, Loader2, AlertCircle,
-  Sparkles, Star, CheckCircle2, Image, Building2, Calendar, X
+  Sparkles, Star, CheckCircle2, Image, Building2, Calendar, X, ArrowLeft
 } from 'lucide-react'
 
 // ════════════════════════════════════════════
@@ -593,12 +593,20 @@ export default function Register() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 space-y-4">
           <button
             onClick={() => navigate('/login')}
-            className="text-pink-500 font-bold text-sm hover:underline"
+            className="text-pink-500 font-bold text-sm hover:underline block mx-auto"
           >
             Já tenho uma conta → Entrar
+          </button>
+          
+          <button
+            onClick={() => navigate('/')}
+            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 mx-auto transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar para o início
           </button>
         </div>
 

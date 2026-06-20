@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
-import { Lock, User, AlertCircle, Loader2, Store, Sparkles, Calendar } from 'lucide-react'
+import { ArrowLeft, Lock, User, AlertCircle, Loader2, Store, Sparkles, Calendar } from 'lucide-react'
 
 export default function Login() {
   const navigate = useNavigate()
@@ -127,6 +127,14 @@ export default function Login() {
           >
             <Sparkles className="w-4 h-4" />
             Ainda não tem conta? Cadastre-se agora
+          </button>
+          
+          <button
+            onClick={() => navigate('/')}
+            className="text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 mx-auto transition-all"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Voltar para o início
           </button>
           
           <p className="text-slate-400 text-xs">
