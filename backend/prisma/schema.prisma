@@ -19,12 +19,26 @@ model Admin {
   photoUrl       String @default("") @map("photo_url")
   address        String @default("")
   operatingHours String @default("") @map("operating_hours")
+  mpAccessToken  String @default("") @map("mp_access_token")
+  accentColor    String @default("#f97316") @map("accent_color")
+  secondaryColor String @default("#ec4899") @map("secondary_color")
+  publicTheme    String @default("light") @map("public_theme")
+  bannerUrl      String @default("") @map("banner_url")
+  googleAccessToken  String @default("") @map("google_access_token")
+  googleRefreshToken String @default("") @map("google_refresh_token")
+  googleTokenExpiry  DateTime? @map("google_token_expiry")
+  googleCalendarEmail String @default("") @map("google_calendar_email")
   createdAt      DateTime @default(now()) @map("created_at")
 
   links          SchedulingLink[]
   transactions   Transaction[]
   services       Service[]
   subscription   Subscription?
+  coupons        Coupon[]
+  membershipPlans MembershipPlan[]
+  clientNotes    ClientNote[]
+  sentMessages     ChatMessage[] @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
 
   @@map("admin")
 }
@@ -74,6 +88,9 @@ model SchedulingLink {
   serviceId Int?       @map("service_id")
   service   Service?    @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   
+  bookingFeeEnabled Boolean @default(false) @map("booking_fee_enabled")
+  bookingFeeAmount  Float   @default(0.0) @map("booking_fee_amount")
+  
   deletedAt DateTime?   @map("deleted_at")
   
   timeSlots TimeSlot[]
@@ -94,13 +111,14 @@ model TimeSlot {
 }
 
 model Booking {
-  id          Int      @id @default(autoincrement())
-  clientName  String   @map("client_name")
-  clientPhone String   @map("client_phone")
-  status      String   @default("PENDENTE")
-  timeSlotId  Int      @unique @map("time_slot_id")
-  timeSlot    TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now()) @map("created_at")
+  id           Int      @id @default(autoincrement())
+  clientName   String   @map("client_name")
+  clientPhone  String   @map("client_phone")
+  status       String   @default("PENDENTE")
+  timeSlotId   Int      @unique @map("time_slot_id")
+  timeSlot     TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  reminderSent Boolean  @default(false) @map("reminder_sent")
+  createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("bookings")
 }
@@ -122,4 +140,75 @@ model Transaction {
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@map("transactions")
+}
+
+model Coupon {
+  id            Int      @id @default(autoincrement())
+  code          String
+  discountType  String   @map("discount_type") // "percentage" or "fixed"
+  discountValue Float    @map("discount_value")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  adminId       Int      @map("admin_id")
+  admin         Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("coupons")
+}
+
+model MembershipPlan {
+  id            Int      @id @default(autoincrement())
+  name          String
+  description   String   @default("")
+  price         Float
+  interval      String   // "monthly" or "yearly"
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  adminId       Int      @map("admin_id")
+  admin         Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  subscriptions ClientSubscription[]
+
+  @@map("membership_plans")
+}
+
+model ClientSubscription {
+  id              Int      @id @default(autoincrement())
+  clientName      String   @map("client_name")
+  clientPhone     String   @map("client_phone")
+  status          String   @default("active") // "active", "expired", "canceled"
+  expiresAt       DateTime @map("expires_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  planId          Int      @map("plan_id")
+  plan            MembershipPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@map("client_subscriptions")
+}
+
+model ClientNote {
+  id          Int      @id @default(autoincrement())
+  clientPhone String   @map("client_phone")
+  content     String
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("client_notes")
+}
+
+model ChatMessage {
+  id         Int      @id @default(autoincrement())
+  content    String
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  senderId   Int      @map("sender_id")
+  sender     Admin    @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  receiverId Int      @map("receiver_id")
+  receiver   Admin    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@map("chat_messages")
 }

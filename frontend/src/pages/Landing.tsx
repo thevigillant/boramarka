@@ -20,7 +20,7 @@ export default function Landing() {
   }, [isDark])
 
   // --- 1. SIMULADOR DE AGENDAMENTO ---
-  const [simStep, setSimStep] = useState(1) // 1: serviço, 2: horário, 3: dados, 4: sucesso
+  const [simStep, setSimStep] = useState(1) // 1: serviço, 2: horário, 3: dados, 4: taxa pagamento, 5: sucesso
   const [simService, setSimService] = useState<{ name: string; price: number; duration: number; icon: any } | null>(null)
   const [selectedDay, setSelectedDay] = useState('Qui, 18')
   const [simTime, setSimTime] = useState('')
@@ -49,7 +49,7 @@ export default function Landing() {
 
   // Triga nova mensagem de WhatsApp ao agendar ou cancelar
   useEffect(() => {
-    if (simStep === 4) {
+    if (simStep === 5) {
       // Mensagem de confirmação imediata
       const timer1 = setTimeout(() => {
         setWaMessages(prev => [
@@ -80,7 +80,7 @@ export default function Landing() {
       }
     }
 
-    if (simStep === 6) {
+    if (simStep === 7) {
       // Mensagem de cancelamento imediata
       const timerCancel = setTimeout(() => {
         setWaMessages(prev => [
@@ -463,17 +463,67 @@ export default function Landing() {
                         >
                           Confirmar Agendamento <Check className="w-3.5 h-3.5" />
                         </button>
+                        <p className="text-[9px] text-slate-500 font-semibold text-center mt-1.5">💳 Sinal (pago ao profissional): R$ 10,00</p>
                       </div>
                     </div>
                   )}
 
                   {simStep === 4 && (
+                    <div className="animate-scale-in flex flex-col flex-1 py-1">
+                      <div className="flex justify-between items-center mb-3">
+                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Passo 4: Pagamento</span>
+                        <button onClick={() => setSimStep(3)} className="text-[10px] font-bold text-pink-500 hover:underline">Voltar</button>
+                      </div>
+
+                      <div className="text-center mb-3">
+                        <span className="text-2xl">💳</span>
+                        <h4 className="text-xs font-black text-white mt-1">Sinal de Reserva</h4>
+                        <p className="text-[9px] text-slate-400 font-semibold mt-1 leading-relaxed px-2">
+                          Pague o sinal diretamente ao profissional para garantir seu horário. O restante é pago no atendimento.
+                        </p>
+                      </div>
+
+                      {/* Resumo */}
+                      <div className="bg-[#0E1321] rounded-2xl p-3 border border-slate-800 text-[10px] space-y-2 mb-3">
+                        <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
+                          <span className="text-slate-500">Serviço:</span>
+                          <span className="text-white font-bold">{simService?.name}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
+                          <span className="text-slate-500">Data/Hora:</span>
+                          <span className="text-orange-400 font-bold">{selectedDay} às {simTime}</span>
+                        </div>
+                        <div className="flex justify-between border-b border-slate-800/50 pb-1.5">
+                          <span className="text-slate-500">Preço Total:</span>
+                          <span className="text-white font-bold">R$ {simService?.price}</span>
+                        </div>
+                        <div className="flex justify-between pt-0.5">
+                          <span className="text-slate-300 font-black">Sinal (direto p/ profissional):</span>
+                          <span className="text-emerald-400 font-black text-sm">R$ 10,00</span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => setSimStep(5)}
+                        className="w-full py-3 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 rounded-2xl text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/20 active:scale-[0.98]"
+                      >
+                        💳 Pagar com Mercado Pago
+                      </button>
+
+                      <p className="text-[8px] text-slate-500 font-semibold text-center mt-2 leading-relaxed">
+                        Pagamento processado direto pelo Mercado Pago do profissional. O BoraMarka não retém comissão.
+                      </p>
+                    </div>
+                  )}
+
+                  {simStep === 5 && (
                     <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
                       <div className="w-14 h-14 rounded-full bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 mb-4 animate-bounce">
                         <CheckCircle2 className="w-7 h-7" />
                       </div>
                       
-                      <h4 className="text-sm font-black text-white mb-2">Horário Confirmado!</h4>
+                      <h4 className="text-sm font-black text-white mb-1">Horário Confirmado!</h4>
+                      <p className="text-[9px] text-emerald-400 font-bold mb-3">✅ Sinal recebido pelo profissional</p>
                       
                       {/* Recibo Simulado */}
                       <div className="w-full bg-[#0E1321] rounded-2xl p-4 border border-slate-800 text-left text-[10px] space-y-2 mb-6">
@@ -489,9 +539,13 @@ export default function Landing() {
                           <span className="text-slate-500">Horário:</span>
                           <span className="text-orange-400 font-bold">{selectedDay} às {simTime}</span>
                         </div>
+                        <div className="flex justify-between border-b border-slate-800/50 pb-2">
+                          <span className="text-slate-500">Sinal pago:</span>
+                          <span className="text-emerald-400 font-bold">R$ 10,00</span>
+                        </div>
                         <div className="flex justify-between font-black">
-                          <span className="text-slate-400">Total:</span>
-                          <span className="text-emerald-400 text-xs">R$ {simService?.price}</span>
+                          <span className="text-slate-400">A pagar no dia:</span>
+                          <span className="text-white text-xs">R$ {(simService?.price || 0) - 10}</span>
                         </div>
                       </div>
 
@@ -507,9 +561,9 @@ export default function Landing() {
                           onClick={() => {
                             const isCloseToBooking = selectedDay === 'Qui, 18' && (simTime === '09:00' || simTime === '10:30');
                             if (isCloseToBooking) {
-                              setSimStep(7);
+                              setSimStep(8);
                             } else {
-                              setSimStep(5);
+                              setSimStep(6);
                             }
                           }}
                           className="flex items-center justify-center gap-1.5 w-full py-2 border border-red-500/30 hover:border-red-500 bg-red-500/5 hover:bg-red-500/10 rounded-xl text-[10px] font-black text-red-400 transition-all active:scale-[0.98]"
@@ -520,7 +574,7 @@ export default function Landing() {
                     </div>
                   )}
 
-                  {simStep === 5 && (
+                  {simStep === 6 && (
                     <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
                       <div className="w-12 h-12 rounded-full bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-400 mb-4 animate-pulse">
                         <Shield className="w-6 h-6" />
@@ -533,14 +587,14 @@ export default function Landing() {
                       
                       <div className="flex flex-col gap-1.5 w-full">
                         <button
-                          onClick={() => setSimStep(6)}
+                          onClick={() => setSimStep(7)}
                           className="w-full py-2.5 bg-red-500 hover:bg-red-600 rounded-xl text-white font-black text-xs transition-all active:scale-[0.98] shadow-lg shadow-red-500/20"
                         >
                           Sim, Cancelar Horário
                         </button>
                         
                         <button
-                          onClick={() => setSimStep(4)}
+                          onClick={() => setSimStep(5)}
                           className="w-full py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
                         >
                           Não, Voltar
@@ -549,7 +603,7 @@ export default function Landing() {
                     </div>
                   )}
 
-                  {simStep === 6 && (
+                  {simStep === 7 && (
                     <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
                       <div className="w-12 h-12 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-slate-400 mb-4">
                         <Check className="w-6 h-6" />
@@ -569,7 +623,7 @@ export default function Landing() {
                     </div>
                   )}
 
-                  {simStep === 7 && (
+                  {simStep === 8 && (
                     <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
                       <div className="w-12 h-12 rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-500 mb-4 animate-bounce">
                         <AlertCircle className="w-6 h-6" />
@@ -593,7 +647,7 @@ export default function Landing() {
                         </a>
                         
                         <button
-                          onClick={() => setSimStep(4)}
+                          onClick={() => setSimStep(5)}
                           className="w-full py-2 border border-slate-800 hover:border-slate-700 bg-slate-900/50 hover:bg-slate-900 rounded-xl text-[10px] font-black text-slate-300 transition-all active:scale-[0.98]"
                         >
                           Voltar

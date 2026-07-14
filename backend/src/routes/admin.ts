@@ -37,22 +37,45 @@ export default async function adminRoutes(app: FastifyInstance) {
       photoUrl: admin.photoUrl,
       address: admin.address,
       operatingHours: admin.operatingHours,
+      mpAccessToken: admin.mpAccessToken,
+      accentColor: admin.accentColor,
+      secondaryColor: admin.secondaryColor,
+      publicTheme: admin.publicTheme,
+      bannerUrl: admin.bannerUrl,
     };
   });
 
   app.put('/profile', async (request, reply) => {
     const user = request.user as { id: number };
-    const { username, businessName, cnpj, phone, description, photoUrl, address, operatingHours } =
-      request.body as {
-        username?: string;
-        businessName?: string;
-        cnpj?: string;
-        phone?: string;
-        description?: string;
-        photoUrl?: string;
-        address?: string;
-        operatingHours?: string;
-      };
+    const {
+      username,
+      businessName,
+      cnpj,
+      phone,
+      description,
+      photoUrl,
+      address,
+      operatingHours,
+      mpAccessToken,
+      accentColor,
+      secondaryColor,
+      publicTheme,
+      bannerUrl
+    } = request.body as {
+      username?: string;
+      businessName?: string;
+      cnpj?: string;
+      phone?: string;
+      description?: string;
+      photoUrl?: string;
+      address?: string;
+      operatingHours?: string;
+      mpAccessToken?: string;
+      accentColor?: string;
+      secondaryColor?: string;
+      publicTheme?: string;
+      bannerUrl?: string;
+    };
 
     let newUsername: string | undefined;
     if (username !== undefined) {
@@ -77,6 +100,11 @@ export default async function adminRoutes(app: FastifyInstance) {
         ...(photoUrl !== undefined && { photoUrl: photoUrl.trim() }),
         ...(address !== undefined && { address: address.trim() }),
         ...(operatingHours !== undefined && { operatingHours }),
+        ...(mpAccessToken !== undefined && { mpAccessToken: mpAccessToken.trim() }),
+        ...(accentColor !== undefined && { accentColor: accentColor.trim() }),
+        ...(secondaryColor !== undefined && { secondaryColor: secondaryColor.trim() }),
+        ...(publicTheme !== undefined && { publicTheme: publicTheme.trim() }),
+        ...(bannerUrl !== undefined && { bannerUrl: bannerUrl.trim() }),
       },
     });
 
@@ -89,6 +117,11 @@ export default async function adminRoutes(app: FastifyInstance) {
       photoUrl: admin.photoUrl,
       address: admin.address,
       operatingHours: admin.operatingHours,
+      mpAccessToken: admin.mpAccessToken,
+      accentColor: admin.accentColor,
+      secondaryColor: admin.secondaryColor,
+      publicTheme: admin.publicTheme,
+      bannerUrl: admin.bannerUrl,
     };
   });
 
@@ -152,7 +185,12 @@ export default async function adminRoutes(app: FastifyInstance) {
   // Create new link
   app.post('/links', async (request, reply) => {
     const user = request.user as { id: number };
-    const { title, serviceId } = request.body as { title?: string; serviceId?: number };
+    const { title, serviceId, bookingFeeEnabled, bookingFeeAmount } = request.body as {
+      title?: string;
+      serviceId?: number;
+      bookingFeeEnabled?: boolean;
+      bookingFeeAmount?: number;
+    };
 
     const link = await prisma.schedulingLink.create({
       data: {
@@ -160,10 +198,39 @@ export default async function adminRoutes(app: FastifyInstance) {
         title: title?.trim() || 'Agendamento',
         adminId: user.id,
         ...(serviceId && { serviceId }),
+        bookingFeeEnabled: !!bookingFeeEnabled,
+        bookingFeeAmount: bookingFeeAmount || 0.0,
       },
     });
 
     return reply.status(201).send(link);
+  });
+
+  // Update link
+  app.put('/links/:id', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { id } = request.params as { id: string };
+    const { title, serviceId, bookingFeeEnabled, bookingFeeAmount } = request.body as {
+      title?: string;
+      serviceId?: number | null;
+      bookingFeeEnabled?: boolean;
+      bookingFeeAmount?: number;
+    };
+
+    try {
+      const link = await prisma.schedulingLink.update({
+        where: { id: parseInt(id), adminId: user.id },
+        data: {
+          ...(title !== undefined && { title: title.trim() }),
+          serviceId: serviceId === undefined ? undefined : serviceId,
+          ...(bookingFeeEnabled !== undefined && { bookingFeeEnabled }),
+          ...(bookingFeeAmount !== undefined && { bookingFeeAmount }),
+        },
+      });
+      return link;
+    } catch (error: any) {
+      return reply.status(404).send({ error: 'Link não encontrado ou erro ao atualizar' });
+    }
   });
 
   // Soft delete link
@@ -406,7 +473,14 @@ export default async function adminRoutes(app: FastifyInstance) {
 
     // Create a receivable transaction for the service price
     const service = booking.timeSlot.link.service;
-    const amount = service?.price ?? 0;
+    const link = booking.timeSlot.link;
+    let amount = service?.price ?? 0;
+
+    // Deduct the booking fee paid from the final transaction amount
+    if (booking.status === 'PAGO' && link.bookingFeeEnabled && link.bookingFeeAmount > 0) {
+      amount = Math.max(0, amount - link.bookingFeeAmount);
+    }
+
     await prisma.transaction.create({
       data: {
         type: 'receivable',
@@ -531,6 +605,76 @@ export default async function adminRoutes(app: FastifyInstance) {
         data: { isAvailable: true },
       });
       await tx.booking.delete({ where: { id: parseInt(id) } });
+    });
+
+    return reply.status(204).send();
+  });
+
+  // GET /api/admin/coupons — Get all coupons
+  app.get('/coupons', async (request) => {
+    const user = request.user as { id: number };
+    return prisma.coupon.findMany({
+      where: { adminId: user.id },
+      orderBy: { createdAt: 'desc' }
+    });
+  });
+
+  // POST /api/admin/coupons — Create a new coupon
+  app.post('/coupons', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { code, discountType, discountValue } = request.body as {
+      code: string;
+      discountType: 'percentage' | 'fixed';
+      discountValue: number;
+    };
+
+    if (!code?.trim() || !discountType || !discountValue) {
+      return reply.status(400).send({ error: 'Todos os campos são obrigatórios' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+
+    const existing = await prisma.coupon.findFirst({
+      where: {
+        adminId: user.id,
+        code: cleanCode,
+      }
+    });
+
+    if (existing) {
+      return reply.status(409).send({ error: 'Você já possui um cupom com este código' });
+    }
+
+    const coupon = await prisma.coupon.create({
+      data: {
+        code: cleanCode,
+        discountType,
+        discountValue,
+        adminId: user.id,
+      }
+    });
+
+    return reply.status(201).send(coupon);
+  });
+
+  // DELETE /api/admin/coupons/:id — Delete a coupon
+  app.delete('/coupons/:id', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { id } = request.params as { id: string };
+
+    const coupon = await prisma.coupon.findFirst({
+      where: {
+        id: parseInt(id),
+        adminId: user.id,
+      }
+    });
+
+    if (!coupon) {
+      return reply.status(404).send({ error: 'Cupom não encontrado' });
+    }
+
+    await prisma.coupon.delete({
+      where: { id: coupon.id }
     });
 
     return reply.status(204).send();
