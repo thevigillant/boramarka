@@ -2,6 +2,33 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { sendWhatsAppMessage, generateBookingMessage } from '../services/whatsapp';
 import { checkAndUpdateSubscription } from '../services/subscription';
+import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { getGoogleCalendarEvents } from '../services/googleCalendar';
+
+async function cleanupExpiredBookings(token: string) {
+  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
+  const expiredBookings = await prisma.booking.findMany({
+    where: {
+      status: 'AGUARDANDO_PAGAMENTO',
+      createdAt: { lt: fifteenMinutesAgo },
+      timeSlot: { link: { token } }
+    },
+    select: { id: true, timeSlotId: true }
+  });
+
+  if (expiredBookings.length > 0) {
+    const expiredBookingIds = expiredBookings.map(b => b.id);
+    const expiredSlotIds = expiredBookings.map(b => b.timeSlotId);
+    await prisma.$transaction([
+      prisma.booking.deleteMany({ where: { id: { in: expiredBookingIds } } }),
+      prisma.timeSlot.updateMany({
+        where: { id: { in: expiredSlotIds } },
+        data: { isAvailable: true }
+      })
+    ]);
+    console.log(`[JIT CLEANUP] Liberou ${expiredBookings.length} slots expirados para o link ${token}`);
+  }
+}
 
 export default async function scheduleRoutes(app: FastifyInstance) {
   // GET /api/schedule/p/:username — Get public profile + services catalog
@@ -17,6 +44,10 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         photoUrl: true,
         phone: true,
         address: true,
+        accentColor: true,
+        secondaryColor: true,
+        publicTheme: true,
+        bannerUrl: true,
         services: {
           select: {
             id: true,
@@ -43,7 +74,11 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       phone: isInactive ? '' : admin.phone,
       address: admin.address,
       services: admin.services,
-      isInactive
+      isInactive,
+      accentColor: admin.accentColor,
+      secondaryColor: admin.secondaryColor,
+      publicTheme: admin.publicTheme,
+      bannerUrl: admin.bannerUrl,
     };
   });
 
@@ -51,9 +86,13 @@ export default async function scheduleRoutes(app: FastifyInstance) {
   app.get('/:token', async (request, reply) => {
     const { token } = request.params as { token: string };
 
+    // Run JIT Cleanup
+    await cleanupExpiredBookings(token);
+
     const link = await prisma.schedulingLink.findUnique({
       where: { token },
       include: {
+        service: true,
         timeSlots: {
           where: { isAvailable: true },
           orderBy: [{ date: 'asc' }, { time: 'asc' }],
@@ -75,9 +114,57 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Os agendamentos deste profissional estão suspensos temporariamente devido à assinatura pendente.' });
     }
 
+    // Fetch and filter out slots conflicting with Google Calendar if connected
+    let filteredTimeSlots = link.timeSlots;
+    if (link.timeSlots.length > 0) {
+      try {
+        const sortedSlots = [...link.timeSlots].sort((a, b) => a.date.localeCompare(b.date));
+        const minDate = sortedSlots[0].date;
+        const maxDate = sortedSlots[sortedSlots.length - 1].date;
+        
+        const startISO = `${minDate}T00:00:00Z`;
+        const endISO = `${maxDate}T23:59:59Z`;
+
+        const googleEvents = await getGoogleCalendarEvents(link.adminId, startISO, endISO).catch((err) => {
+          console.error('Error fetching Google Calendar events for filtering:', err);
+          return [];
+        });
+
+        if (googleEvents.length > 0) {
+          const serviceDuration = link.service?.duration || 30;
+          filteredTimeSlots = link.timeSlots.filter(slot => {
+            const slotStart = new Date(`${slot.date}T${slot.time}:00`);
+            const slotEnd = new Date(slotStart.getTime() + serviceDuration * 60 * 1000);
+
+            for (const event of googleEvents) {
+              let eventStart: Date;
+              let eventEnd: Date;
+
+              if (event.start.dateTime && event.end.dateTime) {
+                eventStart = new Date(event.start.dateTime);
+                eventEnd = new Date(event.end.dateTime);
+              } else if (event.start.date && event.end.date) {
+                eventStart = new Date(`${event.start.date}T00:00:00`);
+                eventEnd = new Date(`${event.end.date}T00:00:00`);
+              } else {
+                continue;
+              }
+
+              if (slotStart < eventEnd && slotEnd > eventStart) {
+                return false;
+              }
+            }
+            return true;
+          });
+        }
+      } catch (err) {
+        console.error('Failed to apply Google Calendar filtering:', err);
+      }
+    }
+
     // Group slots by date
     const slotsByDate: Record<string, { id: number; time: string }[]> = {};
-    for (const slot of link.timeSlots) {
+    for (const slot of filteredTimeSlots) {
       if (!slotsByDate[slot.date]) {
         slotsByDate[slot.date] = [];
       }
@@ -88,6 +175,10 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       title: link.title,
       dates: Object.keys(slotsByDate).sort(),
       slotsByDate,
+      bookingFeeEnabled: link.bookingFeeEnabled,
+      bookingFeeAmount: link.bookingFeeAmount,
+      serviceName: link.service?.name || '',
+      servicePrice: link.service?.price || 0,
     };
   });
 
@@ -115,9 +206,13 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       });
     }
 
+    // Run JIT Cleanup before booking
+    await cleanupExpiredBookings(token);
+
     // Verify the link exists
     const link = await prisma.schedulingLink.findUnique({
       where: { token },
+      include: { service: true }
     });
     if (!link) {
       return reply.status(404).send({ error: 'Link não encontrado' });
@@ -144,9 +239,134 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(409).send({ error: 'Este horário já foi reservado. Escolha outro.' });
     }
 
-    // Create booking and mark slot as unavailable (atomic transaction)
+    // Check if client has active subscription
+    const activeSub = await prisma.clientSubscription.findFirst({
+      where: {
+        clientPhone: cleanPhone,
+        status: 'active',
+        expiresAt: { gt: new Date() },
+        plan: { adminId: link.adminId }
+      }
+    });
+
+    const isFeeRequired = link.bookingFeeEnabled && link.bookingFeeAmount > 0 && !activeSub;
+
+    // Check if Booking Fee is enabled and required (not bypassed by active membership)
+    if (isFeeRequired) {
+      const admin = await prisma.admin.findUnique({
+        where: { id: link.adminId },
+        select: { mpAccessToken: true, businessName: true }
+      });
+
+      if (!admin?.mpAccessToken) {
+        return reply.status(400).send({
+          error: 'Este profissional ainda não configurou as credenciais do Mercado Pago para receber a taxa de agendamento.'
+        });
+      }
+
+      // Create booking in "AGUARDANDO_PAGAMENTO" state
+      const booking = await prisma.$transaction(async (tx) => {
+        const freshSlot = await tx.timeSlot.findUnique({ where: { id: timeSlotId } });
+        if (!freshSlot?.isAvailable) {
+          throw new Error('SLOT_TAKEN');
+        }
+
+        await tx.timeSlot.update({
+          where: { id: timeSlotId },
+          data: { isAvailable: false },
+        });
+
+        return tx.booking.create({
+          data: {
+            clientName: clientName.trim(),
+            clientPhone: cleanPhone,
+            timeSlotId,
+            status: 'AGUARDANDO_PAGAMENTO',
+          },
+          include: {
+            timeSlot: true,
+          },
+        });
+      }).catch((err) => {
+        if (err.message === 'SLOT_TAKEN') {
+          return null;
+        }
+        throw err;
+      });
+
+      if (!booking) {
+        return reply.status(409).send({ error: 'Este horário acabou de ser reservado. Escolha outro.' });
+      }
+
+      // If mpAccessToken is SIMULADOR, return simulation URL
+      if (admin.mpAccessToken === 'SIMULADOR') {
+        return reply.status(201).send({
+          booking: {
+            id: booking.id,
+            clientName: booking.clientName,
+            clientPhone: booking.clientPhone,
+            date: booking.timeSlot.date,
+            time: booking.timeSlot.time,
+          },
+          paymentRequired: true,
+          paymentUrl: `/agendar/${token}/pagar-simulado?bookingId=${booking.id}`,
+        });
+      } else {
+        // Create actual Mercado Pago Preference
+        try {
+          const mpClient = new MercadoPagoConfig({ accessToken: admin.mpAccessToken });
+          const preference = new Preference(mpClient);
+
+          const baseUrl = process.env.CORS_ORIGIN 
+            ? process.env.CORS_ORIGIN.split(',')[0] 
+            : 'http://localhost:5173';
+
+          const response = await preference.create({
+            body: {
+              items: [
+                {
+                  id: `fee_${booking.id}`,
+                  title: `Taxa de Agendamento - ${admin.businessName || 'Profissional'}`,
+                  quantity: 1,
+                  unit_price: link.bookingFeeAmount,
+                  currency_id: 'BRL',
+                }
+              ],
+              external_reference: booking.id.toString(),
+              back_urls: {
+                success: `${baseUrl}/agendar/${token}/sucesso?bookingId=${booking.id}&payment=success`,
+                failure: `${baseUrl}/agendar/${token}/sucesso?bookingId=${booking.id}&payment=failure`,
+                pending: `${baseUrl}/agendar/${token}/sucesso?bookingId=${booking.id}&payment=pending`
+              },
+              auto_return: 'approved',
+            }
+          });
+
+          return reply.status(201).send({
+            booking: {
+              id: booking.id,
+              clientName: booking.clientName,
+              clientPhone: booking.clientPhone,
+              date: booking.timeSlot.date,
+              time: booking.timeSlot.time,
+            },
+            paymentRequired: true,
+            paymentUrl: response.init_point,
+          });
+        } catch (error) {
+          console.error('Erro ao gerar checkout do profissional:', error);
+          // Rollback booking creation
+          await prisma.$transaction([
+            prisma.booking.delete({ where: { id: booking.id } }),
+            prisma.timeSlot.update({ where: { id: timeSlotId }, data: { isAvailable: true } })
+          ]);
+          return reply.status(500).send({ error: 'Erro ao conectar ao Mercado Pago do profissional.' });
+        }
+      }
+    }
+
+    // Normal Flow (no booking fee required)
     const booking = await prisma.$transaction(async (tx) => {
-      // Double-check availability inside transaction
       const freshSlot = await tx.timeSlot.findUnique({ where: { id: timeSlotId } });
       if (!freshSlot?.isAvailable) {
         throw new Error('SLOT_TAKEN');
@@ -162,6 +382,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           clientName: clientName.trim(),
           clientPhone: cleanPhone,
           timeSlotId,
+          status: 'PENDENTE',
         },
         include: {
           timeSlot: true,
@@ -309,5 +530,248 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     await sendWhatsAppMessage(booking.clientPhone, cancelMessage);
 
     return { success: true };
+  });
+
+  // POST /api/schedule/booking/:id/confirm-simulation — Public endpoint to simulate payment approval
+  app.post('/booking/:id/confirm-simulation', async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: { service: true, admin: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    if (booking.status !== 'AGUARDANDO_PAGAMENTO') {
+      return { success: true, message: 'Agendamento já processado.' };
+    }
+
+    // Update status to PAGO
+    const updated = await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: 'PAGO' }
+    });
+
+    // Create fee transaction in professional's cash flow
+    const link = booking.timeSlot.link;
+    await prisma.transaction.create({
+      data: {
+        type: 'receivable',
+        description: `Taxa de Agendamento - ${booking.clientName}`,
+        amount: link.bookingFeeAmount,
+        dueDate: new Date().toISOString().split('T')[0],
+        paid: true,
+        paidAt: new Date().toISOString().split('T')[0],
+        clientName: booking.clientName,
+        category: 'Taxa de Agendamento',
+        notes: 'Pago via Simulador de Testes',
+        adminId: link.adminId
+      }
+    });
+
+    // Send WhatsApp notification
+    const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+    const message = [
+      `Olá, ${booking.clientName}! ✅`,
+      '',
+      `Seu agendamento foi *confirmado*! Recebemos o pagamento da taxa de agendamento de R$ ${link.bookingFeeAmount.toFixed(2)}.`,
+      `📅 Data: *${formattedDate}*`,
+      `🕐 Hora: *${booking.timeSlot.time}*`,
+      `💼 Serviço: *${link.service?.name || 'Serviço'}*`,
+      '',
+      `Obrigado pela preferência! 😊`,
+    ].join('\n');
+
+    await sendWhatsAppMessage(booking.clientPhone, message);
+
+    return { success: true, booking: updated };
+  });
+
+  // POST /api/schedule/webhook-fee — Webhook for client payments
+  app.post('/webhook-fee', async (request, reply) => {
+    // Return 200 immediately to Mercado Pago
+    reply.status(200).send();
+
+    const query = request.query as any;
+    const body = request.body as any;
+    const type = query.type || body?.type;
+    const dataId = query['data.id'] || body?.data?.id;
+
+    if (type === 'payment' && dataId) {
+      try {
+        const admins = await prisma.admin.findMany({
+          where: { mpAccessToken: { notIn: ['', 'SIMULADOR'] } },
+          select: { id: true, mpAccessToken: true }
+        });
+
+        let paymentInfo = null;
+        let matchedAdmin = null;
+
+        for (const admin of admins) {
+          const response = await fetch(`https://api.mercadopago.com/v1/payments/${dataId}`, {
+            headers: { Authorization: `Bearer ${admin.mpAccessToken}` }
+          });
+          if (response.ok) {
+            paymentInfo = await response.json();
+            matchedAdmin = admin;
+            break;
+          }
+        }
+
+        if (paymentInfo && paymentInfo.status === 'approved') {
+          const bookingId = parseInt(paymentInfo.external_reference);
+          if (!isNaN(bookingId)) {
+            const booking = await prisma.booking.findUnique({
+              where: { id: bookingId },
+              include: {
+                timeSlot: {
+                  include: {
+                    link: {
+                      include: { service: true }
+                    }
+                  }
+                }
+              }
+            });
+
+            if (booking && booking.status === 'AGUARDANDO_PAGAMENTO') {
+              // Update status to PAGO
+              await prisma.booking.update({
+                where: { id: bookingId },
+                data: { status: 'PAGO' }
+              });
+
+              // Create transaction
+              await prisma.transaction.create({
+                data: {
+                  type: 'receivable',
+                  description: `Taxa de Agendamento - ${booking.clientName}`,
+                  amount: booking.timeSlot.link.bookingFeeAmount,
+                  dueDate: new Date().toISOString().split('T')[0],
+                  paid: true,
+                  paidAt: new Date().toISOString().split('T')[0],
+                  clientName: booking.clientName,
+                  category: 'Taxa de Agendamento',
+                  notes: `Pago via Mercado Pago (Ref: ${dataId})`,
+                  adminId: matchedAdmin.id
+                }
+              });
+
+              // Send WhatsApp message
+              const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+              const message = [
+                `Olá, ${booking.clientName}! ✅`,
+                '',
+                `Seu agendamento foi *confirmado*! Recebemos o pagamento da taxa de agendamento de R$ ${booking.timeSlot.link.bookingFeeAmount.toFixed(2)}.`,
+                `📅 Data: *${formattedDate}*`,
+                `🕐 Hora: *${booking.timeSlot.time}*`,
+                `💼 Serviço: *${booking.timeSlot.link.service?.name || 'Serviço'}*`,
+                '',
+                `Obrigado pela preferência! 😊`,
+              ].join('\n');
+
+              await sendWhatsAppMessage(booking.clientPhone, message);
+              console.log(`✅ Webhook-Fee: Pagamento aprovado de R$ ${booking.timeSlot.link.bookingFeeAmount} para Booking ID ${bookingId}`);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao processar webhook-fee do Mercado Pago:', error);
+      }
+    }
+  });
+
+  // GET /api/schedule/:token/validate-coupon — Validate a coupon code
+  app.get('/:token/validate-coupon', async (request, reply) => {
+    const { token } = request.params as { token: string };
+    const { code } = request.query as { code: string };
+
+    if (!code?.trim()) {
+      return reply.status(400).send({ error: 'Código do cupom é obrigatório' });
+    }
+
+    const cleanCode = code.trim().toUpperCase();
+
+    const link = await prisma.schedulingLink.findUnique({
+      where: { token }
+    });
+
+    if (!link) {
+      return reply.status(404).send({ error: 'Link de agendamento não encontrado' });
+    }
+
+    const coupon = await prisma.coupon.findFirst({
+      where: {
+        adminId: link.adminId,
+        code: cleanCode,
+        active: true
+      }
+    });
+
+    if (!coupon) {
+      return reply.status(404).send({ error: 'Cupom inválido ou expirado' });
+    }
+
+    return {
+      valid: true,
+      code: coupon.code,
+      discountType: coupon.discountType,
+      discountValue: coupon.discountValue
+    };
+  });
+
+  // GET /api/schedule/:token/validate-subscription — Verify if client has an active subscription
+  app.get('/:token/validate-subscription', async (request, reply) => {
+    const { token } = request.params as { token: string };
+    const { phone } = request.query as { phone: string };
+
+    if (!phone?.trim()) {
+      return reply.status(400).send({ error: 'Telefone é obrigatório' });
+    }
+
+    const cleanPhone = phone.trim().replace(/\D/g, '');
+
+    const link = await prisma.schedulingLink.findUnique({
+      where: { token }
+    });
+
+    if (!link) {
+      return reply.status(404).send({ error: 'Link de agendamento não encontrado' });
+    }
+
+    // Find any active client subscription for this admin's membership plans
+    const subscription = await prisma.clientSubscription.findFirst({
+      where: {
+        clientPhone: cleanPhone,
+        status: 'active',
+        expiresAt: { gt: new Date() },
+        plan: { adminId: link.adminId }
+      },
+      include: {
+        plan: true
+      }
+    });
+
+    if (!subscription) {
+      return { active: false };
+    }
+
+    return {
+      active: true,
+      clientName: subscription.clientName,
+      planName: subscription.plan.name,
+      expiresAt: subscription.expiresAt
+    };
   });
 }

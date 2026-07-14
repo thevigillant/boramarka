@@ -4,7 +4,7 @@ import { api } from '../services/api'
 import {
   Users, Calendar, CreditCard, DollarSign, LogOut,
   Moon, Sun, Search, Filter, Trash2, Edit, X, Check,
-  AlertCircle, Loader2, CheckCircle2, AlertTriangle, ShieldCheck
+  AlertCircle, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, UserCheck
 } from 'lucide-react'
 
 interface UserSubscription {
@@ -162,6 +162,42 @@ export default function SuperAdminDashboard() {
     }
   }
 
+  // Impersonate professional account (login as them)
+  const handleImpersonateUser = async (userId: number) => {
+    try {
+      const data = await api.impersonateUser(userId)
+      // Save current superadmin token to session storage
+      const currentToken = localStorage.getItem('token') || sessionStorage.getItem('token')
+      if (currentToken) {
+        sessionStorage.setItem('superadmin_token', currentToken)
+      }
+      // Set the impersonated professional's token as active
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('role', 'admin')
+      // Redirect to professional dashboard
+      navigate('/dashboard')
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao entrar como profissional', 'error')
+    }
+  }
+
+  // Impersonate self as professional
+  const handleImpersonateSelf = async () => {
+    try {
+      const data = await api.impersonateSelf()
+      // Save current superadmin token to session storage
+      const currentToken = localStorage.getItem('token') || sessionStorage.getItem('token')
+      if (currentToken) {
+        sessionStorage.setItem('superadmin_token', currentToken)
+      }
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('role', 'admin')
+      navigate('/dashboard')
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao entrar como profissional', 'error')
+    }
+  }
+
   // Open subscription edit modal and pre-fill values
   const openEditModal = (user: UserData) => {
     setEditingUser(user)
@@ -271,6 +307,15 @@ export default function SuperAdminDashboard() {
               title={isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
             >
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </button>
+
+            {/* Usar como Profissional */}
+            <button
+              onClick={handleImpersonateSelf}
+              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-orange-500 to-pink-500 hover:opacity-90 text-white rounded-xl font-bold text-sm shadow-lg shadow-pink-500/20 transition-all cursor-pointer"
+            >
+              <UserCheck className="w-4 h-4" />
+              Usar como Profissional
             </button>
 
             {/* Logout */}
@@ -445,6 +490,13 @@ export default function SuperAdminDashboard() {
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => handleImpersonateUser(user.id)}
+                            className="p-2 text-slate-500 dark:text-slate-400 hover:text-emerald-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"
+                            title="Acessar Painel como este Profissional"
+                          >
+                            <UserCheck className="w-4 h-4" />
+                          </button>
                           <button
                             onClick={() => openEditModal(user)}
                             className="p-2 text-slate-500 dark:text-slate-400 hover:text-pink-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all cursor-pointer"

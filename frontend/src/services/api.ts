@@ -80,6 +80,11 @@ export const api = {
       photoUrl: string;
       address: string;
       operatingHours: string;
+      mpAccessToken?: string;
+      accentColor?: string;
+      secondaryColor?: string;
+      publicTheme?: string;
+      bannerUrl?: string;
     }>('/admin/profile'),
 
   updateProfile: (data: {
@@ -91,6 +96,11 @@ export const api = {
     photoUrl?: string;
     address?: string;
     operatingHours?: string;
+    mpAccessToken?: string;
+    accentColor?: string;
+    secondaryColor?: string;
+    publicTheme?: string;
+    bannerUrl?: string;
   }) =>
     request('/admin/profile', {
       method: 'PUT',
@@ -111,10 +121,16 @@ export const api = {
       totalSlots: number;
       availableSlots: number;
       bookedSlots: number;
+      bookingFeeEnabled: boolean;
+      bookingFeeAmount: number;
+      service: { id: number; name: string; price: number } | null;
     }>>('/admin/links'),
 
-  createLink: (title: string, serviceId?: number) =>
-    request('/admin/links', { method: 'POST', body: JSON.stringify({ title, serviceId }) }),
+  createLink: (title: string, serviceId?: number | null, bookingFeeEnabled?: boolean, bookingFeeAmount?: number) =>
+    request('/admin/links', { method: 'POST', body: JSON.stringify({ title, serviceId, bookingFeeEnabled, bookingFeeAmount }) }),
+
+  updateLink: (id: number, data: { title?: string; serviceId?: number | null; bookingFeeEnabled?: boolean; bookingFeeAmount?: number }) =>
+    request(`/admin/links/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   getDeletedLinks: () =>
     request<Array<{
@@ -280,6 +296,10 @@ export const api = {
       phone: string;
       address: string;
       isInactive?: boolean;
+      accentColor?: string;
+      secondaryColor?: string;
+      publicTheme?: string;
+      bannerUrl?: string;
       services: Array<{
         id: number;
         name: string;
@@ -294,15 +314,26 @@ export const api = {
       title: string;
       dates: string[];
       slotsByDate: Record<string, { id: number; time: string }[]>;
+      bookingFeeEnabled: boolean;
+      bookingFeeAmount: number;
+      serviceName: string;
+      servicePrice: number;
     }>(`/schedule/${token}`),
 
   bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string }) =>
     request<{
       booking: { id: number; clientName: string; clientPhone: string; date: string; time: string };
       whatsapp: { success: boolean; method: 'api' | 'link'; link?: string };
+      paymentRequired?: boolean;
+      paymentUrl?: string;
     }>(`/schedule/${token}/book`, {
       method: 'POST',
       body: JSON.stringify(data),
+    }),
+
+  confirmSimulationBooking: (id: number) =>
+    request<{ success: boolean; booking: any }>(`/schedule/booking/${id}/confirm-simulation`, {
+      method: 'POST'
     }),
 
   getPublicBookingDetails: (id: number) =>
@@ -379,5 +410,179 @@ export const api = {
   deleteUser: (id: number) =>
     request<{ success: boolean; message: string }>(`/superadmin/users/${id}`, {
       method: 'DELETE',
+    }),
+
+  // ═══ Coupons ═══
+  getCoupons: () =>
+    request<Array<{
+      id: number;
+      code: string;
+      discountType: 'percentage' | 'fixed';
+      discountValue: number;
+      active: boolean;
+      createdAt: string;
+    }>>('/admin/coupons'),
+
+  createCoupon: (data: { code: string; discountType: 'percentage' | 'fixed'; discountValue: number }) =>
+    request('/admin/coupons', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteCoupon: (id: number) =>
+    request(`/admin/coupons/${id}`, {
+      method: 'DELETE',
+    }),
+
+  validateCoupon: (token: string, code: string) =>
+    request<{
+      valid: boolean;
+      code: string;
+      discountType: 'percentage' | 'fixed';
+      discountValue: number;
+    }>(`/schedule/${token}/validate-coupon?code=${code}`),
+
+  // ═══ Google Calendar ═══
+  getGoogleCalendarStatus: () =>
+    request<{ connected: boolean; email: string }>('/admin/google-calendar/status'),
+
+  disconnectGoogleCalendar: () =>
+    request('/admin/google-calendar/disconnect', {
+      method: 'POST',
+    }),
+
+  // ═══ Memberships ═══
+  getMembershipPlans: () =>
+    request<Array<{
+      id: number;
+      name: string;
+      description: string;
+      price: number;
+      interval: 'monthly' | 'yearly';
+      active: boolean;
+      _count?: { subscriptions: number };
+    }>>('/admin/memberships/plans'),
+
+  createMembershipPlan: (data: { name: string; description?: string; price: number; interval: 'monthly' | 'yearly' }) =>
+    request('/admin/memberships/plans', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteMembershipPlan: (id: number) =>
+    request(`/admin/memberships/plans/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getClientSubscriptions: () =>
+    request<Array<{
+      id: number;
+      clientName: string;
+      clientPhone: string;
+      status: string;
+      expiresAt: string;
+      createdAt: string;
+      plan: { name: string; interval: string; price: number };
+    }>>('/admin/memberships/subscriptions'),
+
+  createClientSubscription: (data: { clientName: string; clientPhone: string; planId: number }) =>
+    request('/admin/memberships/subscriptions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteClientSubscription: (id: number) =>
+    request(`/admin/memberships/subscriptions/${id}`, {
+      method: 'DELETE',
+    }),
+
+  validateClientSubscription: (token: string, phone: string) =>
+    request<{
+      active: boolean;
+      clientName?: string;
+      planName?: string;
+      expiresAt?: string;
+    }>(`/schedule/${token}/validate-subscription?phone=${phone}`),
+
+  // ═══ Client CRM (History & Notes) ═══
+  getClientHistory: (phone: string) =>
+    request<Array<{
+      id: number;
+      clientName: string;
+      clientPhone: string;
+      status: string;
+      createdAt: string;
+      timeSlot: {
+        date: string;
+        time: string;
+        link: {
+          service?: { name: string; price: number };
+        };
+      };
+    }>>(`/admin/clients/${phone}/history`),
+
+  getClientNotes: (phone: string) =>
+    request<Array<{
+      id: number;
+      clientPhone: string;
+      content: string;
+      createdAt: string;
+    }>>(`/admin/clients/${phone}/notes`),
+
+  createClientNote: (phone: string, content: string) =>
+    request(`/admin/clients/${phone}/notes`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+
+  deleteClientNote: (id: number) =>
+    request(`/admin/clients/notes/${id}`, {
+      method: 'DELETE',
+    }),
+
+  // ═══ Social Networking & Chat ═══
+  exploreProfessionals: (search?: string) =>
+    request<Array<{
+      id: number;
+      username: string;
+      businessName: string;
+      description: string;
+      photoUrl: string;
+      address: string;
+      phone: string;
+      accentColor?: string;
+      secondaryColor?: string;
+    }>>(`/admin/social/explore${search ? `?q=${encodeURIComponent(search)}` : ''}`),
+
+  getChatsInbox: () =>
+    request<Array<{
+      partner: { id: number; username: string; businessName: string; photoUrl: string };
+      lastMessage: string;
+      timestamp: string;
+    }>>('/admin/social/chats'),
+
+  getChatMessages: (partnerId: number) =>
+    request<Array<{
+      id: number;
+      content: string;
+      createdAt: string;
+      senderId: number;
+      receiverId: number;
+    }>>(`/admin/social/chats/${partnerId}`),
+
+  sendChatMessage: (receiverId: number, content: string) =>
+    request(`/admin/social/chats/${receiverId}`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    }),
+
+  impersonateUser: (id: number) =>
+    request<{ token: string; username: string }>(`/superadmin/users/${id}/impersonate`, {
+      method: 'POST',
+    }),
+
+  impersonateSelf: () =>
+    request<{ token: string; username: string }>('/superadmin/impersonate-self', {
+      method: 'POST',
     }),
 };

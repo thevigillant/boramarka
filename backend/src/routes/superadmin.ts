@@ -146,4 +146,46 @@ export default async function superadminRoutes(app: FastifyInstance) {
 
     return { success: true, message: 'Profissional e todos os seus dados foram excluídos com sucesso' };
   });
+
+  // ═══════════════════════════════════════════
+  //  IMPERSONATE USER (LOGIN AS PROFESSIONAL)
+  // ═══════════════════════════════════════════
+  app.post('/users/:id/impersonate', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const adminId = parseInt(id);
+    if (isNaN(adminId)) {
+      return reply.status(400).send({ error: 'ID inválido' });
+    }
+
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId }
+    });
+
+    if (!admin) {
+      return reply.status(404).send({ error: 'Profissional não encontrado' });
+    }
+
+    // Generate token for this user as admin role
+    const token = app.jwt.sign({
+      id: admin.id,
+      username: admin.username,
+      role: 'admin'
+    });
+
+    return { token, username: admin.username };
+  });
+
+  // POST /api/superadmin/impersonate-self — Impersonate self as professional
+  app.post('/impersonate-self', async (request, reply) => {
+    const user = request.user as { id: number; username: string };
+    
+    // Generate token for the superadmin self as admin role
+    const token = app.jwt.sign({
+      id: user.id,
+      username: user.username,
+      role: 'admin'
+    });
+
+    return { token, username: user.username };
+  });
 }

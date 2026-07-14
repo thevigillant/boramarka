@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { useLocation, useParams, useNavigate, Link } from 'react-router-dom'
-import { Check, Calendar, Clock, ExternalLink, ArrowLeft } from 'lucide-react'
+import { Check, Calendar, Clock, ArrowLeft, Loader2 } from 'lucide-react'
+import { api } from '../services/api'
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split('-')
@@ -15,7 +17,48 @@ export default function BookingSuccess() {
     whatsapp?: { success: boolean; method: 'api' | 'link'; link?: string }
   } | null
 
-  if (!state?.booking) {
+  // Check for bookingId in query params (return from Mercado Pago)
+  const searchParams = new URLSearchParams(location.search)
+  const queryBookingId = searchParams.get('bookingId')
+  const paymentStatus = searchParams.get('payment')
+
+  const [fetchedBooking, setFetchedBooking] = useState<{
+    id: number; clientName: string; clientPhone: string; date: string; time: string;
+    businessName: string; businessPhone: string; serviceName: string; price: number;
+  } | null>(null)
+  const [fetchLoading, setFetchLoading] = useState(false)
+
+  useEffect(() => {
+    // If we have no state but have a bookingId from query params, fetch booking details
+    if (!state?.booking && queryBookingId) {
+      setFetchLoading(true)
+      api.getPublicBookingDetails(parseInt(queryBookingId))
+        .then(data => setFetchedBooking(data))
+        .catch(() => {})
+        .finally(() => setFetchLoading(false))
+    }
+  }, [state, queryBookingId])
+
+  // Use state booking or fetched booking
+  const booking = state?.booking || (fetchedBooking ? {
+    id: fetchedBooking.id,
+    clientName: fetchedBooking.clientName,
+    clientPhone: fetchedBooking.clientPhone,
+    date: fetchedBooking.date,
+    time: fetchedBooking.time,
+  } : null)
+
+  const whatsapp = state?.whatsapp || null
+
+  if (fetchLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!booking) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
         <div className="text-center">
@@ -25,7 +68,7 @@ export default function BookingSuccess() {
     )
   }
 
-  const { booking, whatsapp } = state
+  const isPaidViaMP = paymentStatus === 'success' && !state?.booking
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
@@ -37,6 +80,12 @@ export default function BookingSuccess() {
         
         <h1 className="text-3xl font-black text-slate-900 mb-2">Agendado!</h1>
         <p className="text-slate-500 mb-8 font-medium">Tudo certo, {booking.clientName.split(' ')[0]}!</p>
+
+        {isPaidViaMP && (
+          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-emerald-700 font-bold text-sm mb-6">
+            ✅ Sinal pago diretamente ao profissional com sucesso!
+          </div>
+        )}
 
         <div className="card-simple p-6 mb-8">
           <div className="space-y-4">

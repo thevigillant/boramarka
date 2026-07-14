@@ -22,6 +22,10 @@ interface PublicProfileData {
   address: string
   services: ServiceData[]
   isInactive?: boolean
+  accentColor?: string
+  secondaryColor?: string
+  publicTheme?: string
+  bannerUrl?: string
 }
 
 export default function PublicProfile() {
@@ -49,7 +53,7 @@ export default function PublicProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />
+        <Loader2 className="w-10 h-10 text-slate-400 animate-spin" />
       </div>
     )
   }
@@ -67,13 +71,30 @@ export default function PublicProfile() {
     )
   }
 
+  const accent = profile.accentColor || '#f97316'
+  const secondary = profile.secondaryColor || '#ec4899'
+  const theme = profile.publicTheme || 'light'
+
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 font-sans selection:bg-pink-500/30">
-      
+    <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-[#0B0F19]' : 'bg-slate-50'} text-slate-900 dark:text-slate-100 font-sans selection:bg-pink-500/30`}>
+      <style>{`
+        .custom-accent-color { color: ${accent} !important; }
+        .custom-accent-hover-border:hover {
+          border-color: ${accent}80 !important;
+          box-shadow: 0 20px 25px -5px ${accent}15 !important;
+        }
+        .custom-accent-hover-text:hover {
+          color: ${accent} !important;
+        }
+      `}</style>
+
       {/* Cover / Hero Background */}
-      <div className="h-48 sm:h-64 w-full bg-gradient-to-br from-orange-400 via-pink-500 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 mix-blend-overlay"></div>
+      <div 
+        className="h-48 sm:h-64 w-full relative overflow-hidden bg-cover bg-center"
+        style={profile.bannerUrl ? { backgroundImage: `url(${profile.bannerUrl})` } : { background: `linear-gradient(135deg, ${accent}, ${secondary})` }}
+      >
+        <div className="absolute inset-0 bg-black/20"></div>
+        {!profile.bannerUrl && <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20 mix-blend-overlay"></div>}
       </div>
 
       <div className="max-w-4xl mx-auto px-6 pb-20 -mt-20 relative z-10">
@@ -86,8 +107,14 @@ export default function PublicProfile() {
         )}
 
         {/* Profile Card */}
-        <div className="bg-white dark:bg-[#131826] rounded-3xl p-6 sm:p-10 shadow-2xl shadow-pink-500/10 border border-slate-100 dark:border-slate-800 text-center animate-slide-up">
-          <div className="w-32 h-32 sm:w-40 sm:h-40 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full mx-auto mb-6 shadow-xl shadow-pink-500/30 flex items-center justify-center text-white text-5xl font-black overflow-hidden border-4 border-white dark:border-[#131826]">
+        <div className="bg-white dark:bg-[#131826] rounded-3xl p-6 sm:p-10 shadow-2xl border border-slate-100 dark:border-slate-800 text-center animate-slide-up">
+          <div 
+            className="w-32 h-32 sm:w-40 sm:h-40 rounded-full mx-auto mb-6 shadow-xl flex items-center justify-center text-white text-5xl font-black overflow-hidden border-4 border-white dark:border-[#131826]"
+            style={{ 
+              background: `linear-gradient(to right, ${accent}, ${secondary})`,
+              boxShadow: `0 20px 25px -5px ${accent}40`
+            }}
+          >
             {profile.photoUrl ? (
               <img src={profile.photoUrl} alt={profile.businessName} className="w-full h-full object-cover" />
             ) : (
@@ -129,14 +156,14 @@ export default function PublicProfile() {
               {profile.services.map(service => (
                 <div 
                   key={service.id} 
-                  className="bg-white dark:bg-[#131826] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-pink-300 dark:hover:border-pink-500/50 hover:shadow-2xl hover:shadow-pink-500/10 transition-all flex flex-col justify-between group"
+                  className="bg-white dark:bg-[#131826] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:shadow-2xl custom-accent-hover-border transition-all flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex justify-between items-start gap-4 mb-4">
-                      <h3 className="font-black text-xl text-slate-900 dark:text-white leading-tight group-hover:text-pink-500 transition-colors">
+                      <h3 className="font-black text-xl text-slate-900 dark:text-white leading-tight custom-accent-hover-text transition-colors">
                         {service.name}
                       </h3>
-                      <span className="font-black text-lg text-pink-500 whitespace-nowrap">
+                      <span className="font-black text-lg custom-accent-color whitespace-nowrap">
                         {formatCurrency(service.price)}
                       </span>
                     </div>
@@ -159,7 +186,10 @@ export default function PublicProfile() {
 
         {/* Footer */}
         <footer className="mt-20 pt-10 pb-6 border-t border-slate-200 dark:border-slate-800 text-center animate-slide-up" style={{ animationDelay: '0.4s' }}>
-          <h4 className="text-lg font-black bg-gradient-to-r from-orange-500 to-pink-500 bg-clip-text text-transparent inline-block mb-3">
+          <h4 
+            className="text-lg font-black bg-clip-text text-transparent inline-block mb-3"
+            style={{ backgroundImage: `linear-gradient(to right, ${accent}, ${secondary})` }}
+          >
             BoraMarka
           </h4>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-medium">
