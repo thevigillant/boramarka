@@ -550,6 +550,7 @@ export default function SuperAdminDashboard() {
                 >
                   <option value="mensal">Mensal (R$ 29,90/mês)</option>
                   <option value="anual">Anual (R$ 299,00/ano)</option>
+                  <option value="premium">Premium (R$ 49,99/mês - Domínio Próprio)</option>
                 </select>
               </div>
 

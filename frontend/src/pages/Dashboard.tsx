@@ -314,7 +314,7 @@ function InactiveBanner({
 // ════════════════════════════════════════════
 // Subscription Paywall Modal
 // ════════════════════════════════════════════
-function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClose: () => void; onCheckout: (plan: 'mensal' | 'anual') => void }) {
+function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClose: () => void; onCheckout: (plan: 'mensal' | 'anual' | 'premium') => void }) {
   if (!isOpen) return null
 
   return (
@@ -351,6 +351,14 @@ function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClos
           >
             <CreditCard className="w-5 h-5" />
             Plano Anual — R$ 260/ano <span className="text-xs opacity-80 ml-1">(economize R$ 100)</span>
+          </button>
+
+          <button 
+            onClick={() => onCheckout('premium')}
+            className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+          >
+            <Sparkles className="w-5 h-5 text-yellow-300" />
+            Plano Premium — R$ 49,99/mês
           </button>
         </div>
       </div>
@@ -532,6 +540,7 @@ export default function Dashboard() {
     secondaryColor?: string;
     publicTheme?: string;
     bannerUrl?: string;
+    customDomain?: string;
   } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -591,6 +600,7 @@ export default function Dashboard() {
     accentColor: '#f97316',
     secondaryColor: '#ec4899',
     publicTheme: 'light',
+    customDomain: '',
   })
 
   useEffect(() => {
@@ -603,6 +613,7 @@ export default function Dashboard() {
         accentColor: adminInfo.accentColor || '#f97316',
         secondaryColor: adminInfo.secondaryColor || '#ec4899',
         publicTheme: adminInfo.publicTheme || 'light',
+        customDomain: adminInfo.customDomain || '',
       })
     }
   }, [adminInfo])
@@ -991,7 +1002,7 @@ export default function Dashboard() {
     navigate('/login')
   }
 
-  const handleCheckout = async (plan: 'mensal' | 'anual') => {
+  const handleCheckout = async (plan: 'mensal' | 'anual' | 'premium') => {
     try {
       const { init_point } = await api.createCheckout(plan)
       window.location.href = init_point // Redireciona para o Mercado Pago
@@ -2677,6 +2688,61 @@ export default function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Custom Domain and Subdomain Section */}
+                  <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                    <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">Endereço e Domínio</h3>
+                    
+                    {/* Wildcard Subdomain display */}
+                    <div className="bg-slate-50 dark:bg-[#1A2235] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-1">
+                      <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase">Subdomínio Grátis</label>
+                      <p className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                        {adminInfo ? `${adminInfo.username}.boramarka.com.br` : '...'}
+                      </p>
+                      <span className="text-[10px] text-slate-400 dark:text-slate-500 block">
+                        Sua página pública resolve diretamente com este subdomínio de forma transparente!
+                      </span>
+                    </div>
+
+                    {/* Custom Domain Input */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase">Domínio Próprio</label>
+                        {subscription?.plan !== 'premium' && (
+                          <span className="text-[9px] font-black uppercase tracking-wider text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded-full">
+                            Recurso Premium
+                          </span>
+                        )}
+                      </div>
+                      
+                      {subscription?.plan === 'premium' ? (
+                        <div className="space-y-2">
+                          <input
+                            type="text"
+                            value={brandingForm.customDomain || ''}
+                            onChange={e => setBrandingForm({ ...brandingForm, customDomain: e.target.value })}
+                            placeholder="ex: agendar.meusalao.com.br"
+                            className="w-full input-simple font-bold text-sm bg-slate-50 dark:bg-[#1A2235]"
+                          />
+                          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+                            Aponte o registro <strong>CNAME</strong> do seu domínio próprio para <strong>cname.boramarka.com.br</strong> e depois salve o domínio desejado acima.
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="p-4 bg-gradient-to-br from-pink-500/5 to-orange-500/5 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-start gap-3">
+                          <div className="p-2 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl text-white">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                          </div>
+                          <div className="space-y-1 text-left">
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">Domínio Próprio Bloqueado</p>
+                            <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                              Mapear seu domínio próprio (ex: <code>agendar.meusalao.com</code>) é uma funcionalidade exclusiva do <strong>Plano Premium</strong>. Faça o upgrade na aba "Assinatura" para habilitar!
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <button type="submit" className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all shadow-xl shadow-pink-500/20 mt-4">
                     Salvar Identidade Visual
                   </button>
@@ -2871,10 +2937,10 @@ export default function Dashboard() {
                   </div>
                 )}
 
-                {/* Plan Options */}
+                 {/* Plan Options */}
                 <div>
                   <h3 className="text-md font-black text-slate-900 dark:text-white mb-6">Planos Disponíveis</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     
                     {/* Monthly Card */}
                     <div className={`border p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left ${
@@ -2885,7 +2951,7 @@ export default function Dashboard() {
                       <div className="space-y-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Mensal</h4>
+                            <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Básico Mensal</h4>
                             <p className="text-xs text-slate-400 font-semibold mt-1">Ideal para começar e testar</p>
                           </div>
                           {subscription?.plan === 'mensal' && subscription?.status === 'active' && (
@@ -2933,7 +2999,7 @@ export default function Dashboard() {
                       <div className="space-y-4">
                         <div className="flex justify-between items-start">
                           <div>
-                            <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Anual</h4>
+                            <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Básico Anual</h4>
                             <p className="text-xs text-slate-400 font-semibold mt-1">O melhor custo-benefício</p>
                           </div>
                           {subscription?.plan === 'anual' && subscription?.status === 'active' && (
@@ -2965,6 +3031,54 @@ export default function Dashboard() {
                       >
                         <CreditCard className="w-4 h-4" />
                         {subscription?.plan === 'anual' && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar Anual'}
+                      </button>
+                    </div>
+
+                    {/* Premium Card */}
+                    <div className={`border p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left relative overflow-hidden ${
+                      subscription?.plan === 'premium' && subscription?.status === 'active'
+                        ? 'border-violet-500 bg-violet-500/5 dark:bg-violet-500/10 shadow-lg shadow-violet-500/10'
+                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#1A2235]/40 hover:border-slate-300 dark:hover:border-slate-700'
+                    }`}>
+                      <div className="absolute top-3 right-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm z-10">
+                        Mais Completo
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-start">
+                          <div>
+                            <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Premium</h4>
+                            <p className="text-xs text-slate-400 font-semibold mt-1">Domínio próprio e exclusividade</p>
+                          </div>
+                          {subscription?.plan === 'premium' && subscription?.status === 'active' && (
+                            <span className="text-[9px] font-black uppercase tracking-widest bg-violet-600 text-white px-2.5 py-1 rounded-full">Plano Atual</span>
+                          )}
+                        </div>
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 49,99</span>
+                          <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
+                        </div>
+                        <ul className="space-y-2.5 pt-2">
+                          {['Tudo dos planos básico e anual', 'Subdomínio Wildcard grátis profissional', 'Domínio próprio (ex: agendar.salao.com)', 'Página 100% livre da marca BoraMarka', 'Suporte técnico prioritário dedicado VIP'].map((feat, i) => (
+                            <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                              <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                              <span>{feat}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                      <button 
+                        onClick={() => handleCheckout('premium')}
+                        className={`w-full py-4 rounded-2xl font-black text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-2 ${
+                          subscription?.plan === 'premium' && subscription?.status === 'active'
+                            ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl shadow-indigo-500/20 hover:opacity-95'
+                        }`}
+                        disabled={subscription?.plan === 'premium' && subscription?.status === 'active'}
+                      >
+                        <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
+                        {subscription?.plan === 'premium' && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar Premium'}
                       </button>
                     </div>
 

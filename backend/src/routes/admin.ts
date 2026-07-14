@@ -42,6 +42,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
+      customDomain: admin.customDomain,
     };
   });
 
@@ -60,7 +61,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       accentColor,
       secondaryColor,
       publicTheme,
-      bannerUrl
+      bannerUrl,
+      customDomain
     } = request.body as {
       username?: string;
       businessName?: string;
@@ -75,6 +77,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       secondaryColor?: string;
       publicTheme?: string;
       bannerUrl?: string;
+      customDomain?: string | null;
     };
 
     let newUsername: string | undefined;
@@ -86,6 +89,38 @@ export default async function adminRoutes(app: FastifyInstance) {
         if (existing) {
           return reply.status(400).send({ error: 'Este @ já está em uso por outra conta.' });
         }
+      }
+    }
+
+    let finalCustomDomain: string | null | undefined = undefined;
+    if (customDomain !== undefined) {
+      if (customDomain === null || customDomain.trim() === '') {
+        finalCustomDomain = null;
+      } else {
+        // Format customDomain: trim, lowercase, remove protocol
+        let formatted = customDomain.trim().toLowerCase();
+        formatted = formatted.replace(/^(https?:\/\/)?(www\.)?/, '');
+        formatted = formatted.replace(/\/$/, ''); // remove trailing slash
+
+        // Check if professional has premium plan
+        const sub = await prisma.subscription.findUnique({ where: { adminId: user.id } });
+        if (!sub || sub.plan !== 'premium' || sub.status !== 'active') {
+          return reply.status(403).send({ error: 'Configurar domínio próprio é um recurso exclusivo do Plano Premium ativo.' });
+        }
+
+        // Check if domain is already taken
+        const existing = await prisma.admin.findFirst({
+          where: {
+            customDomain: formatted,
+            id: { not: user.id }
+          }
+        });
+
+        if (existing) {
+          return reply.status(400).send({ error: 'Este domínio já está mapeado para outra conta.' });
+        }
+
+        finalCustomDomain = formatted;
       }
     }
 
@@ -105,6 +140,7 @@ export default async function adminRoutes(app: FastifyInstance) {
         ...(secondaryColor !== undefined && { secondaryColor: secondaryColor.trim() }),
         ...(publicTheme !== undefined && { publicTheme: publicTheme.trim() }),
         ...(bannerUrl !== undefined && { bannerUrl: bannerUrl.trim() }),
+        ...(finalCustomDomain !== undefined && { customDomain: finalCustomDomain }),
       },
     });
 
@@ -122,6 +158,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
+      customDomain: admin.customDomain,
     };
   });
 

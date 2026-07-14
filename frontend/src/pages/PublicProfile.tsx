@@ -40,6 +40,12 @@ export default function PublicProfile() {
         .then(setProfile)
         .catch(err => setError(err.message))
         .finally(() => setLoading(false))
+    } else {
+      const host = window.location.host
+      api.getPublicProfileByHost(host)
+        .then(setProfile)
+        .catch(err => setError(err.message))
+        .finally(() => setLoading(false))
     }
   }, [username])
 
