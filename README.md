@@ -9,18 +9,18 @@ A plataforma permite que os profissionais tenham total autonomia sobre suas agen
 ## ✨ Funcionalidades Principais
 
 ### 📅 Agenda Inteligente & Multi-Agendamento
-- **Links de Venda Dedicados:** Links personalizáveis no formato `boramarka.com/p/@username` para divulgação.
+- **Links de Venda Dedicados:** Links personalizáveis no formato `boramarka.com/p/@username` para divulgação direta para seus clientes.
 - **Geração de Slots em Lote:** Criação inteligente de horários disponíveis em bloco (por intervalo de minutos) ou horários específicos únicos.
-- **Catálogo de Serviços:** Apresentação elegante com nome, duração, descrição e preço de cada serviço.
-- **Página de Agendamento Pública:** Interface fluida para o cliente final escolher o serviço, horário disponível e confirmar informando nome e WhatsApp.
+- **Catálogo de Serviços:** Apresentação elegante com nome, duração, descrição e preço de cada serviço oferecido.
+- **Página de Agendamento Pública:** Interface fluida e responsiva para o cliente final escolher o serviço, horário disponível e confirmar informando nome e WhatsApp.
 
 ### 📅 Sincronização com Google Calendar
-- Sincronização bidirecional automática com a agenda pessoal Google do profissional.
+- **Sincronização Bidirecional:** Conecte sua conta do Google para sincronização automática com a agenda pessoal do profissional.
 - **Bloqueio de Double Booking:** O sistema detecta compromissos pessoais externos marcados no Google Calendar e bloqueia automaticamente os slots equivalentes no BoraMarka para evitar conflitos de horário.
 
-### 👥 Mini CRM de Clientes
-- **Painel de Relacionamento:** Lista dinâmica de clientes com histórico completo de interações.
-- **Métricas por Cliente:** Valor total investido (faturamento gerado) e número total de agendamentos confirmados.
+### 👥 CRM & Relacionamento com Clientes
+- **Painel de Relacionamento:** Lista dinâmica de clientes com histórico completo de interações e contatos.
+- **Métricas por Cliente:** Valor total investido (faturamento gerado) e número total de agendamentos confirmados pelo cliente.
 - **Anotações Privadas:** Espaço dedicado para o profissional registrar preferências, fichas de anamnese ou observações técnicas sobre o cliente.
 
 ### 🌐 Rede de Networking & Chat Global
@@ -28,8 +28,9 @@ A plataforma permite que os profissionais tenham total autonomia sobre suas agen
 - **Busca Avançada:** Filtros rápidos por nome, negócio, especialidade ou localização.
 - **Chat em Tempo Real (DMs):** Sistema interno de mensagens diretas e chat interativo com histórico completo de conversas para negociações e parcerias comerciais.
 
-### 💳 Clube de Assinaturas (Recorrência)
-- Permite que profissionais criem clubes de fidelidade, onde clientes pagam mensalidades fixas para garantir atendimentos recorrentes (ex: 4 cortes de cabelo no mês por valor fixo).
+### 💳 Clube de Assinaturas (Recorrência) & Cupons
+- **Clube de Assinaturas:** Permite que profissionais criem clubes de fidelidade, onde clientes pagam mensalidades fixas para garantir atendimentos recorrentes (ex: 4 cortes de cabelo no mês por valor fixo).
+- **Sistema de Cupons:** Criação de cupons de desconto fixos ou percentuais para impulsionar as vendas e fidelizar clientes.
 
 ### 👑 Painel do Administrador Geral (SuperAdmin)
 - **Saúde do Negócio:** Visualização em tempo real de estatísticas de faturamento mensal estimado, total de clientes ativos, trial e assinaturas ativas.
@@ -46,19 +47,37 @@ A plataforma permite que os profissionais tenham total autonomia sobre suas agen
 
 ## 🛠️ Stack Tecnológica
 
-O projeto adota uma arquitetura moderna, de alta performance e totalmente em TypeScript:
+O projeto adota uma arquitetura moderna, de alta performance e totalmente escrita em **TypeScript**:
 
 ### 🖥️ Frontend (Interface do Usuário)
 - **Framework principal:** [React](https://react.dev/) com [Vite](https://vite.dev/) (build ultra rápido)
 - **Estilização:** [Tailwind CSS](https://tailwindcss.com/) (design moderno com suporte completo a Dark/Light mode)
 - **Roteamento:** [React Router DOM](https://reactrouter.com/)
 - **Pacote de Ícones:** [Lucide React](https://lucide.dev/)
+- **Integração HTTP:** Axios com gerenciamento de tokens JWT
 
 ### ⚙️ Backend (Serviço de API)
 - **Framework principal:** [Fastify](https://fastify.dev/) (alternativa de alta velocidade e baixo consumo de memória ao Express)
 - **ORM:** [Prisma ORM](https://www.prisma.io/)
 - **Banco de Dados:** SQLite (padrão de desenvolvimento rápido) / PostgreSQL (pronto para produção)
 - **Segurança & Autenticação:** JWT (JSON Web Tokens) e encriptação de senhas com `bcrypt`
+
+---
+
+## 💾 Modelo de Dados (Prisma Schema)
+
+O banco de dados é estruturado de forma a suportar o ecossistema SaaS completo:
+
+- **Admin:** Representa o profissional ou estabelecimento. Contém configurações de perfil, cores personalizadas para sua página pública (`accentColor`, `secondaryColor`, `publicTheme`), chaves de API, credenciais do Google Calendar e status de assinatura.
+- **Subscription:** Controla o status do plano do profissional (trialing, active, inactive) e datas de expiração e término do trial.
+- **Service:** Catálogo de serviços oferecidos com nome, duração e preço.
+- **SchedulingLink:** Link único (`token`) com taxa de reserva opcional (`bookingFeeEnabled`).
+- **TimeSlot & Booking:** Gerencia os horários abertos para agendamento e as reservas confirmadas pelos clientes.
+- **Transaction:** Fluxo de caixa para controle financeiro (entradas/saídas).
+- **Coupon:** Gerenciador de cupons de descontos para promoções.
+- **MembershipPlan & ClientSubscription:** Controla os planos de recorrência que o profissional oferece aos seus clientes finais.
+- **ClientNote:** Anotações privadas sobre os clientes feitas pelo profissional.
+- **ChatMessage:** Mensagens diretas trocadas entre os profissionais na rede social interna.
 
 ---
 
@@ -111,20 +130,22 @@ Certifique-se de possuir o [Node.js](https://nodejs.org/) instalado em sua máqu
 
 ---
 
-## 📂 Estrutura do Projeto
+## 📂 Estrutura de Diretórios
 
 ```text
 ├── backend/
 │   ├── prisma/                  # Configurações do Prisma ORM e Schema do Banco
 │   └── src/
-│       ├── plugins/             # Middleware de autenticação JWT
-│       ├── routes/              # Definição dos endpoints da API (Autenticação, Clientes, Calendário, etc)
+│       ├── plugins/             # Middleware de autenticação JWT e Fastify Setup
+│       ├── routes/              # Definição dos endpoints da API (Autenticação, Clientes, Financeiro, Agendamento, etc)
 │       ├── services/            # Integração com Google Calendar e Lembretes automáticos
 │       └── server.ts            # Arquivo inicializador do servidor Fastify
 ├── frontend/
-│   ├── src/
-│       ├── pages/               # Telas principais (Dashboard, SuperAdmin, Landing Page, Perfil Público)
+│   ├── public/                  # Assets estáticos e públicos (imagens, ícones)
+│   └── src/
+│       ├── pages/               # Telas principais (Dashboard, SuperAdmin, Landing Page, Perfil Público, Login/Cadastro)
 │       ├── services/            # Comunicação HTTP (API Client com Axios)
+│       ├── index.css            # Estilos globais e configurações de tema do Tailwind
 │       └── App.tsx              # Rotas e configurações globais do React
 └── README.md
 ```
