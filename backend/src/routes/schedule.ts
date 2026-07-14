@@ -82,6 +82,92 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     };
   });
 
+  // GET /api/schedule/by-host — Get public profile + services catalog by Hostname
+  app.get('/by-host', async (request, reply) => {
+    const { host } = request.query as { host: string };
+    if (!host) {
+      return reply.status(400).send({ error: 'Host não informado' });
+    }
+
+    // Parse host to determine if it is a subdomain
+    const hostname = host.split(':')[0]; // remove port
+    const parts = hostname.split('.');
+    
+    let admin = null;
+    
+    // Check if it's a subdomain (e.g. salao.boramarka.com.br or salao.localhost)
+    const isSubdomain = parts.length > 2 && 
+      parts[0] !== 'www' && 
+      parts[0] !== 'admin' && 
+      parts[0] !== 'api';
+
+    // Also support local testing with subdomains (e.g. salao.localhost)
+    const isLocalSubdomain = parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'www';
+
+    if (isSubdomain || isLocalSubdomain) {
+      const subdomain = parts[0];
+      admin = await prisma.admin.findUnique({
+        where: { username: subdomain },
+        include: {
+          services: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              duration: true,
+              description: true
+            }
+          }
+        }
+      });
+    } else {
+      // Custom Domain (e.g. agendar.salao.com)
+      admin = await prisma.admin.findFirst({
+        where: { customDomain: hostname },
+        include: {
+          services: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              duration: true,
+              description: true
+            }
+          }
+        }
+      });
+
+      // Verify custom domain requires premium plan
+      if (admin) {
+        const sub = await checkAndUpdateSubscription(admin.id);
+        if (sub.plan !== 'premium' || sub.status !== 'active') {
+          return reply.status(403).send({ error: 'Recurso de domínio próprio exclusivo do Plano Premium ativo.' });
+        }
+      }
+    }
+
+    if (!admin) {
+      return reply.status(404).send({ error: 'Estabelecimento não encontrado' });
+    }
+
+    const sub = await checkAndUpdateSubscription(admin.id);
+    const isInactive = sub.status === 'inactive';
+
+    return {
+      businessName: admin.businessName,
+      description: admin.description,
+      photoUrl: admin.photoUrl,
+      phone: isInactive ? '' : admin.phone,
+      address: admin.address,
+      services: admin.services,
+      isInactive,
+      accentColor: admin.accentColor,
+      secondaryColor: admin.secondaryColor,
+      publicTheme: admin.publicTheme,
+      bannerUrl: admin.bannerUrl,
+    };
+  });
+
   // GET /api/schedule/:token — Get available slots for a scheduling link
   app.get('/:token', async (request, reply) => {
     const { token } = request.params as { token: string };
@@ -629,7 +715,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           }
         }
 
-        if (paymentInfo && paymentInfo.status === 'approved') {
+        if (paymentInfo && paymentInfo.status === 'approved' && matchedAdmin) {
           const bookingId = parseInt(paymentInfo.external_reference);
           if (!isNaN(bookingId)) {
             const booking = await prisma.booking.findUnique({

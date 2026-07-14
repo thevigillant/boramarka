@@ -21,15 +21,22 @@ export default async function billingRoutes(app: FastifyInstance) {
   // Rota para gerar um link de pagamento
   app.post('/checkout', { preHandler: [authenticate] }, async (request, reply) => {
     const user = request.user as { id: number };
-    const { plan } = request.body as { plan: 'mensal' | 'anual' };
+    const { plan } = request.body as { plan: 'mensal' | 'anual' | 'premium' };
 
     if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
       return reply.status(500).send({ error: 'Gateway de pagamento não configurado no servidor.' });
     }
 
     // Define preços baseados no plano
-    const price = plan === 'anual' ? 260.00 : 30.00;
-    const title = plan === 'anual' ? 'BoraMarka - Plano Anual' : 'BoraMarka - Plano Mensal';
+    let price = 30.00;
+    let title = 'BoraMarka - Plano Mensal';
+    if (plan === 'anual') {
+      price = 260.00;
+      title = 'BoraMarka - Plano Anual';
+    } else if (plan === 'premium') {
+      price = 49.99;
+      title = 'BoraMarka - Plano Premium';
+    }
 
     try {
       const preference = new Preference(client);

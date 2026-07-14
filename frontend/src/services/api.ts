@@ -85,6 +85,7 @@ export const api = {
       secondaryColor?: string;
       publicTheme?: string;
       bannerUrl?: string;
+      customDomain?: string;
     }>('/admin/profile'),
 
   updateProfile: (data: {
@@ -101,6 +102,7 @@ export const api = {
     secondaryColor?: string;
     publicTheme?: string;
     bannerUrl?: string;
+    customDomain?: string | null;
   }) =>
     request('/admin/profile', {
       method: 'PUT',
@@ -309,6 +311,27 @@ export const api = {
       }>;
     }>(`/schedule/p/${username}`),
 
+  getPublicProfileByHost: (host: string) =>
+    request<{
+      businessName: string;
+      description: string;
+      photoUrl: string;
+      phone: string;
+      address: string;
+      isInactive?: boolean;
+      accentColor?: string;
+      secondaryColor?: string;
+      publicTheme?: string;
+      bannerUrl?: string;
+      services: Array<{
+        id: number;
+        name: string;
+        price: number;
+        duration: number;
+        description: string | null;
+      }>;
+    }>(`/schedule/by-host?host=${encodeURIComponent(host)}`),
+
   getSchedule: (token: string) =>
     request<{
       title: string;
@@ -358,13 +381,13 @@ export const api = {
   getSubscriptionStatus: () =>
     request<{
       id: number;
-      plan: 'mensal' | 'anual';
+      plan: 'mensal' | 'anual' | 'premium';
       status: 'active' | 'inactive' | 'pending' | 'trialing';
       expiresAt: string | null;
       trialEndsAt: string | null;
     }>('/billing/status'),
 
-  createCheckout: (plan: 'mensal' | 'anual') =>
+  createCheckout: (plan: 'mensal' | 'anual' | 'premium') =>
     request<{ init_point: string }>('/billing/checkout', {
       method: 'POST',
       body: JSON.stringify({ plan }),

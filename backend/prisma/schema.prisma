@@ -28,6 +28,7 @@ model Admin {
   googleRefreshToken String @default("") @map("google_refresh_token")
   googleTokenExpiry  DateTime? @map("google_token_expiry")
   googleCalendarEmail String @default("") @map("google_calendar_email")
+  customDomain        String? @unique @map("custom_domain")
   createdAt      DateTime @default(now()) @map("created_at")
 
   links          SchedulingLink[]

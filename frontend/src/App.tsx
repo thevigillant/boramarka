@@ -23,11 +23,34 @@ function SuperAdminProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function RootRouteWrapper() {
+  const hostname = window.location.hostname;
+  const parts = hostname.split('.');
+  
+  // Exclude main domains: localhost, 127.0.0.1, boramarka.com.br, www.boramarka.com.br
+  const isMainDomain = 
+    hostname === 'localhost' || 
+    hostname === '127.0.0.1' ||
+    (parts.length === 2 && parts[0] === 'boramarka') ||
+    (parts.length === 3 && parts[1] === 'boramarka' && parts[0] === 'www');
+
+  // Also local subdomain test: e.g. salao.localhost
+  const isLocalSubdomain = parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'www';
+
+  const isDomainAccess = (!isMainDomain && parts.length >= 2) || isLocalSubdomain;
+
+  if (isDomainAccess) {
+    return <PublicProfile />;
+  }
+
+  return <Landing />;
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={<RootRouteWrapper />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route
