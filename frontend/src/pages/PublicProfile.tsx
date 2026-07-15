@@ -12,6 +12,7 @@ interface ServiceData {
   price: number
   duration: number
   description: string | null
+  token?: string | null
 }
 
 interface PublicProfileData {
@@ -159,11 +160,8 @@ export default function PublicProfile() {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {profile.services.map(service => (
-                <div 
-                  key={service.id} 
-                  className="bg-white dark:bg-[#131826] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:shadow-2xl custom-accent-hover-border transition-all flex flex-col justify-between group"
-                >
+              {profile.services.map(service => {
+                const cardContent = (
                   <div>
                     <div className="flex justify-between items-start gap-4 mb-4">
                       <h3 className="font-black text-xl text-slate-900 dark:text-white leading-tight custom-accent-hover-text transition-colors">
@@ -184,8 +182,31 @@ export default function PublicProfile() {
                       <Clock className="w-3.5 h-3.5" /> {service.duration} minutos
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+
+                const cardClass = "bg-white dark:bg-[#131826] p-6 sm:p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:shadow-2xl custom-accent-hover-border transition-all flex flex-col justify-between group cursor-pointer text-left block w-full";
+
+                if (service.token && !profile.isInactive) {
+                  return (
+                    <Link 
+                      key={service.id} 
+                      to={`/agendar/${service.token}`}
+                      className={cardClass}
+                    >
+                      {cardContent}
+                    </Link>
+                  );
+                }
+
+                return (
+                  <div 
+                    key={service.id} 
+                    className={cardClass + " cursor-default hover:shadow-none hover:border-slate-200 dark:hover:border-slate-800"}
+                  >
+                    {cardContent}
+                  </div>
+                );
+              })}
             </div>
           </div>
         )}

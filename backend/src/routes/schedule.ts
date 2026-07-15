@@ -54,7 +54,13 @@ export default async function scheduleRoutes(app: FastifyInstance) {
             name: true,
             price: true,
             duration: true,
-            description: true
+            description: true,
+            links: {
+              select: {
+                token: true
+              },
+              take: 1
+            }
           }
         }
       }
@@ -67,13 +73,22 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     const sub = await checkAndUpdateSubscription(admin.id);
     const isInactive = sub.status === 'inactive';
 
+    const mappedServices = admin.services.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      price: s.price,
+      duration: s.duration,
+      description: s.description,
+      token: s.links?.[0]?.token || null
+    }));
+
     return {
       businessName: admin.businessName,
       description: admin.description,
       photoUrl: admin.photoUrl,
       phone: isInactive ? '' : admin.phone,
       address: admin.address,
-      services: admin.services,
+      services: mappedServices,
       isInactive,
       accentColor: admin.accentColor,
       secondaryColor: admin.secondaryColor,
@@ -115,7 +130,13 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               name: true,
               price: true,
               duration: true,
-              description: true
+              description: true,
+              links: {
+                select: {
+                  token: true
+                },
+                take: 1
+              }
             }
           }
         }
@@ -131,7 +152,13 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               name: true,
               price: true,
               duration: true,
-              description: true
+              description: true,
+              links: {
+                select: {
+                  token: true
+                },
+                take: 1
+              }
             }
           }
         }
@@ -153,13 +180,22 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     const sub = await checkAndUpdateSubscription(admin.id);
     const isInactive = sub.status === 'inactive';
 
+    const mappedServices = admin.services.map((s: any) => ({
+      id: s.id,
+      name: s.name,
+      price: s.price,
+      duration: s.duration,
+      description: s.description,
+      token: s.links?.[0]?.token || null
+    }));
+
     return {
       businessName: admin.businessName,
       description: admin.description,
       photoUrl: admin.photoUrl,
       phone: isInactive ? '' : admin.phone,
       address: admin.address,
-      services: admin.services,
+      services: mappedServices,
       isInactive,
       accentColor: admin.accentColor,
       secondaryColor: admin.secondaryColor,
@@ -519,7 +555,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
                 admin: {
                   select: {
                     businessName: true,
-                    phone: true
+                    phone: true,
+                    username: true
                   }
                 },
                 service: {
@@ -547,6 +584,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       time: booking.timeSlot.time,
       businessName: booking.timeSlot.link.admin.businessName,
       businessPhone: booking.timeSlot.link.admin.phone,
+      businessUsername: booking.timeSlot.link.admin.username,
       serviceName: booking.timeSlot.link.service?.name || 'Serviço',
       price: booking.timeSlot.link.service?.price || 0,
     };
@@ -618,6 +656,93 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     return { success: true };
   });
 
+  // POST /api/schedule/booking/:id/reschedule — Public reschedule with 2-hour deadline check
+  app.post('/booking/:id/reschedule', async (request, reply) => {
+    const { id } = request.params as { id: string };
+    const { newTimeSlotId } = request.body as { newTimeSlotId: number };
+
+    if (!newTimeSlotId) {
+      return reply.status(400).send({ error: 'Novo horário não especificado.' });
+    }
+
+    const booking = await prisma.booking.findUnique({
+      where: { id: parseInt(id) },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: {
+                admin: {
+                  select: {
+                    businessName: true,
+                    phone: true
+                  }
+                },
+                service: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado.' });
+    }
+
+    // Check rescheduling policy (2-hour limit)
+    const appointmentDate = new Date(`${booking.timeSlot.date}T${booking.timeSlot.time}:00-03:00`);
+    const now = new Date();
+    const diffMs = appointmentDate.getTime() - now.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours < 2) {
+      return reply.status(400).send({
+        error: 'PRAZO_LIMITE_EXPIRADO',
+        message: 'Reagendamentos online só são permitidos com até 2 horas de antecedência. Por favor, entre em contato direto com o profissional.',
+        businessPhone: booking.timeSlot.link.admin.phone
+      });
+    }
+
+    // Verify new slot is available and belongs to the same scheduling link
+    const newSlot = await prisma.timeSlot.findUnique({
+      where: { id: newTimeSlotId },
+    });
+
+    if (!newSlot || !newSlot.isAvailable || newSlot.linkId !== booking.timeSlot.linkId) {
+      return reply.status(400).send({ error: 'O horário selecionado não está mais disponível.' });
+    }
+
+    // Reschedule: Atomic swap of slot availability and booking assignment
+    await prisma.$transaction(async (tx) => {
+      // 1. Free old slot
+      await tx.timeSlot.update({
+        where: { id: booking.timeSlotId },
+        data: { isAvailable: true }
+      });
+      // 2. Reserve new slot
+      await tx.timeSlot.update({
+        where: { id: newTimeSlotId },
+        data: { isAvailable: false }
+      });
+      // 3. Update booking
+      await tx.booking.update({
+        where: { id: booking.id },
+        data: { timeSlotId: newTimeSlotId }
+      });
+    });
+
+    // Send WhatsApp notification
+    const rescheduleMessage = `🗓️ *Remarcação automática:* Olá ${booking.clientName}, seu agendamento para *${booking.timeSlot.link.service?.name || 'Serviço'}* foi alterado de *${booking.timeSlot.date} às ${booking.timeSlot.time}* para o dia *${newSlot.date} às ${newSlot.time}* com sucesso.`;
+    await sendWhatsAppMessage(booking.clientPhone, rescheduleMessage);
+
+    return { success: true };
+  });
+
   // POST /api/schedule/booking/:id/confirm-simulation — Public endpoint to simulate payment approval
   app.post('/booking/:id/confirm-simulation', async (request, reply) => {
     const { id } = request.params as { id: string };
@@ -681,7 +806,16 @@ export default async function scheduleRoutes(app: FastifyInstance) {
 
     await sendWhatsAppMessage(booking.clientPhone, message);
 
-    return { success: true, booking: updated };
+    return {
+      success: true,
+      booking: {
+        id: updated.id,
+        clientName: updated.clientName,
+        clientPhone: updated.clientPhone,
+        date: booking.timeSlot.date,
+        time: booking.timeSlot.time
+      }
+    };
   });
 
   // POST /api/schedule/webhook-fee — Webhook for client payments

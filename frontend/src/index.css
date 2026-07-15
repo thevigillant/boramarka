@@ -17,16 +17,34 @@
 
 @layer components {
   .card-simple {
-    background: rgba(8, 10, 22, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06), 0 24px 48px rgba(0, 0, 0, 0.3);
-    border-radius: 2rem;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 1.5rem;
+    padding: 6px;
     transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
-  
+
+  .card-simple > * {
+    /* Inner content inherits the doppelrand-inner look when nested */
+  }
+
   .dark .card-simple {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.04);
+  }
+
+  .card-simple:hover {
+    border-color: rgba(139, 92, 246, 0.12);
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.04);
+    transform: translateY(-2px);
+  }
+
+  /* Card simple inner — apply this to the direct child for doppelrand effect */
+  .card-simple-inner {
     background: rgba(8, 10, 22, 0.85);
-    border-color: rgba(255, 255, 255, 0.06);
+    border-radius: calc(1.5rem - 6px);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
+    height: 100%;
   }
 
   .btn-primary-simple {
@@ -42,12 +60,12 @@
   }
 
   .btn-primary-simple:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 15px 30px rgba(139, 92, 246, 0.25);
+    transform: translateY(-2px);
+    box-shadow: 0 20px 40px rgba(139, 92, 246, 0.25);
   }
 
   .btn-primary-simple:active {
-    transform: scale(0.98);
+    transform: scale(0.98) translateY(0);
   }
 
   .btn-primary-simple:disabled {
@@ -60,16 +78,19 @@
     background: rgba(255, 255, 255, 0.03);
     border: 1px solid rgba(255, 255, 255, 0.06);
     color: rgba(255, 255, 255, 0.8);
-    border-radius: 0.75rem;
+    border-radius: 1rem;
     padding: 0.75rem 1rem;
-    transition: border-color 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+    transition: border-color 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+                box-shadow 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
   .input-simple:focus {
     border-color: rgba(139, 92, 246, 0.5);
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.08);
     outline: none;
   }
 }
+
 
 @keyframes slideUp {
   from { transform: translateY(12px); opacity: 0; }
@@ -226,5 +247,161 @@ select option {
 .light select option {
   background-color: #ffffff !important;
   color: #1e293b !important;
+}
+
+/* ═══════════════════════════════════════════════════════
+   LANDING PAGE PREMIUM — Additional Styles
+   ═══════════════════════════════════════════════════════ */
+
+/* Smooth scroll */
+html { scroll-behavior: smooth; }
+
+/* Grain texture overlay */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  pointer-events: none;
+  opacity: 0.03;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 128px 128px;
+}
+
+/* FAQ Accordion */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.5s cubic-bezier(0.32, 0.72, 0, 1),
+              opacity 0.4s ease,
+              padding 0.4s ease;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.faq-answer.open {
+  max-height: 300px;
+  opacity: 1;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+.faq-chevron {
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.faq-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* Pain card shimmer */
+.pain-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.pain-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.03) 50%,
+    transparent 60%
+  );
+  transform: translateX(-100%);
+  transition: transform 0.8s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.pain-card:hover::after {
+  transform: translateX(100%);
+}
+
+/* Before/After split */
+.before-card {
+  border-left: 3px solid rgba(239, 68, 68, 0.4);
+}
+
+.after-card {
+  border-left: 3px solid rgba(52, 211, 153, 0.4);
+}
+
+/* Counter number animation */
+@keyframes countPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.03); }
+}
+
+.counter-number.counting {
+  animation: countPulse 0.15s ease-in-out;
+}
+
+/* Testimonial quote */
+.testimonial-quote::before {
+  content: '"';
+  position: absolute;
+  top: -10px;
+  left: 20px;
+  font-size: 80px;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  pointer-events: none;
+}
+
+/* Mobile menu overlay */
+.mobile-menu-overlay {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.mobile-menu-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-menu-panel {
+  transform: translateY(-20px);
+  opacity: 0;
+  transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1),
+              opacity 0.3s ease;
+}
+
+.mobile-menu-overlay.open .mobile-menu-panel {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+/* Profession card hover glow */
+.profession-card {
+  transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.profession-card:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 0 30px rgba(139, 92, 246, 0.08);
+  transform: translateY(-4px);
+}
+
+/* CTA section glow */
+.cta-glow {
+  position: relative;
+}
+
+.cta-glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.1), rgba(249, 115, 22, 0.08));
+  border-radius: inherit;
+  z-index: -1;
+  filter: blur(40px);
 }
 

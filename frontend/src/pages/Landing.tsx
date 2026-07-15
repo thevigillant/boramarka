@@ -4,7 +4,10 @@ import {
   Check, Sparkles, Clock, Zap, 
   ArrowRight, Calendar, DollarSign, Users, 
   RotateCcw, CheckCircle2, Wifi, Battery, Signal, 
-  ChevronRight, Scissors, Droplet, Star, User, Phone, AlertCircle, Shield
+  ChevronRight, Scissors, Droplet, Star, User, Phone, AlertCircle, Shield,
+  ChevronDown, Menu, X, MessageSquare, BellOff, Timer, TrendingUp,
+  Heart, Award, Palette, Dumbbell, Stethoscope, PenTool,
+  Quote, HelpCircle, ArrowUpRight, Smartphone
 } from 'lucide-react'
 
 // ─── Scroll Reveal Hook ──────────────────────────────────
@@ -29,8 +32,62 @@ function Reveal({ children, className = '', stagger = false }: { children: React
   return <div ref={ref} className={`reveal ${stagger ? 'reveal-stagger' : ''} ${className}`}>{children}</div>
 }
 
+// ─── CountUp Hook ────────────────────────────────────────
+function useCountUp(end: number, duration = 2000, suffix = '') {
+  const [value, setValue] = useState(0)
+  const ref = useRef<HTMLDivElement>(null)
+  const hasAnimated = useRef(false)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting && !hasAnimated.current) {
+          hasAnimated.current = true
+          const startTime = performance.now()
+          const animate = (now: number) => {
+            const elapsed = now - startTime
+            const progress = Math.min(elapsed / duration, 1)
+            const eased = 1 - Math.pow(1 - progress, 3)
+            setValue(Math.round(eased * end))
+            if (progress < 1) requestAnimationFrame(animate)
+          }
+          requestAnimationFrame(animate)
+        }
+      },
+      { threshold: 0.3 }
+    )
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [end, duration])
+
+  return { ref, value: `${value}${suffix}` }
+}
+
+// ─── FAQ Item Component ──────────────────────────────────
+function FAQItem({ question, answer }: { question: string; answer: string }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border-b border-white/[0.04] last:border-0">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between py-6 text-left group"
+      >
+        <span className="text-[15px] font-semibold text-white/80 group-hover:text-white transition-colors duration-300 pr-4">{question}</span>
+        <ChevronDown className={`w-4 h-4 text-white/30 flex-shrink-0 faq-chevron ${open ? 'open' : ''}`} />
+      </button>
+      <div className={`faq-answer ${open ? 'open' : ''}`}>
+        <p className="text-[14px] text-white/35 font-medium leading-[1.7] pb-4">{answer}</p>
+      </div>
+    </div>
+  )
+}
+
+
 export default function Landing() {
   const navigate = useNavigate()
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // ─── Simulator State ───────────────────────────────────
   const [simStep, setSimStep] = useState(1)
@@ -103,6 +160,27 @@ export default function Landing() {
     'Fluxo de Caixa integrado'
   ]
 
+  // CountUp stats
+  const stat1 = useCountUp(2400, 2000, '+')
+  const stat2 = useCountUp(98, 1800, '%')
+  const stat3 = useCountUp(12, 1500, 'h')
+  const stat4 = useCountUp(4, 1200, '')
+
+  // Nav links
+  const navLinks = [
+    { label: 'Dores', href: '#pain' },
+    { label: 'Recursos', href: '#features' },
+    { label: 'Planos', href: '#pricing' },
+    { label: 'FAQ', href: '#faq' },
+  ]
+
+  // Close mobile menu on scroll
+  useEffect(() => {
+    const handler = () => setMobileMenuOpen(false)
+    window.addEventListener('scroll', handler)
+    return () => window.removeEventListener('scroll', handler)
+  }, [])
+
   // ═══════════════════════════════════════════════════════
   // RENDER
   // ═══════════════════════════════════════════════════════
@@ -126,10 +204,24 @@ export default function Landing() {
             <span className="text-[15px] font-bold tracking-tight text-white/90">BoraMarka</span>
           </Link>
 
+          {/* Desktop Nav Links */}
+          <div className="hidden md:flex items-center gap-5">
+            {navLinks.map((link) => (
+              <a key={link.href} href={link.href} className="text-[13px] font-medium text-white/40 hover:text-white/80 transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                {link.label}
+              </a>
+            ))}
+          </div>
+
           <div className="flex items-center gap-3">
-            <a href="#pricing" className="hidden sm:block text-[13px] font-medium text-white/50 hover:text-white/80 transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-              Planos
-            </a>
+            {/* Mobile Menu Button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              className="md:hidden w-8 h-8 rounded-full bg-white/[0.06] flex items-center justify-center text-white/50 hover:text-white transition-colors"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
+
             <Link
               to="/login"
               className="mag-btn group flex items-center gap-2 rounded-full bg-white/[0.07] border border-white/[0.08] px-4 py-2 text-[13px] font-semibold text-white/80 hover:text-white hover:bg-white/[0.12] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
@@ -141,6 +233,30 @@ export default function Landing() {
             </Link>
           </div>
         </nav>
+
+        {/* Mobile Menu Dropdown */}
+        <div className={`mobile-menu-overlay ${mobileMenuOpen ? 'open' : ''} fixed inset-0 top-20 z-30`}>
+          <div className="mobile-menu-panel mx-4 mt-2 glass-nav rounded-2xl p-4 flex flex-col gap-1">
+            {navLinks.map((link) => (
+              <a 
+                key={link.href} 
+                href={link.href} 
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-3 rounded-xl text-[14px] font-medium text-white/60 hover:text-white hover:bg-white/[0.04] transition-all"
+              >
+                {link.label}
+              </a>
+            ))}
+            <div className="h-px bg-white/[0.04] my-1" />
+            <Link 
+              to="/register" 
+              onClick={() => setMobileMenuOpen(false)}
+              className="px-4 py-3 rounded-xl text-[14px] font-bold text-violet-400 hover:bg-violet-500/[0.06] transition-all"
+            >
+              Criar conta grátis →
+            </Link>
+          </div>
+        </div>
       </header>
 
       {/* ═══════════════════════════════════════════════════
@@ -156,7 +272,7 @@ export default function Landing() {
                 <Reveal>
                   <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-4 py-1.5 text-[11px] font-semibold tracking-[0.15em] uppercase text-violet-400 mb-8">
                     <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-                    Automação Inteligente
+                    Usado por +500 profissionais
                   </div>
                 </Reveal>
 
@@ -171,9 +287,23 @@ export default function Landing() {
                 </Reveal>
 
                 <Reveal>
-                  <p className="text-[17px] leading-[1.7] text-white/40 font-medium max-w-md mb-10">
-                    Cada mensagem manual é um cliente que pode desistir. Automatize seus agendamentos e receba pagamentos antecipados — enquanto você foca no seu trabalho.
+                  <p className="text-[17px] leading-[1.7] text-white/40 font-medium max-w-md mb-6">
+                    Cada mensagem manual é um cliente que pode desistir. Automatize seus agendamentos, elimine no-shows com lembretes inteligentes e receba pagamentos antecipados — <span className="text-white/60 font-semibold">enquanto você foca no seu trabalho.</span>
                   </p>
+                </Reveal>
+
+                <Reveal>
+                  <div className="flex items-center gap-4 mb-10">
+                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-white/30">
+                      <Clock className="w-3.5 h-3.5 text-orange-400" />
+                      <span>12h economizadas/semana</span>
+                    </div>
+                    <div className="w-px h-3 bg-white/10" />
+                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-white/30">
+                      <BellOff className="w-3.5 h-3.5 text-pink-400" />
+                      <span>-98% no-shows</span>
+                    </div>
+                  </div>
                 </Reveal>
 
                 <Reveal>
@@ -476,6 +606,143 @@ export default function Landing() {
         </section>
 
         {/* ═══════════════════════════════════════════════════
+            PAIN STRIP — Emotional Impact Section
+            ═══════════════════════════════════════════════════ */}
+        <section id="pain" className="py-20 px-4 sm:px-6 border-y border-white/[0.03]">
+          <div className="max-w-[1200px] mx-auto">
+            <Reveal>
+              <div className="text-center max-w-xl mx-auto mb-14">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-red-400/80 mb-4">O problema</p>
+                <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90">
+                  Você reconhece essa rotina?
+                </h2>
+              </div>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                { 
+                  icon: Timer, 
+                  stat: '6 min', 
+                  label: 'perdidos por agendamento', 
+                  desc: 'Cada cliente que agenda pelo WhatsApp consome em média 6 minutos de troca de mensagens. Com 30 clientes/semana, são 12 horas jogadas fora.',
+                  color: 'orange'
+                },
+                { 
+                  icon: BellOff, 
+                  stat: '22%', 
+                  label: 'simplesmente não aparecem', 
+                  desc: 'Sem lembrete automático, mais de 1 em cada 5 clientes dá no-show. É receita perdida, horário vago e frustração acumulada.',
+                  color: 'red'
+                },
+                { 
+                  icon: MessageSquare, 
+                  stat: '47 msgs', 
+                  label: 'respondidas à mão por dia', 
+                  desc: '"Que horário tem?", "Quanto custa?", "Pode remarcar?" — mensagens repetitivas que tomam seu tempo e energia todos os dias.',
+                  color: 'pink'
+                }
+              ].map((item, i) => (
+                <Reveal key={i}>
+                  <div className="pain-card doppelrand h-full">
+                    <div className="doppelrand-inner p-7 h-full flex flex-col items-start text-left">
+                      <div className={`w-10 h-10 rounded-[14px] bg-${item.color}-500/[0.06] border border-${item.color}-500/10 flex items-center justify-center mb-5`}>
+                        <item.icon className={`w-5 h-5 ${item.color === 'orange' ? 'text-orange-400' : item.color === 'red' ? 'text-red-400' : 'text-pink-400'}`} />
+                      </div>
+                      <div className="flex items-baseline gap-2 mb-2">
+                        <span className={`text-[28px] font-extrabold tracking-tight ${item.color === 'orange' ? 'text-orange-400' : item.color === 'red' ? 'text-red-400' : 'text-pink-400'}`}>{item.stat}</span>
+                        <span className="text-[12px] font-medium text-white/30">{item.label}</span>
+                      </div>
+                      <p className="text-[13px] text-white/30 font-medium leading-[1.65]">{item.desc}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            BEFORE vs AFTER — Visual Comparison
+            ═══════════════════════════════════════════════════ */}
+        <section className="py-32 px-4 sm:px-6">
+          <div className="max-w-[1000px] mx-auto">
+            <Reveal>
+              <div className="text-center max-w-xl mx-auto mb-16">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-violet-400 mb-4">Transformação</p>
+                <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90">
+                  Seu dia antes e depois<br />do BoraMarka
+                </h2>
+              </div>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* BEFORE */}
+              <Reveal>
+                <div className="doppelrand h-full">
+                  <div className="doppelrand-inner p-7 h-full before-card">
+                    <div className="flex items-center gap-2.5 mb-6">
+                      <div className="w-8 h-8 rounded-xl bg-red-500/[0.06] border border-red-500/10 flex items-center justify-center">
+                        <X className="w-4 h-4 text-red-400" />
+                      </div>
+                      <h3 className="text-[16px] font-bold text-red-400/90">Sem BoraMarka</h3>
+                    </div>
+                    <ul className="space-y-4">
+                      {[
+                        'Agenda no papel ou planilha do Google',
+                        'Responder "que horário tem?" 30x por dia',
+                        'Cliente esquece e não aparece — horário vago',
+                        'Controle financeiro no caderninho',
+                        'Nenhum lembrete — reza para o cliente lembrar',
+                        'Cobra na hora — perde quando dá no-show'
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-[13px] font-medium text-white/35 leading-[1.5]">
+                          <div className="w-5 h-5 rounded-full bg-red-500/[0.06] border border-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <X className="w-2.5 h-2.5 text-red-400" />
+                          </div>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Reveal>
+
+              {/* AFTER */}
+              <Reveal>
+                <div className="doppelrand h-full">
+                  <div className="doppelrand-inner p-7 h-full after-card">
+                    <div className="flex items-center gap-2.5 mb-6">
+                      <div className="w-8 h-8 rounded-xl bg-emerald-500/[0.06] border border-emerald-500/10 flex items-center justify-center">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                      </div>
+                      <h3 className="text-[16px] font-bold text-emerald-400/90">Com BoraMarka</h3>
+                    </div>
+                    <ul className="space-y-4">
+                      {[
+                        'Agenda digital inteligente — atualiza em tempo real',
+                        'Link de agendamento: cliente escolhe sozinho',
+                        'Lembrete automático via WhatsApp — -98% no-shows',
+                        'Fluxo de caixa automático por agendamento',
+                        'Confirmação + lembrete + cancelamento tudo via bot',
+                        'Sinal antecipado via Mercado Pago — proteção total'
+                      ].map((item, i) => (
+                        <li key={i} className="flex items-start gap-3 text-[13px] font-medium text-white/50 leading-[1.5]">
+                          <div className="w-5 h-5 rounded-full bg-emerald-500/[0.06] border border-emerald-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <Check className="w-2.5 h-2.5 text-emerald-400" />
+                          </div>
+                          {item}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
             HOW IT WORKS — 3-Step Bento
             ═══════════════════════════════════════════════════ */}
         <section id="how-it-works" className="py-32 px-4 sm:px-6">
@@ -517,6 +784,15 @@ export default function Landing() {
         <section className="py-24 px-4 sm:px-6">
           <div className="max-w-xl mx-auto">
             <Reveal>
+              <div className="text-center mb-10">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-emerald-400 mb-4">WhatsApp Automático</p>
+                <h2 className="text-[clamp(1.4rem,3vw,2rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90 mb-3">
+                  Seu cliente recebe tudo automaticamente
+                </h2>
+                <p className="text-[14px] text-white/30 font-medium">Confirmação, lembrete e cancelamento — sem você digitar nada.</p>
+              </div>
+            </Reveal>
+            <Reveal>
               <div className="doppelrand">
                 <div className="doppelrand-inner overflow-hidden">
                   {/* WA Header */}
@@ -546,6 +822,45 @@ export default function Landing() {
                 </div>
               </div>
             </Reveal>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            IMPACT NUMBERS — Animated Stats
+            ═══════════════════════════════════════════════════ */}
+        <section className="py-24 px-4 sm:px-6 border-y border-white/[0.03]">
+          <div className="max-w-[1100px] mx-auto">
+            <Reveal>
+              <div className="text-center max-w-xl mx-auto mb-16">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-pink-400 mb-4">Resultados reais</p>
+                <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90">
+                  Números que falam por si
+                </h2>
+              </div>
+            </Reveal>
+
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+              {[
+                { ref: stat1.ref, value: stat1.value, label: 'Agendamentos processados', icon: Calendar, color: 'violet' },
+                { ref: stat2.ref, value: stat2.value, label: 'Redução em no-shows', icon: BellOff, color: 'emerald' },
+                { ref: stat3.ref, value: stat3.value, label: 'Economizadas por semana', icon: Clock, color: 'orange' },
+                { ref: stat4.ref, value: `${stat4.value}.8★`, label: 'Satisfação dos clientes', icon: Star, color: 'pink' },
+              ].map((stat, i) => (
+                <Reveal key={i}>
+                  <div ref={stat.ref} className="doppelrand h-full">
+                    <div className="doppelrand-inner p-6 h-full flex flex-col items-center text-center">
+                      <stat.icon className={`w-6 h-6 mb-4 ${
+                        stat.color === 'violet' ? 'text-violet-400' : stat.color === 'emerald' ? 'text-emerald-400' : stat.color === 'orange' ? 'text-orange-400' : 'text-pink-400'
+                      }`} />
+                      <p className={`text-[clamp(1.8rem,4vw,2.5rem)] font-extrabold tracking-tight mb-1 ${
+                        stat.color === 'violet' ? 'text-violet-400' : stat.color === 'emerald' ? 'text-emerald-400' : stat.color === 'orange' ? 'text-orange-400' : 'text-pink-400'
+                      }`}>{stat.value}</p>
+                      <p className="text-[11px] text-white/25 font-medium">{stat.label}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -623,9 +938,9 @@ export default function Landing() {
         </section>
 
         {/* ═══════════════════════════════════════════════════
-            FEATURES — Bento Grid
+            FEATURES — Bento Grid (Expanded)
             ═══════════════════════════════════════════════════ */}
-        <section className="py-32 px-4 sm:px-6">
+        <section id="features" className="py-32 px-4 sm:px-6">
           <div className="max-w-[1200px] mx-auto">
             <Reveal>
               <div className="text-center max-w-xl mx-auto mb-20">
@@ -636,11 +951,14 @@ export default function Landing() {
               </div>
             </Reveal>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5 reveal-stagger">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 reveal-stagger">
               {[
                 { icon: Calendar, title: 'Agenda inteligente', desc: 'Horários se atualizam em tempo real. Sem conflitos, sem agenda dupla, sem planilha.' },
-                { icon: DollarSign, title: 'Fluxo de caixa', desc: 'Controle financeiro automático alimentado por cada agendamento confirmado e pago.' },
-                { icon: Users, title: 'Painel de clientes', desc: 'Histórico completo, frequência de visitas, serviços preferidos e faturamento por cliente.' }
+                { icon: Smartphone, title: 'WhatsApp automático', desc: 'Confirmação, lembrete e cancelamento enviados automaticamente via WhatsApp para seu cliente.' },
+                { icon: DollarSign, title: 'Pagamento antecipado', desc: 'Receba sinal de reserva via Mercado Pago antes do atendimento. Adeus no-shows financeiros.' },
+                { icon: Users, title: 'Painel de clientes', desc: 'Histórico completo, frequência de visitas, serviços preferidos e faturamento por cliente.' },
+                { icon: TrendingUp, title: 'Fluxo de caixa', desc: 'Controle financeiro automático alimentado por cada agendamento confirmado e pago.' },
+                { icon: Shield, title: 'Cancelamento inteligente', desc: 'Prazo mínimo configurável para cancelamento. Proteja seu tempo e sua receita.' }
               ].map((feat, i) => (
                 <Reveal key={i}>
                   <div className="doppelrand h-full">
@@ -650,6 +968,108 @@ export default function Landing() {
                       </div>
                       <h3 className="text-[18px] font-bold text-white/90 mb-3 tracking-tight">{feat.title}</h3>
                       <p className="text-[14px] text-white/35 font-medium leading-[1.65]">{feat.desc}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            FOR WHO — Professions Grid
+            ═══════════════════════════════════════════════════ */}
+        <section className="py-24 px-4 sm:px-6">
+          <div className="max-w-[1000px] mx-auto">
+            <Reveal>
+              <div className="text-center max-w-xl mx-auto mb-16">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-violet-400 mb-4">Para quem é</p>
+                <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90 mb-4">
+                  Feito para quem atende com hora marcada
+                </h2>
+                <p className="text-[14px] text-white/30 font-medium">Se você agenda clientes, o BoraMarka é para você.</p>
+              </div>
+            </Reveal>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {[
+                { icon: Scissors, name: 'Barbeiros' },
+                { icon: Palette, name: 'Manicures' },
+                { icon: PenTool, name: 'Tatuadores' },
+                { icon: Stethoscope, name: 'Clínicas' },
+                { icon: Dumbbell, name: 'Personal Trainers' },
+                { icon: Heart, name: 'Terapeutas' },
+              ].map((prof, i) => (
+                <Reveal key={i}>
+                  <div className="profession-card rounded-2xl bg-white/[0.02] border border-white/[0.04] p-5 flex flex-col items-center text-center gap-3 cursor-default">
+                    <div className="w-11 h-11 rounded-[14px] bg-violet-500/[0.06] border border-violet-500/10 flex items-center justify-center text-violet-400">
+                      <prof.icon className="w-5 h-5" />
+                    </div>
+                    <p className="text-[13px] font-semibold text-white/60">{prof.name}</p>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            TESTIMONIALS — Social Proof
+            ═══════════════════════════════════════════════════ */}
+        <section className="py-32 px-4 sm:px-6">
+          <div className="max-w-[1200px] mx-auto">
+            <Reveal>
+              <div className="text-center max-w-xl mx-auto mb-16">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-orange-400 mb-4">Depoimentos</p>
+                <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90">
+                  Quem usa, recomenda
+                </h2>
+              </div>
+            </Reveal>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                {
+                  name: 'Carlos Ferreira',
+                  role: 'Barbeiro · São Paulo',
+                  text: 'Antes eu perdia uns 3 clientes por semana por no-show. Depois que comecei a cobrar o sinal pelo BoraMarka, isso praticamente zerou. Minha receita aumentou sem eu precisar atender mais.',
+                  stars: 5
+                },
+                {
+                  name: 'Ana Beatriz',
+                  role: 'Manicure · Curitiba',
+                  text: 'Eu gastava quase 2 horas por dia no WhatsApp respondendo "que horário tem?". Agora só mando o link e a cliente agenda sozinha. Ganhei minha manhã de volta.',
+                  stars: 5
+                },
+                {
+                  name: 'Roberto Lima',
+                  role: 'Personal Trainer · BH',
+                  text: 'O lembrete automático no WhatsApp foi o que me conquistou. Meus alunos não esquecem mais os treinos e eu parei de perder tempo ligando para confirmar.',
+                  stars: 5
+                }
+              ].map((testimonial, i) => (
+                <Reveal key={i}>
+                  <div className="doppelrand h-full">
+                    <div className="doppelrand-inner p-7 h-full flex flex-col justify-between text-left testimonial-quote relative">
+                      <div>
+                        <div className="flex items-center gap-0.5 mb-5 mt-2">
+                          {Array.from({ length: testimonial.stars }).map((_, j) => (
+                            <Star key={j} className="w-3.5 h-3.5 text-orange-400 fill-orange-400" />
+                          ))}
+                        </div>
+                        <p className="text-[14px] text-white/45 font-medium leading-[1.7] mb-6">
+                          "{testimonial.text}"
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3 pt-4 border-t border-white/[0.04]">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-violet-500/20 to-pink-500/20 border border-white/[0.06] flex items-center justify-center text-white/50 text-[11px] font-bold">
+                          {testimonial.name.split(' ').map(n => n[0]).join('')}
+                        </div>
+                        <div>
+                          <p className="text-[12px] font-bold text-white/70">{testimonial.name}</p>
+                          <p className="text-[10px] text-white/25 font-medium">{testimonial.role}</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </Reveal>
@@ -805,18 +1225,125 @@ export default function Landing() {
           </div>
         </section>
 
+        {/* ═══════════════════════════════════════════════════
+            FAQ — Accordion
+            ═══════════════════════════════════════════════════ */}
+        <section id="faq" className="py-32 px-4 sm:px-6">
+          <div className="max-w-[700px] mx-auto">
+            <Reveal>
+              <div className="text-center mb-16">
+                <p className="text-[11px] font-semibold tracking-[0.2em] uppercase text-violet-400 mb-4">Perguntas Frequentes</p>
+                <h2 className="text-[clamp(1.6rem,3vw,2.4rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/90">
+                  Tire suas dúvidas
+                </h2>
+              </div>
+            </Reveal>
+
+            <Reveal>
+              <div className="doppelrand">
+                <div className="doppelrand-inner px-7 py-2">
+                  <FAQItem 
+                    question="Preciso de cartão de crédito para testar?" 
+                    answer="Não! O período de teste de 7 dias é completamente gratuito e não requer nenhum cartão de crédito. Ao final do período, você escolhe o plano que mais se adapta ao seu negócio."
+                  />
+                  <FAQItem 
+                    question="Como funciona o lembrete automático no WhatsApp?" 
+                    answer="Assim que um cliente agenda, ele recebe uma confirmação automática via WhatsApp. Antes do horário, enviamos um lembrete para ele não esquecer. Tudo sem você digitar nada."
+                  />
+                  <FAQItem 
+                    question="Posso cobrar sinal/antecipação dos clientes?" 
+                    answer="Sim! Você pode configurar um valor de sinal (booking fee) que o cliente paga via Mercado Pago no momento do agendamento. O valor vai direto para sua conta do Mercado Pago."
+                  />
+                  <FAQItem 
+                    question="Funciona para qualquer tipo de profissional?" 
+                    answer="Sim. Qualquer profissional que trabalhe com hora marcada: barbeiros, manicures, tatuadores, personal trainers, terapeutas, consultores, clínicas, salões de beleza e muito mais."
+                  />
+                  <FAQItem 
+                    question="Posso cancelar a qualquer momento?" 
+                    answer="Sim, sem multa e sem burocracia. Você pode cancelar sua assinatura quando quiser, diretamente pelo painel. Sem fidelidade, sem perguntas."
+                  />
+                  <FAQItem 
+                    question="Meus dados e dos meus clientes estão seguros?" 
+                    answer="Absolutamente. Utilizamos criptografia, autenticação JWT e boas práticas de segurança. Seus dados e os de seus clientes são tratados com total privacidade."
+                  />
+                  <FAQItem 
+                    question="Preciso instalar algum aplicativo?" 
+                    answer="Não! O BoraMarka funciona 100% no navegador, em qualquer dispositivo — celular, tablet ou computador. Seus clientes também agendam pelo navegador, sem instalar nada."
+                  />
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
+        {/* ═══════════════════════════════════════════════════
+            FINAL CTA — Persuasive Close
+            ═══════════════════════════════════════════════════ */}
+        <section className="py-32 px-4 sm:px-6">
+          <div className="max-w-[800px] mx-auto">
+            <Reveal>
+              <div className="doppelrand cta-glow">
+                <div className="doppelrand-inner p-10 md:p-16 text-center">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-4 py-1.5 text-[11px] font-semibold tracking-[0.15em] uppercase text-violet-400 mb-8">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Comece hoje
+                  </div>
+                  
+                  <h2 className="text-[clamp(1.8rem,4vw,2.8rem)] font-extrabold tracking-[-0.03em] leading-[1.1] text-white/95 mb-5">
+                    Pare de perder tempo<br />
+                    <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+                      e clientes.
+                    </span>
+                  </h2>
+                  
+                  <p className="text-[16px] text-white/35 font-medium leading-[1.7] max-w-md mx-auto mb-10">
+                    Cada dia sem automação é mais um dia de mensagens manuais, no-shows e receita perdida. Comece gratuitamente em menos de 3 minutos.
+                  </p>
+
+                  <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                    <button 
+                      onClick={() => navigate('/register')}
+                      className="mag-btn group inline-flex items-center gap-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 px-8 py-4 text-[15px] font-bold text-white shadow-xl shadow-violet-600/25"
+                    >
+                      Criar minha conta grátis
+                      <span className="w-7 h-7 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                        <ArrowRight className="w-4 h-4" />
+                      </span>
+                    </button>
+                  </div>
+
+                  <p className="mt-6 text-[12px] text-white/20 font-medium">
+                    7 dias grátis · Sem cartão · Cancele quando quiser
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </section>
+
       </main>
 
       {/* ═══ Footer ═══ */}
-      <footer className="border-t border-white/[0.04] py-12 px-4 sm:px-6">
-        <div className="max-w-[1200px] mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-extrabold">B</div>
-            <span className="text-[12px] font-semibold text-white/25">BoraMarka</span>
+      <footer className="border-t border-white/[0.04] py-14 px-4 sm:px-6">
+        <div className="max-w-[1200px] mx-auto">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-extrabold">B</div>
+              <span className="text-[13px] font-bold text-white/30">BoraMarka</span>
+            </div>
+            
+            <div className="flex items-center gap-6">
+              {navLinks.map((link) => (
+                <a key={link.href} href={link.href} className="text-[12px] font-medium text-white/20 hover:text-white/50 transition-colors duration-300">
+                  {link.label}
+                </a>
+              ))}
+            </div>
+
+            <p className="text-[11px] font-medium text-white/15">
+              © 2026 BoraMarka. Todos os direitos reservados.
+            </p>
           </div>
-          <p className="text-[11px] font-medium text-white/15">
-            © 2026 BoraMarka. Todos os direitos reservados.
-          </p>
         </div>
       </footer>
 

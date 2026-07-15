@@ -152,8 +152,8 @@ function Toast({ message, type, onClose }: { message: string; type: 'success' | 
 
   return (
     <div className={`fixed top-6 right-6 left-6 sm:left-auto sm:w-80 z-50 animate-slide-up ${
-      type === 'success' ? 'bg-emerald-600' : 'bg-red-600'
-    } text-white px-6 py-4 rounded-2xl shadow-xl flex items-center gap-3 text-sm border-2 border-white/20`}>
+      type === 'success' ? 'bg-emerald-500/90' : 'bg-red-500/90'
+    } backdrop-blur-xl text-white px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 text-sm border border-white/10`}>
       {type === 'success' ? <Check className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
       <span className="flex-1 font-semibold">{message}</span>
     </div>
@@ -371,21 +371,23 @@ function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClos
 // ════════════════════════════════════════════
 function StatCard({ title, value, icon: Icon, color, trend }: { title: string; value: string | number; icon: any; color: string; trend?: { val: string; up: boolean } }) {
   return (
-    <div className="card-simple p-6 flex flex-col justify-between hover:shadow-lg transition-all">
-      <div className="flex justify-between items-start mb-6">
-        <p className="text-slate-500 dark:text-slate-400 text-[10px] font-bold uppercase tracking-widest">{title}</p>
-        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-800">
-          <Icon className="w-5 h-5" style={{ color: color }} />
+    <div className="card-simple">
+      <div className="card-simple-inner p-6 flex flex-col justify-between">
+        <div className="flex justify-between items-start mb-6">
+          <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">{title}</p>
+          <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+            <Icon className="w-5 h-5" style={{ color: color }} />
+          </div>
         </div>
-      </div>
-      <div>
-        <p className="text-4xl font-black text-slate-900 dark:text-white mb-2">{value}</p>
-        {trend && (
-          <span className={`text-xs font-bold flex items-center gap-0.5 ${trend.up ? 'text-emerald-500' : 'text-red-500'}`}>
-            {trend.up ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
-            {trend.val}
-          </span>
-        )}
+        <div>
+          <p className="text-4xl font-black text-white mb-2">{value}</p>
+          {trend && (
+            <span className={`text-xs font-bold flex items-center gap-0.5 ${trend.up ? 'text-emerald-400' : 'text-red-400'}`}>
+              {trend.up ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+              {trend.val}
+            </span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -796,6 +798,10 @@ export default function Dashboard() {
   // Booking Management States
   const [searchBookingQuery, setSearchBookingQuery] = useState('')
   const [showNewBookingModal, setShowNewBookingModal] = useState(false)
+  const [showDeleteSlotModal, setShowDeleteSlotModal] = useState(false)
+  const [slotToDelete, setSlotToDelete] = useState<number | null>(null)
+  const [slotToDeleteTime, setSlotToDeleteTime] = useState('')
+  const [deleteAllDayFreeSlots, setDeleteAllDayFreeSlots] = useState(false)
   const [newBookingData, setNewBookingData] = useState({
     linkId: '',
     date: '',
@@ -1312,6 +1318,36 @@ export default function Dashboard() {
     }
   }
 
+  const handleDeleteSlot = (id: number, time: string) => {
+    setSlotToDelete(id)
+    setSlotToDeleteTime(time)
+    setDeleteAllDayFreeSlots(false)
+    setShowDeleteSlotModal(true)
+  }
+
+  const confirmDeleteSlot = async () => {
+    if (!slotToDelete) return
+    try {
+      if (deleteAllDayFreeSlots && slotDate) {
+        const freeSlots = slotsByDate[slotDate]?.filter(s => s.isAvailable) || []
+        await Promise.all(freeSlots.map(s => api.deleteSlot(s.id)))
+        showToast('Todos os horários livres da data foram removidos!')
+      } else {
+        await api.deleteSlot(slotToDelete)
+        showToast('Horário removido com sucesso!')
+      }
+      
+      setShowDeleteSlotModal(false)
+      setSlotToDelete(null)
+      
+      if (selectedLinkId) {
+        api.getSlots(selectedLinkId).then(setSlots)
+      }
+    } catch (err: any) {
+      showToast(err.message, 'error')
+    }
+  }
+
   const handleCreateManualBooking = async (e: React.FormEvent) => {
     e.preventDefault()
     const { linkId, date, time, clientName, clientPhone } = newBookingData
@@ -1394,7 +1430,11 @@ export default function Dashboard() {
   })()
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 pb-20 transition-colors duration-300 relative">
+    <div className="min-h-screen bg-[#050507] text-white pb-20 transition-colors duration-300 relative overflow-hidden grain">
+      {/* Mesh Gradient Orbs */}
+      <div className="orb w-[600px] h-[600px] bg-violet-600/[0.05] top-[-150px] left-[-100px] blur-[160px]" />
+      <div className="orb w-[400px] h-[400px] bg-pink-600/[0.04] top-[40%] right-[-100px] blur-[140px]" style={{ animationDelay: '-7s' }} />
+      <div className="orb w-[500px] h-[500px] bg-orange-600/[0.03] bottom-[5%] left-[30%] blur-[160px]" style={{ animationDelay: '-14s' }} />
       {/* Trial Countdown Banner (during trial) */}
       {subscription && subscription.status === 'trialing' && subscription.trialEndsAt && (
         <TrialBanner 
@@ -1419,80 +1459,73 @@ export default function Dashboard() {
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
-      {/* Navbar Premium */}
-      <header className="bg-white dark:bg-[#131826] border-b border-slate-200 dark:border-slate-800 sticky top-0 z-40 shadow-sm transition-colors duration-300">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/20 shrink-0">
-                <Check className="w-7 h-7" strokeWidth={3} />
+      {/* Navbar Premium — Glass Island */}
+      <header className="sticky top-0 z-40 px-4 sm:px-6 pt-4 pb-2">
+        <div className="glass-nav rounded-2xl max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-pink-500 rounded-[10px] flex items-center justify-center text-white text-sm font-extrabold shadow-lg shadow-violet-500/20 shrink-0">
+                B
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-black text-xl text-slate-900 dark:text-white leading-tight">BoraMarka</h1>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mt-0.5">Painel de Controle</p>
+                <h1 className="font-extrabold text-[15px] text-white/90 leading-tight tracking-tight">BoraMarka</h1>
+                <p className="text-[9px] text-white/30 font-bold uppercase tracking-[0.15em] mt-0.5">Painel de Controle</p>
               </div>
             </div>
             
-            <div className="hidden md:flex items-center gap-2 bg-emerald-50 dark:bg-emerald-500/10 px-4 py-1.5 rounded-full border border-emerald-100 dark:border-emerald-500/20">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 tracking-wide">Sua Agenda Online</span>
+            <div className="hidden md:flex items-center gap-2 bg-emerald-500/[0.06] px-3 py-1.5 rounded-full border border-emerald-500/15">
+              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[11px] font-semibold text-emerald-400 tracking-wide">Sua Agenda Online</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-3">
              {sessionStorage.getItem('superadmin_token') && (
                <button 
                  onClick={handleRestoreSuperAdmin}
-                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-black text-[10px] rounded-full uppercase tracking-wider transition-all hover:opacity-90 shadow-md shadow-emerald-500/25 cursor-pointer shrink-0"
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-[10px] rounded-full uppercase tracking-wider transition-all hover:opacity-90 shadow-md shadow-emerald-500/25 cursor-pointer shrink-0"
                  title="Voltar ao Painel SuperAdmin"
                >
                  <ShieldAlert className="w-3.5 h-3.5" /> Voltar SuperAdmin
                </button>
              )}
-             <button 
-               onClick={() => setIsDark(!isDark)}
-               className="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
-               title="Alternar Modo Escuro"
-             >
-               {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-             </button>
 
              <button 
                onClick={() => fetchData(true)} 
                disabled={refreshing}
-               className={`p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all ${refreshing ? 'animate-spin' : ''}`}
+               className={`p-2 text-white/30 hover:text-white/60 hover:bg-white/[0.04] rounded-xl transition-all ${refreshing ? 'animate-spin' : ''}`}
                title="Atualizar dados"
              >
-               <RefreshCw className="w-5 h-5" />
+               <RefreshCw className="w-4.5 h-4.5" />
              </button>
              
              {adminInfo && (
-               <div className="flex items-center gap-4 pl-5 border-l border-slate-200 dark:border-slate-800">
+               <div className="flex items-center gap-3 pl-3 border-l border-white/[0.06]">
                  <div className="text-right hidden sm:block">
                    <div className="flex items-center justify-end gap-2">
-                     <p className="text-sm font-black text-slate-900 dark:text-white leading-none">{adminInfo.businessName || adminInfo.username}</p>
-                     <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-slate-400 hover:text-orange-500 transition-colors" title="Editar Perfil">
-                       <Pencil className="w-3.5 h-3.5" />
+                     <p className="text-[13px] font-bold text-white/80 leading-none">{adminInfo.businessName || adminInfo.username}</p>
+                     <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-white/25 hover:text-violet-400 transition-colors" title="Editar Perfil">
+                       <Pencil className="w-3 h-3" />
                      </button>
                    </div>
-                   <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold mt-1">@{adminInfo.username.toLowerCase()}</p>
+                   <p className="text-[10px] text-white/25 font-semibold mt-1">@{adminInfo.username.toLowerCase()}</p>
                  </div>
                  <button 
                    onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : avatarInputRef.current?.click()}
-                   className="w-10 h-10 rounded-full relative group cursor-pointer shrink-0"
+                   className="w-9 h-9 rounded-full relative group cursor-pointer shrink-0"
                    title="Clique para trocar a foto"
                  >
                    {adminInfo.photoUrl ? (
-                     <img src={adminInfo.photoUrl} alt="Avatar" className="w-10 h-10 rounded-full object-cover" />
+                     <img src={adminInfo.photoUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-white/10" />
                    ) : (
-                     <div className="w-10 h-10 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center font-bold text-slate-500 dark:text-slate-300">
+                     <div className="w-9 h-9 bg-white/[0.06] border border-white/[0.08] rounded-full flex items-center justify-center font-bold text-white/50 text-sm">
                        {adminInfo.username[0].toUpperCase()}
                      </div>
                    )}
                    <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <Camera className="w-4 h-4 text-white" />
+                     <Camera className="w-3.5 h-3.5 text-white" />
                    </div>
-                   <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-orange-500 border-2 border-white dark:border-[#131826] rounded-full"></div>
+                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-violet-500 border-2 border-[#080a16] rounded-full"></div>
                  </button>
                  <input
                    ref={avatarInputRef}
@@ -1503,10 +1536,10 @@ export default function Dashboard() {
                  />
                  <button 
                    onClick={handleLogout}
-                   className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl transition-all ml-1"
+                   className="p-2 text-white/25 hover:text-red-400 hover:bg-red-500/[0.06] rounded-xl transition-all"
                    title="Sair do sistema"
                  >
-                   <LogOut className="w-5 h-5" />
+                   <LogOut className="w-4.5 h-4.5" />
                  </button>
                </div>
              )}
@@ -1514,10 +1547,10 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-10">
+      <main className="relative z-10 max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
         
-        {/* Navigation Tabs - Pill Style */}
-        <div className="flex flex-wrap items-center gap-2 mb-10">
+        {/* Navigation Tabs - Premium Pill Style */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-10">
           {[
             { id: 'overview' as const, label: 'Resumo', icon: LayoutDashboard },
             { id: 'agendamentos' as const, label: 'Agendamentos', icon: Calendar, badge: bookings.length },
@@ -1544,18 +1577,18 @@ export default function Dashboard() {
                     setActiveTab(tab.id)
                   }
                 }}
-                className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-full text-sm font-bold transition-all ${
+                className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   isActive
-                    ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-md shadow-orange-500/30'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white'
+                    ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/20'
+                    : 'bg-white/[0.03] border border-white/[0.06] text-white/35 hover:text-white/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
                 }`}
                 title={tab.label}
               >
-                <tab.icon className="w-[16px] h-[16px] flex-shrink-0" />
+                <tab.icon className="w-[15px] h-[15px] flex-shrink-0" />
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-black ${
-                    isActive ? 'bg-white/30 text-white' : 'bg-orange-500 text-white'
+                  <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                    isActive ? 'bg-white/20 text-white' : 'bg-violet-500/20 text-violet-400'
                   }`}>
                     {tab.badge}
                   </span>
@@ -1570,62 +1603,66 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'overview' && (
           <div className="animate-slide-up space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatCard title="Total de Clientes" value={stats.totalBookings} icon={Users} color="#2563eb" />
-              <StatCard title="Saldo Financeiro" value={formatCurrency(financeStats.balance)} icon={Wallet} color="#059669" />
-              <StatCard title="A Receber" value={formatCurrency(financeStats.pendingReceivable)} icon={TrendingUp} color="#0891b2" />
-              <StatCard title="A Pagar" value={formatCurrency(financeStats.pendingPayable)} icon={TrendingDown} color="#dc2626" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <StatCard title="Total de Clientes" value={stats.totalBookings} icon={Users} color="#8b5cf6" />
+              <StatCard title="Saldo Financeiro" value={formatCurrency(financeStats.balance)} icon={Wallet} color="#10b981" />
+              <StatCard title="A Receber" value={formatCurrency(financeStats.pendingReceivable)} icon={TrendingUp} color="#06b6d4" />
+              <StatCard title="A Pagar" value={formatCurrency(financeStats.pendingPayable)} icon={TrendingDown} color="#ef4444" />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Recent Bookings */}
-              <div className="card-simple p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h3 className="font-bold text-lg">Últimos Agendamentos</h3>
-                  <button onClick={() => setActiveTab('agendamentos')} className="text-pink-500 text-xs font-bold hover:underline uppercase tracking-wider">Ver todos</button>
-                </div>
-                <div className="space-y-4">
-                  {bookings.slice(0, 5).map(b => (
-                    <div key={b.id} className="flex items-center gap-4 p-3 rounded-xl bg-slate-50 dark:bg-[#0B0F19] border border-slate-100 dark:border-slate-800 transition-all hover:border-pink-500/30">
-                      <div className="w-10 h-10 bg-white dark:bg-[#131826] rounded-lg flex items-center justify-center font-black text-pink-500 border border-slate-200 dark:border-slate-700">
-                        {b.clientName[0].toUpperCase()}
+              <div className="card-simple">
+                <div className="card-simple-inner p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="font-bold text-[15px] text-white/80">Últimos Agendamentos</h3>
+                    <button onClick={() => setActiveTab('agendamentos')} className="text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Ver todos</button>
+                  </div>
+                  <div className="space-y-3">
+                    {bookings.slice(0, 5).map(b => (
+                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] transition-all hover:border-violet-500/20">
+                        <div className="w-9 h-9 bg-white/[0.04] rounded-lg flex items-center justify-center font-bold text-violet-400 text-sm border border-white/[0.06]">
+                          {b.clientName[0].toUpperCase()}
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-semibold text-sm text-white/80">{b.clientName}</p>
+                          <p className="text-[10px] text-white/25 font-semibold uppercase">{formatDate(b.timeSlot.date)} — {b.timeSlot.time}</p>
+                        </div>
+                        <a href={`https://wa.me/${b.clientPhone}`} target="_blank" className="p-2 text-emerald-400 hover:bg-emerald-500/[0.06] rounded-lg transition-all">
+                          <Phone className="w-4 h-4" />
+                        </a>
                       </div>
-                      <div className="flex-1">
-                        <p className="font-bold text-sm dark:text-white">{b.clientName}</p>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase">{formatDate(b.timeSlot.date)} — {b.timeSlot.time}</p>
-                      </div>
-                      <a href={`https://wa.me/${b.clientPhone}`} target="_blank" className="p-2 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-lg transition-all">
-                        <Phone className="w-4 h-4" />
-                      </a>
-                    </div>
-                  ))}
-                  {bookings.length === 0 && <p className="text-center py-10 text-slate-400 dark:text-slate-500 text-sm italic">Nenhum agendamento recente</p>}
+                    ))}
+                    {bookings.length === 0 && <p className="text-center py-10 text-white/20 text-sm italic">Nenhum agendamento recente</p>}
+                  </div>
                 </div>
               </div>
 
               {/* Financial Summary */}
-              <div className="card-simple p-6 overflow-hidden relative">
-                <div className="flex justify-between items-center mb-6">
-                   <h3 className="font-bold text-lg">Resumo Financeiro</h3>
-                   <button onClick={() => setActiveTab('financeiro')} className="text-pink-500 text-xs font-bold hover:underline uppercase tracking-wider">Gestão completa</button>
-                </div>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/20">
-                    <div>
-                      <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-500 uppercase tracking-widest">Recebido</p>
-                      <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400">{formatCurrency(financeStats.receivedAmount)}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 flex items-center justify-center">
-                       <ArrowUpRight className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-                    </div>
+              <div className="card-simple">
+                <div className="card-simple-inner p-6 overflow-hidden relative">
+                  <div className="flex justify-between items-center mb-6">
+                     <h3 className="font-bold text-[15px] text-white/80">Resumo Financeiro</h3>
+                     <button onClick={() => setActiveTab('financeiro')} className="text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Gestão completa</button>
                   </div>
-                  <div className="flex justify-between items-center p-5 rounded-2xl bg-red-50 dark:bg-red-500/5 border border-red-100 dark:border-red-500/20">
-                    <div>
-                      <p className="text-[10px] font-bold text-red-600 dark:text-red-500 uppercase tracking-widest">Pago</p>
-                      <p className="text-2xl font-black text-red-700 dark:text-red-400">{formatCurrency(financeStats.paidAmount)}</p>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center p-5 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/10">
+                      <div>
+                        <p className="text-[10px] font-bold text-emerald-400/80 uppercase tracking-widest">Recebido</p>
+                        <p className="text-2xl font-black text-emerald-400">{formatCurrency(financeStats.receivedAmount)}</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/[0.06] flex items-center justify-center">
+                         <ArrowUpRight className="w-5 h-5 text-emerald-400" />
+                      </div>
                     </div>
-                    <div className="w-12 h-12 rounded-xl bg-red-100 dark:bg-red-500/10 flex items-center justify-center">
-                       <ArrowDownRight className="w-6 h-6 text-red-600 dark:text-red-400" />
+                    <div className="flex justify-between items-center p-5 rounded-xl bg-red-500/[0.04] border border-red-500/10">
+                      <div>
+                        <p className="text-[10px] font-bold text-red-400/80 uppercase tracking-widest">Pago</p>
+                        <p className="text-2xl font-black text-red-400">{formatCurrency(financeStats.paidAmount)}</p>
+                      </div>
+                      <div className="w-10 h-10 rounded-xl bg-red-500/[0.06] flex items-center justify-center">
+                         <ArrowDownRight className="w-5 h-5 text-red-400" />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1855,8 +1892,23 @@ export default function Dashboard() {
                                <Check className="w-5 h-5" />
                              </button>
                            )}
-                           <a
-                             href={`https://wa.me/${booking.clientPhone}`}
+                           <button
+                              onClick={() => {
+                                const token = booking.timeSlot.link?.token;
+                                if (!token) return;
+                                const cancelLink = `${window.location.origin}/agendar/${token}/cancelar/${booking.id}`;
+                                const msg = `Olá, ${booking.clientName}! ✨\n\nCaso precise cancelar ou remarcar o seu agendamento de *${booking.timeSlot.link?.service?.name || 'Serviço'}*:\n\n📅 Data: *${formatDate(booking.timeSlot.date)}*\n⏰ Hora: *${booking.timeSlot.time}*\n\nAcesse o link do seu portal de atendimento para remarcar ou cancelar:\n🔗 ${cancelLink}\n\nQualquer dúvida, estamos à disposição!`;
+                                const cleanPhone = booking.clientPhone.replace(/\D/g, '');
+                                const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
+                                window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank');
+                              }}
+                              className="px-3 py-1.5 bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-[#8b5cf6]/20"
+                              title="Enviar link de cancelamento/remarcação para o cliente"
+                            >
+                              <RefreshCw className="w-3.5 h-3.5" />
+                              <span>Cancelamento</span>
+                            </button>
+                            <a href={`https://wa.me/${booking.clientPhone}`}
                              target="_blank"
                              rel="noreferrer"
                              className="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
@@ -2001,11 +2053,23 @@ export default function Dashboard() {
                          {slotsByDate[slotDate] && slotsByDate[slotDate].length > 0 ? (
                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
                              {slotsByDate[slotDate].map(slot => (
-                               <div key={slot.id} className={`p-4 text-center rounded-2xl border transition-all flex flex-col justify-center min-h-[80px] ${slot.isAvailable ? 'bg-transparent border-slate-200 dark:border-slate-700 hover:border-pink-500/50' : 'bg-gradient-to-r from-orange-500 to-pink-500 border-transparent text-white shadow-md shadow-orange-500/20'}`}>
-                                 <p className={`font-black text-lg leading-tight ${slot.isAvailable ? 'text-slate-900 dark:text-white' : 'text-white'}`}>{slot.time}</p>
-                                 <p className={`text-[10px] font-bold truncate mt-1 uppercase tracking-wider ${slot.isAvailable ? 'text-slate-400 dark:text-slate-500' : 'text-white/90'}`}>{slot.booking ? slot.booking.clientName : (slot.isAvailable ? 'Livre' : 'Ocupado')}</p>
-                               </div>
-                             ))}
+                                <div key={slot.id} className={`relative group p-4 text-center rounded-2xl border transition-all flex flex-col justify-center min-h-[80px] ${slot.isAvailable ? 'bg-transparent border-slate-200 dark:border-slate-700 hover:border-pink-500/50' : 'bg-gradient-to-r from-orange-500 to-pink-500 border-transparent text-white shadow-md shadow-orange-500/20'}`}>
+                                  {slot.isAvailable && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteSlot(slot.id, slot.time);
+                                      }}
+                                      className="absolute top-2 right-2 p-1 text-slate-400 hover:text-red-500 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                                      title="Excluir Horário"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                  <p className={`font-black text-lg leading-tight ${slot.isAvailable ? 'text-slate-900 dark:text-white' : 'text-white'}`}>{slot.time}</p>
+                                  <p className={`text-[10px] font-bold truncate mt-1 uppercase tracking-wider ${slot.isAvailable ? 'text-slate-400 dark:text-slate-500' : 'text-white/90'}`}>{slot.booking ? slot.booking.clientName : (slot.isAvailable ? 'Livre' : 'Ocupado')}</p>
+                                </div>
+                              ))}
                            </div>
                          ) : (
                            <div className="text-center py-10 text-slate-500">
@@ -4206,6 +4270,52 @@ export default function Dashboard() {
 
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Slot Confirmation Modal */}
+      {showDeleteSlotModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100 border border-slate-100 dark:border-slate-800">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-black text-slate-900 dark:text-white">Excluir Horário</h3>
+              <button onClick={() => setShowDeleteSlotModal(false)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"><X className="w-5 h-5" /></button>
+            </div>
+            
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed font-semibold text-left">
+                Tem certeza que deseja excluir o horário das <span className="text-pink-500 font-bold">{slotToDeleteTime}</span>?
+              </p>
+
+              <label className="flex items-center gap-3 p-3.5 bg-slate-50/50 dark:bg-[#0B0F19]/50 rounded-2xl border border-slate-100 dark:border-slate-800 cursor-pointer text-left">
+                <input
+                  type="checkbox"
+                  checked={deleteAllDayFreeSlots}
+                  onChange={e => setDeleteAllDayFreeSlots(e.target.checked)}
+                  className="w-4 h-4 text-pink-500 rounded border-slate-300 focus:ring-pink-500 cursor-pointer"
+                />
+                <div className="flex-1">
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200 block uppercase tracking-wider">Limpar o dia todo</span>
+                  <span className="text-[10px] text-slate-400 font-bold block mt-0.5">Excluir TODOS os horários livres desta data</span>
+                </div>
+              </label>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={confirmDeleteSlot}
+                  className="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-black rounded-xl transition-all shadow-md shadow-red-500/10 text-sm"
+                >
+                  Excluir
+                </button>
+                <button
+                  onClick={() => setShowDeleteSlotModal(false)}
+                  className="px-5 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl transition-all text-sm"
+                >
+                  Voltar
+                </button>
+              </div>
             </div>
           </div>
         </div>

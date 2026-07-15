@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
+import { v4 as uuidv4 } from 'uuid';
 
 export default async function serviceRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -14,7 +15,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
     });
   });
 
-  // POST /api/services — Create a new service
+  // POST /api/services — Create a new service and automatically create its scheduling link
   app.post('/', async (request, reply) => {
     const user = request.user as { id: number };
     const { name, description, price, duration } = request.body as {
@@ -28,14 +29,27 @@ export default async function serviceRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Nome, preço e duração são obrigatórios' });
     }
 
-    const service = await prisma.service.create({
-      data: {
-        name,
-        description,
-        price,
-        duration,
-        adminId: user.id,
-      },
+    const service = await prisma.$transaction(async (tx) => {
+      const s = await tx.service.create({
+        data: {
+          name,
+          description,
+          price,
+          duration,
+          adminId: user.id,
+        },
+      });
+
+      await tx.schedulingLink.create({
+        data: {
+          token: uuidv4(),
+          title: name,
+          serviceId: s.id,
+          adminId: user.id,
+        }
+      });
+
+      return s;
     });
 
     return reply.status(201).send(service);
@@ -68,14 +82,21 @@ export default async function serviceRoutes(app: FastifyInstance) {
     }
   });
 
-  // DELETE /api/services/:id — Delete a service
+  // DELETE /api/services/:id — Delete a service and its automatically created scheduling link
   app.delete('/:id', async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
 
     try {
-      await prisma.service.delete({
-        where: { id: parseInt(id), adminId: user.id },
+      await prisma.$transaction(async (tx) => {
+        // Delete related scheduling link first
+        await tx.schedulingLink.deleteMany({
+          where: { serviceId: parseInt(id), adminId: user.id }
+        });
+        
+        await tx.service.delete({
+          where: { id: parseInt(id), adminId: user.id },
+        });
       });
       return reply.status(204).send();
     } catch {
