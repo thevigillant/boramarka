@@ -368,6 +368,7 @@ export const api = {
       time: string;
       businessName: string;
       businessPhone: string;
+      businessUsername: string;
       serviceName: string;
       price: number;
     }>(`/schedule/booking/${id}`),
@@ -375,6 +376,12 @@ export const api = {
   cancelPublicBooking: (id: number) =>
     request<{ success: boolean }>(`/schedule/booking/${id}/cancel`, {
       method: 'POST'
+    }),
+
+  reschedulePublicBooking: (id: number, newTimeSlotId: number) =>
+    request<{ success: boolean }>(`/schedule/booking/${id}/reschedule`, {
+      method: 'POST',
+      body: JSON.stringify({ newTimeSlotId })
     }),
 
   // ═══ Billing (Assinaturas) ═══

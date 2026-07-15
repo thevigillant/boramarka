@@ -11,15 +11,19 @@ A plataforma permite que os profissionais tenham total autonomia sobre suas agen
 ### 📅 Agenda Inteligente & Multi-Agendamento
 - **Links de Venda Dedicados:** Links personalizáveis no formato `boramarka.com/p/@username` para divulgação direta para seus clientes.
 - **Geração de Slots em Lote:** Criação inteligente de horários disponíveis em bloco (por intervalo de minutos) ou horários específicos únicos.
-- **Catálogo de Serviços:** Apresentação elegante com nome, duração, descrição e preço de cada serviço oferecido.
-- **Página de Agendamento Pública:** Interface fluida e responsiva para o cliente final escolher o serviço, horário disponível e confirmar informando nome e WhatsApp.
+- **Catálogo de Serviços Click-to-Book:** Apresentação elegante com nome, duração, descrição e preço de cada serviço oferecido. Os serviços são vinculados 1-a-1 aos links de venda de forma automática na criação, permitindo agendamento direto pelo catálogo mestre do perfil.
+
+### 🔄 Portal do Cliente Online (Cancelamentos & Remarcação)
+- **Portal de Auto-atendimento:** Links seguros e dinâmicos enviados por WhatsApp que permitem ao cliente final cancelar ou remarcar o próprio horário com 1 clique (sem necessidade de login).
+- **Remarcação Integrada:** Seletor de slots livre dinâmico no calendário com validação da antecedência limite configurada (ex: antecedência de 2 horas).
+- **Mensagens Dinâmicas:** Disparo automatizado de WhatsApp com o comprovante e link do portal estruturado de maneira profissional e com emojis.
 
 ### 📅 Sincronização com Google Calendar
 - **Sincronização Bidirecional:** Conecte sua conta do Google para sincronização automática com a agenda pessoal do profissional.
 - **Bloqueio de Double Booking:** O sistema detecta compromissos pessoais externos marcados no Google Calendar e bloqueia automaticamente os slots equivalentes no BoraMarka para evitar conflitos de horário.
 
 ### 👥 CRM & Relacionamento com Clientes
-- **Painel de Relacionamento:** Lista dinâmica de clientes com histórico completo de interações e contatos.
+- **Painel de Relacionamento:** Lista dinâmica de clientes com histórico completo de interações, anotações de progresso e histórico de agendamentos.
 - **Métricas por Cliente:** Valor total investido (faturamento gerado) e número total de agendamentos confirmados pelo cliente.
 - **Anotações Privadas:** Espaço dedicado para o profissional registrar preferências, fichas de anamnese ou observações técnicas sobre o cliente.
 
@@ -36,12 +40,20 @@ A plataforma permite que os profissionais tenham total autonomia sobre suas agen
 - **Saúde do Negócio:** Visualização em tempo real de estatísticas de faturamento mensal estimado, total de clientes ativos, trial e assinaturas ativas.
 - **Controle de Usuários:** Gerenciamento total das contas dos profissionais cadastrados (visualizar dados, alterar planos de assinatura e excluir contas).
 - **Acesso Impersonation (Login como Cliente):** O administrador geral pode acessar com um clique o painel de qualquer profissional para suporte, com botão de escape rápido ("Voltar SuperAdmin") ativo no cabeçalho do profissional.
-- **Botão "Usar como Profissional":** Atalho na navbar para o próprio dono usar a plataforma como profissional.
 
 ### 🔒 Período de Experiência & Paywall (SaaS)
 - **7 Dias de Teste Grátis:** Ativação automática no cadastro.
 - **Cronômetro regressivo em tempo real:** Exibido no topo do painel do profissional.
-- **Paywall Elegante:** Bloqueio inteligente (modo de visualização apenas) com restrição de novos agendamentos e edições no término do trial, liberando acesso somente após assinatura integrada via Mercado Pago.
+- **Paywall Elegante:** Bloqueio inteligente com restrição de novos agendamentos e edições no término do trial, liberando acesso somente após assinatura integrada via Mercado Pago.
+
+---
+
+## 🎨 Design & Visual Premium (Aesthetics)
+- **Atmosphere Glow & Mesh Orbs:** Fundo escuro profundo (`#050507`) com orbs coloridos desfocados em movimento e textura de grãos sutil.
+- **Doppelrand Card System:** Estilo de bordas duplas finas com luzes direcionais que respondem ao mouse (efeito Lift 3D e Glow).
+- **Glassmorphism Navbar:** Menu flutuante em formato de ilha translúcida com efeitos de desfoque.
+- **Pills de Navegação:** Transições e gradientes animados violeta-rosa nas tabs.
+- **Modal "Você Agendou com...":** Tela de finalização de agendamento contendo um recibo animado interativo em modal e links diretos para voltar ao catálogo público.
 
 ---
 
@@ -51,7 +63,7 @@ O projeto adota uma arquitetura moderna, de alta performance e totalmente escrit
 
 ### 🖥️ Frontend (Interface do Usuário)
 - **Framework principal:** [React](https://react.dev/) com [Vite](https://vite.dev/) (build ultra rápido)
-- **Estilização:** [Tailwind CSS](https://tailwindcss.com/) (design moderno com suporte completo a Dark/Light mode)
+- **Estilização:** [Tailwind CSS](https://tailwindcss.com/)
 - **Roteamento:** [React Router DOM](https://reactrouter.com/)
 - **Pacote de Ícones:** [Lucide React](https://lucide.dev/)
 - **Integração HTTP:** Axios com gerenciamento de tokens JWT
@@ -59,7 +71,7 @@ O projeto adota uma arquitetura moderna, de alta performance e totalmente escrit
 ### ⚙️ Backend (Serviço de API)
 - **Framework principal:** [Fastify](https://fastify.dev/) (alternativa de alta velocidade e baixo consumo de memória ao Express)
 - **ORM:** [Prisma ORM](https://www.prisma.io/)
-- **Banco de Dados:** SQLite (padrão de desenvolvimento rápido) / PostgreSQL (pronto para produção)
+- **Banco de Dados:** SQLite (desenvolvimento) / PostgreSQL (produção)
 - **Segurança & Autenticação:** JWT (JSON Web Tokens) e encriptação de senhas com `bcrypt`
 
 ---
@@ -68,15 +80,15 @@ O projeto adota uma arquitetura moderna, de alta performance e totalmente escrit
 
 O banco de dados é estruturado de forma a suportar o ecossistema SaaS completo:
 
-- **Admin:** Representa o profissional ou estabelecimento. Contém configurações de perfil, cores personalizadas para sua página pública (`accentColor`, `secondaryColor`, `publicTheme`), chaves de API, credenciais do Google Calendar e status de assinatura.
-- **Subscription:** Controla o status do plano do profissional (trialing, active, inactive) e datas de expiração e término do trial.
-- **Service:** Catálogo de serviços oferecidos com nome, duração e preço.
+- **Admin:** Representa o profissional. Contém dados de perfil, cores personalizadas para página pública (`accentColor`, `secondaryColor`, `publicTheme`), chaves de API, credenciais do Google Calendar e Mercado Pago (`mpAccessToken`).
+- **Subscription:** Controla o status do plano do profissional (trialing, active, inactive).
+- **Service:** Catálogo de serviços oferecidos com nome, duração, preço e links de agendamento gerados automaticamente.
 - **SchedulingLink:** Link único (`token`) com taxa de reserva opcional (`bookingFeeEnabled`).
 - **TimeSlot & Booking:** Gerencia os horários abertos para agendamento e as reservas confirmadas pelos clientes.
 - **Transaction:** Fluxo de caixa para controle financeiro (entradas/saídas).
 - **Coupon:** Gerenciador de cupons de descontos para promoções.
-- **MembershipPlan & ClientSubscription:** Controla os planos de recorrência que o profissional oferece aos seus clientes finais.
-- **ClientNote:** Anotações privadas sobre os clientes feitas pelo profissional.
+- **MembershipPlan & ClientSubscription:** Controla os planos de recorrência.
+- **ClientNote:** Anotações privadas sobre os clientes.
 - **ChatMessage:** Mensagens diretas trocadas entre os profissionais na rede social interna.
 
 ---

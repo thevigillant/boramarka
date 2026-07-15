@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useParams, useNavigate, Link } from 'react-router-dom'
-import { Check, Calendar, Clock, ArrowLeft, Loader2 } from 'lucide-react'
+import { Check, Calendar, Clock, ArrowLeft, Loader2, Sparkles } from 'lucide-react'
 import { api } from '../services/api'
 
 function formatDate(dateStr: string): string {
+  if (!dateStr) return '';
   const [y, m, d] = dateStr.split('-')
-  return `${d}/${m}/${y}`
+  const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+  const monthName = months[parseInt(m) - 1]
+  return `${d} de ${monthName}`
+}
+
+function formatCurrency(val: number) {
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(val)
 }
 
 export default function BookingSuccess() {
@@ -24,104 +31,136 @@ export default function BookingSuccess() {
 
   const [fetchedBooking, setFetchedBooking] = useState<{
     id: number; clientName: string; clientPhone: string; date: string; time: string;
-    businessName: string; businessPhone: string; serviceName: string; price: number;
+    businessName: string; businessPhone: string; businessUsername: string; serviceName: string; price: number;
   } | null>(null)
   const [fetchLoading, setFetchLoading] = useState(false)
+  const [showConfirmModal, setShowConfirmModal] = useState(true)
+
+  const bookingId = state?.booking?.id || (queryBookingId ? parseInt(queryBookingId) : null)
 
   useEffect(() => {
-    // If we have no state but have a bookingId from query params, fetch booking details
-    if (!state?.booking && queryBookingId) {
+    if (bookingId) {
       setFetchLoading(true)
-      api.getPublicBookingDetails(parseInt(queryBookingId))
+      api.getPublicBookingDetails(bookingId)
         .then(data => setFetchedBooking(data))
         .catch(() => {})
         .finally(() => setFetchLoading(false))
     }
-  }, [state, queryBookingId])
+  }, [bookingId])
 
-  // Use state booking or fetched booking
-  const booking = state?.booking || (fetchedBooking ? {
-    id: fetchedBooking.id,
-    clientName: fetchedBooking.clientName,
-    clientPhone: fetchedBooking.clientPhone,
-    date: fetchedBooking.date,
-    time: fetchedBooking.time,
+  const booking = fetchedBooking || (state?.booking ? {
+    id: state.booking.id,
+    clientName: state.booking.clientName,
+    clientPhone: state.booking.clientPhone,
+    date: state.booking.date,
+    time: state.booking.time,
+    businessName: '',
+    businessPhone: '',
+    businessUsername: '',
+    serviceName: 'Serviço',
+    price: 0
   } : null)
 
   const whatsapp = state?.whatsapp || null
+  const isPaidViaMP = paymentStatus === 'success'
 
-  if (fetchLoading) {
+  // Loading state (including waiting for state / backend load)
+  if (fetchLoading || (bookingId && !booking)) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        <Loader2 className="w-10 h-10 text-pink-500 animate-spin z-10" />
       </div>
     )
   }
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-        <div className="text-center">
-          <button onClick={() => navigate('/')} className="text-pink-500 font-bold">Voltar para o início</button>
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center p-6 relative overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl animate-pulse"></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
+        
+        <div className="text-center z-10 bg-[#131826]/40 backdrop-blur-md p-8 rounded-3xl border border-slate-800">
+          <p className="text-slate-400 font-bold mb-4">Nenhum agendamento encontrado.</p>
+          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-black rounded-xl text-sm transition-all shadow-lg shadow-pink-500/15">
+            Voltar para o início
+          </button>
         </div>
       </div>
     )
   }
 
-  const isPaidViaMP = paymentStatus === 'success' && !state?.booking
+  const profileLink = booking.businessUsername ? `/p/${booking.businessUsername}` : `/agendar/${token}`;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-sm animate-slide-up text-center">
+    <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4 relative overflow-hidden text-slate-100">
+      {/* Background Decorative Orbs */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl"></div>
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
+
+      <div className="w-full max-w-md bg-[#131826]/40 backdrop-blur-md p-8 rounded-3xl border border-slate-800/80 shadow-2xl relative z-10 text-center animate-slide-up">
         {/* Success Icon */}
-        <div className="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
-          <Check className="w-12 h-12 text-white" />
+        <div className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
+          <Check className="w-10 h-10 text-white" />
         </div>
         
-        <h1 className="text-3xl font-black text-slate-900 mb-2">Agendado!</h1>
-        <p className="text-slate-500 mb-8 font-medium">Tudo certo, {booking.clientName.split(' ')[0]}!</p>
+        <h1 className="text-3xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent mb-2">Agendado com Sucesso!</h1>
+        <p className="text-slate-400 mb-6 font-semibold">Tudo certo, {booking.clientName.split(' ')[0]}!</p>
 
         {isPaidViaMP && (
-          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-emerald-700 font-bold text-sm mb-6">
-            ✅ Sinal pago diretamente ao profissional com sucesso!
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
+            ✅ Taxa de agendamento paga via Mercado Pago!
           </div>
         )}
 
-        <div className="card-simple p-6 mb-8">
+        {/* Ticket Container */}
+        <div className="bg-[#0B0F19]/60 border border-slate-800 rounded-3xl p-6 mb-6 text-left relative overflow-hidden">
+          <div className="absolute -top-12 -right-12 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl"></div>
+          
+          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Detalhes do Agendamento</h3>
+          
           <div className="space-y-4">
-            <div className="flex items-center gap-4 text-left p-3 bg-slate-50 rounded-xl">
-              <Calendar className="w-6 h-6 text-pink-500" />
+            <div>
+              <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Serviço</span>
+              <span className="text-sm font-bold text-slate-200">{booking.serviceName}</span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-slate-400 font-bold uppercase">Dia</p>
-                <p className="font-bold text-slate-900">{formatDate(booking.date)}</p>
+                <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Data</span>
+                <span className="text-sm font-bold text-slate-200">{formatDate(booking.date)}</span>
+              </div>
+              <div>
+                <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Horário</span>
+                <span className="text-sm font-bold text-slate-200">{booking.time}</span>
               </div>
             </div>
 
-            <div className="flex items-center gap-4 text-left p-3 bg-slate-50 rounded-xl">
-              <Clock className="w-6 h-6 text-pink-500" />
-              <div>
-                <p className="text-xs text-slate-400 font-bold uppercase">Horário</p>
-                <p className="font-bold text-slate-900">{booking.time}</p>
+            {booking.price > 0 && (
+              <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
+                <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider">Valor total</span>
+                <span className="text-sm font-black text-pink-500">{formatCurrency(booking.price)}</span>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
         {whatsapp?.method === 'api' ? (
-          <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-2xl text-emerald-700 font-bold text-sm mb-6">
-             ✅ Comprovante enviado no WhatsApp!
+          <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
+             ✅ Comprovante enviado no seu WhatsApp!
           </div>
         ) : whatsapp?.link ? (
-          <div className="mb-8">
-            <p className="text-sm text-slate-600 font-bold mb-4">Clique no botão abaixo para receber o comprovante:</p>
+          <div className="mb-6">
+            <p className="text-xs text-slate-400 font-bold mb-3">Clique no botão abaixo para receber o comprovante no WhatsApp:</p>
             <a
               href={whatsapp.link}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-4 rounded-2xl transition-all shadow-md text-lg"
+              className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-3.5 rounded-2xl transition-all shadow-lg shadow-[#25d366]/10 text-base"
             >
-              <span className="text-2xl">💬</span>
-              Abrir WhatsApp
+              💬 Abrir WhatsApp
             </a>
           </div>
         ) : null}
@@ -129,19 +168,67 @@ export default function BookingSuccess() {
         <div className="mb-6">
           <Link
             to={`/agendar/${token}/cancelar/${booking.id}`}
-            className="text-xs text-red-500 hover:text-red-600 font-bold hover:underline"
+            className="text-xs text-slate-500 hover:text-red-400 font-bold transition-colors"
           >
-            Precisa cancelar este horário? Clique aqui
+            Precisa alterar ou cancelar? Clique aqui
           </Link>
         </div>
 
         <Link
-          to={`/agendar/${token}`}
+          to={profileLink}
           className="inline-flex items-center gap-2 text-slate-400 hover:text-pink-500 font-bold text-sm transition-colors"
         >
-          <ArrowLeft className="w-4 h-4" /> Voltar para o início
+          <ArrowLeft className="w-4 h-4" /> Ir para o catálogo do profissional
         </Link>
       </div>
+
+      {/* Elegant Confirmation Overlay Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#131826] w-full max-w-sm rounded-3xl p-8 shadow-2xl border border-slate-800 animate-scale-in text-center relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-violet-600/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <div className="w-16 h-16 bg-gradient-to-tr from-violet-600 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-pink-500/20">
+              <Sparkles className="w-8 h-8 text-white" />
+            </div>
+
+            <h2 className="text-2xl font-black text-white leading-tight mb-2 tracking-tight">
+              Você Agendou com <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-pink-500 font-black">@{booking.businessUsername || booking.businessName}</span> no BoraMarka
+            </h2>
+            
+            <p className="text-xs text-slate-400 font-medium leading-relaxed mb-6">
+              Seu horário para <strong className="text-slate-200">{booking.serviceName}</strong> foi reservado com sucesso e o profissional já foi notificado.
+            </p>
+
+            <div className="bg-[#0B0F19] rounded-2xl p-4 mb-6 border border-slate-800/80 text-left">
+              <div className="flex items-center gap-3 text-xs text-slate-300 font-bold mb-2">
+                <Calendar className="w-4 h-4 text-pink-500" />
+                <span>{formatDate(booking.date)}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-300 font-bold">
+                <Clock className="w-4 h-4 text-pink-500" />
+                <span>às {booking.time}</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                setShowConfirmModal(false);
+              }}
+              className="w-full py-4 bg-gradient-to-r from-violet-600 to-pink-500 text-white font-black rounded-2xl transition-all shadow-lg hover:shadow-pink-500/15 text-sm uppercase tracking-wider"
+            >
+              Ver Detalhes do Comprovante
+            </button>
+
+            <button
+              onClick={() => navigate(profileLink)}
+              className="w-full mt-3 py-2 text-xs text-slate-400 hover:text-slate-200 font-bold transition-all"
+            >
+              Voltar ao Catálogo do Profissional
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
