@@ -8,7 +8,8 @@ import {
   TrendingUp, TrendingDown, Wallet, CreditCard, Gift, Tag,
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
-  ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert
+  ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop
 } from 'lucide-react'
 
 // ════════════════════════════════════════════
@@ -45,6 +46,7 @@ interface BookingData {
   clientName: string
   clientPhone: string
   status: string
+  paidAmount: number
   createdAt: string
   timeSlot: {
     date: string
@@ -100,6 +102,42 @@ interface Transaction {
   category: string
   notes: string
   createdAt: string
+}
+
+interface EmployeeDocumentData {
+  id: number
+  title: string
+  category: string
+  fileUrl: string
+  fileName: string
+  fileSize: string
+  expiryDate: string
+  notes: string
+  createdAt: string
+}
+
+interface EmployeeData {
+  id: number
+  name: string
+  role: string
+  phone: string
+  email: string
+  cpf: string
+  rg: string
+  birthDate: string
+  admissionDate: string
+  salary: number
+  commission: number
+  workingHours: string
+  status: 'ACTIVE' | 'DISMISSED' | 'ARCHIVED'
+  dismissalDate: string
+  dismissalReason: string
+  dismissalNotes: string
+  pendingType: string
+  pendingResolved: boolean
+  pendingNotes: string
+  createdAt: string
+  documents?: EmployeeDocumentData[]
 }
 
 // ════════════════════════════════════════════
@@ -358,7 +396,7 @@ function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClos
             className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
           >
             <Sparkles className="w-5 h-5 text-yellow-300" />
-            Plano Premium — R$ 49,99/mês
+            Plano Premium — R$ 69,90/mês
           </button>
         </div>
       </div>
@@ -374,15 +412,15 @@ function StatCard({ title, value, icon: Icon, color, trend }: { title: string; v
     <div className="card-simple">
       <div className="card-simple-inner p-6 flex flex-col justify-between">
         <div className="flex justify-between items-start mb-6">
-          <p className="text-white/30 text-[10px] font-bold uppercase tracking-widest">{title}</p>
-          <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+          <p className="text-slate-500 dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">{title}</p>
+          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06]">
             <Icon className="w-5 h-5" style={{ color: color }} />
           </div>
         </div>
         <div>
-          <p className="text-4xl font-black text-white mb-2">{value}</p>
+          <p className="text-4xl font-black text-slate-800 dark:text-white mb-2">{value}</p>
           {trend && (
-            <span className={`text-xs font-bold flex items-center gap-0.5 ${trend.up ? 'text-emerald-400' : 'text-red-400'}`}>
+            <span className={`text-xs font-bold flex items-center gap-0.5 ${trend.up ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
               {trend.up ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
               {trend.val}
             </span>
@@ -466,7 +504,7 @@ function maskPhone(value: string): string {
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit'>('overview')
   const [showPaywall, setShowPaywall] = useState(false)
   const [financeFilter, setFinanceFilter] = useState<'all' | 'receivable' | 'payable'>('all')
   const [loading, setLoading] = useState(true)
@@ -518,6 +556,65 @@ export default function Dashboard() {
   const [clientNotes, setClientNotes] = useState<any[]>([])
   const [newNoteContent, setNewNoteContent] = useState('')
   const [loadingClientDetails, setLoadingClientDetails] = useState(false)
+
+  // ═══ Employee / RH States ═══
+  const [employees, setEmployees] = useState<EmployeeData[]>([])
+  const [loadingEmployees, setLoadingEmployees] = useState(false)
+  const [rhSubTab, setRhSubTab] = useState<'ACTIVE' | 'DISMISSED' | 'ARCHIVED'>('ACTIVE')
+  const [rhSearch, setRhSearch] = useState('')
+  const [rhPendingTypeFilter, setRhPendingTypeFilter] = useState('ALL')
+  const [rhPendingStatusFilter, setRhPendingStatusFilter] = useState('ALL')
+  
+  // Registration Modal State
+  const [employeeModalOpen, setEmployeeModalOpen] = useState(false)
+  const [editingEmployee, setEditingEmployee] = useState<EmployeeData | null>(null)
+  const [employeeForm, setEmployeeForm] = useState({
+    name: '',
+    role: '',
+    phone: '',
+    email: '',
+    cpf: '',
+    rg: '',
+    birthDate: '',
+    admissionDate: new Date().toISOString().split('T')[0],
+    salary: '',
+    commission: '',
+    workingHours: ''
+  })
+
+  // Dismissal Modal State
+  const [dismissModalOpen, setDismissModalOpen] = useState(false)
+  const [employeeToDismiss, setEmployeeToDismiss] = useState<EmployeeData | null>(null)
+  const [dismissForm, setDismissForm] = useState({
+    dismissalDate: new Date().toISOString().split('T')[0],
+    dismissalReason: 'Sem justa causa',
+    dismissalNotes: '',
+    pendingType: 'RESCISAO',
+    pendingNotes: '',
+    hasPending: true
+  })
+
+  // Document Manager Modal State
+  const [docModalOpen, setDocModalOpen] = useState(false)
+  const [selectedEmployeeForDocs, setSelectedEmployeeForDocs] = useState<EmployeeData | null>(null)
+  const [docList, setDocList] = useState<EmployeeDocumentData[]>([])
+  const [loadingDocs, setLoadingDocs] = useState(false)
+  const [docForm, setDocForm] = useState({
+    title: '',
+    category: 'CONTRATO',
+    fileUrl: '',
+    fileName: '',
+    fileSize: '',
+    expiryDate: '',
+    notes: ''
+  })
+
+  // ═══ Audit Log States ═══
+  const [auditLogs, setAuditLogs] = useState<any[]>([])
+  const [loadingAuditLogs, setLoadingAuditLogs] = useState(false)
+  const [auditSearch, setAuditSearch] = useState('')
+  const [auditEntityFilter, setAuditEntityFilter] = useState('ALL')
+  const [auditSeverityFilter, setAuditSeverityFilter] = useState('ALL')
 
   // ═══ Social/Chat States ═══
   const [socialSearch, setSocialSearch] = useState('')
@@ -824,6 +921,11 @@ export default function Dashboard() {
 
   // ═══ Data Fetching ═══
   const [subscription, setSubscription] = useState<{ plan: string; status: string; expiresAt: string | null; trialEndsAt: string | null } | null>(null)
+  
+  const hasBanner = !!(subscription && (
+    subscription.status === 'inactive' || 
+    (subscription.status === 'trialing' && subscription.trialEndsAt && new Date(subscription.trialEndsAt).getTime() > new Date().getTime())
+  ))
   
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
@@ -1181,6 +1283,242 @@ export default function Dashboard() {
     }
   }
 
+  const fetchEmployees = useCallback(async () => {
+    if (subscription?.plan !== 'premium' || subscription?.status !== 'active') return
+    setLoadingEmployees(true)
+    try {
+      const data = await api.getEmployees()
+      setEmployees(data || [])
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao carregar colaboradores', 'error')
+    } finally {
+      setLoadingEmployees(false)
+    }
+  }, [subscription, showToast])
+
+  useEffect(() => {
+    if (activeTab === 'rh') {
+      fetchEmployees()
+    }
+  }, [activeTab, fetchEmployees])
+
+  const handleCreateOrUpdateEmployee = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!employeeForm.name || !employeeForm.role) {
+      showToast('Nome e Cargo são obrigatórios', 'error')
+      return
+    }
+
+    const data = {
+      name: employeeForm.name,
+      role: employeeForm.role,
+      phone: employeeForm.phone,
+      email: employeeForm.email,
+      cpf: employeeForm.cpf,
+      rg: employeeForm.rg,
+      birthDate: employeeForm.birthDate,
+      admissionDate: employeeForm.admissionDate,
+      salary: employeeForm.salary ? parseFloat(employeeForm.salary) : 0,
+      commission: employeeForm.commission ? parseFloat(employeeForm.commission) : 0,
+      workingHours: employeeForm.workingHours
+    }
+
+    try {
+      if (editingEmployee) {
+        await api.updateEmployee(editingEmployee.id, data)
+        showToast('Colaborador atualizado com sucesso!')
+      } else {
+        await api.createEmployee(data)
+        showToast('Colaborador cadastrado com sucesso!')
+      }
+      setEmployeeModalOpen(false)
+      setEditingEmployee(null)
+      setEmployeeForm({
+        name: '', role: '', phone: '', email: '',
+        cpf: '', rg: '', birthDate: '',
+        admissionDate: new Date().toISOString().split('T')[0],
+        salary: '', commission: '', workingHours: ''
+      })
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao salvar colaborador', 'error')
+    }
+  }
+
+  const openEditEmployee = (emp: EmployeeData) => {
+    setEditingEmployee(emp)
+    setEmployeeForm({
+      name: emp.name,
+      role: emp.role,
+      phone: emp.phone || '',
+      email: emp.email || '',
+      cpf: emp.cpf || '',
+      rg: emp.rg || '',
+      birthDate: emp.birthDate || '',
+      admissionDate: emp.admissionDate || new Date().toISOString().split('T')[0],
+      salary: emp.salary ? emp.salary.toString() : '',
+      commission: emp.commission ? emp.commission.toString() : '',
+      workingHours: emp.workingHours || ''
+    })
+    setEmployeeModalOpen(true)
+  }
+
+  const openDismissModal = (emp: EmployeeData) => {
+    setEmployeeToDismiss(emp)
+    setDismissForm({
+      dismissalDate: new Date().toISOString().split('T')[0],
+      dismissalReason: 'Sem justa causa',
+      dismissalNotes: '',
+      pendingType: 'RESCISAO',
+      pendingNotes: '',
+      hasPending: true
+    })
+    setDismissModalOpen(true)
+  }
+
+  const handleConfirmDismissal = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!employeeToDismiss) return
+    try {
+      await api.dismissEmployee(employeeToDismiss.id, {
+        dismissalDate: dismissForm.dismissalDate,
+        dismissalReason: dismissForm.dismissalReason,
+        dismissalNotes: dismissForm.dismissalNotes,
+        pendingType: dismissForm.hasPending ? dismissForm.pendingType : '',
+        pendingNotes: dismissForm.hasPending ? dismissForm.pendingNotes : '',
+        pendingResolved: !dismissForm.hasPending
+      })
+      showToast(`Colaborador ${employeeToDismiss.name} demitido. Mivido para pendências.`)
+      setDismissModalOpen(false)
+      setEmployeeToDismiss(null)
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao demitir colaborador', 'error')
+    }
+  }
+
+  const handleResolvePending = async (empId: number, resolved: boolean) => {
+    try {
+      await api.resolveEmployeePending(empId, resolved)
+      showToast(resolved ? 'Pendência marcada como resolvida!' : 'Pendência reaberta.')
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao atualizar pendência', 'error')
+    }
+  }
+
+  const handleArchiveEmployee = async (empId: number) => {
+    if (!window.confirm('Mover este colaborador demitido para o Arquivo Morto?')) return
+    try {
+      await api.archiveEmployee(empId)
+      showToast('Colaborador movido para o Arquivo Morto.')
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao arquivar colaborador', 'error')
+    }
+  }
+
+  const handleRestoreEmployee = async (empId: number) => {
+    if (!window.confirm('Reativar este colaborador e retornar para a Equipe Ativa?')) return
+    try {
+      await api.restoreEmployee(empId)
+      showToast('Colaborador reativado na equipe!')
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao reativar colaborador', 'error')
+    }
+  }
+
+  const handleDeleteEmployee = async (id: number) => {
+    if (!window.confirm('Tem certeza que deseja remover permanentemente o registro deste colaborador?')) return
+    try {
+      await api.deleteEmployee(id)
+      showToast('Registro de colaborador excluído!')
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao excluir colaborador', 'error')
+    }
+  }
+
+  // Document Manager Handlers
+  const openDocManager = async (emp: EmployeeData) => {
+    setSelectedEmployeeForDocs(emp)
+    setDocModalOpen(true)
+    setLoadingDocs(true)
+    try {
+      const docs = await api.getEmployeeDocuments(emp.id)
+      setDocList(docs || [])
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao carregar documentos', 'error')
+    } finally {
+      setLoadingDocs(false)
+    }
+  }
+
+  const handleAddDocument = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedEmployeeForDocs) return
+    if (!docForm.title || !docForm.fileUrl) {
+      showToast('Título e arquivo são obrigatórios', 'error')
+      return
+    }
+    try {
+      await api.addEmployeeDocument(selectedEmployeeForDocs.id, docForm)
+      showToast('Documento anexado com sucesso!')
+      setDocForm({
+        title: '',
+        category: 'CONTRATO',
+        fileUrl: '',
+        fileName: '',
+        fileSize: '',
+        expiryDate: '',
+        notes: ''
+      })
+      const docs = await api.getEmployeeDocuments(selectedEmployeeForDocs.id)
+      setDocList(docs || [])
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao anexar documento', 'error')
+    }
+  }
+
+  const handleDeleteDocument = async (docId: number) => {
+    if (!selectedEmployeeForDocs) return
+    if (!window.confirm('Excluir este documento anexado?')) return
+    try {
+      await api.deleteEmployeeDocument(docId)
+      showToast('Documento excluído!')
+      const docs = await api.getEmployeeDocuments(selectedEmployeeForDocs.id)
+      setDocList(docs || [])
+      fetchEmployees()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao excluir documento', 'error')
+    }
+  }
+
+  // Audit Logs Handler
+  const fetchAuditLogs = useCallback(async () => {
+    setLoadingAuditLogs(true)
+    try {
+      const logs = await api.getAuditLogs({
+        search: auditSearch,
+        entity: auditEntityFilter !== 'ALL' ? auditEntityFilter : undefined,
+        severity: auditSeverityFilter !== 'ALL' ? auditSeverityFilter : undefined
+      })
+      setAuditLogs(logs || [])
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao carregar logs de auditoria', 'error')
+    } finally {
+      setLoadingAuditLogs(false)
+    }
+  }, [auditSearch, auditEntityFilter, auditSeverityFilter, showToast])
+
+  useEffect(() => {
+    if (activeTab === 'audit') {
+      fetchAuditLogs()
+    }
+  }, [activeTab, fetchAuditLogs])
+
   const handleCreateLink = async () => {
     if (!newLinkTitle.trim()) return
     try {
@@ -1430,7 +1768,7 @@ export default function Dashboard() {
   })()
 
   return (
-    <div className="min-h-screen bg-[#050507] text-white pb-20 transition-colors duration-300 relative overflow-hidden grain">
+    <div className={`min-h-screen ${isDark ? 'dark bg-[#050507] text-white' : 'bg-[#F1F5F9] text-slate-800'} pb-20 transition-colors duration-300 relative overflow-hidden grain`}>
       {/* Mesh Gradient Orbs */}
       <div className="orb w-[600px] h-[600px] bg-violet-600/[0.05] top-[-150px] left-[-100px] blur-[160px]" />
       <div className="orb w-[400px] h-[400px] bg-pink-600/[0.04] top-[40%] right-[-100px] blur-[140px]" style={{ animationDelay: '-7s' }} />
@@ -1460,22 +1798,25 @@ export default function Dashboard() {
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
       {/* Navbar Premium — Glass Island */}
-      <header className="sticky top-0 z-40 px-4 sm:px-6 pt-4 pb-2">
-        <div className="glass-nav rounded-2xl max-w-6xl mx-auto px-5 h-16 flex items-center justify-between">
+      <header 
+        style={hasBanner ? { top: '48px', marginTop: '48px' } : undefined}
+        className="sticky top-0 z-40 px-4 sm:px-6 pt-4 pb-2 transition-all duration-300"
+      >
+        <div className="bg-white/85 dark:bg-[#131826]/40 backdrop-blur-md border border-slate-200/50 dark:border-white/[0.04] rounded-2xl max-w-6xl mx-auto px-5 h-16 flex items-center justify-between shadow-sm">
           <div className="flex items-center gap-5">
             <div className="flex items-center gap-2.5">
               <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-pink-500 rounded-[10px] flex items-center justify-center text-white text-sm font-extrabold shadow-lg shadow-violet-500/20 shrink-0">
                 B
               </div>
               <div className="hidden sm:block">
-                <h1 className="font-extrabold text-[15px] text-white/90 leading-tight tracking-tight">BoraMarka</h1>
-                <p className="text-[9px] text-white/30 font-bold uppercase tracking-[0.15em] mt-0.5">Painel de Controle</p>
+                <h1 className="font-extrabold text-[15px] text-slate-800 dark:text-white/90 leading-tight tracking-tight">BoraMarka</h1>
+                <p className="text-[9px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-[0.15em] mt-0.5">Painel de Controle</p>
               </div>
             </div>
             
-            <div className="hidden md:flex items-center gap-2 bg-emerald-500/[0.06] px-3 py-1.5 rounded-full border border-emerald-500/15">
-              <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[11px] font-semibold text-emerald-400 tracking-wide">Sua Agenda Online</span>
+            <div className="hidden md:flex items-center gap-2 bg-emerald-500/10 dark:bg-emerald-500/[0.06] px-3 py-1.5 rounded-full border border-emerald-500/20 dark:border-emerald-500/15">
+              <div className="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse" />
+              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tracking-wide">Sua Agenda Online</span>
             </div>
           </div>
 
@@ -1489,60 +1830,66 @@ export default function Dashboard() {
                  <ShieldAlert className="w-3.5 h-3.5" /> Voltar SuperAdmin
                </button>
              )}
+              <button 
+                onClick={() => setIsDark(!isDark)} 
+                className="p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all"
+                title={isDark ? "Modo Claro" : "Modo Escuro"}
+              >
+                {isDark ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+              </button>
 
-             <button 
-               onClick={() => fetchData(true)} 
-               disabled={refreshing}
-               className={`p-2 text-white/30 hover:text-white/60 hover:bg-white/[0.04] rounded-xl transition-all ${refreshing ? 'animate-spin' : ''}`}
-               title="Atualizar dados"
-             >
-               <RefreshCw className="w-4.5 h-4.5" />
-             </button>
-             
-             {adminInfo && (
-               <div className="flex items-center gap-3 pl-3 border-l border-white/[0.06]">
-                 <div className="text-right hidden sm:block">
-                   <div className="flex items-center justify-end gap-2">
-                     <p className="text-[13px] font-bold text-white/80 leading-none">{adminInfo.businessName || adminInfo.username}</p>
-                     <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-white/25 hover:text-violet-400 transition-colors" title="Editar Perfil">
-                       <Pencil className="w-3 h-3" />
-                     </button>
-                   </div>
-                   <p className="text-[10px] text-white/25 font-semibold mt-1">@{adminInfo.username.toLowerCase()}</p>
-                 </div>
-                 <button 
-                   onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : avatarInputRef.current?.click()}
-                   className="w-9 h-9 rounded-full relative group cursor-pointer shrink-0"
-                   title="Clique para trocar a foto"
-                 >
-                   {adminInfo.photoUrl ? (
-                     <img src={adminInfo.photoUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-white/10" />
-                   ) : (
-                     <div className="w-9 h-9 bg-white/[0.06] border border-white/[0.08] rounded-full flex items-center justify-center font-bold text-white/50 text-sm">
-                       {adminInfo.username[0].toUpperCase()}
+              <button 
+                onClick={() => fetchData(true)} 
+                disabled={refreshing}
+                className={`p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all ${refreshing ? 'animate-spin' : ''}`}
+                title="Atualizar dados"
+              >
+                <RefreshCw className="w-4.5 h-4.5" />
+              </button>
+               {adminInfo && (
+                 <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-white/[0.06]">
+                   <div className="text-right hidden sm:block">
+                     <div className="flex items-center justify-end gap-2">
+                       <p className="text-[13px] font-bold text-slate-700 dark:text-white/80 leading-none">{adminInfo.businessName || adminInfo.username}</p>
+                       <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-slate-400 dark:text-white/25 hover:text-violet-650 dark:hover:text-violet-400 transition-colors" title="Editar Perfil">
+                         <Pencil className="w-3 h-3" />
+                       </button>
                      </div>
-                   )}
-                   <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <Camera className="w-3.5 h-3.5 text-white" />
+                     <p className="text-[10px] text-slate-400 dark:text-white/25 font-semibold mt-1">@{adminInfo.username.toLowerCase()}</p>
                    </div>
-                   <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-violet-500 border-2 border-[#080a16] rounded-full"></div>
-                 </button>
-                 <input
-                   ref={avatarInputRef}
-                   type="file"
-                   accept="image/*"
-                   onChange={handleAvatarChange}
-                   className="hidden"
-                 />
-                 <button 
-                   onClick={handleLogout}
-                   className="p-2 text-white/25 hover:text-red-400 hover:bg-red-500/[0.06] rounded-xl transition-all"
-                   title="Sair do sistema"
-                 >
-                   <LogOut className="w-4.5 h-4.5" />
-                 </button>
-               </div>
-             )}
+                   <button 
+                     onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : avatarInputRef.current?.click()}
+                     className="w-9 h-9 rounded-full relative group cursor-pointer shrink-0"
+                     title="Clique para trocar a foto"
+                   >
+                     {adminInfo.photoUrl ? (
+                       <img src={adminInfo.photoUrl} alt="Avatar" className="w-9 h-9 rounded-full object-cover border border-white/10" />
+                     ) : (
+                       <div className="w-9 h-9 bg-slate-200/50 dark:bg-white/[0.06] border border-slate-300 dark:border-white/[0.08] rounded-full flex items-center justify-center font-bold text-slate-500 dark:text-white/50 text-sm">
+                         {adminInfo.username[0].toUpperCase()}
+                       </div>
+                     )}
+                     <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                       <Camera className="w-3.5 h-3.5 text-white" />
+                     </div>
+                     <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-violet-500 border-2 border-[#F1F5F9] dark:border-[#080a16] rounded-full"></div>
+                   </button>
+                   <input
+                     ref={avatarInputRef}
+                     type="file"
+                     accept="image/*"
+                     onChange={handleAvatarChange}
+                     className="hidden"
+                   />
+                   <button 
+                     onClick={handleLogout}
+                     className="p-2 text-slate-400 dark:text-white/25 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/[0.06] rounded-xl transition-all"
+                     title="Sair do sistema"
+                   >
+                     <LogOut className="w-4.5 h-4.5" />
+                   </button>
+                 </div>
+               )}
           </div>
         </div>
       </header>
@@ -1563,6 +1910,8 @@ export default function Dashboard() {
             { id: 'faturamento' as const, label: 'Assinatura', icon: CreditCard },
             { id: 'cupons' as const, label: 'Cupons', icon: Tag },
             { id: 'memberships' as const, label: 'Clube de Assinaturas', icon: Gift },
+            { id: 'rh' as const, label: 'RH / Equipe', icon: UserCheck },
+            { id: 'audit' as const, label: 'Logs & Auditoria', icon: ShieldAlert },
             { id: 'social' as const, label: 'Explorar Rede', icon: Globe },
             { id: 'trash' as const, label: 'Lixeira', icon: Trash2 },
           ].map(tab => {
@@ -1580,7 +1929,7 @@ export default function Dashboard() {
                 className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   isActive
                     ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/20'
-                    : 'bg-white/[0.03] border border-white/[0.06] text-white/35 hover:text-white/70 hover:bg-white/[0.06] hover:border-white/[0.1]'
+                    : 'bg-white/80 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] text-slate-500 dark:text-white/35 hover:text-slate-750 dark:hover:text-white/70 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.1]'
                 }`}
                 title={tab.label}
               >
@@ -1615,53 +1964,52 @@ export default function Dashboard() {
               <div className="card-simple">
                 <div className="card-simple-inner p-6">
                   <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-bold text-[15px] text-white/80">Últimos Agendamentos</h3>
-                    <button onClick={() => setActiveTab('agendamentos')} className="text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Ver todos</button>
+                    <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Últimos Agendamentos</h3>
+                    <button onClick={() => setActiveTab('agendamentos')} className="text-violet-500 dark:text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Ver todos</button>
                   </div>
                   <div className="space-y-3">
                     {bookings.slice(0, 5).map(b => (
-                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.04] transition-all hover:border-violet-500/20">
-                        <div className="w-9 h-9 bg-white/[0.04] rounded-lg flex items-center justify-center font-bold text-violet-400 text-sm border border-white/[0.06]">
+                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-150 dark:border-white/[0.04] transition-all hover:border-violet-500/20">
+                        <div className="w-9 h-9 bg-slate-100 dark:bg-white/[0.04] rounded-lg flex items-center justify-center font-bold text-violet-500 dark:text-violet-400 text-sm border border-slate-200 dark:border-white/[0.06]">
                           {b.clientName[0].toUpperCase()}
                         </div>
                         <div className="flex-1">
-                          <p className="font-semibold text-sm text-white/80">{b.clientName}</p>
-                          <p className="text-[10px] text-white/25 font-semibold uppercase">{formatDate(b.timeSlot.date)} — {b.timeSlot.time}</p>
+                          <p className="font-semibold text-sm text-slate-800 dark:text-white/80">{b.clientName}</p>
+                          <p className="text-[10px] text-slate-500 dark:text-white/25 font-semibold uppercase">{formatDate(b.timeSlot.date)} — {b.timeSlot.time}</p>
                         </div>
-                        <a href={`https://wa.me/${b.clientPhone}`} target="_blank" className="p-2 text-emerald-400 hover:bg-emerald-500/[0.06] rounded-lg transition-all">
+                        <a href={`https://wa.me/${b.clientPhone}`} target="_blank" className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/[0.06] rounded-lg transition-all">
                           <Phone className="w-4 h-4" />
                         </a>
                       </div>
                     ))}
-                    {bookings.length === 0 && <p className="text-center py-10 text-white/20 text-sm italic">Nenhum agendamento recente</p>}
+                    {bookings.length === 0 && <p className="text-center py-10 text-slate-400 dark:text-white/20 text-sm italic">Nenhum agendamento recente</p>}
                   </div>
                 </div>
               </div>
-
               {/* Financial Summary */}
               <div className="card-simple">
                 <div className="card-simple-inner p-6 overflow-hidden relative">
                   <div className="flex justify-between items-center mb-6">
-                     <h3 className="font-bold text-[15px] text-white/80">Resumo Financeiro</h3>
-                     <button onClick={() => setActiveTab('financeiro')} className="text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Gestão completa</button>
+                     <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Resumo Financeiro</h3>
+                     <button onClick={() => setActiveTab('financeiro')} className="text-violet-500 dark:text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Gestão completa</button>
                   </div>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center p-5 rounded-xl bg-emerald-500/[0.04] border border-emerald-500/10">
+                    <div className="flex justify-between items-center p-5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10">
                       <div>
-                        <p className="text-[10px] font-bold text-emerald-400/80 uppercase tracking-widest">Recebido</p>
-                        <p className="text-2xl font-black text-emerald-400">{formatCurrency(financeStats.receivedAmount)}</p>
+                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400/80 uppercase tracking-widest">Recebido</p>
+                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(financeStats.receivedAmount)}</p>
                       </div>
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/[0.06] flex items-center justify-center">
-                         <ArrowUpRight className="w-5 h-5 text-emerald-400" />
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/[0.06] flex items-center justify-center">
+                          <ArrowUpRight className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                       </div>
                     </div>
-                    <div className="flex justify-between items-center p-5 rounded-xl bg-red-500/[0.04] border border-red-500/10">
+                    <div className="flex justify-between items-center p-5 rounded-xl bg-red-500/10 dark:bg-red-500/[0.04] border border-red-500/20 dark:border-red-500/10">
                       <div>
-                        <p className="text-[10px] font-bold text-red-400/80 uppercase tracking-widest">Pago</p>
-                        <p className="text-2xl font-black text-red-400">{formatCurrency(financeStats.paidAmount)}</p>
+                        <p className="text-[10px] font-bold text-red-650 dark:text-red-400/80 uppercase tracking-widest">Pago</p>
+                        <p className="text-2xl font-black text-red-600 dark:text-red-400">{formatCurrency(financeStats.paidAmount)}</p>
                       </div>
-                      <div className="w-10 h-10 rounded-xl bg-red-500/[0.06] flex items-center justify-center">
-                         <ArrowDownRight className="w-5 h-5 text-red-400" />
+                      <div className="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/[0.06] flex items-center justify-center">
+                          <ArrowDownRight className="w-5 h-5 text-red-600 dark:text-red-400" />
                       </div>
                     </div>
                   </div>
@@ -1678,8 +2026,8 @@ export default function Dashboard() {
           <div className="animate-slide-up space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
-                <h2 className="text-2xl font-black text-slate-900">Financeiro</h2>
-                <p className="text-sm text-slate-500">Contas a pagar e a receber</p>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Financeiro</h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Contas a pagar e a receber</p>
               </div>
               <button
                 onClick={() => setShowNewTransaction(true)}
@@ -1733,7 +2081,7 @@ export default function Dashboard() {
                <div className="overflow-x-auto">
                  <table className="w-full text-left">
                    <thead>
-                     <tr className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                     <tr className="text-[10px] font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">
                        <th className="px-6 py-4">Status</th>
                        <th className="px-6 py-4">Descrição</th>
                        <th className="px-6 py-4">Cliente/Fornecedor</th>
@@ -1853,15 +2201,29 @@ export default function Dashboard() {
                            <div>
                              <div className="flex items-center gap-2.5">
                                <h4 className="font-bold text-lg text-slate-900 dark:text-white leading-none">{booking.clientName}</h4>
-                               {booking.status === 'PENDENTE' ? (
-                                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                   Pendente
-                                 </span>
-                               ) : (
-                                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                   Confirmado
-                                 </span>
-                               )}
+{booking.status === 'PENDENTE' ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                                    Pendente
+                                  </span>
+                                ) : booking.status === 'AGUARDANDO_PAGAMENTO' ? (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
+                                    ⏳ Aguardando Pgto
+                                  </span>
+                                ) : booking.status === 'PAGO' && booking.paidAmount > 0 ? (
+                                  booking.paidAmount >= (booking.timeSlot.link?.service?.price || Infinity) ? (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                      💰 Pago Total
+                                    </span>
+                                  ) : (
+                                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                      💳 Sinal Pago
+                                    </span>
+                                  )
+                                ) : (
+                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                                    Confirmado
+                                  </span>
+                                )}
                              </div>
                              <p className="text-xs font-bold text-pink-500 mt-1.5">
                                {booking.timeSlot.link?.service?.name || booking.timeSlot.link?.title}
@@ -2170,7 +2532,7 @@ export default function Dashboard() {
                 ))}
                 {services.length === 0 && (
                   <div className="col-span-full card-simple py-20 text-center border-dashed border-2 dark:border-slate-800">
-                    <p className="text-slate-400 font-bold uppercase tracking-widest">Seu catálogo está vazio</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Seu catálogo está vazio</p>
                     <p className="text-xs text-slate-300 mt-1">Clique em "Novo Serviço" para começar</p>
                   </div>
                 )}
@@ -2198,12 +2560,12 @@ export default function Dashboard() {
                     >
                       <Copy className="w-4 h-4" /> Copiar Perfil
                     </button>
-                    <button 
-                      onClick={() => openEditProfile()} 
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-pink-600/40 text-white font-black py-3 px-6 rounded-xl hover:bg-pink-600/60 transition-all border border-white/20 shadow-lg"
-                    >
-                      <Palette className="w-4 h-4" /> Personalizar Página
-                    </button>
+                     <button 
+                       onClick={() => setActiveTab('personalizar')} 
+                       className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-pink-600/40 text-white font-black py-3 px-6 rounded-xl hover:bg-pink-600/60 transition-all border border-white/20 shadow-lg"
+                     >
+                       <Palette className="w-4 h-4" /> Personalizar Página
+                     </button>
                     <a 
                       href={`/p/${adminInfo?.username}`} 
                       target="_blank" 
@@ -2426,7 +2788,7 @@ export default function Dashboard() {
                   <div className="hidden md:block overflow-x-auto bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-sm">
                     <table className="w-full text-left border-collapse">
                       <thead>
-                        <tr className="border-b border-slate-100 dark:border-slate-800 text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50/50 dark:bg-[#1A2235]/20">
+                        <tr className="border-b border-slate-200 dark:border-slate-800 text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest bg-slate-100/50 dark:bg-[#1A2235]/20">
                           <th className="py-4 px-6">Nome do Cliente</th>
                           <th className="py-4 px-6">WhatsApp</th>
                           <th className="py-4 px-6 text-center">Consultas</th>
@@ -3119,11 +3481,11 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 49,99</span>
+                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 69,90</span>
                           <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
                         </div>
                         <ul className="space-y-2.5 pt-2">
-                          {['Tudo dos planos básico e anual', 'Subdomínio Wildcard grátis profissional', 'Domínio próprio (ex: agendar.salao.com)', 'Página 100% livre da marca BoraMarka', 'Suporte técnico prioritário dedicado VIP'].map((feat, i) => (
+                          {['Tudo dos planos básico e anual', 'Gestão de RH e Equipe completa', 'Subdomínio Wildcard grátis profissional', 'Domínio próprio (ex: agendar.salao.com)', 'Página 100% livre da marca BoraMarka', 'Suporte técnico prioritário dedicado VIP'].map((feat, i) => (
                             <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
                               <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                               <span>{feat}</span>
@@ -3519,8 +3881,8 @@ export default function Dashboard() {
            <div className="animate-slide-up space-y-6">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="text-2xl font-black text-slate-900">Lixeira</h2>
-                  <p className="text-sm text-slate-500">Links de venda excluídos recentemente</p>
+                  <h2 className="text-2xl font-black text-slate-900 dark:text-white">Lixeira</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Links de venda excluídos recentemente</p>
                 </div>
               </div>
               
@@ -3555,12 +3917,641 @@ export default function Dashboard() {
                 ))}
                 {deletedLinks.length === 0 && (
                   <div className="col-span-full py-20 text-center">
-                    <Trash2 className="w-16 h-16 text-slate-100 mx-auto mb-4" />
-                    <p className="text-slate-400 font-bold uppercase tracking-widest">A lixeira está vazia</p>
+                    <Trash2 className="w-16 h-16 text-slate-400 dark:text-slate-200 mx-auto mb-4 opacity-40" />
+                    <p className="text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">A lixeira está vazia</p>
                   </div>
                 )}
               </div>
            </div>
+        )}
+
+        {activeTab === 'rh' && (
+          <div className="animate-slide-up space-y-6">
+            {subscription?.plan !== 'premium' || subscription?.status !== 'active' ? (
+              <div className="max-w-md mx-auto text-center py-16 px-6 bg-white/80 dark:bg-[#131826]/40 border border-slate-200 dark:border-white/[0.06] rounded-3xl backdrop-blur-xl shadow-2xl space-y-6 text-slate-900 dark:text-slate-100">
+                <div className="w-16 h-16 bg-violet-500/20 text-violet-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-violet-500/30">
+                  <UserCheck className="w-8 h-8 text-violet-500 animate-pulse" />
+                </div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gestão de RH Bloqueada</h2>
+                <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold leading-relaxed">
+                  A Gestão de RH e Colaboradores é uma funcionalidade exclusiva do <strong>Plano Premium</strong> (R$ 69,90/mês). 
+                  Organize sua equipe, controle arquivos, gerencie demissões e controle pendências!
+                </p>
+                <button
+                  onClick={() => setActiveTab('faturamento')}
+                  className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-black hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles className="w-5 h-5 text-yellow-300 animate-spin-slow" />
+                  Fazer Upgrade para o Plano Premium
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* Header Title & Action */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <UserCheck className="w-6 h-6 text-violet-500" />
+                      Gestão de Recursos Humanos (RH)
+                    </h2>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">Controle completo de colaboradores, arquivos, desligamentos e pendências</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingEmployee(null)
+                      setEmployeeForm({
+                        name: '', role: '', phone: '', email: '',
+                        cpf: '', rg: '', birthDate: '',
+                        admissionDate: new Date().toISOString().split('T')[0],
+                        salary: '', commission: '', workingHours: ''
+                      })
+                      setEmployeeModalOpen(true)
+                    }}
+                    className="flex items-center gap-2 px-5 py-3.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-wider hover:opacity-95 shadow-md shadow-indigo-500/10 hover:scale-[1.02] transition-all"
+                  >
+                    <Plus className="w-4 h-4" /> Cadastrar Colaborador
+                  </button>
+                </div>
+
+                {/* KPI Metrics Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="card-simple p-5">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Equipe Ativa</span>
+                      <Users className="w-4 h-4 text-violet-500" />
+                    </div>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {employees.filter(e => e.status === 'ACTIVE' || !e.status).length}
+                    </p>
+                    <span className="text-[10px] text-slate-400 font-bold">Colaboradores trabalhando</span>
+                  </div>
+
+                  <div className="card-simple p-5">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Folha Salarial Base</span>
+                      <DollarSign className="w-4 h-4 text-emerald-500" />
+                    </div>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {formatCurrency(employees.filter(e => e.status === 'ACTIVE' || !e.status).reduce((acc, c) => acc + (c.salary || 0), 0))}
+                    </p>
+                    <span className="text-[10px] text-slate-400 font-bold">Total salários bases ativos</span>
+                  </div>
+
+                  <div className={`card-simple p-5 border-2 ${
+                    employees.filter(e => e.status === 'DISMISSED' && !e.pendingResolved).length > 0 
+                      ? 'border-amber-500/40 bg-amber-500/5' 
+                      : 'border-transparent'
+                  }`}>
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-amber-500">Pendências Demissionais</span>
+                      <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    </div>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {employees.filter(e => e.status === 'DISMISSED' && !e.pendingResolved).length}
+                    </p>
+                    <span className="text-[10px] text-amber-400 font-bold">Ex-funcionários pendentes</span>
+                  </div>
+
+                  <div className="card-simple p-5">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Arquivo Morto</span>
+                      <Archive className="w-4 h-4 text-slate-400" />
+                    </div>
+                    <p className="text-2xl font-black text-slate-900 dark:text-white">
+                      {employees.filter(e => e.status === 'ARCHIVED').length}
+                    </p>
+                    <span className="text-[10px] text-slate-400 font-bold">Registros arquivados</span>
+                  </div>
+                </div>
+
+                {/* Sub-Tab Navigation Bar & Search Filters */}
+                <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 bg-white/40 dark:bg-[#131826]/30 p-2 rounded-3xl border border-slate-200 dark:border-white/[0.06]">
+                  {/* Pills */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => setRhSubTab('ACTIVE')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                        rhSubTab === 'ACTIVE'
+                          ? 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Users className="w-3.5 h-3.5" />
+                      Equipe Ativa
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-white/20 text-white font-bold">
+                        {employees.filter(e => e.status === 'ACTIVE' || !e.status).length}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setRhSubTab('DISMISSED')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 relative ${
+                        rhSubTab === 'DISMISSED'
+                          ? 'bg-amber-500 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <UserX className="w-3.5 h-3.5" />
+                      Demitidos & Pendências
+                      <span className={`ml-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${
+                        employees.filter(e => e.status === 'DISMISSED' && !e.pendingResolved).length > 0
+                          ? 'bg-red-600 text-white animate-pulse'
+                          : 'bg-white/20 text-white'
+                      }`}>
+                        {employees.filter(e => e.status === 'DISMISSED').length}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setRhSubTab('ARCHIVED')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                        rhSubTab === 'ARCHIVED'
+                          ? 'bg-slate-700 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                      Arquivo Morto
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-white/20 text-white font-bold">
+                        {employees.filter(e => e.status === 'ARCHIVED').length}
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Search input */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1 md:w-64">
+                      <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        value={rhSearch}
+                        onChange={e => setRhSearch(e.target.value)}
+                        placeholder="Buscar por nome, cargo, CPF..."
+                        className="w-full pl-9 pr-3 py-2 bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Specific Filters for DISMISSED Tab */}
+                {rhSubTab === 'DISMISSED' && (
+                  <div className="p-4 bg-amber-500/5 border border-amber-500/20 rounded-2xl flex flex-wrap items-center gap-4 text-xs font-bold">
+                    <span className="text-amber-500 flex items-center gap-1.5 uppercase text-[10px] tracking-wider font-black">
+                      <Filter className="w-3.5 h-3.5" /> Filtrar Pendências:
+                    </span>
+
+                    <div className="flex items-center gap-2">
+                      <label className="text-slate-400 text-[10px] uppercase">Status da Pendência:</label>
+                      <select
+                        value={rhPendingStatusFilter}
+                        onChange={e => setRhPendingStatusFilter(e.target.value)}
+                        className="bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-xl font-bold"
+                      >
+                        <option value="ALL">Todas (Abertas e Resolvidas)</option>
+                        <option value="PENDING">⚠️ Apenas Pendentes (Abertas)</option>
+                        <option value="RESOLVED">✅ Apenas Resolvidas</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <label className="text-slate-400 text-[10px] uppercase">Tipo de Pendência:</label>
+                      <select
+                        value={rhPendingTypeFilter}
+                        onChange={e => setRhPendingTypeFilter(e.target.value)}
+                        className="bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-xl font-bold"
+                      >
+                        <option value="ALL">Todos os Tipos</option>
+                        <option value="RESCISAO">Pagamento de Rescisão</option>
+                        <option value="EQUIPAMENTO">Devolução de Chaves / Equipamentos</option>
+                        <option value="EXAME_DEMISSIONAL">Exame Demissional</option>
+                        <option value="DOCUMENTACAO">Assinatura de Documentação / Carteira</option>
+                        <option value="OUTROS">Outros</option>
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                {/* Employees Cards Container */}
+                {loadingEmployees ? (
+                  <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                    <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+                    <p className="text-xs font-bold text-slate-400">Carregando colaboradores...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {employees
+                      .filter(emp => {
+                        // Filter by subtab
+                        if (rhSubTab === 'ACTIVE') return emp.status === 'ACTIVE' || !emp.status;
+                        if (rhSubTab === 'DISMISSED') return emp.status === 'DISMISSED';
+                        if (rhSubTab === 'ARCHIVED') return emp.status === 'ARCHIVED';
+                        return true;
+                      })
+                      .filter(emp => {
+                        // Filter by search
+                        if (!rhSearch.trim()) return true;
+                        const query = rhSearch.toLowerCase();
+                        return (
+                          emp.name.toLowerCase().includes(query) ||
+                          emp.role.toLowerCase().includes(query) ||
+                          (emp.cpf && emp.cpf.includes(query)) ||
+                          (emp.phone && emp.phone.includes(query))
+                        );
+                      })
+                      .filter(emp => {
+                        // Filter by pending status (if dismissed subtab)
+                        if (rhSubTab !== 'DISMISSED') return true;
+                        if (rhPendingStatusFilter === 'PENDING') return !emp.pendingResolved;
+                        if (rhPendingStatusFilter === 'RESOLVED') return emp.pendingResolved;
+                        return true;
+                      })
+                      .filter(emp => {
+                        // Filter by pending type (if dismissed subtab)
+                        if (rhSubTab !== 'DISMISSED') return true;
+                        if (rhPendingTypeFilter === 'ALL') return true;
+                        return emp.pendingType === rhPendingTypeFilter;
+                      })
+                      .map(emp => (
+                        <div key={emp.id} className={`card-simple p-6 flex flex-col justify-between relative overflow-hidden group border-2 ${
+                          rhSubTab === 'DISMISSED' && !emp.pendingResolved
+                            ? 'border-amber-500/40 bg-amber-500/5'
+                            : rhSubTab === 'ARCHIVED'
+                            ? 'opacity-75 bg-slate-900/40 border-slate-800'
+                            : 'border-transparent'
+                        }`}>
+                          <div className="absolute top-0 right-0 w-32 h-32 bg-violet-500/5 dark:bg-violet-500/10 rounded-full blur-3xl group-hover:bg-violet-500/10 dark:group-hover:bg-violet-500/20 transition-all duration-500" />
+                          
+                          <div className="relative space-y-4">
+                            {/* Card Header: Avatar & Status */}
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-white font-black text-base shadow-md ${
+                                  rhSubTab === 'DISMISSED'
+                                    ? 'bg-gradient-to-br from-amber-500 to-red-500'
+                                    : rhSubTab === 'ARCHIVED'
+                                    ? 'bg-slate-700'
+                                    : 'bg-gradient-to-br from-violet-500 to-indigo-500'
+                                }`}>
+                                  {emp.name.substring(0, 2).toUpperCase()}
+                                </div>
+                                <div className="text-left">
+                                  <h3 className="font-black text-slate-900 dark:text-white text-base leading-tight">{emp.name}</h3>
+                                  <span className="inline-block mt-1 bg-violet-500/10 text-violet-600 dark:text-violet-400 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md">
+                                    {emp.role}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Document counter badge */}
+                              <button
+                                onClick={() => openDocManager(emp)}
+                                className="flex items-center gap-1 text-[10px] font-black bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2.5 py-1 rounded-xl hover:bg-violet-500 hover:text-white transition-all"
+                                title="Ver Arquivos & Documentos"
+                              >
+                                <Paperclip className="w-3 h-3" />
+                                <span>{emp.documents?.length || 0}</span>
+                              </button>
+                            </div>
+
+                            {/* Dismissed Status Box */}
+                            {rhSubTab === 'DISMISSED' && (
+                              <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-1 text-left">
+                                <div className="flex justify-between items-center">
+                                  <span className="text-[10px] font-black text-amber-500 uppercase tracking-wider">Demissão em {emp.dismissalDate || formatDate(emp.createdAt.split('T')[0])}</span>
+                                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                                    emp.pendingResolved
+                                      ? 'bg-emerald-500 text-white'
+                                      : 'bg-red-500 text-white animate-pulse'
+                                  }`}>
+                                    {emp.pendingResolved ? '✅ Pendência Resolvida' : '⚠️ Pendência Aberta'}
+                                  </span>
+                                </div>
+                                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Motivo: {emp.dismissalReason}</p>
+                                {emp.pendingType && (
+                                  <p className="text-[11px] text-amber-600 dark:text-amber-400 font-semibold">
+                                    <strong>Pendência:</strong> {emp.pendingType} {emp.pendingNotes && `— ${emp.pendingNotes}`}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+
+                            {/* Archived Status Box */}
+                            {rhSubTab === 'ARCHIVED' && (
+                              <div className="p-2.5 bg-slate-800/40 border border-slate-700/50 rounded-2xl text-left">
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">📁 Registro no Arquivo Morto</span>
+                              </div>
+                            )}
+
+                            {/* Details List */}
+                            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-white/[0.05] text-xs font-semibold text-slate-600 dark:text-slate-350 text-left">
+                              {emp.cpf && (
+                                <p className="text-[11px]">
+                                  <span className="text-slate-400 font-bold">CPF:</span> {emp.cpf}
+                                </p>
+                              )}
+                              {emp.phone && (
+                                <p className="flex items-center gap-2">
+                                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>{emp.phone}</span>
+                                </p>
+                              )}
+                              {emp.email && (
+                                <p className="flex items-center gap-2">
+                                  <span className="text-slate-400 font-bold">@</span>
+                                  <span className="truncate">{emp.email}</span>
+                                </p>
+                              )}
+                              <div className="grid grid-cols-2 gap-2 pt-2 mt-2 border-t border-dashed border-slate-100 dark:border-white/[0.05]">
+                                <div>
+                                  <span className="text-[9px] text-slate-400 block uppercase tracking-wider font-bold">Salário Base</span>
+                                  <span className="text-xs font-black text-slate-900 dark:text-white">{formatCurrency(emp.salary)}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[9px] text-slate-400 block uppercase tracking-wider font-bold">Comissão</span>
+                                  <span className="text-xs font-black text-slate-900 dark:text-white">{emp.commission}%</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Action Buttons */}
+                          <div className="space-y-2 mt-6 relative z-10">
+                            <button
+                              onClick={() => openDocManager(emp)}
+                              className="w-full flex items-center justify-center gap-2 bg-violet-500/10 hover:bg-violet-500 hover:text-white text-violet-500 font-black py-2.5 rounded-xl transition-all text-xs border border-violet-500/20"
+                            >
+                              <Paperclip className="w-3.5 h-3.5" /> Arquivos & Documentos ({emp.documents?.length || 0})
+                            </button>
+
+                            <div className="flex gap-2">
+                              {rhSubTab === 'ACTIVE' && (
+                                <>
+                                  <button
+                                    onClick={() => openEditEmployee(emp)}
+                                    className="flex-1 flex items-center justify-center gap-1 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-slate-600 dark:text-slate-300 font-black py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-all text-xs"
+                                  >
+                                    <Pencil className="w-3.5 h-3.5" /> Editar
+                                  </button>
+                                  <button
+                                    onClick={() => openDismissModal(emp)}
+                                    className="flex-1 flex items-center justify-center gap-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500 hover:text-white font-black py-2 rounded-xl transition-all text-xs"
+                                    title="Demitir Colaborador"
+                                  >
+                                    <UserX className="w-3.5 h-3.5" /> Demitir
+                                  </button>
+                                </>
+                              )}
+
+                              {rhSubTab === 'DISMISSED' && (
+                                <>
+                                  {!emp.pendingResolved ? (
+                                    <button
+                                      onClick={() => handleResolvePending(emp.id, true)}
+                                      className="flex-1 flex items-center justify-center gap-1 bg-emerald-500 text-white font-black py-2 rounded-xl hover:bg-emerald-600 transition-all text-xs shadow-md"
+                                    >
+                                      <CheckCircle2 className="w-3.5 h-3.5" /> Resolver Pendência
+                                    </button>
+                                  ) : (
+                                    <button
+                                      onClick={() => handleArchiveEmployee(emp.id)}
+                                      className="flex-1 flex items-center justify-center gap-1 bg-slate-800 text-slate-200 font-black py-2 rounded-xl hover:bg-slate-700 transition-all text-xs"
+                                    >
+                                      <Archive className="w-3.5 h-3.5" /> Arquivo Morto
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => handleRestoreEmployee(emp.id)}
+                                    className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 rounded-xl transition-all text-xs font-bold"
+                                    title="Reativar Colaborador na Equipe"
+                                  >
+                                    <RefreshCw className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+
+                              {rhSubTab === 'ARCHIVED' && (
+                                <>
+                                  <button
+                                    onClick={() => handleRestoreEmployee(emp.id)}
+                                    className="flex-1 flex items-center justify-center gap-1 bg-violet-600 text-white font-black py-2 rounded-xl hover:bg-violet-700 transition-all text-xs"
+                                  >
+                                    <RefreshCw className="w-3.5 h-3.5" /> Reativar Equipe
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEmployee(emp.id)}
+                                    className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                                    title="Excluir Definitivamente"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                    {employees
+                      .filter(emp => {
+                        if (rhSubTab === 'ACTIVE') return emp.status === 'ACTIVE' || !emp.status;
+                        if (rhSubTab === 'DISMISSED') return emp.status === 'DISMISSED';
+                        if (rhSubTab === 'ARCHIVED') return emp.status === 'ARCHIVED';
+                        return true;
+                      })
+                      .length === 0 && (
+                      <div className="col-span-full py-20 text-center bg-white/40 dark:bg-[#131826]/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                        <UserCheck className="w-16 h-16 text-slate-300 dark:text-slate-700 mx-auto mb-4 opacity-40 animate-pulse" />
+                        <h4 className="text-slate-500 dark:text-slate-400 font-black uppercase tracking-widest text-sm">
+                          Nenhum colaborador nesta categoria
+                        </h4>
+                        <p className="text-slate-400 dark:text-slate-500 text-xs font-semibold mt-1 max-w-xs mx-auto">
+                          {rhSubTab === 'ACTIVE' && 'Cadastre membros da sua equipe ativa.'}
+                          {rhSubTab === 'DISMISSED' && 'Nenhum funcionário demitido ou com pendências registradas.'}
+                          {rhSubTab === 'ARCHIVED' && 'Nenhum colaborador arquivado no histórico.'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════ */}
+        {/* TAB: Logs de Auditoria & Registro de Ações */}
+        {/* ═══════════════════════════════════════════ */}
+        {activeTab === 'audit' && (
+          <div className="animate-slide-up space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <ShieldAlert className="w-6 h-6 text-violet-500" />
+                  Logs & Auditoria de Atividades
+                </h2>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  Rastreamento completo de alterações em serviços, cupons, colaboradores e endereço IP das máquinas
+                </p>
+              </div>
+              <button
+                onClick={() => fetchAuditLogs()}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 rounded-xl font-bold text-xs hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Atualizar Logs
+              </button>
+            </div>
+
+            {/* Filter Bar */}
+            <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 p-4 bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] rounded-2xl">
+              <div className="relative flex-1">
+                <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  value={auditSearch}
+                  onChange={e => setAuditSearch(e.target.value)}
+                  placeholder="Filtrar por usuário, ação, dispositivo ou IP..."
+                  className="w-full pl-9 pr-3 py-2 bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 rounded-xl text-xs font-bold text-slate-900 dark:text-white focus:outline-none focus:border-violet-500"
+                />
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold text-slate-400">Severidade:</label>
+                  <select
+                    value={auditSeverityFilter}
+                    onChange={e => setAuditSeverityFilter(e.target.value)}
+                    className="bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-bold"
+                  >
+                    <option value="ALL">Todas Severidades</option>
+                    <option value="CRITICAL">🚨 Crítico</option>
+                    <option value="HIGH">⚠️ Alto</option>
+                    <option value="MEDIUM">🔮 Médio</option>
+                    <option value="INFO">ℹ️ Informativo</option>
+                  </select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-bold text-slate-400">Categoria:</label>
+                  <select
+                    value={auditEntityFilter}
+                    onChange={e => setAuditEntityFilter(e.target.value)}
+                    className="bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-bold"
+                  >
+                    <option value="ALL">Todas as Categorias</option>
+                    <option value="SERVICE">Serviços</option>
+                    <option value="COUPON">Cupons</option>
+                    <option value="EMPLOYEE">Colaboradores (RH)</option>
+                    <option value="DOCUMENT">Documentos</option>
+                    <option value="AUTH">Login & Segurança</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Logs List */}
+            {loadingAuditLogs ? (
+              <div className="flex flex-col items-center justify-center py-20 space-y-3">
+                <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
+                <p className="text-xs font-bold text-slate-400">Carregando histórico de auditoria...</p>
+              </div>
+            ) : auditLogs.length === 0 ? (
+              <div className="py-20 text-center bg-white/40 dark:bg-[#131826]/20 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
+                <ShieldAlert className="w-12 h-12 text-slate-400 mx-auto mb-3 opacity-40" />
+                <h4 className="text-slate-500 dark:text-slate-400 font-black uppercase text-sm">Nenhum registro de auditoria encontrado</h4>
+                <p className="text-slate-400 dark:text-slate-500 text-xs mt-1">
+                  As ações realizadas na plataforma serão registradas aqui em tempo real.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {auditLogs.map((log: any) => {
+                  const severity = log.severity || 'INFO'
+                  const isCritical = severity === 'CRITICAL'
+                  const isHigh = severity === 'HIGH'
+                  const isMedium = severity === 'MEDIUM'
+
+                  return (
+                    <div
+                      key={log.id}
+                      className={`p-4 bg-white/80 dark:bg-[#131826]/60 border rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-left shadow-sm transition-all ${
+                        isCritical
+                          ? 'border-red-500/30 bg-red-500/5 hover:border-red-500/50'
+                          : isHigh
+                          ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50'
+                          : 'border-slate-200 dark:border-white/[0.06] hover:border-violet-500/30'
+                      }`}
+                    >
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-black flex-shrink-0 ${
+                          isCritical
+                            ? 'bg-red-500/10 text-red-500 border border-red-500/20 shadow-md shadow-red-500/10'
+                            : isHigh
+                            ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                            : isMedium
+                            ? 'bg-violet-500/10 text-violet-500 border border-violet-500/20'
+                            : 'bg-blue-500/10 text-blue-500 border border-blue-500/20'
+                        }`}>
+                          <ShieldAlert className="w-5 h-5" />
+                        </div>
+
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {/* Severity Tag */}
+                            <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                              isCritical
+                                ? 'bg-red-500/20 text-red-600 dark:text-red-400 border border-red-500/30 animate-pulse'
+                                : isHigh
+                                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30'
+                                : isMedium
+                                ? 'bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/30'
+                                : 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
+                            }`}>
+                              {isCritical ? '🚨 CRÍTICO' : isHigh ? '⚠️ ALTO' : isMedium ? '🔮 MÉDIO' : 'ℹ️ INFO'}
+                            </span>
+
+                            {/* Action Tag */}
+                            <span className="text-[10px] font-mono font-black uppercase tracking-wider px-2 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md">
+                              {log.action}
+                            </span>
+
+                            <span className="text-[10px] font-bold text-slate-400 ml-auto sm:ml-0">
+                              {log.createdAt && log.createdAt.includes('T')
+                                ? `${formatDate(log.createdAt.split('T')[0])} às ${log.createdAt.split('T')[1]?.substring(0, 5)}`
+                                : log.createdAt || ''}
+                            </span>
+                          </div>
+
+                          <p className="text-xs font-bold text-slate-900 dark:text-white leading-relaxed">
+                            {log.details || 'Ação registrada no sistema'}
+                          </p>
+
+                          <div className="flex flex-wrap items-center gap-3 text-[11px] text-slate-500 dark:text-slate-400 font-semibold pt-1">
+                            <span className="flex items-center gap-1 text-violet-500 font-bold">
+                              <User className="w-3.5 h-3.5" />
+                              {log.userName || 'Usuário'} ({log.userRole || 'user'})
+                            </span>
+
+                            <span className="flex items-center gap-1 text-slate-600 dark:text-slate-300 font-bold">
+                              <Laptop className="w-3.5 h-3.5 text-slate-400" />
+                              {log.deviceInfo || 'Dispositivo Desconhecido'}
+                            </span>
+
+                            <span className={`flex items-center gap-1 font-mono text-[10px] px-2 py-0.5 rounded-md font-bold ${
+                              (log.ipAddress && (log.ipAddress.includes('Localhost') || log.ipAddress === '127.0.0.1'))
+                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
+                                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
+                            }`}>
+                              🌐 IP: {log.ipAddress || '127.0.0.1'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         )}
 
         {/* ═══════════════════════════════════════════ */}
@@ -3597,7 +4588,7 @@ export default function Dashboard() {
                 ) : exploreList.length === 0 ? (
                   <div className="p-12 text-center bg-white dark:bg-[#131826] rounded-3xl border border-dashed border-slate-200 dark:border-slate-800">
                     <Globe className="w-12 h-12 text-slate-200 dark:text-slate-700 mx-auto mb-4" />
-                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">Nenhum profissional encontrado</p>
+                    <p className="text-slate-500 dark:text-slate-400 font-bold text-xs uppercase tracking-widest">Nenhum profissional encontrado</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -4316,6 +5307,508 @@ export default function Dashboard() {
                   Voltar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee / Colaborador Registration Modal */}
+      {employeeModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-900 dark:text-slate-100">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-100 dark:border-slate-800 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                  <UserCheck className="w-5 h-5 text-violet-500" />
+                  {editingEmployee ? 'Editar Ficha do Colaborador' : 'Novo Cadastro de Colaborador'}
+                </h3>
+                <p className="text-xs text-slate-400 font-semibold mt-0.5">Preencha os dados contratuais e pessoais</p>
+              </div>
+              <button 
+                onClick={() => {
+                  setEmployeeModalOpen(false)
+                  setEditingEmployee(null)
+                }} 
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleCreateOrUpdateEmployee} className="space-y-4">
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase mb-1">Nome Completo *</label>
+                <input 
+                  type="text" 
+                  value={employeeForm.name} 
+                  onChange={e => setEmployeeForm({...employeeForm, name: e.target.value})} 
+                  placeholder="Ex: Carlos Eduardo Silva" 
+                  className="input-simple font-bold" 
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Cargo / Especialidade *</label>
+                  <input 
+                    type="text" 
+                    value={employeeForm.role} 
+                    onChange={e => setEmployeeForm({...employeeForm, role: e.target.value})} 
+                    placeholder="Ex: Barbeiro Senior, Esteticista..." 
+                    className="input-simple font-bold" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Jornada / Horário</label>
+                  <input 
+                    type="text" 
+                    value={employeeForm.workingHours} 
+                    onChange={e => setEmployeeForm({...employeeForm, workingHours: e.target.value})} 
+                    placeholder="Ex: Seg a Sex 09h às 18h" 
+                    className="input-simple font-bold" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">WhatsApp / Telefone</label>
+                  <input 
+                    type="text" 
+                    value={employeeForm.phone} 
+                    onChange={e => setEmployeeForm({...employeeForm, phone: e.target.value})} 
+                    placeholder="Ex: (11) 99999-9999" 
+                    className="input-simple font-bold" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">E-mail</label>
+                  <input 
+                    type="email" 
+                    value={employeeForm.email} 
+                    onChange={e => setEmployeeForm({...employeeForm, email: e.target.value})} 
+                    placeholder="Ex: carlos@email.com" 
+                    className="input-simple font-bold text-xs" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">CPF</label>
+                  <input 
+                    type="text" 
+                    value={employeeForm.cpf} 
+                    onChange={e => setEmployeeForm({...employeeForm, cpf: e.target.value})} 
+                    placeholder="000.000.000-00" 
+                    className="input-simple font-bold text-xs" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">RG</label>
+                  <input 
+                    type="text" 
+                    value={employeeForm.rg} 
+                    onChange={e => setEmployeeForm({...employeeForm, rg: e.target.value})} 
+                    placeholder="00.000.000-0" 
+                    className="input-simple font-bold text-xs" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Data de Admissão</label>
+                  <input 
+                    type="date" 
+                    value={employeeForm.admissionDate} 
+                    onChange={e => setEmployeeForm({...employeeForm, admissionDate: e.target.value})} 
+                    className="input-simple font-bold text-xs" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Data de Nascimento</label>
+                  <input 
+                    type="date" 
+                    value={employeeForm.birthDate} 
+                    onChange={e => setEmployeeForm({...employeeForm, birthDate: e.target.value})} 
+                    className="input-simple font-bold text-xs" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Salário Base (R$)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={employeeForm.salary} 
+                    onChange={e => setEmployeeForm({...employeeForm, salary: e.target.value})} 
+                    placeholder="0,00" 
+                    className="input-simple font-bold" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Comissão (%)</label>
+                  <input 
+                    type="number" 
+                    min="0"
+                    max="100"
+                    value={employeeForm.commission} 
+                    onChange={e => setEmployeeForm({...employeeForm, commission: e.target.value})} 
+                    placeholder="Ex: 10" 
+                    className="input-simple font-bold" 
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black rounded-xl transition-all shadow-md shadow-indigo-500/10 hover:opacity-95 text-sm uppercase tracking-wider"
+                >
+                  {editingEmployee ? 'Atualizar Colaborador' : 'Cadastrar Colaborador'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmployeeModalOpen(false)
+                    setEditingEmployee(null)
+                  }}
+                  className="px-5 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl transition-all text-sm uppercase tracking-wider"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Dismissal / Demissão Modal */}
+      {dismissModalOpen && employeeToDismiss && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-900 dark:text-slate-100">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-lg rounded-3xl p-8 shadow-2xl animate-scale-in border border-amber-500/30 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center font-black">
+                  <UserX className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Demissão do Colaborador</h3>
+                  <p className="text-xs text-amber-500 font-bold">{employeeToDismiss.name} — {employeeToDismiss.role}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setDismissModalOpen(false)
+                  setEmployeeToDismiss(null)
+                }} 
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleConfirmDismissal} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Data do Desligamento *</label>
+                  <input 
+                    type="date" 
+                    value={dismissForm.dismissalDate} 
+                    onChange={e => setDismissForm({...dismissForm, dismissalDate: e.target.value})} 
+                    className="input-simple font-bold text-xs" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Motivo do Desligamento *</label>
+                  <select
+                    value={dismissForm.dismissalReason}
+                    onChange={e => setDismissForm({...dismissForm, dismissalReason: e.target.value})}
+                    className="input-simple font-bold text-xs"
+                    required
+                  >
+                    <option value="Sem justa causa">Sem justa causa</option>
+                    <option value="Com justa causa">Com justa causa</option>
+                    <option value="Pedido de demissão">Pedido de demissão</option>
+                    <option value="Término de contrato de experiência">Término de contrato de experiência</option>
+                    <option value="Acordo entre as partes">Acordo entre as partes</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase mb-1">Observações da Demissão</label>
+                <textarea
+                  rows={2}
+                  value={dismissForm.dismissalNotes}
+                  onChange={e => setDismissForm({...dismissForm, dismissalNotes: e.target.value})}
+                  placeholder="Ex: Entregou aviso prévio trabalhado..."
+                  className="input-simple font-semibold text-xs"
+                />
+              </div>
+
+              {/* Toggle Pending Issue */}
+              <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-500" />
+                    <span className="text-xs font-black text-amber-500 uppercase tracking-wider">Registrar Pendência Demissional?</span>
+                  </div>
+                  <input 
+                    type="checkbox"
+                    checked={dismissForm.hasPending}
+                    onChange={e => setDismissForm({...dismissForm, hasPending: e.target.checked})}
+                    className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500"
+                  />
+                </div>
+
+                {dismissForm.hasPending && (
+                  <div className="space-y-3 pt-2 border-t border-amber-500/20">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Tipo da Pendência principal</label>
+                      <select
+                        value={dismissForm.pendingType}
+                        onChange={e => setDismissForm({...dismissForm, pendingType: e.target.value})}
+                        className="input-simple font-bold text-xs"
+                      >
+                        <option value="RESCISAO">Pagamento de Rescisão / Verbas</option>
+                        <option value="EQUIPAMENTO">Devolução de Chaves / Notebook / Equipamentos</option>
+                        <option value="EXAME_DEMISSIONAL">Exame Médico Demissional</option>
+                        <option value="DOCUMENTACAO">Assinatura de Documentação / Carteira</option>
+                        <option value="OUTROS">Outros</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Detalhes da Pendência</label>
+                      <input 
+                        type="text"
+                        value={dismissForm.pendingNotes}
+                        onChange={e => setDismissForm({...dismissForm, pendingNotes: e.target.value})}
+                        placeholder="Ex: Falta devolução da chave do portão e pagamento da 2ª parcela"
+                        className="input-simple font-semibold text-xs"
+                      />
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 py-4 bg-gradient-to-r from-amber-600 to-red-600 text-white font-black rounded-xl transition-all shadow-md hover:opacity-95 text-sm uppercase tracking-wider"
+                >
+                  Confirmar Demissão & Mover para Pendências
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDismissModalOpen(false)
+                    setEmployeeToDismiss(null)
+                  }}
+                  className="px-5 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-xl transition-all text-sm uppercase tracking-wider"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Document Manager Modal */}
+      {docModalOpen && selectedEmployeeForDocs && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-900 dark:text-slate-100">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-scale-in border border-violet-500/20 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-violet-500/20 text-violet-500 flex items-center justify-center font-black">
+                  <Paperclip className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">Gestão de Documentos</h3>
+                  <p className="text-xs text-violet-500 font-bold">{selectedEmployeeForDocs.name} ({selectedEmployeeForDocs.role})</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => {
+                  setDocModalOpen(false)
+                  setSelectedEmployeeForDocs(null)
+                }} 
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Form for Uploading / Attaching New Document */}
+            <form onSubmit={handleAddDocument} className="p-5 bg-violet-500/5 border border-violet-500/20 rounded-2xl space-y-4 mb-6">
+              <h4 className="text-xs font-black uppercase tracking-wider text-violet-500 flex items-center gap-2">
+                <Upload className="w-4 h-4" /> Anexar Novo Documento
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Título do Documento *</label>
+                  <input 
+                    type="text" 
+                    value={docForm.title} 
+                    onChange={e => setDocForm({...docForm, title: e.target.value})} 
+                    placeholder="Ex: ASO Admissional, Contrato de Trabalho..." 
+                    className="input-simple font-bold text-xs" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Categoria *</label>
+                  <select
+                    value={docForm.category}
+                    onChange={e => setDocForm({...docForm, category: e.target.value})}
+                    className="input-simple font-bold text-xs"
+                    required
+                  >
+                    <option value="CONTRATO">Contrato de Trabalho</option>
+                    <option value="ASO">Exame ASO / Atestado</option>
+                    <option value="IDENTIFICACAO">Documento Pessoal (RG/CPF/CNH)</option>
+                    <option value="HOLERITE">Holerite / Comprovante</option>
+                    <option value="GERAL">Outros Documentos</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Data de Vencimento / Validade</label>
+                  <input 
+                    type="date" 
+                    value={docForm.expiryDate} 
+                    onChange={e => setDocForm({...docForm, expiryDate: e.target.value})} 
+                    className="input-simple font-bold text-xs" 
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-1">Arquivo *</label>
+                  <input 
+                    type="file" 
+                    onChange={e => {
+                      const file = e.target.files?.[0]
+                      if (file) {
+                        if (file.size > 25 * 1024 * 1024) {
+                          showToast('O arquivo não pode ser maior que 25MB', 'error')
+                          e.target.value = ''
+                          return
+                        }
+                        const reader = new FileReader()
+                        reader.onload = (uploadEvent) => {
+                          const base64 = uploadEvent.target?.result as string
+                          setDocForm({
+                            ...docForm,
+                            fileUrl: base64,
+                            fileName: file.name,
+                            fileSize: file.size >= 1024 * 1024
+                              ? `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+                              : `${(file.size / 1024).toFixed(1)} KB`
+                          })
+                        }
+                        reader.onerror = () => {
+                          showToast('Erro ao ler arquivo selecionado', 'error')
+                        }
+                        reader.readAsDataURL(file)
+                      }
+                    }} 
+                    className="text-xs text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-violet-600 file:text-white hover:file:bg-violet-700 cursor-pointer" 
+                    required={!docForm.fileUrl}
+                  />
+                  {docForm.fileName && (
+                    <span className="text-[10px] text-emerald-400 font-bold block mt-1">
+                      ✅ {docForm.fileName} ({docForm.fileSize})
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black rounded-xl text-xs uppercase tracking-wider hover:opacity-95 shadow-md"
+              >
+                Anexar Documento ao Colaborador
+              </button>
+            </form>
+
+            {/* Document List */}
+            <div className="space-y-3">
+              <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 flex items-center justify-between">
+                <span>Documentos Arquivados ({docList.length})</span>
+              </h4>
+
+              {loadingDocs ? (
+                <div className="py-8 text-center">
+                  <Loader2 className="w-6 h-6 text-violet-500 animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-slate-400 font-bold">Carregando arquivos...</p>
+                </div>
+              ) : docList.length === 0 ? (
+                <div className="py-8 text-center bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                  <FileText className="w-8 h-8 text-slate-400 mx-auto mb-2 opacity-40" />
+                  <p className="text-xs text-slate-400 font-bold">Nenhum documento anexado ainda.</p>
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                  {docList.map(doc => {
+                    const isExpired = doc.expiryDate && new Date(doc.expiryDate) < new Date()
+                    return (
+                      <div key={doc.id} className="p-3 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between gap-3 text-left">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center font-bold">
+                            <FileText className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h5 className="text-xs font-black text-slate-900 dark:text-white">{doc.title}</h5>
+                              <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-violet-500/10 text-violet-500">
+                                {doc.category}
+                              </span>
+                              {isExpired && (
+                                <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-red-500 text-white animate-pulse">
+                                  ⚠️ Vencido ({formatDate(doc.expiryDate)})
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                              {doc.fileName || 'Arquivo'} {doc.fileSize && `(${doc.fileSize})`} — Enviado em {formatDate(doc.createdAt.split('T')[0])}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={doc.fileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            download={doc.fileName || doc.title}
+                            className="p-2 bg-violet-500/10 text-violet-500 hover:bg-violet-500 hover:text-white rounded-xl transition-all"
+                            title="Baixar / Visualizar"
+                          >
+                            <Download className="w-4 h-4" />
+                          </a>
+                          <button
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                            title="Excluir Documento"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>

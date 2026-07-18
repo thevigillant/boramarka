@@ -34,7 +34,7 @@ export default async function billingRoutes(app: FastifyInstance) {
       price = 260.00;
       title = 'BoraMarka - Plano Anual';
     } else if (plan === 'premium') {
-      price = 49.99;
+      price = 69.90;
       title = 'BoraMarka - Plano Premium';
     }
 

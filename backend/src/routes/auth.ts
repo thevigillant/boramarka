@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
+import { createAuditLog } from '../utils/auditLogger';
 
 export default async function authRoutes(app: FastifyInstance) {
   // GET /api/auth/check — Check if any admin account exists
@@ -120,6 +121,16 @@ export default async function authRoutes(app: FastifyInstance) {
       { id: admin.id, username: admin.username, role: admin.role },
       { expiresIn: '24h' }
     );
+
+    // Record login audit log
+    request.user = { id: admin.id, username: admin.username, role: admin.role };
+    await createAuditLog(request, {
+      action: 'LOGIN',
+      entity: 'AUTH',
+      entityId: admin.id,
+      details: `Efetuou login no sistema como "${admin.username}"`,
+      adminId: admin.id,
+    });
 
     return {
       token,

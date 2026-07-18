@@ -12,6 +12,8 @@ import googleCalendarRoutes from './routes/googleCalendar';
 import membershipRoutes from './routes/memberships';
 import clientRoutes from './routes/clients';
 import socialRoutes from './routes/social';
+import employeeRoutes from './routes/employees';
+import auditRoutes from './routes/audit';
 import { startReminderService } from './services/reminder';
 
 // Augment Fastify JWT types
@@ -23,6 +25,7 @@ declare module '@fastify/jwt' {
 }
 
 const app = Fastify({
+  bodyLimit: 50 * 1024 * 1024, // 50MB limit for document uploads
   logger: {
     transport: {
       target: 'pino-pretty',
@@ -56,6 +59,8 @@ app.register(googleCalendarRoutes, { prefix: '/api/admin/google-calendar' });
 app.register(membershipRoutes, { prefix: '/api/admin/memberships' });
 app.register(clientRoutes, { prefix: '/api/admin/clients' });
 app.register(socialRoutes, { prefix: '/api/admin/social' });
+app.register(employeeRoutes, { prefix: '/api/admin/employees' });
+app.register(auditRoutes, { prefix: '/api/admin/audit-logs' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));

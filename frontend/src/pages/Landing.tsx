@@ -7,7 +7,7 @@ import {
   ChevronRight, Scissors, Droplet, Star, User, Phone, AlertCircle, Shield,
   ChevronDown, Menu, X, MessageSquare, BellOff, Timer, TrendingUp,
   Heart, Award, Palette, Dumbbell, Stethoscope, PenTool,
-  Quote, HelpCircle, ArrowUpRight, Smartphone
+  Quote, HelpCircle, ArrowUpRight, Smartphone, ArrowUp
 } from 'lucide-react'
 
 // ─── Scroll Reveal Hook ──────────────────────────────────
@@ -88,6 +88,24 @@ function FAQItem({ question, answer }: { question: string; answer: string }) {
 export default function Landing() {
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [showScrollTop, setShowScrollTop] = useState(false)
+
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowScrollTop(true)
+      } else {
+        setShowScrollTop(false)
+      }
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   // ─── Simulator State ───────────────────────────────────
   const [simStep, setSimStep] = useState(1)
@@ -1194,13 +1212,13 @@ export default function Landing() {
                       <h3 className="text-[17px] font-bold text-white/90 mb-1 tracking-tight">BoraPremium</h3>
                       <div className="flex items-baseline gap-1 mb-1">
                         <span className="text-[11px] text-white/25 font-medium">R$</span>
-                        <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">49<span className="text-[22px]">,99</span></span>
+                        <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">69<span className="text-[22px]">,90</span></span>
                         <span className="text-[11px] text-white/25 font-medium">/mês</span>
                       </div>
-                      <p className="text-violet-400 text-[9px] font-bold bg-violet-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-3 tracking-wider uppercase">Domínio Próprio</p>
+                      <p className="text-violet-400 text-[9px] font-bold bg-violet-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-3 tracking-wider uppercase">Domínio Próprio & RH</p>
                       <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Sua marca, seu domínio, seu controle.</p>
                       <ul className="space-y-3 mb-8">
-                        {['Tudo dos outros planos', 'Subdomínio profissional grátis', 'Domínio próprio personalizado', 'Remoção total da marca BoraMarka', 'Suporte VIP prioritário'].map((f, i) => (
+                        {['Tudo dos outros planos', 'Gestão de RH para equipes', 'Subdomínio profissional grátis', 'Domínio próprio personalizado', 'Remoção total da marca BoraMarka', 'Suporte VIP prioritário'].map((f, i) => (
                           <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
                             <div className="w-4 h-4 rounded-full bg-violet-500/[0.08] border border-violet-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-violet-400" /></div>
                             {f}
@@ -1346,6 +1364,17 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {/* Botão Voltar ao Topo (Flutuante) */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-6 right-6 z-50 flex h-12 w-12 items-center justify-center rounded-full border border-white/10 bg-black/40 backdrop-blur-md text-white shadow-2xl transition-all duration-300 hover:scale-110 hover:border-pink-500/50 hover:bg-gradient-to-tr hover:from-violet-600/80 hover:to-pink-600/80 ${
+          showScrollTop ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-4 scale-90 pointer-events-none'
+        }`}
+        aria-label="Voltar ao topo"
+      >
+        <ArrowUp className="w-5 h-5 animate-pulse" />
+      </button>
 
     </div>
   )
