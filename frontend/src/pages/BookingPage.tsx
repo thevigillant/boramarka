@@ -55,9 +55,13 @@ export default function BookingPage() {
   const [couponValidating, setCouponValidating] = useState(false)
   const [activeMembership, setActiveMembership] = useState<{ planName: string; expiresAt: string } | null>(null)
   
-  // Payment redirect / simulation state
   const [pendingPaymentBooking, setPendingPaymentBooking] = useState<any>(null)
   const [isSubmittingSimulation, setIsSubmittingSimulation] = useState(false)
+  const [payFullPrice, setPayFullPrice] = useState(false)
+  const [activeCoupons, setActiveCoupons] = useState<Array<{ code: string; discountType: 'percentage' | 'fixed'; discountValue: number }>>([])
+  const [accentColor, setAccentColor] = useState('#f97316')
+  const [secondaryColor, setSecondaryColor] = useState('#ec4899')
+  const [publicTheme, setPublicTheme] = useState('light')
 
   useEffect(() => {
     if (!token) return
@@ -70,6 +74,10 @@ export default function BookingPage() {
         setBookingFeeAmount(data.bookingFeeAmount)
         setServiceName(data.serviceName)
         setServicePrice(data.servicePrice)
+        setActiveCoupons(data.activeCoupons || [])
+        setAccentColor(data.accentColor || '#f97316')
+        setSecondaryColor(data.secondaryColor || '#ec4899')
+        setPublicTheme(data.publicTheme || 'light')
         if (data.dates.length > 0) setSelectedDate(data.dates[0])
       })
       .catch(err => setError(err.message))
@@ -131,12 +139,15 @@ export default function BookingPage() {
         timeSlotId: selectedSlotId,
         clientName: clientName.trim(),
         clientPhone: cleanPhone,
+        payFullPrice: bookingFeeEnabled && bookingFeeAmount > 0 && !activeMembership ? payFullPrice : undefined,
       })
 
       if (result.paymentRequired) {
         setPendingPaymentBooking({
           booking: result.booking,
           paymentUrl: result.paymentUrl,
+          paymentAmount: result.paymentAmount,
+          payFullPrice: result.payFullPrice,
         })
       } else {
         if (result.whatsapp?.link) {
@@ -192,11 +203,12 @@ export default function BookingPage() {
       setIsSubmittingSimulation(true);
       setSubmitError('');
       try {
-        const result = await api.confirmSimulationBooking(booking.id);
+        const result = await api.confirmSimulationBooking(booking.id, pendingPaymentBooking.payFullPrice);
         navigate(`/agendar/${token}/sucesso`, {
           state: {
             booking: result.booking,
-            whatsapp: { success: true, method: 'link', link: `https://wa.me/55${booking.clientPhone.replace(/\D/g, '')}` }
+            whatsapp: { success: true, method: 'link', link: `https://wa.me/55${booking.clientPhone.replace(/\D/g, '')}` },
+            payFullPrice: pendingPaymentBooking.payFullPrice,
           }
         });
       } catch (err: any) {
@@ -207,43 +219,67 @@ export default function BookingPage() {
     };
 
     return (
-      <div className="min-h-screen bg-[#0B0F19] pb-16">
+      <div className={`min-h-screen ${publicTheme === 'dark' ? 'dark bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-800'} pb-16 font-sans`}>
+        <style>{`
+          .custom-accent-color { color: ${accentColor} !important; }
+          .custom-accent-bg { background-color: ${accentColor} !important; }
+          .custom-accent-border { border-color: ${accentColor} !important; }
+          .custom-gradient-bg { background: linear-gradient(135deg, ${accentColor}, ${secondaryColor}) !important; }
+          .custom-accent-glow {
+            box-shadow: 0 10px 15px -3px ${accentColor}30, 0 4px 6px -4px ${accentColor}30 !important;
+          }
+        `}</style>
         {/* Header */}
-        <div className="bg-gradient-to-r from-orange-500 to-pink-500 px-6 pt-12 pb-24 text-white text-center">
+        <div className="custom-gradient-bg px-6 pt-12 pb-24 text-white text-center">
           <div className="max-w-xl mx-auto">
-            <h1 className="text-3xl font-black mb-2">Sinal de Reserva</h1>
-            <p className="opacity-90 font-medium">Pague o sinal diretamente ao profissional para garantir seu horário</p>
+            <h1 className="text-3xl font-black mb-2">{pendingPaymentBooking.payFullPrice ? 'Pagamento Total' : 'Sinal de Reserva'}</h1>
+            <p className="opacity-90 font-medium">{pendingPaymentBooking.payFullPrice ? 'Pague o valor total do serviço agora e não se preocupe no dia!' : 'Pague o sinal diretamente ao profissional para garantir seu horário'}</p>
           </div>
         </div>
 
         <div className="max-w-xl mx-auto px-4 -mt-16 animate-slide-up">
-          <div className="bg-[#131826] rounded-3xl border border-slate-800 shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">
+          <div className="bg-white dark:bg-[#131826] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">
             <div className="text-center space-y-2">
-              <span className="text-4xl">💳</span>
-              <h2 className="text-xl font-black text-white">Sinal de Reserva</h2>
-              <p className="text-slate-400 text-sm font-semibold">
-                O profissional solicita um sinal antecipado para reservar seu horário. Esse valor vai direto para o profissional e será descontado do preço total do serviço no dia do atendimento.
+              <span className="text-4xl">{pendingPaymentBooking.payFullPrice ? '✨' : '💳'}</span>
+              <h2 className="text-xl font-black text-slate-900 dark:text-white">{pendingPaymentBooking.payFullPrice ? 'Pagamento Total' : 'Sinal de Reserva'}</h2>
+              <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
+                {pendingPaymentBooking.payFullPrice
+                  ? 'Você optou por pagar o valor total do serviço agora. Nada será cobrado no dia do atendimento!'
+                  : 'O profissional solicita um sinal antecipado para reservar seu horário. Esse valor vai direto para o profissional e será descontado do preço total do serviço no dia do atendimento.'
+                }
               </p>
             </div>
 
             {/* Resume Card */}
-            <div className="bg-[#1A2235] border border-slate-800 rounded-2xl p-4 space-y-3">
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                <span className="text-xs font-bold text-slate-400 uppercase">Serviço</span>
-                <span className="text-sm font-bold text-white">{serviceName || 'Serviço'}</span>
+            <div className="bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 space-y-3">
+              <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Serviço</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">{serviceName || 'Serviço'}</span>
               </div>
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                <span className="text-xs font-bold text-slate-400 uppercase">Data e Hora</span>
-                <span className="text-sm font-bold text-pink-500">{day} de {month} ({weekday}) às {booking.time}</span>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Data e Hora</span>
+                <span className="text-sm font-bold text-pink-600 dark:text-pink-500">{day} de {month} ({weekday}) às {booking.time}</span>
               </div>
-              <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                <span className="text-xs font-bold text-slate-400 uppercase">Preço Total do Serviço</span>
-                <span className="text-sm font-bold text-white">R$ {(servicePrice || 0).toFixed(2)}</span>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
+                <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Preço Total do Serviço</span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">R$ {(servicePrice || 0).toFixed(2)}</span>
               </div>
               <div className="flex justify-between items-center pt-1">
-                <span className="text-sm font-black text-slate-300">Sinal (pago ao profissional)</span>
-                <span className="text-xl font-black text-emerald-400">R$ {(bookingFeeAmount || 0).toFixed(2)}</span>
+                <span className="text-sm font-black text-slate-700 dark:text-slate-350">{pendingPaymentBooking.payFullPrice ? 'Valor Total (pago agora)' : 'Sinal (pago ao profissional)'}</span>
+                <span className="text-xl font-black text-emerald-650 dark:text-emerald-400">R$ {(pendingPaymentBooking.paymentAmount || bookingFeeAmount || 0).toFixed(2)}</span>
               </div>
+              {!pendingPaymentBooking.payFullPrice && servicePrice > 0 && (
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
+                  <span className="text-xs font-bold text-slate-500">Restante a pagar no dia</span>
+                  <span className="text-sm font-bold text-slate-750 dark:text-slate-400">R$ {(servicePrice - (pendingPaymentBooking.paymentAmount || bookingFeeAmount || 0)).toFixed(2)}</span>
+                </div>
+              )}
+              {pendingPaymentBooking.payFullPrice && (
+                <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
+                  <span className="text-xs font-bold text-emerald-600 dark:text-emerald-500">Restante a pagar no dia</span>
+                  <span className="text-sm font-black text-emerald-650 dark:text-emerald-400">R$ 0,00 🎉</span>
+                </div>
+              )}
             </div>
 
             {submitError && (
@@ -254,9 +290,9 @@ export default function BookingPage() {
 
             {isSimulated ? (
               <div className="space-y-4">
-                <div className="bg-gradient-to-r from-orange-500/10 to-pink-500/10 border border-pink-500/20 rounded-2xl p-4 text-center space-y-2">
-                  <p className="text-orange-400 text-xs font-black uppercase tracking-widest">Modo de Teste / Simulador</p>
-                  <p className="text-slate-300 text-xs font-semibold">
+                <div className="bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 rounded-2xl p-4 text-center space-y-2">
+                  <p className="text-orange-500 dark:text-orange-400 text-xs font-black uppercase tracking-widest">Modo de Teste / Simulador</p>
+                  <p className="text-slate-700 dark:text-slate-300 text-xs font-semibold">
                     Este profissional configurou as credenciais como <strong>SIMULADOR</strong>. Você pode simular o pagamento clicando no botão abaixo.
                   </p>
                 </div>
@@ -264,7 +300,7 @@ export default function BookingPage() {
                 <button
                   onClick={handleSimulationPayment}
                   disabled={isSubmittingSimulation}
-                  className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-pink-500/20 hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="w-full custom-gradient-bg text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl custom-accent-glow hover:opacity-90 transition-opacity disabled:opacity-50"
                 >
                   {isSubmittingSimulation ? (
                     <>
@@ -282,7 +318,7 @@ export default function BookingPage() {
             ) : (
               <a
                 href={pendingPaymentBooking.paymentUrl}
-                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-pink-500/20 hover:opacity-90 transition-opacity text-center text-lg"
+                className="w-full custom-gradient-bg text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl custom-accent-glow hover:opacity-90 transition-opacity text-center text-lg"
               >
                 <span>💳</span>
                 Pagar com Mercado Pago
@@ -312,9 +348,24 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] pb-16">
+    <div className={`min-h-screen ${publicTheme === 'dark' ? 'dark bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-800'} pb-16 font-sans`}>
+      <style>{`
+        .custom-accent-color { color: ${accentColor} !important; }
+        .custom-accent-bg { background-color: ${accentColor} !important; }
+        .custom-accent-border { border-color: ${accentColor} !important; }
+        .custom-accent-hover-border:hover { border-color: ${accentColor} !important; }
+        .custom-gradient-bg { background: linear-gradient(135deg, ${accentColor}, ${secondaryColor}) !important; }
+        .custom-gradient-text {
+          background: linear-gradient(135deg, ${accentColor}, ${secondaryColor});
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .custom-accent-glow {
+          box-shadow: 0 10px 15px -3px ${accentColor}30, 0 4px 6px -4px ${accentColor}30 !important;
+        }
+      `}</style>
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-pink-500 px-6 pt-12 pb-24 text-white text-center">
+      <div className="custom-gradient-bg px-6 pt-12 pb-24 text-white text-center">
         <div className="max-w-xl mx-auto">
           <h1 className="text-3xl font-black mb-2">{title}</h1>
           <p className="opacity-90 font-medium">Escolha o melhor dia e horário para você</p>
@@ -322,10 +373,10 @@ export default function BookingPage() {
       </div>
 
       <div className="max-w-xl mx-auto px-4 -mt-16 animate-slide-up">
-        <div className="bg-[#131826] rounded-3xl border border-slate-800 shadow-2xl overflow-hidden">
+        <div className="bg-white dark:bg-[#131826] rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-2xl overflow-hidden">
           {/* Step 1: Date */}
-          <div className="p-6 border-b border-slate-800">
-            <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+          <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+            <h2 className="text-sm font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest mb-4 flex items-center gap-2">
               <Calendar className="w-4 h-4" /> 1. Escolha o dia
             </h2>
             <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
@@ -338,8 +389,8 @@ export default function BookingPage() {
                     onClick={() => { setSelectedDate(date); setSelectedSlotId(null) }}
                     className={`flex-shrink-0 w-20 py-4 rounded-2xl border transition-all ${
                       isSelected
-                        ? 'bg-gradient-to-r from-orange-500 to-pink-500 border-pink-500 text-white shadow-lg shadow-pink-500/20 scale-105'
-                        : 'bg-[#1A2235] border-slate-700 text-slate-400 hover:border-pink-500/50'
+                        ? 'custom-gradient-bg border-transparent text-white shadow-lg scale-105'
+                        : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:border-pink-500/50'
                     }`}
                   >
                     <p className={`text-[10px] font-bold uppercase ${isSelected ? 'opacity-90' : 'text-slate-500'}`}>{weekday}</p>
@@ -358,8 +409,8 @@ export default function BookingPage() {
 
           {/* Step 2: Time */}
           {selectedDate && (
-            <div className="p-6 border-b border-slate-800">
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="text-sm font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> 2. Escolha o horário
               </h2>
               <div className="grid grid-cols-3 gap-2">
@@ -371,8 +422,8 @@ export default function BookingPage() {
                       onClick={() => setSelectedSlotId(slot.id)}
                       className={`py-4 rounded-xl font-bold border transition-all ${
                         isSelected
-                          ? 'bg-gradient-to-r from-orange-500 to-pink-500 border-pink-500 text-white shadow-md shadow-pink-500/20'
-                          : 'bg-[#1A2235] border-slate-700 text-slate-300 hover:border-pink-500/50'
+                          ? 'custom-gradient-bg border-transparent text-white shadow-md'
+                          : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-pink-500/50'
                       }`}
                     >
                       {slot.time}
@@ -386,16 +437,16 @@ export default function BookingPage() {
           {/* Step 3: Form */}
           {selectedSlotId && (
             <form onSubmit={handleSubmit} className="p-6 animate-slide-up">
-              <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-6 flex items-center gap-2">
+              <h2 className="text-sm font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest mb-6 flex items-center gap-2">
                 <User className="w-4 h-4" /> 3. Confirme seus dados
               </h2>
 
-              <div className="bg-gradient-to-r from-orange-500/10 to-pink-500/10 border border-pink-500/20 rounded-2xl p-4 mb-6 flex items-center justify-between">
+              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-4 mb-6 flex items-center justify-between shadow-sm">
                 <div>
-                  <p className="text-white font-bold text-lg">{formatDateLabel(selectedDate!).day}/{formatDateLabel(selectedDate!).month} às {selectedSlotTime}</p>
-                  <p className="text-pink-400 text-xs font-bold uppercase tracking-widest">{formatDateLabel(selectedDate!).weekday}</p>
+                  <p className="text-slate-900 dark:text-white font-bold text-lg">{formatDateLabel(selectedDate!).day}/{formatDateLabel(selectedDate!).month} às {selectedSlotTime}</p>
+                  <p className="text-pink-600 dark:text-pink-450 text-xs font-bold uppercase tracking-widest">{formatDateLabel(selectedDate!).weekday}</p>
                 </div>
-                <button type="button" onClick={() => setSelectedSlotId(null)} className="text-pink-400 font-bold text-sm hover:text-pink-300 transition-colors">Mudar</button>
+                <button type="button" onClick={() => setSelectedSlotId(null)} className="text-pink-600 dark:text-pink-400 font-bold text-sm hover:text-pink-500 transition-colors">Mudar</button>
               </div>
 
               {submitError && (
@@ -406,29 +457,29 @@ export default function BookingPage() {
 
               <div className="space-y-4 mb-8">
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2 px-1">Seu Nome</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 px-1">Seu Nome</label>
                   <input
                     type="text"
                     value={clientName}
                     onChange={e => setClientName(e.target.value)}
                     placeholder="Digite seu nome"
                     required
-                    className="w-full px-4 py-3.5 bg-[#1A2235] border border-slate-700 rounded-xl text-white placeholder-slate-500 font-semibold focus:outline-none focus:border-pink-500 transition-colors"
+                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-550 font-semibold focus:outline-none focus:border-pink-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2 px-1">Seu WhatsApp</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 px-1">Seu WhatsApp</label>
                   <input
                     type="tel"
                     value={clientPhone}
                     onChange={e => setClientPhone(maskPhone(e.target.value))}
                     placeholder="(00) 00000-0000"
                     required
-                    className="w-full px-4 py-3.5 bg-[#1A2235] border border-slate-700 rounded-xl text-white placeholder-slate-500 font-semibold focus:outline-none focus:border-pink-500 transition-colors"
+                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-550 font-semibold focus:outline-none focus:border-pink-500 transition-colors"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-slate-300 mb-2 px-1">Cupom de Desconto (opcional)</label>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 px-1">Cupom de Desconto (opcional)</label>
                   <div className="flex gap-2">
                     <input
                       type="text"
@@ -438,7 +489,7 @@ export default function BookingPage() {
                         setCouponError('');
                       }}
                       placeholder="Código do cupom"
-                      className="flex-grow px-4 py-3 bg-[#1A2235] border border-slate-700 rounded-xl text-white placeholder-slate-500 font-semibold focus:outline-none focus:border-pink-500 transition-colors uppercase text-sm"
+                      className="flex-grow px-4 py-3 bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-550 font-semibold focus:outline-none focus:border-pink-500 transition-colors uppercase text-sm"
                       disabled={couponValidating || !!appliedCoupon}
                     />
                     {appliedCoupon ? (
@@ -471,24 +522,63 @@ export default function BookingPage() {
                       Cupom {appliedCoupon.code} aplicado! ({appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `R$ ${appliedCoupon.discountValue.toFixed(2)}`})
                     </p>
                   )}
+                  
+                  {activeCoupons.length > 0 && !appliedCoupon && (
+                    <div className="mt-3 animate-fade-in">
+                      <p className="text-[11px] font-black text-slate-650 dark:text-slate-350 uppercase tracking-wider mb-2 flex items-center gap-1">
+                        <span>💡</span> Cupons Disponíveis (Clique para aplicar)
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {activeCoupons.map((coupon) => (
+                          <button
+                            key={coupon.code}
+                            type="button"
+                            onClick={async () => {
+                              setCouponCode(coupon.code);
+                              setCouponError('');
+                              setCouponValidating(true);
+                              try {
+                                const result = await api.validateCoupon(token!, coupon.code);
+                                setAppliedCoupon(result);
+                              } catch (err: any) {
+                                setCouponError(err.message || 'Erro ao aplicar cupom.');
+                              } finally {
+                                setCouponValidating(false);
+                              }
+                            }}
+                            className="bg-slate-100 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-700 hover:border-pink-500 rounded-xl px-3 py-2 text-left flex items-center justify-between gap-3 text-xs transition-all hover:scale-[1.02] cursor-pointer shadow-sm group"
+                          >
+                            <span className="font-mono font-black text-pink-600 dark:text-pink-400 group-hover:text-pink-500 dark:group-hover:text-pink-350">
+                              {coupon.code}
+                            </span>
+                            <span className="text-slate-600 dark:text-slate-300 font-bold bg-slate-200 dark:bg-slate-800 px-2 py-0.5 rounded-lg text-[10px]">
+                              {coupon.discountType === 'percentage'
+                                ? `-${coupon.discountValue}%`
+                                : `-R$ ${coupon.discountValue.toFixed(2)}`}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Price Summary Breakdown */}
-              <div className="bg-[#1A2235] border border-slate-800 rounded-2xl p-4 mb-6 space-y-2.5 text-left">
-                <div className="flex justify-between items-center text-xs font-bold text-slate-400">
+              <div className="bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-6 space-y-2.5 text-left shadow-sm">
+                <div className="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-350">
                   <span>Preço do Serviço</span>
-                  <span>R$ {servicePrice.toFixed(2)}</span>
+                  <span className="text-slate-800 dark:text-slate-200">R$ {servicePrice.toFixed(2)}</span>
                 </div>
                 {appliedCoupon && (
-                  <div className="flex justify-between items-center text-emerald-400 text-xs font-bold">
+                  <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                     <span>Cupom ({appliedCoupon.code})</span>
                     <span>-{appliedCoupon.discountType === 'percentage' ? `${appliedCoupon.discountValue}%` : `R$ ${appliedCoupon.discountValue.toFixed(2)}`}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center pt-2.5 border-t border-slate-800/80">
-                  <span className="text-xs font-black text-slate-300">Total a pagar no local</span>
-                  <span className="text-lg font-black text-pink-500">
+                <div className="flex justify-between items-center pt-2.5 border-t border-slate-200 dark:border-slate-800/80">
+                  <span className="text-xs font-black text-slate-700 dark:text-slate-300">Total a pagar no local</span>
+                  <span className="text-lg font-black text-pink-600 dark:text-pink-500">
                     R$ {(() => {
                       if (!appliedCoupon) return servicePrice;
                       if (appliedCoupon.discountType === 'percentage') {
@@ -502,10 +592,52 @@ export default function BookingPage() {
               </div>
 
               {bookingFeeEnabled && bookingFeeAmount > 0 && !activeMembership && (
-                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6 text-center space-y-1">
-                  <p className="text-amber-400 text-xs font-black uppercase tracking-widest">💳 Sinal de Reserva</p>
-                  <p className="text-white font-black text-lg">R$ {bookingFeeAmount.toFixed(2)}</p>
-                  <p className="text-slate-400 text-xs font-semibold">O profissional solicita um sinal antecipado para garantir seu horário. Esse valor vai direto para ele e será descontado do total no dia.</p>
+                <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-550/30 rounded-2xl p-4 mb-6 text-center space-y-3">
+                  <p className="text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-widest">💳 Forma de Pagamento</p>
+                  <p className="text-slate-600 dark:text-slate-350 text-xs font-semibold">O profissional solicita um sinal para garantir seu horário. Escolha como deseja pagar:</p>
+                  
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => setPayFullPrice(false)}
+                      className={`py-4 px-3 rounded-2xl border-2 transition-all text-left ${
+                        !payFullPrice
+                          ? 'border-amber-500 bg-amber-500/15 shadow-lg shadow-amber-500/10'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1A2235] hover:border-slate-350 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      <p className={`text-xs font-black uppercase tracking-wider mb-1 ${!payFullPrice ? 'text-amber-600 dark:text-amber-450' : 'text-slate-400 dark:text-slate-500'}`}>
+                        Só o Sinal
+                      </p>
+                      <p className={`text-lg font-black ${!payFullPrice ? 'text-slate-900 dark:text-white' : 'text-slate-650 dark:text-slate-400'}`}>
+                        R$ {bookingFeeAmount.toFixed(2)}
+                      </p>
+                      <p className={`text-[10px] font-semibold mt-1 ${!payFullPrice ? 'text-amber-800 dark:text-amber-300/80' : 'text-slate-500 dark:text-slate-450'}`}>Paga o restante no dia</p>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => setPayFullPrice(true)}
+                      className={`py-4 px-3 rounded-2xl border-2 transition-all text-left relative overflow-hidden ${
+                        payFullPrice
+                          ? 'border-emerald-500 bg-emerald-500/15 shadow-lg shadow-emerald-500/10'
+                          : 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-[#1A2235] hover:border-slate-350 dark:hover:border-slate-600'
+                      }`}
+                    >
+                      {!payFullPrice && (
+                        <span className="absolute top-1.5 right-1.5 text-[8px] font-black bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          Sem preocupação
+                        </span>
+                      )}
+                      <p className={`text-xs font-black uppercase tracking-wider mb-1 ${payFullPrice ? 'text-emerald-600 dark:text-emerald-450' : 'text-slate-400 dark:text-slate-500'}`}>
+                        Valor Total
+                      </p>
+                      <p className={`text-lg font-black ${payFullPrice ? 'text-slate-900 dark:text-white' : 'text-slate-650 dark:text-slate-400'}`}>
+                        R$ {servicePrice.toFixed(2)}
+                      </p>
+                      <p className={`text-[10px] font-semibold mt-1 ${payFullPrice ? 'text-emerald-800 dark:text-emerald-300/80' : 'text-slate-500 dark:text-slate-450'}`}>Nada a pagar no dia 🎉</p>
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -520,7 +652,7 @@ export default function BookingPage() {
               <button
                 type="submit"
                 disabled={submitting || !clientName.trim() || clientPhone.replace(/\D/g, '').length < 10}
-                className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white font-black py-5 text-xl rounded-2xl flex items-center justify-center gap-3 shadow-xl shadow-pink-500/20 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full custom-gradient-bg text-white font-black py-5 text-xl rounded-2xl flex items-center justify-center gap-3 shadow-xl custom-accent-glow hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (
                   <>

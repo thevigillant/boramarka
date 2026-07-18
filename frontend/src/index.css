@@ -8,6 +8,11 @@
   html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
   body { 
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif; 
+    background-color: #F1F5F9;
+    color: #334155;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+  .dark body {
     background-color: #050507;
     color: #fff;
   }
@@ -17,34 +22,40 @@
 
 @layer components {
   .card-simple {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.04);
+    background: rgba(15, 23, 42, 0.03);
+    border: 1px solid rgba(15, 23, 42, 0.05);
     border-radius: 1.5rem;
     padding: 6px;
     transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
   }
 
-  .card-simple > * {
-    /* Inner content inherits the doppelrand-inner look when nested */
-  }
-
   .dark .card-simple {
-    background: rgba(255, 255, 255, 0.02);
-    border-color: rgba(255, 255, 255, 0.04);
+    background: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.04) !important;
   }
 
   .card-simple:hover {
-    border-color: rgba(139, 92, 246, 0.12);
-    box-shadow: 0 0 40px rgba(139, 92, 246, 0.04);
+    border-color: rgba(139, 92, 246, 0.18);
+    box-shadow: 0 10px 40px rgba(139, 92, 246, 0.05);
     transform: translateY(-2px);
+  }
+
+  .dark .card-simple:hover {
+    border-color: rgba(139, 92, 246, 0.12) !important;
+    box-shadow: 0 0 40px rgba(139, 92, 246, 0.04) !important;
   }
 
   /* Card simple inner — apply this to the direct child for doppelrand effect */
   .card-simple-inner {
-    background: rgba(8, 10, 22, 0.85);
+    background: #ffffff;
     border-radius: calc(1.5rem - 6px);
-    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 1px 3px rgba(15, 23, 42, 0.05);
     height: 100%;
+  }
+
+  .dark .card-simple-inner {
+    background: rgba(8, 10, 22, 0.85) !important;
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06) !important;
   }
 
   .btn-primary-simple {
@@ -75,13 +86,19 @@
 
   .input-simple {
     width: 100%;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    color: rgba(255, 255, 255, 0.8);
+    background: rgba(15, 23, 42, 0.02);
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    color: #1e293b;
     border-radius: 1rem;
     padding: 0.75rem 1rem;
     transition: border-color 0.5s cubic-bezier(0.32, 0.72, 0, 1),
                 box-shadow 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  }
+
+  .dark .input-simple {
+    background: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.06) !important;
+    color: rgba(255, 255, 255, 0.8) !important;
   }
 
   .input-simple:focus {
@@ -153,16 +170,26 @@
 
 /* Double-Bezel Wrapper */
 .doppelrand {
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(15, 23, 42, 0.03);
+  border: 1px solid rgba(15, 23, 42, 0.05);
   border-radius: 2rem;
   padding: 6px;
 }
 
+.dark .doppelrand {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.04) !important;
+}
+
 .doppelrand-inner {
-  background: rgba(8, 10, 22, 0.85);
+  background: #ffffff;
   border-radius: calc(2rem - 6px);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.9), 0 1px 3px rgba(15, 23, 42, 0.05);
+}
+
+.dark .doppelrand-inner {
+  background: rgba(8, 10, 22, 0.85) !important;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.06) !important;
 }
 
 /* Floating glass nav */

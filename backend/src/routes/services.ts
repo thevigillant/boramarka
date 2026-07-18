@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { createAuditLog } from '../utils/auditLogger';
 
 export default async function serviceRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -52,6 +53,14 @@ export default async function serviceRoutes(app: FastifyInstance) {
       return s;
     });
 
+    await createAuditLog(request, {
+      action: 'CREATE_SERVICE',
+      entity: 'SERVICE',
+      entityId: service.id,
+      details: `Cadastrou o serviço "${service.name}" (R$ ${price.toFixed(2)}, ${duration} min)`,
+      adminId: user.id,
+    });
+
     return reply.status(201).send(service);
   });
 
@@ -76,6 +85,15 @@ export default async function serviceRoutes(app: FastifyInstance) {
           ...(duration !== undefined && { duration }),
         },
       });
+
+      await createAuditLog(request, {
+        action: 'UPDATE_SERVICE',
+        entity: 'SERVICE',
+        entityId: updated.id,
+        details: `Atualizou os dados do serviço "${updated.name}"`,
+        adminId: user.id,
+      });
+
       return updated;
     } catch {
       return reply.status(404).send({ error: 'Serviço não encontrado' });
@@ -88,8 +106,11 @@ export default async function serviceRoutes(app: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     try {
+      const serviceToDelete = await prisma.service.findFirst({
+        where: { id: parseInt(id), adminId: user.id },
+      });
+
       await prisma.$transaction(async (tx) => {
-        // Delete related scheduling link first
         await tx.schedulingLink.deleteMany({
           where: { serviceId: parseInt(id), adminId: user.id }
         });
@@ -98,6 +119,15 @@ export default async function serviceRoutes(app: FastifyInstance) {
           where: { id: parseInt(id), adminId: user.id },
         });
       });
+
+      await createAuditLog(request, {
+        action: 'DELETE_SERVICE',
+        entity: 'SERVICE',
+        entityId: id,
+        details: `Excluiu o serviço "${serviceToDelete?.name || id}"`,
+        adminId: user.id,
+      });
+
       return reply.status(204).send();
     } catch {
       return reply.status(404).send({ error: 'Serviço não encontrado' });

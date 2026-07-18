@@ -79,6 +79,7 @@ export default function Register() {
 
   useEffect(() => {
     setChecking(false)
+    document.documentElement.classList.add('dark')
   }, [])
 
   // Step 1 — Credenciais

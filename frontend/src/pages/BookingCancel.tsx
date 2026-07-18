@@ -51,6 +51,7 @@ export default function BookingCancel() {
   const [newDateTime, setNewDateTime] = useState({ date: '', time: '' })
 
   useEffect(() => {
+    document.documentElement.classList.add('dark')
     if (!bookingId) return
     api.getPublicBookingDetails(Number(bookingId))
       .then(data => {

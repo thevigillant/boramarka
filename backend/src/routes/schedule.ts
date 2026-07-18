@@ -215,6 +215,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       where: { token },
       include: {
         service: true,
+        admin: true,
         timeSlots: {
           where: { isAvailable: true },
           orderBy: [{ date: 'asc' }, { time: 'asc' }],
@@ -293,6 +294,19 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       slotsByDate[slot.date].push({ id: slot.id, time: slot.time });
     }
 
+    // Buscar cupons ativos deste profissional
+    const coupons = await prisma.coupon.findMany({
+      where: {
+        adminId: link.adminId,
+        active: true
+      },
+      select: {
+        code: true,
+        discountType: true,
+        discountValue: true
+      }
+    });
+
     return {
       title: link.title,
       dates: Object.keys(slotsByDate).sort(),
@@ -301,16 +315,21 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       bookingFeeAmount: link.bookingFeeAmount,
       serviceName: link.service?.name || '',
       servicePrice: link.service?.price || 0,
+      activeCoupons: coupons,
+      accentColor: link.admin.accentColor,
+      secondaryColor: link.admin.secondaryColor,
+      publicTheme: link.admin.publicTheme,
     };
   });
 
   // POST /api/schedule/:token/book — Book a time slot
   app.post('/:token/book', async (request, reply) => {
     const { token } = request.params as { token: string };
-    const { timeSlotId, clientName, clientPhone } = request.body as {
+    const { timeSlotId, clientName, clientPhone, payFullPrice } = request.body as {
       timeSlotId: number;
       clientName: string;
       clientPhone: string;
+      payFullPrice?: boolean;
     };
 
     // Validate input
@@ -377,7 +396,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     if (isFeeRequired) {
       const admin = await prisma.admin.findUnique({
         where: { id: link.adminId },
-        select: { mpAccessToken: true, businessName: true }
+        select: { mpAccessToken: true, businessName: true, phone: true }
       });
 
       if (!admin?.mpAccessToken) {
@@ -420,6 +439,14 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         return reply.status(409).send({ error: 'Este horário acabou de ser reservado. Escolha outro.' });
       }
 
+      // Determine payment amount: full service price or just the booking fee
+      const paymentAmount = payFullPrice && link.service?.price
+        ? link.service.price
+        : link.bookingFeeAmount;
+      const paymentLabel = payFullPrice && link.service?.price
+        ? `Pagamento Total - ${admin.businessName || 'Profissional'}`
+        : `Taxa de Agendamento - ${admin.businessName || 'Profissional'}`;
+
       // If mpAccessToken is SIMULADOR, return simulation URL
       if (admin.mpAccessToken === 'SIMULADOR') {
         return reply.status(201).send({
@@ -431,6 +458,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
             time: booking.timeSlot.time,
           },
           paymentRequired: true,
+          paymentAmount,
+          payFullPrice: !!payFullPrice,
           paymentUrl: `/agendar/${token}/pagar-simulado?bookingId=${booking.id}`,
         });
       } else {
@@ -448,9 +477,9 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               items: [
                 {
                   id: `fee_${booking.id}`,
-                  title: `Taxa de Agendamento - ${admin.businessName || 'Profissional'}`,
+                  title: paymentLabel,
                   quantity: 1,
-                  unit_price: link.bookingFeeAmount,
+                  unit_price: paymentAmount,
                   currency_id: 'BRL',
                 }
               ],
@@ -473,6 +502,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               time: booking.timeSlot.time,
             },
             paymentRequired: true,
+            paymentAmount,
+            payFullPrice: !!payFullPrice,
             paymentUrl: response.init_point,
           });
         } catch (error) {
@@ -521,13 +552,34 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(409).send({ error: 'Este horário acabou de ser reservado. Escolha outro.' });
     }
 
-    // Generate and send WhatsApp message
+    // Generate and send WhatsApp message to client
     const message = generateBookingMessage(
       clientName.trim(),
       booking.timeSlot.date,
       booking.timeSlot.time
     );
     const whatsappResult = await sendWhatsAppMessage(cleanPhone, message);
+
+    // Notify the professional via WhatsApp
+    const adminForNotify = await prisma.admin.findUnique({
+      where: { id: link.adminId },
+      select: { phone: true, businessName: true }
+    });
+    if (adminForNotify?.phone) {
+      const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+      const adminMsg = [
+        `🔔 *Novo Agendamento!*`,
+        '',
+        `👤 Cliente: *${clientName.trim()}*`,
+        `📞 Tel: ${cleanPhone}`,
+        `📅 Data: *${formattedDate}*`,
+        `🕐 Hora: *${booking.timeSlot.time}*`,
+        `💼 Serviço: *${link.service?.name || 'Serviço'}*`,
+        '',
+        `Confira no seu painel BoraMarka! 🚀`,
+      ].join('\n');
+      await sendWhatsAppMessage(adminForNotify.phone, adminMsg);
+    }
 
     return reply.status(201).send({
       booking: {
@@ -768,43 +820,71 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return { success: true, message: 'Agendamento já processado.' };
     }
 
-    // Update status to PAGO
+    // Determine the payment amount — check if the original preference was for full price
+    const link = booking.timeSlot.link;
+    const servicePrice = link.service?.price || 0;
+    const feeAmount = link.bookingFeeAmount;
+    // If paidAmount would be service price, it was a full payment; otherwise it's the fee
+    // We'll use request body to determine, but for simulation we check a query param or default to fee
+    const { payFullPrice } = request.body as { payFullPrice?: boolean };
+    const paidAmount = payFullPrice ? servicePrice : feeAmount;
+    const isFullPayment = payFullPrice && servicePrice > 0;
+    const paymentLabel = isFullPayment ? 'Pagamento Total do Serviço' : 'Taxa de Agendamento';
+
+    // Update status and paidAmount
     const updated = await prisma.booking.update({
       where: { id: booking.id },
-      data: { status: 'PAGO' }
+      data: { status: 'PAGO', paidAmount }
     });
 
-    // Create fee transaction in professional's cash flow
-    const link = booking.timeSlot.link;
+    // Create transaction in professional's cash flow
     await prisma.transaction.create({
       data: {
         type: 'receivable',
-        description: `Taxa de Agendamento - ${booking.clientName}`,
-        amount: link.bookingFeeAmount,
+        description: `${paymentLabel} - ${booking.clientName}`,
+        amount: paidAmount,
         dueDate: new Date().toISOString().split('T')[0],
         paid: true,
         paidAt: new Date().toISOString().split('T')[0],
         clientName: booking.clientName,
-        category: 'Taxa de Agendamento',
+        category: paymentLabel,
         notes: 'Pago via Simulador de Testes',
         adminId: link.adminId
       }
     });
 
-    // Send WhatsApp notification
+    // Send WhatsApp notification to client
     const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
-    const message = [
+    const clientMsg = [
       `Olá, ${booking.clientName}! ✅`,
       '',
-      `Seu agendamento foi *confirmado*! Recebemos o pagamento da taxa de agendamento de R$ ${link.bookingFeeAmount.toFixed(2)}.`,
+      isFullPayment
+        ? `Seu agendamento foi *confirmado*! Recebemos o pagamento total de R$ ${paidAmount.toFixed(2)}. Nada a pagar no dia! 🎉`
+        : `Seu agendamento foi *confirmado*! Recebemos o pagamento da taxa de agendamento de R$ ${paidAmount.toFixed(2)}.`,
       `📅 Data: *${formattedDate}*`,
       `🕐 Hora: *${booking.timeSlot.time}*`,
       `💼 Serviço: *${link.service?.name || 'Serviço'}*`,
       '',
       `Obrigado pela preferência! 😊`,
     ].join('\n');
+    await sendWhatsAppMessage(booking.clientPhone, clientMsg);
 
-    await sendWhatsAppMessage(booking.clientPhone, message);
+    // Notify the professional via WhatsApp
+    if (link.admin?.phone) {
+      const adminMsg = [
+        `🔔 *Novo Agendamento Confirmado!*`,
+        '',
+        `👤 Cliente: *${booking.clientName}*`,
+        `📞 Tel: ${booking.clientPhone}`,
+        `📅 Data: *${formattedDate}*`,
+        `🕐 Hora: *${booking.timeSlot.time}*`,
+        `💼 Serviço: *${link.service?.name || 'Serviço'}*`,
+        `💰 ${paymentLabel}: *R$ ${paidAmount.toFixed(2)}*`,
+        '',
+        `Confira no seu painel BoraMarka! 🚀`,
+      ].join('\n');
+      await sendWhatsAppMessage(link.admin.phone, adminMsg);
+    }
 
     return {
       success: true,
@@ -866,43 +946,73 @@ export default async function scheduleRoutes(app: FastifyInstance) {
             });
 
             if (booking && booking.status === 'AGUARDANDO_PAGAMENTO') {
-              // Update status to PAGO
+              // Determine if this was a full payment or just the fee
+              // We compare the payment amount with the service price
+              const paidMpAmount = paymentInfo.transaction_amount || booking.timeSlot.link.bookingFeeAmount;
+              const servicePrice = booking.timeSlot.link.service?.price || 0;
+              const isFullPayment = servicePrice > 0 && paidMpAmount >= servicePrice;
+              const paymentLabel = isFullPayment ? 'Pagamento Total do Serviço' : 'Taxa de Agendamento';
+
+              // Update status and paidAmount
               await prisma.booking.update({
                 where: { id: bookingId },
-                data: { status: 'PAGO' }
+                data: { status: 'PAGO', paidAmount: paidMpAmount }
               });
 
               // Create transaction
               await prisma.transaction.create({
                 data: {
                   type: 'receivable',
-                  description: `Taxa de Agendamento - ${booking.clientName}`,
-                  amount: booking.timeSlot.link.bookingFeeAmount,
+                  description: `${paymentLabel} - ${booking.clientName}`,
+                  amount: paidMpAmount,
                   dueDate: new Date().toISOString().split('T')[0],
                   paid: true,
                   paidAt: new Date().toISOString().split('T')[0],
                   clientName: booking.clientName,
-                  category: 'Taxa de Agendamento',
+                  category: paymentLabel,
                   notes: `Pago via Mercado Pago (Ref: ${dataId})`,
                   adminId: matchedAdmin.id
                 }
               });
 
-              // Send WhatsApp message
+              // Send WhatsApp message to client
               const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
-              const message = [
+              const clientMessage = [
                 `Olá, ${booking.clientName}! ✅`,
                 '',
-                `Seu agendamento foi *confirmado*! Recebemos o pagamento da taxa de agendamento de R$ ${booking.timeSlot.link.bookingFeeAmount.toFixed(2)}.`,
+                isFullPayment
+                  ? `Seu agendamento foi *confirmado*! Recebemos o pagamento total de R$ ${paidMpAmount.toFixed(2)}. Nada a pagar no dia! 🎉`
+                  : `Seu agendamento foi *confirmado*! Recebemos o pagamento da taxa de agendamento de R$ ${paidMpAmount.toFixed(2)}.`,
                 `📅 Data: *${formattedDate}*`,
                 `🕐 Hora: *${booking.timeSlot.time}*`,
                 `💼 Serviço: *${booking.timeSlot.link.service?.name || 'Serviço'}*`,
                 '',
                 `Obrigado pela preferência! 😊`,
               ].join('\n');
+              await sendWhatsAppMessage(booking.clientPhone, clientMessage);
 
-              await sendWhatsAppMessage(booking.clientPhone, message);
-              console.log(`✅ Webhook-Fee: Pagamento aprovado de R$ ${booking.timeSlot.link.bookingFeeAmount} para Booking ID ${bookingId}`);
+              // Notify the professional via WhatsApp
+              const adminForWebhook = await prisma.admin.findUnique({
+                where: { id: matchedAdmin.id },
+                select: { phone: true }
+              });
+              if (adminForWebhook?.phone) {
+                const adminMsg = [
+                  `🔔 *Novo Agendamento Confirmado!*`,
+                  '',
+                  `👤 Cliente: *${booking.clientName}*`,
+                  `📞 Tel: ${booking.clientPhone}`,
+                  `📅 Data: *${formattedDate}*`,
+                  `🕐 Hora: *${booking.timeSlot.time}*`,
+                  `💼 Serviço: *${booking.timeSlot.link.service?.name || 'Serviço'}*`,
+                  `💰 ${paymentLabel}: *R$ ${paidMpAmount.toFixed(2)}*`,
+                  '',
+                  `Confira no seu painel BoraMarka! 🚀`,
+                ].join('\n');
+                await sendWhatsAppMessage(adminForWebhook.phone, adminMsg);
+              }
+
+              console.log(`✅ Webhook-Fee: ${paymentLabel} de R$ ${paidMpAmount} para Booking ID ${bookingId}`);
             }
           }
         }

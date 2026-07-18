@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { createAuditLog } from '../utils/auditLogger';
 
 export default async function adminRoutes(app: FastifyInstance) {
   // All admin routes require authentication
@@ -691,6 +692,14 @@ export default async function adminRoutes(app: FastifyInstance) {
       }
     });
 
+    await createAuditLog(request, {
+      action: 'CREATE_COUPON',
+      entity: 'COUPON',
+      entityId: coupon.id,
+      details: `Cadastrou o cupom de desconto "${cleanCode}" (${discountType === 'percentage' ? `${discountValue}%` : `R$ ${discountValue}`})`,
+      adminId: user.id,
+    });
+
     return reply.status(201).send(coupon);
   });
 
@@ -712,6 +721,14 @@ export default async function adminRoutes(app: FastifyInstance) {
 
     await prisma.coupon.delete({
       where: { id: coupon.id }
+    });
+
+    await createAuditLog(request, {
+      action: 'DELETE_COUPON',
+      entity: 'COUPON',
+      entityId: coupon.id,
+      details: `Excluiu o cupom de desconto "${coupon.code}"`,
+      adminId: user.id,
     });
 
     return reply.status(204).send();

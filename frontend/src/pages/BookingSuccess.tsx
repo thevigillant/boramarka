@@ -22,6 +22,7 @@ export default function BookingSuccess() {
   const state = location.state as {
     booking?: { id: number; clientName: string; clientPhone: string; date: string; time: string }
     whatsapp?: { success: boolean; method: 'api' | 'link'; link?: string }
+    payFullPrice?: boolean
   } | null
 
   // Check for bookingId in query params (return from Mercado Pago)
@@ -37,6 +38,7 @@ export default function BookingSuccess() {
   const [showConfirmModal, setShowConfirmModal] = useState(true)
 
   const bookingId = state?.booking?.id || (queryBookingId ? parseInt(queryBookingId) : null)
+  const isPayFullPrice = state?.payFullPrice || false
 
   useEffect(() => {
     if (bookingId) {
@@ -111,7 +113,9 @@ export default function BookingSuccess() {
 
         {isPaidViaMP && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
-            ✅ Taxa de agendamento paga via Mercado Pago!
+            {isPayFullPrice
+              ? '✅ Valor total do serviço pago via Mercado Pago! Nada a pagar no dia! 🎉'
+              : '✅ Taxa de agendamento paga via Mercado Pago!'}
           </div>
         )}
 

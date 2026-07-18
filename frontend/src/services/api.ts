@@ -341,22 +341,33 @@ export const api = {
       bookingFeeAmount: number;
       serviceName: string;
       servicePrice: number;
+      activeCoupons?: Array<{
+        code: string;
+        discountType: 'percentage' | 'fixed';
+        discountValue: number;
+      }>;
+      accentColor?: string;
+      secondaryColor?: string;
+      publicTheme?: string;
     }>(`/schedule/${token}`),
 
-  bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string }) =>
+  bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string; payFullPrice?: boolean }) =>
     request<{
       booking: { id: number; clientName: string; clientPhone: string; date: string; time: string };
       whatsapp: { success: boolean; method: 'api' | 'link'; link?: string };
       paymentRequired?: boolean;
+      paymentAmount?: number;
+      payFullPrice?: boolean;
       paymentUrl?: string;
     }>(`/schedule/${token}/book`, {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
-  confirmSimulationBooking: (id: number) =>
+  confirmSimulationBooking: (id: number, payFullPrice?: boolean) =>
     request<{ success: boolean; booking: any }>(`/schedule/booking/${id}/confirm-simulation`, {
-      method: 'POST'
+      method: 'POST',
+      body: JSON.stringify({ payFullPrice }),
     }),
 
   getPublicBookingDetails: (id: number) =>
@@ -606,6 +617,137 @@ export const api = {
       body: JSON.stringify({ content }),
     }),
 
+  // ═══ Employees / RH ═══
+  getEmployees: (params?: { status?: string; pendingType?: string; pendingResolved?: boolean }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.pendingType) query.append('pendingType', params.pendingType);
+    if (params?.pendingResolved !== undefined) query.append('pendingResolved', params.pendingResolved.toString());
+    return request<Array<{
+      id: number;
+      name: string;
+      role: string;
+      phone: string;
+      email: string;
+      cpf: string;
+      rg: string;
+      birthDate: string;
+      admissionDate: string;
+      salary: number;
+      commission: number;
+      workingHours: string;
+      status: 'ACTIVE' | 'DISMISSED' | 'ARCHIVED';
+      dismissalDate: string;
+      dismissalReason: string;
+      dismissalNotes: string;
+      pendingType: string;
+      pendingResolved: boolean;
+      pendingNotes: string;
+      createdAt: string;
+      documents?: Array<{
+        id: number;
+        title: string;
+        category: string;
+        fileUrl: string;
+        fileName: string;
+        fileSize: string;
+        expiryDate: string;
+        notes: string;
+        createdAt: string;
+      }>;
+    }>>(`/admin/employees?${query.toString()}`);
+  },
+
+  createEmployee: (data: {
+    name: string;
+    role: string;
+    phone?: string;
+    email?: string;
+    cpf?: string;
+    rg?: string;
+    birthDate?: string;
+    admissionDate?: string;
+    salary?: number;
+    commission?: number;
+    workingHours?: string;
+  }) =>
+    request('/admin/employees', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateEmployee: (id: number, data: any) =>
+    request(`/admin/employees/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  dismissEmployee: (id: number, data: {
+    dismissalDate?: string;
+    dismissalReason?: string;
+    dismissalNotes?: string;
+    pendingType?: string;
+    pendingNotes?: string;
+    pendingResolved?: boolean;
+  }) =>
+    request(`/admin/employees/${id}/dismiss`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  resolveEmployeePending: (id: number, resolved = true) =>
+    request(`/admin/employees/${id}/resolve-pending`, {
+      method: 'PUT',
+      body: JSON.stringify({ resolved }),
+    }),
+
+  archiveEmployee: (id: number) =>
+    request(`/admin/employees/${id}/archive`, {
+      method: 'PUT',
+    }),
+
+  restoreEmployee: (id: number) =>
+    request(`/admin/employees/${id}/restore`, {
+      method: 'PUT',
+    }),
+
+  deleteEmployee: (id: number) =>
+    request(`/admin/employees/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getEmployeeDocuments: (employeeId: number) =>
+    request<Array<{
+      id: number;
+      title: string;
+      category: string;
+      fileUrl: string;
+      fileName: string;
+      fileSize: string;
+      expiryDate: string;
+      notes: string;
+      createdAt: string;
+    }>>(`/admin/employees/${employeeId}/documents`),
+
+  addEmployeeDocument: (employeeId: number, data: {
+    title: string;
+    category?: string;
+    fileUrl: string;
+    fileName?: string;
+    fileSize?: string;
+    expiryDate?: string;
+    notes?: string;
+  }) =>
+    request(`/admin/employees/${employeeId}/documents`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteEmployeeDocument: (documentId: number) =>
+    request(`/admin/employees/documents/${documentId}`, {
+      method: 'DELETE',
+    }),
+
   impersonateUser: (id: number) =>
     request<{ token: string; username: string }>(`/superadmin/users/${id}/impersonate`, {
       method: 'POST',
@@ -615,4 +757,26 @@ export const api = {
     request<{ token: string; username: string }>('/superadmin/impersonate-self', {
       method: 'POST',
     }),
+
+  getAuditLogs: (params?: { search?: string; entity?: string; action?: string; severity?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.entity) query.append('entity', params.entity);
+    if (params?.action) query.append('action', params.action);
+    if (params?.severity) query.append('severity', params.severity);
+    return request<Array<{
+      id: number;
+      action: string;
+      entity: string;
+      entityId: string;
+      details: string;
+      ipAddress: string;
+      userAgent: string;
+      deviceInfo: string;
+      severity: 'CRITICAL' | 'HIGH' | 'MEDIUM' | 'INFO';
+      userName: string;
+      userRole: string;
+      createdAt: string;
+    }>>(`/admin/audit-logs?${query.toString()}`);
+  },
 };

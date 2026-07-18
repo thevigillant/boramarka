@@ -40,6 +40,8 @@ model Admin {
   clientNotes    ClientNote[]
   sentMessages     ChatMessage[] @relation("SentMessages")
   receivedMessages ChatMessage[] @relation("ReceivedMessages")
+  employees        Employee[]
+  auditLogs        AuditLog[]
 
   @@map("admin")
 }
@@ -118,6 +120,7 @@ model Booking {
   status       String   @default("PENDENTE")
   timeSlotId   Int      @unique @map("time_slot_id")
   timeSlot     TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  paidAmount   Float    @default(0) @map("paid_amount")
   reminderSent Boolean  @default(false) @map("reminder_sent")
   createdAt    DateTime @default(now()) @map("created_at")
 
@@ -212,4 +215,79 @@ model ChatMessage {
   receiver   Admin    @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
 
   @@map("chat_messages")
+}
+
+model Employee {
+  id               Int      @id @default(autoincrement())
+  name             String
+  role             String
+  phone            String   @default("")
+  email            String   @default("")
+  cpf              String   @default("")
+  rg               String   @default("")
+  birthDate        String   @default("") @map("birth_date")
+  admissionDate    String   @default("") @map("admission_date")
+  salary           Float    @default(0.0)
+  commission       Float    @default(0.0)
+  workingHours     String   @default("") @map("working_hours")
+  
+  // Status: "ACTIVE" | "DISMISSED" | "ARCHIVED"
+  status           String   @default("ACTIVE")
+  
+  // Dismissal / Termination details
+  dismissalDate    String   @default("") @map("dismissal_date")
+  dismissalReason  String   @default("") @map("dismissal_reason")
+  dismissalNotes   String   @default("") @map("dismissal_notes")
+  
+  // Pending issues (if dismissed)
+  pendingType      String   @default("") @map("pending_type")
+  pendingResolved  Boolean  @default(true) @map("pending_resolved")
+  pendingNotes     String   @default("") @map("pending_notes")
+
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @default(now()) @map("updated_at")
+
+  adminId          Int      @map("admin_id")
+  admin            Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  documents        EmployeeDocument[]
+
+  @@map("employees")
+}
+
+model EmployeeDocument {
+  id          Int      @id @default(autoincrement())
+  title       String
+  category    String   @default("GERAL")
+  fileUrl     String   @map("file_url")
+  fileName    String   @default("") @map("file_name")
+  fileSize    String   @default("") @map("file_size")
+  expiryDate  String   @default("") @map("expiry_date")
+  notes       String   @default("")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  employeeId  Int      @map("employee_id")
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_documents")
+}
+
+model AuditLog {
+  id          Int      @id @default(autoincrement())
+  action      String
+  entity      String
+  entityId    String   @default("") @map("entity_id")
+  details     String   @default("")
+  ipAddress   String   @default("") @map("ip_address")
+  userAgent   String   @default("") @map("user_agent")
+  deviceInfo  String   @default("") @map("device_info")
+  severity    String   @default("INFO")
+  userName    String   @default("") @map("user_name")
+  userRole    String   @default("") @map("user_role")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("audit_logs")
 }

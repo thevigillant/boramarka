@@ -25,6 +25,11 @@ export default function Login() {
     }
   }, [navigate])
 
+  // Forçar modo escuro na tela de login
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+  }, [])
+
   // Check if account exists on mount
   useEffect(() => {
     api.checkAccount()
