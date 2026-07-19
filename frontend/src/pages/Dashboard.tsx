@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
 import {
@@ -11,6 +11,7 @@ import {
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
   FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop
 } from 'lucide-react'
+import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 
 // ════════════════════════════════════════════
 // Types
@@ -46,7 +47,7 @@ interface BookingData {
   clientName: string
   clientPhone: string
   status: string
-  paidAmount: number
+  paidAmount?: number
   createdAt: string
   timeSlot: {
     date: string
@@ -507,6 +508,18 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit'>('overview')
   const [showPaywall, setShowPaywall] = useState(false)
   const [financeFilter, setFinanceFilter] = useState<'all' | 'receivable' | 'payable'>('all')
+  const [financeSearchQuery, setFinanceSearchQuery] = useState('')
+  const [financePaidFilter, setFinancePaidFilter] = useState<'all' | 'paid' | 'unpaid'>('all')
+  const [financeDateRange, setFinanceDateRange] = useState<'all' | 'today' | 'thisMonth' | 'lastMonth' | 'last30' | 'last90' | 'custom'>('all')
+  const [financeStartDate, setFinanceStartDate] = useState('')
+  const [financeEndDate, setFinanceEndDate] = useState('')
+  const [financeCategoryFilter, setFinanceCategoryFilter] = useState('all')
+  const [showPdfModal, setShowPdfModal] = useState(false)
+  const [pdfReportType, setPdfReportType] = useState<'bookings' | 'finance'>('bookings')
+  const [pdfIncludeLogo, setPdfIncludeLogo] = useState(true)
+  const [pdfLogoUrl, setPdfLogoUrl] = useState('')
+  const [exportingPdf, setExportingPdf] = useState(false)
+  const pdfFileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -525,6 +538,122 @@ export default function Dashboard() {
   const [links, setLinks] = useState<LinkData[]>([])
   const [bookings, setBookings] = useState<BookingData[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  
+  // Get all unique categories for filter
+  const uniqueCategories = useMemo(() => {
+    const cats = new Set<string>()
+    transactions.forEach(t => {
+      if (t.category) cats.add(t.category)
+    })
+    return Array.from(cats)
+  }, [transactions])
+
+  // Filtered Transactions
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter((t: Transaction) => {
+      // 1. Search Query filter (description or clientName)
+      if (financeSearchQuery.trim()) {
+        const query = financeSearchQuery.toLowerCase()
+        const descMatch = t.description.toLowerCase().includes(query)
+        const clientMatch = t.clientName ? t.clientName.toLowerCase().includes(query) : false
+        if (!descMatch && !clientMatch) return false
+      }
+
+      // 2. Paid filter (status)
+      if (financePaidFilter !== 'all') {
+        const wantPaid = financePaidFilter === 'paid'
+        if (t.paid !== wantPaid) return false
+      }
+
+      // 3. Category filter
+      if (financeCategoryFilter !== 'all') {
+        if (t.category !== financeCategoryFilter) return false
+      }
+
+      // 4. Date range filter
+      if (financeDateRange !== 'all') {
+        const tDate = new Date(t.dueDate)
+        const today = new Date()
+        
+        // Reset times for date-only comparison
+        tDate.setHours(0, 0, 0, 0)
+        today.setHours(0, 0, 0, 0)
+
+        if (financeDateRange === 'today') {
+          if (tDate.getTime() !== today.getTime()) return false
+        } else if (financeDateRange === 'thisMonth') {
+          if (tDate.getMonth() !== today.getMonth() || tDate.getFullYear() !== today.getFullYear()) return false
+        } else if (financeDateRange === 'lastMonth') {
+          const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, 1)
+          if (tDate.getMonth() !== lastMonth.getMonth() || tDate.getFullYear() !== lastMonth.getFullYear()) return false
+        } else if (financeDateRange === 'last30') {
+          const past30 = new Date()
+          past30.setDate(today.getDate() - 30)
+          past30.setHours(0, 0, 0, 0)
+          if (tDate.getTime() < past30.getTime() || tDate.getTime() > today.getTime()) return false
+        } else if (financeDateRange === 'last90') {
+          const past90 = new Date()
+          past90.setDate(today.getDate() - 90)
+          past90.setHours(0, 0, 0, 0)
+          if (tDate.getTime() < past90.getTime() || tDate.getTime() > today.getTime()) return false
+        } else if (financeDateRange === 'custom') {
+          if (financeStartDate) {
+            const start = new Date(financeStartDate)
+            start.setHours(0, 0, 0, 0)
+            if (tDate.getTime() < start.getTime()) return false
+          }
+          if (financeEndDate) {
+            const end = new Date(financeEndDate)
+            end.setHours(0, 0, 0, 0)
+            if (tDate.getTime() > end.getTime()) return false
+          }
+        }
+      }
+
+      return true
+    })
+  }, [transactions, financeSearchQuery, financePaidFilter, financeCategoryFilter, financeDateRange, financeStartDate, financeEndDate])
+
+  // Recalculated dynamic stats based on filtered transactions
+  const filteredFinanceStats = useMemo(() => {
+    let totalReceivable = 0
+    let totalPayable = 0
+    let receivedAmount = 0
+    let paidAmount = 0
+    let pendingReceivable = 0
+    let pendingPayable = 0
+
+    filteredTransactions.forEach(t => {
+      const amount = t.amount
+      if (t.type === 'receivable') {
+        totalReceivable += amount
+        if (t.paid) {
+          receivedAmount += amount
+        } else {
+          pendingReceivable += amount
+        }
+      } else {
+        totalPayable += amount
+        if (t.paid) {
+          paidAmount += amount
+        } else {
+          pendingPayable += amount
+        }
+      }
+    })
+
+    const balance = receivedAmount - paidAmount
+
+    return {
+      totalReceivable,
+      totalPayable,
+      receivedAmount,
+      paidAmount,
+      pendingReceivable,
+      pendingPayable,
+      balance
+    }
+  }, [filteredTransactions])
   const [slots, setSlots] = useState<SlotData[]>([])
   const [services, setServices] = useState<ServiceData[]>([])
   const [deletedLinks, setDeletedLinks] = useState<any[]>([])
@@ -880,7 +1009,8 @@ export default function Dashboard() {
     amount: '',
     dueDate: new Date().toISOString().split('T')[0],
     clientName: '',
-    paid: false
+    paid: false,
+    category: ''
   })
 
   const [showNewService, setShowNewService] = useState(false)
@@ -1592,6 +1722,92 @@ export default function Dashboard() {
       showToast('Link apagado definitivamente!')
     } catch (err: any) { showToast(err.message, 'error') }
   }
+  // ═══ PDF Export Handlers ═══
+  const openPdfExportModal = (type: 'bookings' | 'finance') => {
+    setPdfReportType(type)
+    setPdfIncludeLogo(true)
+    setPdfLogoUrl(adminInfo?.photoUrl || '')
+    setShowPdfModal(true)
+  }
+
+  const handlePdfLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setPdfLogoUrl(event.target.result as string)
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
+  }
+
+  const handleGeneratePdf = async () => {
+    setExportingPdf(true)
+    try {
+      if (pdfReportType === 'bookings') {
+        const filteredBookings = bookings.filter(booking => {
+          const query = searchBookingQuery.toLowerCase().trim()
+          if (!query) return true
+          const serviceName = booking.timeSlot?.link?.service?.name || ''
+          const linkTitle = booking.timeSlot?.link?.title || ''
+          return (
+            booking.clientName.toLowerCase().includes(query) ||
+            booking.clientPhone.includes(query) ||
+            serviceName.toLowerCase().includes(query) ||
+            linkTitle.toLowerCase().includes(query)
+          )
+        })
+        await exportBookingsToPDF({
+          bookings: filteredBookings,
+          adminInfo,
+          includeLogo: pdfIncludeLogo,
+          customLogoUrl: pdfLogoUrl
+        })
+        showToast('Relatório de agendamentos em PDF gerado!')
+      } else {
+        // Prepare active filters list for the PDF
+        const filterLabels: string[] = []
+        filterLabels.push(`Tipo: ${financeFilter === 'all' ? 'Todos' : financeFilter === 'receivable' ? 'Entrada' : 'Saída'}`)
+        if (financeSearchQuery.trim()) {
+          filterLabels.push(`Busca: "${financeSearchQuery}"`)
+        }
+        if (financePaidFilter !== 'all') {
+          filterLabels.push(`Status: ${financePaidFilter === 'paid' ? 'Pago' : 'Pendente'}`)
+        }
+        if (financeCategoryFilter !== 'all') {
+          filterLabels.push(`Categoria: ${financeCategoryFilter}`)
+        }
+        if (financeDateRange !== 'all') {
+          let rangeText = ''
+          if (financeDateRange === 'today') rangeText = 'Hoje'
+          else if (financeDateRange === 'thisMonth') rangeText = 'Este Mês'
+          else if (financeDateRange === 'lastMonth') rangeText = 'Mês Passado'
+          else if (financeDateRange === 'last30') rangeText = 'Últimos 30 Dias'
+          else if (financeDateRange === 'last90') rangeText = 'Últimos 90 Dias'
+          else if (financeDateRange === 'custom') rangeText = `${financeStartDate || 'Início'} a ${financeEndDate || 'Fim'}`
+          filterLabels.push(`Período: ${rangeText}`)
+        }
+
+        await exportFinanceToPDF({
+          transactions: filteredTransactions,
+          financeStats: filteredFinanceStats,
+          adminInfo,
+          includeLogo: pdfIncludeLogo,
+          customLogoUrl: pdfLogoUrl,
+          filterLabels
+        } as any)
+        showToast('Relatório financeiro em PDF gerado!')
+      }
+      setShowPdfModal(false)
+    } catch (err: any) {
+      showToast('Erro ao gerar PDF: ' + (err.message || 'Falha ao processar'), 'error')
+    } finally {
+      setExportingPdf(false)
+    }
+  }
+
   const handleCreateTransaction = async () => {
     if (!newTx.description || !newTx.amount) return
     try {
@@ -1602,7 +1818,7 @@ export default function Dashboard() {
         paid: newTx.paid
       })
       setShowNewTransaction(false)
-      setNewTx({ type: 'receivable', description: '', amount: '', dueDate: new Date().toISOString().split('T')[0], clientName: '', paid: false })
+      setNewTx({ type: 'receivable', description: '', amount: '', dueDate: new Date().toISOString().split('T')[0], clientName: '', paid: false, category: '' })
       fetchData()
       showToast('Transação registrada!')
     } catch (err: any) { showToast(err.message, 'error') }
@@ -1794,6 +2010,145 @@ export default function Dashboard() {
 
       {/* Paywall Modal */}
       <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} onCheckout={handleCheckout} />
+
+      {/* PDF Export Modal */}
+      {showPdfModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center p-6 text-center animate-fade-in" style={{ position: 'fixed' }}>
+          <div className="bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl max-w-md w-full shadow-2xl relative text-left animate-scale-up">
+            <button 
+              onClick={() => setShowPdfModal(false)} 
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl font-bold bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition-all"
+            >
+              &times;
+            </button>
+            
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gradient-to-br from-orange-500/10 to-pink-500/10 dark:bg-orange-500/20 text-orange-500 rounded-2xl border border-orange-500/20">
+                <FileText className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white">Exportar PDF</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {pdfReportType === 'bookings' ? 'Relatório de Agendamentos' : 'Relatório Financeiro'}
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-5 my-6">
+              
+              {/* Active filters summary */}
+              {pdfReportType === 'finance' && (
+                <div className="p-4 bg-slate-50 dark:bg-[#1A2235] rounded-2xl border border-slate-200 dark:border-slate-800 text-xs text-slate-650 dark:text-slate-400 space-y-1.5">
+                  <span className="font-black text-slate-850 dark:text-slate-350 block mb-1">Filtros Aplicados no Relatório:</span>
+                  <div>• Tipo: {financeFilter === 'all' ? 'Todos' : financeFilter === 'receivable' ? 'Apenas Entradas' : 'Apenas Saídas'}</div>
+                  {financeSearchQuery.trim() && <div className="truncate">• Busca: "{financeSearchQuery}"</div>}
+                  {financePaidFilter !== 'all' && <div>• Status: {financePaidFilter === 'paid' ? 'Apenas Pagas/Recebidas' : 'Apenas Pendentes'}</div>}
+                  {financeCategoryFilter !== 'all' && <div>• Categoria: {financeCategoryFilter}</div>}
+                  {financeDateRange !== 'all' && (
+                    <div>
+                      • Período: {
+                        financeDateRange === 'today' ? 'Hoje' :
+                        financeDateRange === 'thisMonth' ? 'Este Mês' :
+                        financeDateRange === 'lastMonth' ? 'Mês Passado' :
+                        financeDateRange === 'last30' ? 'Últimos 30 Dias' :
+                        financeDateRange === 'last90' ? 'Últimos 90 Dias' :
+                        `Personalizado (${financeStartDate || 'Início'} a ${financeEndDate || 'Fim'})`
+                      }
+                    </div>
+                  )}
+                  <div className="text-[10px] text-pink-500 font-black pt-1">
+                    * Serão exportados {filteredTransactions.length} lançamentos.
+                  </div>
+                </div>
+              )}
+
+              {/* Option toggle: Include logo */}
+              <div className="bg-slate-50 dark:bg-[#1A2235] p-4 rounded-2xl border border-slate-200 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                  <label htmlFor="modal-pdf-include-logo" className="text-xs font-bold text-slate-700 dark:text-slate-200 block cursor-pointer select-none">
+                    Quero adicionar minha logo no PDF
+                  </label>
+                  <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-0.5">
+                    Exibe a marca do seu negócio no cabeçalho
+                  </p>
+                </div>
+                <input
+                  id="modal-pdf-include-logo"
+                  type="checkbox"
+                  checked={pdfIncludeLogo}
+                  onChange={e => setPdfIncludeLogo(e.target.checked)}
+                  className="w-5 h-5 rounded text-pink-500 focus:ring-pink-500 cursor-pointer"
+                />
+              </div>
+
+              {/* Logo customizer section */}
+              {pdfIncludeLogo && (
+                <div className="space-y-3 p-4 bg-slate-50 dark:bg-[#1A2235] rounded-2xl border border-slate-200 dark:border-slate-800 animate-fade-in">
+                  <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider">
+                    Logotipo do Relatório
+                  </label>
+                  
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-[#131826] overflow-hidden flex items-center justify-center shrink-0">
+                      {pdfLogoUrl ? (
+                        <img src={pdfLogoUrl} alt="Logo PDF" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl">📸</span>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5 flex-1">
+                      <input
+                        type="file"
+                        ref={pdfFileInputRef}
+                        onChange={handlePdfLogoFileChange}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => pdfFileInputRef.current?.click()}
+                        className="w-full py-2 px-3 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white rounded-xl text-xs font-black transition-all shadow-sm flex items-center justify-center gap-2 uppercase tracking-wider"
+                      >
+                        Carregar Nova Logo
+                      </button>
+
+                      {adminInfo?.photoUrl && pdfLogoUrl !== adminInfo.photoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setPdfLogoUrl(adminInfo.photoUrl || '')}
+                          className="text-[11px] font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 underline block"
+                        >
+                          Usar Logo do Perfil
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer Buttons */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setShowPdfModal(false)}
+                className="flex-1 py-3 px-4 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-650 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all uppercase tracking-wider"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleGeneratePdf}
+                disabled={exportingPdf}
+                className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white text-xs font-black transition-all shadow-lg shadow-pink-500/20 flex items-center justify-center gap-2 uppercase tracking-wider disabled:opacity-50"
+              >
+                {exportingPdf ? 'Gerando...' : 'Gerar PDF'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 
@@ -2029,34 +2384,155 @@ export default function Dashboard() {
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">Financeiro</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">Contas a pagar e a receber</p>
               </div>
-              <button
-                onClick={() => setShowNewTransaction(true)}
-                className="w-full sm:w-auto btn-primary-simple flex items-center justify-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Lançar Valor
-              </button>
+              <div className="flex flex-wrap w-full sm:w-auto items-center gap-3">
+                <button
+                  onClick={() => openPdfExportModal('finance')}
+                  disabled={transactions.length === 0}
+                  className="flex items-center gap-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-black py-2.5 px-4 rounded-xl transition-all border border-slate-700 shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  title="Exportar dados financeiros para PDF"
+                >
+                  <FileText className="w-4 h-4 text-emerald-400" />
+                  Exportar PDF
+                </button>
+
+                <button
+                  onClick={() => setShowNewTransaction(true)}
+                  className="w-full sm:w-auto btn-primary-simple flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-5 h-5" />
+                  Lançar Valor
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                <div className="card-simple p-6 bg-emerald-600 dark:bg-emerald-600 text-white border-none shadow-lg shadow-emerald-600/20">
                  <p className="text-[10px] font-bold uppercase opacity-80 mb-1">Saldo Atual</p>
-                 <p className="text-3xl font-black">{formatCurrency(financeStats.balance)}</p>
+                 <p className="text-3xl font-black">{formatCurrency(filteredFinanceStats.balance)}</p>
                  <Wallet className="w-12 h-12 absolute -right-2 -bottom-2 opacity-10" />
                </div>
                <div className="card-simple p-6 bg-slate-900 dark:bg-slate-800 text-white border-none shadow-lg shadow-slate-900/20">
                  <p className="text-[10px] font-bold uppercase opacity-80 mb-1">Pendentes de Entrada</p>
-                 <p className="text-3xl font-black">{formatCurrency(financeStats.pendingReceivable)}</p>
+                 <p className="text-3xl font-black">{formatCurrency(filteredFinanceStats.pendingReceivable)}</p>
                </div>
                <div className="card-simple p-6 bg-white dark:bg-[#131826] border-slate-200 dark:border-slate-800">
                  <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Contas Pendentes</p>
-                 <p className="text-3xl font-black text-red-600 dark:text-red-500">{formatCurrency(financeStats.pendingPayable)}</p>
+                 <p className="text-3xl font-black text-red-600 dark:text-red-500">{formatCurrency(filteredFinanceStats.pendingPayable)}</p>
                </div>
+            </div>
+
+            {/* Advanced Finance Filter Panel */}
+            <div className="card-simple p-5 space-y-4 bg-white/60 dark:bg-[#131826]/60 backdrop-blur-md border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm relative overflow-visible">
+              <div className="flex items-center gap-2 text-slate-700 dark:text-white">
+                <Filter className="w-4 h-4 text-pink-500" />
+                <span className="text-xs font-black uppercase tracking-wider">Filtros Avançados</span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-end">
+                {/* Search Text Input */}
+                <div className="relative">
+                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                    Busca Rápida
+                  </label>
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      placeholder="Descrição ou cliente..."
+                      value={financeSearchQuery}
+                      onChange={e => setFinanceSearchQuery(e.target.value)}
+                      className="input-simple pl-9 py-2 text-xs w-full"
+                    />
+                  </div>
+                </div>
+
+                {/* Status: Paid or Unpaid */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                    Status de Pagamento
+                  </label>
+                  <select
+                    value={financePaidFilter}
+                    onChange={e => setFinancePaidFilter(e.target.value as any)}
+                    className="input-simple py-2 text-xs w-full cursor-pointer"
+                  >
+                    <option value="all">Todos os Status</option>
+                    <option value="paid">Pagas / Recebidas</option>
+                    <option value="unpaid">Pendentes</option>
+                  </select>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                    Categoria
+                  </label>
+                  <select
+                    value={financeCategoryFilter}
+                    onChange={e => setFinanceCategoryFilter(e.target.value)}
+                    className="input-simple py-2 text-xs w-full cursor-pointer"
+                  >
+                    <option value="all">Todas as Categorias</option>
+                    {uniqueCategories.map((cat: string) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Period/Date Filter */}
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                    Período
+                  </label>
+                  <select
+                    value={financeDateRange}
+                    onChange={e => setFinanceDateRange(e.target.value as any)}
+                    className="input-simple py-2 text-xs w-full cursor-pointer"
+                  >
+                    <option value="all">Qualquer Período</option>
+                    <option value="today">Hoje</option>
+                    <option value="thisMonth">Este Mês</option>
+                    <option value="lastMonth">Mês Passado</option>
+                    <option value="last30">Últimos 30 Dias</option>
+                    <option value="last90">Últimos 90 Dias</option>
+                    <option value="custom">Personalizado...</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Custom Date Range Panel */}
+              {financeDateRange === 'custom' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-xl border border-slate-200 dark:border-slate-800 animate-fade-in">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                      Data Inicial
+                    </label>
+                    <input
+                      type="date"
+                      value={financeStartDate}
+                      onChange={e => setFinanceStartDate(e.target.value)}
+                      className="input-simple py-2 text-xs w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">
+                      Data Final
+                    </label>
+                    <input
+                      type="date"
+                      value={financeEndDate}
+                      onChange={e => setFinanceEndDate(e.target.value)}
+                      className="input-simple py-2 text-xs w-full"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="card-simple overflow-hidden">
                <div className="p-4 bg-slate-50 dark:bg-[#0B0F19] border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
-                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Últimos Lançamentos</span>
+                 <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">Lançamentos Filtrados</span>
                  <div className="flex bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-xl">
                    <button 
                      onClick={() => setFinanceFilter('all')}
@@ -2084,15 +2560,13 @@ export default function Dashboard() {
                      <tr className="text-[10px] font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest border-b border-slate-200 dark:border-slate-800">
                        <th className="px-6 py-4">Status</th>
                        <th className="px-6 py-4">Descrição</th>
-                       <th className="px-6 py-4">Cliente/Fornecedor</th>
-                       <th className="px-6 py-4">Data</th>
+                       <th className="px-6 py-4">Data Vencimento</th>
                        <th className="px-6 py-4 text-right">Valor</th>
                        <th className="px-6 py-4"></th>
                      </tr>
                    </thead>
                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                     {transactions
-                       .filter(tx => financeFilter === 'all' || tx.type === financeFilter)
+                     {filteredTransactions.filter(tx => financeFilter === 'all' || tx.type === financeFilter)
                        .map(tx => (
                        <tr key={tx.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/50 transition-all group">
                          <td className="px-6 py-4">
@@ -2109,11 +2583,18 @@ export default function Dashboard() {
                          </td>
                          <td className="px-6 py-4">
                            <p className="font-bold text-sm text-slate-700 dark:text-slate-200">{tx.description}</p>
-                           <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
+                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                             <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded-full ${
                              tx.type === 'receivable' ? 'bg-pink-50 dark:bg-pink-500/10 text-pink-500' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400'
                            }`}>
                              {tx.type === 'receivable' ? 'Entrada' : 'Saída'}
                            </span>
+                             {tx.category && (
+                               <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50">
+                                 {tx.category}
+                               </span>
+                             )}
+                           </div>
                          </td>
                          <td className="px-6 py-4 text-sm text-slate-500 dark:text-slate-400 font-bold">
                            {formatDate(tx.dueDate)}
@@ -2132,9 +2613,9 @@ export default function Dashboard() {
                      ))}
                    </tbody>
                  </table>
-                 {transactions.length === 0 && (
-                   <div className="text-center py-20 italic text-slate-400">Nenhuma transação lançada</div>
-                 )}
+                 {filteredTransactions.filter((tx: Transaction) => financeFilter === 'all' || tx.type === financeFilter).length === 0 && (
+                    <div className="text-center py-20 italic text-slate-450 dark:text-slate-500">Nenhum lançamento encontrado</div>
+                  )}
                </div>
             </div>
           </div>
@@ -2209,8 +2690,8 @@ export default function Dashboard() {
                                   <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
                                     ⏳ Aguardando Pgto
                                   </span>
-                                ) : booking.status === 'PAGO' && booking.paidAmount > 0 ? (
-                                  booking.paidAmount >= (booking.timeSlot.link?.service?.price || Infinity) ? (
+                                ) : booking.status === 'PAGO' && (booking.paidAmount || 0) > 0 ? (
+                                  (booking.paidAmount || 0) >= (booking.timeSlot.link?.service?.price || Infinity) ? (
                                     <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                                       💰 Pago Total
                                     </span>
@@ -4811,6 +5292,58 @@ export default function Dashboard() {
                 </div>
               </div>
               <div><label className="block text-xs font-black text-slate-400 uppercase mb-2">Cliente / Fornecedor</label><input type="text" value={newTx.clientName} onChange={e => setNewTx({...newTx, clientName: e.target.value})} placeholder="Opcional" className="input-simple font-bold" /></div>
+              
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase mb-2">Categoria</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select 
+                    value={
+                      ['Serviço', 'Venda de Produto', 'Assinatura', 'Fornecedor', 'Aluguel', 'Salário / Comissão', 'Marketing', 'Utilidades', 'Impostos'].includes(newTx.category) 
+                        ? newTx.category 
+                        : newTx.category === '' ? '' : 'custom'
+                    }
+                    onChange={e => {
+                      const val = e.target.value;
+                      if (val === 'custom') {
+                        setNewTx({...newTx, category: ''})
+                      } else {
+                        setNewTx({...newTx, category: val})
+                      }
+                    }}
+                    className="input-simple font-bold text-xs"
+                  >
+                    <option value="">Selecione uma Categoria...</option>
+                    {newTx.type === 'receivable' ? (
+                      <>
+                        <option value="Serviço">Serviço</option>
+                        <option value="Venda de Produto">Venda de Produto</option>
+                        <option value="Assinatura">Assinatura / Recorrência</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="Fornecedor">Fornecedor</option>
+                        <option value="Aluguel">Aluguel</option>
+                        <option value="Salário / Comissão">Salário / Comissão</option>
+                        <option value="Marketing">Marketing / Anúncios</option>
+                        <option value="Utilidades">Utilidades (Água, Luz...)</option>
+                        <option value="Impostos">Impostos / Taxas</option>
+                      </>
+                    )}
+                    <option value="custom">Outra (Personalizada)...</option>
+                  </select>
+
+                  {(!['Serviço', 'Venda de Produto', 'Assinatura', 'Fornecedor', 'Aluguel', 'Salário / Comissão', 'Marketing', 'Utilidades', 'Impostos'].includes(newTx.category) || 
+                    ['Serviço', 'Venda de Produto', 'Assinatura', 'Fornecedor', 'Aluguel', 'Salário / Comissão', 'Marketing', 'Utilidades', 'Impostos'].includes(newTx.category) && newTx.category === '') && (
+                    <input 
+                      type="text" 
+                      value={newTx.category} 
+                      onChange={e => setNewTx({...newTx, category: e.target.value})} 
+                      placeholder="Nome da categoria" 
+                      className="input-simple font-bold" 
+                    />
+                  )}
+                </div>
+              </div>
               
               <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-850 cursor-pointer" onClick={() => setNewTx({...newTx, paid: !newTx.paid})}>
                 <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${newTx.paid ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-slate-200 text-transparent'}`}>
