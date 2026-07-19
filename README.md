@@ -50,6 +50,15 @@ A plataforma permite que os profissionais tenham total autonomia sobre suas agen
 - **Clube de Assinaturas:** Permite que profissionais criem clubes de fidelidade com cobrança mensal recorrente.
 - **Sistema de Cupons:** Criação de cupons de desconto fixos ou percentuais para impulsionar vendas.
 
+### 📊 Gestão Financeira, Filtros e Exportação PDF
+- **Fluxo de Caixa:** Lançamentos rápidos de contas a pagar (Saídas) e a receber (Entradas) com controle de status de pagamento (Pago/Pendente).
+- **Filtros Avançados Completos:**
+  - **Filtro de Períodos de Tempo:** Filtros pré-configurados para o extrato (Hoje, Este Mês, Mês Passado, Últimos 30/90 dias) e suporte a Período Personalizado com seleção de datas específicas (Inicial e Final).
+  - **Categorias Personalizáveis:** Classificação de lançamentos em categorias pré-definidas (Serviço, Utilidades, Aluguel, Fornecedor, etc.) ou criação de categorias customizadas, com filtros de busca por categoria na tabela.
+  - **Busca Textual:** Barra de pesquisa instantânea para descrição da transação ou nome de cliente.
+- **Estatísticas Dinâmicas:** Recálculo em tempo real de Saldo Atual, Pendentes de Entrada e Contas Pendentes de acordo com os filtros aplicados.
+- **Exportação de Relatórios PDF:** Emissão de relatórios estruturados baseados nos filtros de período de tempo, com opção de incluir logotipo personalizado da empresa, seletor de tipo de relatório (Simplificado/Completo) e tema de cores do sistema.
+
 ### 👑 Painel do Administrador Geral (SuperAdmin)
 - **Saúde do Negócio:** Visualização em tempo real de estatísticas de faturamento mensal estimado, total de clientes ativos, trial e assinaturas ativas.
 - **Acesso Impersonation (Login como Cliente):** O administrador geral pode acessar com um clique o painel de qualquer profissional para suporte técnico, com botão de escape rápido.
