@@ -49,6 +49,7 @@ export const api = {
 
   register: (data: {
     username: string;
+    email?: string;
     password: string;
     businessName?: string;
     cnpj?: string;
@@ -69,10 +70,24 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
 
+  forgotPassword: (email: string) =>
+    request<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (data: { email: string; code: string; newPassword: string }) =>
+    request<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+
   // ═══ Profile ═══
   getProfile: () =>
     request<{
       username: string;
+      email?: string;
       businessName: string;
       cnpj: string;
       phone: string;
@@ -90,6 +105,7 @@ export const api = {
 
   updateProfile: (data: {
     username?: string;
+    email?: string;
     businessName?: string;
     cnpj?: string;
     phone?: string;

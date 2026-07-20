@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500" width="500" height="500" fill="none">
+  <defs>
+    <linearGradient id="bmShakaMain" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#7C3AED" />
+      <stop offset="50%" stop-color="#EC4899" />
+      <stop offset="100%" stop-color="#F43F5E" />
+    </linearGradient>
+    <linearGradient id="bmCheckAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#06B6D4" />
+    </linearGradient>
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <g transform="translate(10, 0)" filter="url(#neonGlow)">
+    <!-- Extended Pinky (Right) -->
+    <path
+      d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312"
+      stroke="url(#bmShakaMain)"
+      stroke-width="31"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- 3 Folded Middle Fingers -->
+    <path
+      d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z"
+      stroke="url(#bmShakaMain)"
+      stroke-width="27"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z"
+      stroke="url(#bmShakaMain)"
+      stroke-width="27"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+    <path
+      d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z"
+      stroke="url(#bmShakaMain)"
+      stroke-width="27"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Extended Thumb (Left) -->
+    <path
+      d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343"
+      stroke="url(#bmShakaMain)"
+      stroke-width="31"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+
+    <!-- Wrist Base Curve -->
+    <path
+      d="M133 328 C 172 406, 328 406, 351 297"
+      stroke="url(#bmShakaMain)"
+      stroke-width="31"
+      stroke-linecap="round"
+    />
+
+    <!-- Bold Checkmark in Palm Center -->
+    <path
+      d="M187 297 L234 343 L343 203"
+      stroke="url(#bmCheckAccent)"
+      stroke-width="39"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+</svg>

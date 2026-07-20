@@ -23,6 +23,7 @@ export default async function socialRoutes(app: FastifyInstance) {
     return prisma.admin.findMany({
       where: {
         id: { not: user.id },
+        role: { not: 'superadmin' },
         ...searchFilter
       },
       select: {
