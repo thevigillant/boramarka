@@ -9,6 +9,7 @@ import {
   Heart, Award, Palette, Dumbbell, Stethoscope, PenTool,
   Quote, HelpCircle, ArrowUpRight, Smartphone, ArrowUp
 } from 'lucide-react'
+import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
 // ─── Scroll Reveal Hook ──────────────────────────────────
 function useReveal() {
@@ -215,11 +216,8 @@ export default function Landing() {
           ═══════════════════════════════════════════════════ */}
       <header className="fixed top-5 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-4xl">
         <nav className="glass-nav rounded-full px-5 py-3 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-[10px] bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-sm font-extrabold shadow-lg shadow-violet-500/20">
-              B
-            </div>
-            <span className="text-[15px] font-bold tracking-tight text-white/90">BoraMarka</span>
+          <Link to="/" className="flex items-center">
+            <BoraMarkaLogo size="sm" />
           </Link>
 
           {/* Desktop Nav Links */}
@@ -382,7 +380,7 @@ export default function Landing() {
                       {/* App Header */}
                       <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] bg-[#080a16]/90">
                         <div className="flex items-center gap-2">
-                          <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-extrabold">B</div>
+                          <BoraMarkaLogo size="sm" showText={false} />
                           <div>
                             <p className="text-[11px] font-bold text-white/90 leading-none">BoraMarka Barber</p>
                             <span className="text-[8px] text-emerald-400 font-semibold flex items-center gap-0.5 mt-0.5">
@@ -1345,9 +1343,8 @@ export default function Landing() {
       <footer className="border-t border-white/[0.04] py-14 px-4 sm:px-6">
         <div className="max-w-[1200px] mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="flex items-center gap-2.5">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-[10px] font-extrabold">B</div>
-              <span className="text-[13px] font-bold text-white/30">BoraMarka</span>
+            <div className="flex items-center">
+              <BoraMarkaLogo size="sm" />
             </div>
             
             <div className="flex items-center gap-6">

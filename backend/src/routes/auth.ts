@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { createAuditLog } from '../utils/auditLogger';
+import { sendPasswordResetEmail } from '../utils/mailer';
 
 export default async function authRoutes(app: FastifyInstance) {
   // GET /api/auth/check — Check if any admin account exists
@@ -15,6 +16,7 @@ export default async function authRoutes(app: FastifyInstance) {
     // Permite múltiplos registros
     const {
       username,
+      email,
       password,
       businessName,
       cnpj,
@@ -25,6 +27,7 @@ export default async function authRoutes(app: FastifyInstance) {
       operatingHours,
     } = request.body as {
       username: string;
+      email?: string;
       password: string;
       businessName?: string;
       cnpj?: string;
@@ -50,6 +53,7 @@ export default async function authRoutes(app: FastifyInstance) {
       admin = await prisma.admin.create({
         data: {
           username: username.trim().toLowerCase(),
+          email: email?.trim().toLowerCase() || '',
           passwordHash,
           businessName: businessName?.trim() || '',
           cnpj: cnpj?.trim() || '',
@@ -180,4 +184,106 @@ export default async function authRoutes(app: FastifyInstance) {
 
     return { message: 'Senha alterada com sucesso' };
   });
+
+  // POST /api/auth/forgot-password
+  app.post('/forgot-password', async (request, reply) => {
+    const { email } = request.body as { email: string };
+
+    if (!email || !email.trim()) {
+      return reply.status(400).send({ error: 'E-mail é obrigatório' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+
+    // Busca admin pelo e-mail ou nome de usuário
+    const admin = await prisma.admin.findFirst({
+      where: {
+        OR: [
+          { email: cleanEmail },
+          { username: cleanEmail },
+        ],
+      },
+    });
+
+    const successMessage = 'Se o e-mail estiver cadastrado, você receberá o código de verificação em instantes.';
+
+    if (!admin || !admin.email) {
+      return { message: successMessage };
+    }
+
+    // Gera um código de 6 dígitos numéricos
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const resetTokenExpiry = new Date(Date.now() + 15 * 60 * 1000); // Expirar em 15 minutos
+
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: {
+        resetToken: code,
+        resetTokenExpiry,
+      },
+    });
+
+    await sendPasswordResetEmail(admin.email, admin.username, code);
+
+    return { message: successMessage };
+  });
+
+  // POST /api/auth/reset-password
+  app.post('/reset-password', async (request, reply) => {
+    const { email, code, newPassword } = request.body as {
+      email: string;
+      code: string;
+      newPassword: string;
+    };
+
+    if (!email || !code || !newPassword) {
+      return reply.status(400).send({ error: 'E-mail, código e nova senha são obrigatórios' });
+    }
+
+    if (newPassword.length < 6) {
+      return reply.status(400).send({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanCode = code.trim();
+
+    const admin = await prisma.admin.findFirst({
+      where: {
+        OR: [
+          { email: cleanEmail },
+          { username: cleanEmail },
+        ],
+      },
+    });
+
+    if (!admin || !admin.resetToken || admin.resetToken !== cleanCode) {
+      return reply.status(400).send({ error: 'Código de verificação inválido ou incorreto' });
+    }
+
+    if (!admin.resetTokenExpiry || admin.resetTokenExpiry < new Date()) {
+      return reply.status(400).send({ error: 'O código de verificação expirou. Solicite um novo código.' });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: {
+        passwordHash,
+        resetToken: null,
+        resetTokenExpiry: null,
+      },
+    });
+
+    await createAuditLog(request, {
+      action: 'PASSWORD_RESET',
+      entity: 'AUTH',
+      entityId: admin.id,
+      details: `Redefiniu a senha via código de e-mail com sucesso.`,
+      adminId: admin.id,
+    });
+
+    return { message: 'Senha redefinida com sucesso! Você já pode acessar sua conta.' };
+  });
 }
+

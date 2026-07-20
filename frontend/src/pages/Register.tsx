@@ -4,8 +4,9 @@ import { api } from '../services/api'
 import {
   Store, User, Lock, Phone, FileText, MapPin, Clock,
   ChevronRight, ChevronLeft, Loader2, AlertCircle,
-  Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft
+  Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft, Mail
 } from 'lucide-react'
+import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
 // ════════════════════════════════════════════
 // CNPJ Mask: XX.XXX.XXX/XXXX-XX
@@ -84,6 +85,7 @@ export default function Register() {
 
   // Step 1 — Credenciais
   const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -156,6 +158,8 @@ export default function Register() {
   const validateStep1 = (): string | null => {
     if (!username.trim()) return 'Digite um nome de usuário'
     if (username.trim().length < 3) return 'Usuário deve ter pelo menos 3 caracteres'
+    if (!email.trim()) return 'Digite seu e-mail'
+    if (!/\S+@\S+\.\S+/.test(email.trim())) return 'Digite um e-mail válido'
     if (!password) return 'Digite uma senha'
     if (password.length < 6) return 'A senha deve ter pelo menos 6 caracteres'
     if (password !== confirmPassword) return 'As senhas não conferem'
@@ -186,6 +190,7 @@ export default function Register() {
     try {
       const res = await api.register({
         username: username.trim().toLowerCase(),
+        email: email.trim().toLowerCase(),
         password,
         businessName: businessName.trim(),
         cnpj: cnpj.replace(/\D/g, ''),
@@ -232,14 +237,14 @@ export default function Register() {
 
         {/* Logo */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-10 h-10 rounded-[12px] bg-gradient-to-br from-violet-500 to-pink-500 flex items-center justify-center text-white text-sm font-extrabold shadow-lg shadow-violet-500/20">
-            B
-          </div>
+          <BoraMarkaLogo size="md" showText={false} />
           <div>
-            <h1 className="text-xl font-extrabold text-white/90 leading-none tracking-tight">BoraMarka</h1>
+            <h1 className="text-xl font-extrabold text-white/90 leading-none tracking-tight">
+              Bora<span className="bg-gradient-to-r from-violet-500 to-pink-500 bg-clip-text text-transparent">Marka</span>
+            </h1>
             <p className="text-[9px] text-violet-400 font-bold uppercase tracking-[0.2em] mt-1">
-              {step === 1 && 'Crie sua conta'}
-              {step === 2 && 'Dados do negócio'}
+              {step === 1 && 'Crie sua conta • Sua agenda cheia'}
+              {step === 2 && 'Dados do negócio • Sem complicação'}
               {step === 3 && 'Horários e descrição'}
             </p>
           </div>
@@ -269,6 +274,16 @@ export default function Register() {
                       placeholder="ex: joao.barbearia" className={inputIconClass} autoFocus />
                   </div>
                   <p className="text-[10px] text-white/15 mt-1.5 px-1 font-medium">Usado para entrar no sistema</p>
+                </div>
+
+                <div>
+                  <label className={labelClass}>E-mail</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+                      placeholder="seu@email.com" className={inputIconClass} />
+                  </div>
+                  <p className="text-[10px] text-white/15 mt-1.5 px-1 font-medium">Usado para enviar notificações e recuperação de senha</p>
                 </div>
 
                 <div>
@@ -386,12 +401,12 @@ export default function Register() {
                   <label className={`${labelClass} mb-4`}>Horário de Funcionamento</label>
                   <div className="space-y-2">
                     {Object.entries(dayLabels).map(([key, label]) => (
-                      <div key={key} className={`flex items-center gap-3 p-3 rounded-xl border transition-all duration-500 ${
+                      <div key={key} className={`flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3 p-3 rounded-xl border transition-all duration-500 ${
                         hours[key].active
                           ? 'bg-white/[0.02] border-white/[0.06]'
                           : 'bg-white/[0.01] border-white/[0.03] opacity-50'
                       }`}>
-                        <label className="flex items-center gap-2 cursor-pointer min-w-[100px]">
+                        <label className="flex items-center gap-2 cursor-pointer min-w-[90px]">
                           <input type="checkbox" checked={hours[key].active}
                             onChange={e => updateHours(key, 'active', e.target.checked)}
                             className="w-3.5 h-3.5 rounded border-white/10 bg-white/[0.03] accent-violet-500 cursor-pointer" />
@@ -400,7 +415,7 @@ export default function Register() {
                           </span>
                         </label>
                         {hours[key].active && (
-                          <div className="flex items-center gap-2 ml-auto">
+                          <div className="flex items-center gap-2 ml-auto sm:ml-auto">
                             <input type="time" value={hours[key].open}
                               onChange={e => updateHours(key, 'open', e.target.value)}
                               className="text-[11px] bg-white/[0.03] border border-white/[0.06] rounded-lg px-2 py-1.5 focus:outline-none focus:border-violet-500/50 text-white/60 font-medium" />
@@ -424,6 +439,8 @@ export default function Register() {
                   <div className="grid grid-cols-2 gap-y-2 text-[12px]">
                     <span className="text-white/25 font-semibold">Usuário:</span>
                     <span className="text-white/70 font-bold">{username}</span>
+                    <span className="text-white/25 font-semibold">E-mail:</span>
+                    <span className="text-white/70 font-bold truncate">{email}</span>
                     <span className="text-white/25 font-semibold">Negócio:</span>
                     <span className="text-white/70 font-bold">{businessName}</span>
                     {cnpj && (

@@ -31,6 +31,7 @@ export default async function adminRoutes(app: FastifyInstance) {
     if (!admin) return { error: 'Não encontrado' };
     return {
       username: admin.username,
+      email: admin.email,
       businessName: admin.businessName,
       cnpj: admin.cnpj,
       phone: admin.phone,
@@ -51,6 +52,7 @@ export default async function adminRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const {
       username,
+      email,
       businessName,
       cnpj,
       phone,
@@ -66,6 +68,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       customDomain
     } = request.body as {
       username?: string;
+      email?: string;
       businessName?: string;
       cnpj?: string;
       phone?: string;
@@ -129,6 +132,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       where: { id: user.id },
       data: {
         ...(newUsername !== undefined && { username: newUsername }),
+        ...(email !== undefined && { email: email.trim().toLowerCase() }),
         ...(businessName !== undefined && { businessName: businessName.trim() }),
         ...(cnpj !== undefined && { cnpj: cnpj.trim() }),
         ...(phone !== undefined && { phone: phone.trim() }),

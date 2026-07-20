@@ -413,16 +413,16 @@ export default function BookingPage() {
               <h2 className="text-sm font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest mb-4 flex items-center gap-2">
                 <Clock className="w-4 h-4" /> 2. Escolha o horário
               </h2>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
                 {(slotsByDate[selectedDate] || []).map(slot => {
                   const isSelected = selectedSlotId === slot.id
                   return (
                     <button
                       key={slot.id}
                       onClick={() => setSelectedSlotId(slot.id)}
-                      className={`py-4 rounded-xl font-bold border transition-all ${
+                      className={`py-3.5 px-3 min-h-[44px] rounded-xl font-bold border text-sm sm:text-base flex items-center justify-center transition-all ${
                         isSelected
-                          ? 'custom-gradient-bg border-transparent text-white shadow-md'
+                          ? 'custom-gradient-bg border-transparent text-white shadow-md scale-105'
                           : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:border-pink-500/50'
                       }`}
                     >

@@ -9,9 +9,10 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop, Mail, Menu, ChevronUp, Layers
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
+import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
 // ════════════════════════════════════════════
 // Types
@@ -411,18 +412,18 @@ function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClos
 function StatCard({ title, value, icon: Icon, color, trend }: { title: string; value: string | number; icon: any; color: string; trend?: { val: string; up: boolean } }) {
   return (
     <div className="card-simple">
-      <div className="card-simple-inner p-6 flex flex-col justify-between">
-        <div className="flex justify-between items-start mb-6">
-          <p className="text-slate-500 dark:text-white/30 text-[10px] font-bold uppercase tracking-widest">{title}</p>
-          <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06]">
-            <Icon className="w-5 h-5" style={{ color: color }} />
+      <div className="card-simple-inner p-3.5 sm:p-5 flex flex-col justify-between h-full">
+        <div className="flex justify-between items-start mb-2.5 sm:mb-4">
+          <p className="text-slate-500 dark:text-white/40 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider truncate mr-1">{title}</p>
+          <div className="p-1.5 sm:p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] shrink-0">
+            <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: color }} />
           </div>
         </div>
         <div>
-          <p className="text-4xl font-black text-slate-800 dark:text-white mb-2">{value}</p>
+          <p className="text-lg sm:text-2xl lg:text-3xl font-black text-slate-800 dark:text-white truncate">{value}</p>
           {trend && (
-            <span className={`text-xs font-bold flex items-center gap-0.5 ${trend.up ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
-              {trend.up ? <ArrowUpRight className="w-3.5 h-3.5" /> : <ArrowDownRight className="w-3.5 h-3.5" />}
+            <span className={`text-[10px] sm:text-xs font-bold flex items-center gap-0.5 mt-1 ${trend.up ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
+              {trend.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
               {trend.val}
             </span>
           )}
@@ -506,6 +507,21 @@ function maskPhone(value: string): string {
 export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit'>('overview')
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>('operacional')
+  const dropdownRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setActiveDropdown(null)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
   const [showPaywall, setShowPaywall] = useState(false)
   const [financeFilter, setFinanceFilter] = useState<'all' | 'receivable' | 'payable'>('all')
   const [financeSearchQuery, setFinanceSearchQuery] = useState('')
@@ -529,6 +545,21 @@ export default function Dashboard() {
       (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
   })
 
+  // 🔍 Global Header Search State & Shortcut
+  const [globalSearchQuery, setGlobalSearchQuery] = useState('')
+  const headerSearchInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        headerSearchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   // Data
   const [stats, setStats] = useState<Stats>({ totalLinks: 0, totalSlots: 0, totalBookings: 0, availableSlots: 0 })
   const [financeStats, setFinanceStats] = useState<FinanceStats>({
@@ -538,6 +569,91 @@ export default function Dashboard() {
   const [links, setLinks] = useState<LinkData[]>([])
   const [bookings, setBookings] = useState<BookingData[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+
+  // ═══ Categorias da Navbar (Dropdowns) ═══
+  const navCategories = useMemo(() => {
+    type TabIdType = 'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit'
+    interface NavItem {
+      id: TabIdType
+      label: string
+      icon: any
+      desc: string
+      badge?: number
+    }
+
+    return [
+      {
+        id: 'overview',
+        label: 'Visão Geral',
+        icon: LayoutDashboard,
+        type: 'single' as const,
+        tabId: 'overview' as TabIdType,
+      },
+      {
+        id: 'operacional',
+        label: 'Operacional',
+        icon: Calendar,
+        type: 'dropdown' as const,
+        badge: bookings.length > 0 ? bookings.length : undefined,
+        items: [
+          { id: 'agendamentos', label: 'Agendamentos', icon: Calendar, desc: 'Lista e confirmação de horários agendados', badge: bookings.length },
+          { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Base completa e histórico de clientes' },
+          { id: 'horarios', label: 'Gerenciar Agenda', icon: Clock, desc: 'Configuração da grade de horários disponíveis' },
+        ] as NavItem[]
+      },
+      {
+        id: 'comercial',
+        label: 'Comercial',
+        icon: Briefcase,
+        type: 'dropdown' as const,
+        items: [
+          { id: 'servicos', label: 'Serviços', icon: Briefcase, desc: 'Catálogo de serviços, preços e durações' },
+          { id: 'links', label: 'Links de Venda', icon: Link2, desc: 'Links para clientes agendarem online' },
+          { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
+          { id: 'memberships', label: 'Clube de Assinaturas', icon: Gift, desc: 'Planos e assinaturas recorrentes de clientes' },
+        ] as NavItem[]
+      },
+      {
+        id: 'gestao',
+        label: 'Gestão & Finanças',
+        icon: DollarSign,
+        type: 'dropdown' as const,
+        items: [
+          { id: 'financeiro', label: 'Financeiro', icon: DollarSign, desc: 'Fluxo de caixa, recebíveis e despesas' },
+          { id: 'rh', label: 'RH / Equipe', icon: UserCheck, desc: 'Gestão de funcionários, funções e comissões' },
+          { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano e faturas no BoraMarka' },
+        ] as NavItem[]
+      },
+      {
+        id: 'sistema',
+        label: 'Sistema & Ajustes',
+        icon: Palette,
+        type: 'dropdown' as const,
+        items: [
+          { id: 'personalizar', label: 'Personalizar Página', icon: Palette, desc: 'Identidade visual, tema, cores e banner' },
+          { id: 'social', label: 'Explorar Rede', icon: Globe, desc: 'Rede de contatos e chat com profissionais' },
+          { id: 'audit', label: 'Logs & Auditoria', icon: ShieldAlert, desc: 'Registro de ações, logins e segurança' },
+          { id: 'trash', label: 'Lixeira', icon: Trash2, desc: 'Recuperar itens excluídos recentemente' },
+        ] as NavItem[]
+      }
+    ]
+  }, [bookings.length])
+
+  // Informações da aba atual (Breadcrumb)
+  const currentTabInfo = useMemo(() => {
+    for (const cat of navCategories) {
+      if (cat.type === 'single' && cat.tabId === activeTab) {
+        return { catLabel: cat.label, itemLabel: cat.label, icon: cat.icon }
+      }
+      if (cat.type === 'dropdown') {
+        const found = cat.items.find(item => item.id === activeTab)
+        if (found) {
+          return { catLabel: cat.label, itemLabel: found.label, icon: found.icon }
+        }
+      }
+    }
+    return { catLabel: 'Visão Geral', itemLabel: 'Resumo', icon: LayoutDashboard }
+  }, [activeTab, navCategories])
   
   // Get all unique categories for filter
   const uniqueCategories = useMemo(() => {
@@ -547,6 +663,51 @@ export default function Dashboard() {
     })
     return Array.from(cats)
   }, [transactions])
+
+  // 🔍 Resultados da Busca Global no Cabeçalho
+  const filteredSearchItems = useMemo(() => {
+    if (!globalSearchQuery.trim()) return []
+    const q = globalSearchQuery.toLowerCase()
+    const items: { title: string; subtitle: string; icon: any; targetTab: string }[] = []
+
+    // 1. Clientes & Agendamentos
+    bookings.forEach(b => {
+      if (b.clientName?.toLowerCase().includes(q) || b.clientPhone?.includes(q)) {
+        items.push({
+          title: b.clientName,
+          subtitle: `Agendamento • ${b.timeSlot?.link?.title || 'Serviço'} (${formatDate(b.timeSlot?.date || '')})`,
+          icon: Users,
+          targetTab: 'agendamentos'
+        })
+      }
+    })
+
+    // 2. Links de Venda & Serviços
+    links.forEach(l => {
+      if (l.title?.toLowerCase().includes(q) || l.token?.toLowerCase().includes(q) || l.service?.name?.toLowerCase().includes(q)) {
+        items.push({
+          title: l.title,
+          subtitle: `Link de Vendas • Token: ${l.token}${l.service ? ` (${l.service.name})` : ''}`,
+          icon: Link2,
+          targetTab: 'links'
+        })
+      }
+    })
+
+    // 3. Transações Financeiras
+    transactions.forEach(t => {
+      if (t.description?.toLowerCase().includes(q) || t.clientName?.toLowerCase().includes(q)) {
+        items.push({
+          title: t.description,
+          subtitle: `Financeiro • ${t.type === 'receivable' ? 'Entrada' : 'Saída'} ${formatCurrency(t.amount)}`,
+          icon: DollarSign,
+          targetTab: 'financeiro'
+        })
+      }
+    })
+
+    return items.slice(0, 8)
+  }, [globalSearchQuery, bookings, links, transactions])
 
   // Filtered Transactions
   const filteredTransactions = useMemo(() => {
@@ -756,6 +917,7 @@ export default function Dashboard() {
   const [loadingChat, setLoadingChat] = useState(false)
   const [adminInfo, setAdminInfo] = useState<{ 
     username: string; 
+    email?: string;
     businessName: string; 
     photoUrl?: string; 
     cnpj?: string; 
@@ -921,6 +1083,7 @@ export default function Dashboard() {
   const [showEditProfile, setShowEditProfile] = useState(false)
   const [profileForm, setProfileForm] = useState({
     username: '',
+    email: '',
     businessName: '',
     phone: '',
     address: '',
@@ -954,6 +1117,7 @@ export default function Dashboard() {
       }
       setProfileForm({
         username: adminInfo.username || '',
+        email: adminInfo.email || '',
         businessName: adminInfo.businessName || '',
         phone: adminInfo.phone || '',
         address: adminInfo.address || '',
@@ -2155,39 +2319,122 @@ export default function Dashboard() {
       {/* Navbar Premium — Glass Island */}
       <header 
         style={hasBanner ? { top: '48px', marginTop: '48px' } : undefined}
-        className="sticky top-0 z-40 px-4 sm:px-6 pt-4 pb-2 transition-all duration-300"
+        className="sticky top-0 z-40 px-3 sm:px-6 pt-3 sm:pt-4 pb-2 transition-all duration-300"
       >
-        <div className="bg-white/85 dark:bg-[#131826]/40 backdrop-blur-md border border-slate-200/50 dark:border-white/[0.04] rounded-2xl max-w-6xl mx-auto px-5 h-16 flex items-center justify-between shadow-sm">
-          <div className="flex items-center gap-5">
-            <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-gradient-to-br from-violet-500 to-pink-500 rounded-[10px] flex items-center justify-center text-white text-sm font-extrabold shadow-lg shadow-violet-500/20 shrink-0">
-                B
-              </div>
+        <div className="bg-white/85 dark:bg-[#131826]/80 backdrop-blur-md border border-slate-200/50 dark:border-white/[0.06] rounded-2xl max-w-6xl mx-auto px-3.5 sm:px-5 h-16 flex items-center justify-between shadow-lg shadow-black/5">
+          <div className="flex items-center gap-2.5 sm:gap-4">
+            {/* Mobile Hamburger Button */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-xl bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-white/80 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors shrink-0"
+              title="Abrir Menu de Módulos"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-2 sm:gap-2.5">
+              <BoraMarkaLogo size="md" showText={false} />
               <div className="hidden sm:block">
-                <h1 className="font-extrabold text-[15px] text-slate-800 dark:text-white/90 leading-tight tracking-tight">BoraMarka</h1>
-                <p className="text-[9px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-[0.15em] mt-0.5">Painel de Controle</p>
+                <h1 className="font-extrabold text-[15px] text-slate-800 dark:text-white/90 leading-tight tracking-tight">
+                  Bora<span className="bg-gradient-to-r from-violet-500 to-pink-500 bg-clip-text text-transparent">Marka</span>
+                </h1>
+                <p className="text-[9px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-[0.12em] mt-0.5">Sua agenda cheia, sem complicação</p>
               </div>
-            </div>
-            
-            <div className="hidden md:flex items-center gap-2 bg-emerald-500/10 dark:bg-emerald-500/[0.06] px-3 py-1.5 rounded-full border border-emerald-500/20 dark:border-emerald-500/15">
-              <div className="w-1.5 h-1.5 bg-emerald-500 dark:bg-emerald-400 rounded-full animate-pulse" />
-              <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tracking-wide">Sua Agenda Online</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* 🔍 Global Header Search Bar */}
+          <div className="hidden md:flex items-center flex-1 max-w-sm mx-4 lg:mx-8">
+            <div className="w-full relative group">
+              <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] group-hover:border-violet-500/40 focus-within:border-violet-500/80 focus-within:ring-2 focus-within:ring-violet-500/20 rounded-xl px-3 py-1.5 transition-all duration-200 shadow-inner">
+                <Search className="w-4 h-4 text-slate-400 dark:text-white/40 group-focus-within:text-violet-500 transition-colors shrink-0" />
+                <input
+                  ref={headerSearchInputRef}
+                  type="text"
+                  value={globalSearchQuery}
+                  onChange={(e) => setGlobalSearchQuery(e.target.value)}
+                  placeholder="Buscar cliente, serviço ou agendamento..."
+                  className="bg-transparent text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/35 focus:outline-none w-full font-medium"
+                />
+                {globalSearchQuery ? (
+                  <button
+                    onClick={() => setGlobalSearchQuery('')}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <kbd className="hidden lg:inline-flex items-center gap-0.5 text-[9px] font-semibold text-slate-400 dark:text-white/30 bg-slate-200/60 dark:bg-white/10 px-1.5 py-0.5 rounded border border-slate-300/60 dark:border-white/10 shrink-0">
+                    ⌘K
+                  </kbd>
+                )}
+              </div>
+
+              {/* Search Results Dropdown Overlay */}
+              {globalSearchQuery.trim() !== '' && (
+                <div className="absolute left-0 top-full mt-2.5 w-full bg-white dark:bg-[#0D111E] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-2.5 z-50 animate-scale-in max-h-80 overflow-y-auto custom-scrollbar">
+                  <div className="flex items-center justify-between px-2 mb-2 pb-1.5 border-b border-slate-100 dark:border-white/[0.06]">
+                    <p className="text-[9.5px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">
+                      Resultados da busca ({filteredSearchItems.length})
+                    </p>
+                    <button onClick={() => setGlobalSearchQuery('')} className="text-slate-400 hover:text-slate-600 dark:hover:text-white text-[10px]">
+                      Fechar
+                    </button>
+                  </div>
+
+                  {filteredSearchItems.length === 0 ? (
+                    <div className="py-6 text-center text-xs text-slate-400 dark:text-white/40">
+                      Nenhum resultado encontrado para "{globalSearchQuery}"
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {filteredSearchItems.map((item, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => {
+                            if (subscription?.status === 'inactive' && item.targetTab !== 'faturamento') {
+                              setShowPaywall(true)
+                            } else {
+                              setActiveTab(item.targetTab as any)
+                            }
+                            setGlobalSearchQuery('')
+                          }}
+                          className="w-full p-2 rounded-xl flex items-center justify-between text-left hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-all group/item"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="p-1.5 rounded-lg bg-violet-500/10 text-violet-500 dark:bg-violet-500/20 dark:text-violet-400 shrink-0">
+                              <item.icon className="w-3.5 h-3.5" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.title}</p>
+                              <p className="text-[10px] text-slate-400 dark:text-white/40 truncate">{item.subtitle}</p>
+                            </div>
+                          </div>
+                          <span className="text-[10px] font-bold text-violet-500 opacity-0 group-hover/item:opacity-100 transition-opacity shrink-0 ml-2">
+                            Ir →
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 sm:gap-3">
              {sessionStorage.getItem('superadmin_token') && (
                <button 
                  onClick={handleRestoreSuperAdmin}
                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-[10px] rounded-full uppercase tracking-wider transition-all hover:opacity-90 shadow-md shadow-emerald-500/25 cursor-pointer shrink-0"
                  title="Voltar ao Painel SuperAdmin"
                >
-                 <ShieldAlert className="w-3.5 h-3.5" /> Voltar SuperAdmin
+                 <ShieldAlert className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Voltar SuperAdmin</span>
                </button>
              )}
               <button 
                 onClick={() => setIsDark(!isDark)} 
-                className="p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all"
+                className="p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all shrink-0"
                 title={isDark ? "Modo Claro" : "Modo Escuro"}
               >
                 {isDark ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
@@ -2196,13 +2443,13 @@ export default function Dashboard() {
               <button 
                 onClick={() => fetchData(true)} 
                 disabled={refreshing}
-                className={`p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all ${refreshing ? 'animate-spin' : ''}`}
+                className={`p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all shrink-0 ${refreshing ? 'animate-spin' : ''}`}
                 title="Atualizar dados"
               >
                 <RefreshCw className="w-4.5 h-4.5" />
               </button>
                {adminInfo && (
-                 <div className="flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-white/[0.06]">
+                 <div className="flex items-center gap-2 sm:gap-3 pl-2 sm:pl-3 border-l border-slate-200 dark:border-white/[0.06]">
                    <div className="text-right hidden sm:block">
                      <div className="flex items-center justify-end gap-2">
                        <p className="text-[13px] font-bold text-slate-700 dark:text-white/80 leading-none">{adminInfo.businessName || adminInfo.username}</p>
@@ -2238,7 +2485,7 @@ export default function Dashboard() {
                    />
                    <button 
                      onClick={handleLogout}
-                     className="p-2 text-slate-400 dark:text-white/25 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/[0.06] rounded-xl transition-all"
+                     className="p-2 text-slate-400 dark:text-white/25 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/[0.06] rounded-xl transition-all shrink-0"
                      title="Sair do sistema"
                    >
                      <LogOut className="w-4.5 h-4.5" />
@@ -2247,57 +2494,230 @@ export default function Dashboard() {
                )}
           </div>
         </div>
+
+        {/* 📱 Subcabeçalho Mobile — Título do Módulo Ativo com Espaçamento Limpo */}
+        <div className="md:hidden max-w-6xl mx-auto px-4 pt-3 pb-1 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 flex items-center justify-center shrink-0">
+              <currentTabInfo.icon className="w-4 h-4" />
+            </div>
+            <span className="text-sm font-extrabold text-slate-800 dark:text-white">{currentTabInfo.itemLabel}</span>
+          </div>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">{currentTabInfo.catLabel}</span>
+        </div>
       </header>
 
-      <main className="relative z-10 max-w-6xl mx-auto px-3 sm:px-6 py-6 sm:py-8">
-        
-        {/* Navigation Tabs - Premium Pill Style */}
-        <div className="flex flex-wrap items-center gap-1.5 mb-10">
-          {[
-            { id: 'overview' as const, label: 'Resumo', icon: LayoutDashboard },
-            { id: 'agendamentos' as const, label: 'Agendamentos', icon: Calendar, badge: bookings.length },
-            { id: 'clientes' as const, label: 'Clientes', icon: Users },
-            { id: 'horarios' as const, label: 'Gerenciar Agenda', icon: Clock },
-            { id: 'servicos' as const, label: 'Serviços', icon: Briefcase },
-            { id: 'links' as const, label: 'Links de Venda', icon: Link2 },
-            { id: 'personalizar' as const, label: 'Personalizar', icon: Palette },
-            { id: 'financeiro' as const, label: 'Financeiro', icon: DollarSign },
-            { id: 'faturamento' as const, label: 'Assinatura', icon: CreditCard },
-            { id: 'cupons' as const, label: 'Cupons', icon: Tag },
-            { id: 'memberships' as const, label: 'Clube de Assinaturas', icon: Gift },
-            { id: 'rh' as const, label: 'RH / Equipe', icon: UserCheck },
-            { id: 'audit' as const, label: 'Logs & Auditoria', icon: ShieldAlert },
-            { id: 'social' as const, label: 'Explorar Rede', icon: Globe },
-            { id: 'trash' as const, label: 'Lixeira', icon: Trash2 },
-          ].map(tab => {
-            const isActive = activeTab === tab.id
-            return (
+      {/* 📱 Mobile Drawer Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md md:hidden flex flex-col justify-end animate-fade-in">
+          <div className="bg-white dark:bg-[#0D111E] border-t border-slate-200 dark:border-white/10 rounded-t-[2rem] p-5 max-h-[85dvh] overflow-y-auto custom-scrollbar animate-slide-up relative shadow-2xl">
+            <div className="w-12 h-1.5 bg-slate-300 dark:bg-white/20 rounded-full mx-auto mb-5"></div>
+            
+            <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-100 dark:border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-violet-500/10 dark:bg-violet-500/20 text-violet-600 dark:text-violet-400 flex items-center justify-center font-black">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white text-base leading-tight">Módulos do Sistema</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-white/40">Selecione para navegar</p>
+                </div>
+              </div>
               <button
-                key={tab.id}
-                onClick={() => {
-                  if (subscription?.status === 'inactive' && tab.id !== 'faturamento') {
-                    setShowPaywall(true)
-                  } else {
-                    setActiveTab(tab.id)
-                  }
-                }}
-                className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 rounded-full text-[13px] font-semibold transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                  isActive
-                    ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/20'
-                    : 'bg-white/80 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] text-slate-500 dark:text-white/35 hover:text-slate-750 dark:hover:text-white/70 hover:bg-slate-50 dark:hover:bg-white/[0.06] hover:border-slate-300 dark:hover:border-white/[0.1]'
-                }`}
-                title={tab.label}
+                onClick={() => setMobileMenuOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-white/10 flex items-center justify-center text-slate-500 dark:text-white/50 hover:bg-slate-200 dark:hover:bg-white/20 hover:text-slate-900 dark:hover:text-white transition-colors"
               >
-                <tab.icon className="w-[15px] h-[15px] flex-shrink-0" />
-                <span className="hidden sm:inline">{tab.label}</span>
-                {tab.badge !== undefined && tab.badge > 0 && (
-                  <span className={`ml-0.5 text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-violet-500/20 text-violet-400'
-                  }`}>
-                    {tab.badge}
-                  </span>
-                )}
+                <X className="w-4 h-4" />
               </button>
+            </div>
+
+            <div className="space-y-3 pb-6">
+              {navCategories.map(cat => {
+                if (cat.type === 'single') {
+                  const isActive = activeTab === cat.tabId
+                  return (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setActiveTab(cat.tabId)
+                        setMobileMenuOpen(false)
+                      }}
+                      className={`w-full p-3.5 rounded-2xl flex items-center gap-3 font-bold text-sm transition-all ${
+                        isActive
+                          ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/20'
+                          : 'bg-slate-100/70 dark:bg-white/[0.03] border border-slate-200/80 dark:border-white/[0.06] text-slate-700 dark:text-white/80 hover:bg-slate-200/80 dark:hover:bg-white/[0.08]'
+                      }`}
+                    >
+                      <cat.icon className="w-5 h-5 shrink-0 text-violet-500 dark:text-violet-400" />
+                      <span>{cat.label}</span>
+                    </button>
+                  )
+                }
+
+                const isCatExpanded = expandedMobileCategory === cat.id
+                const hasActiveSub = cat.items.some(item => item.id === activeTab)
+
+                return (
+                  <div key={cat.id} className="rounded-2xl border border-slate-200/80 dark:border-white/[0.06] bg-slate-50/60 dark:bg-white/[0.02] overflow-hidden">
+                    <button
+                      onClick={() => setExpandedMobileCategory(isCatExpanded ? null : cat.id)}
+                      className={`w-full p-3.5 flex items-center justify-between text-sm font-bold transition-colors ${
+                        hasActiveSub ? 'text-violet-600 dark:text-violet-400' : 'text-slate-800 dark:text-white/80'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <cat.icon className="w-5 h-5 text-violet-600 dark:text-violet-400 shrink-0" />
+                        <span>{cat.label}</span>
+                        {cat.badge !== undefined && (
+                          <span className="bg-violet-500/10 dark:bg-violet-500/20 text-violet-600 dark:text-violet-300 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
+                            {cat.badge}
+                          </span>
+                        )}
+                      </div>
+                      <ChevronDown className={`w-4 h-4 text-slate-400 dark:text-white/40 transition-transform duration-300 ${isCatExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isCatExpanded && (
+                      <div className="p-2 space-y-1.5 bg-white/60 dark:bg-white/[0.02] border-t border-slate-200/60 dark:border-white/[0.04]">
+                        {cat.items.map(item => {
+                          const isSubActive = activeTab === item.id
+                          return (
+                            <button
+                              key={item.id}
+                              onClick={() => {
+                                if (subscription?.status === 'inactive' && item.id !== 'faturamento') {
+                                  setShowPaywall(true)
+                                } else {
+                                  setActiveTab(item.id)
+                                }
+                                setMobileMenuOpen(false)
+                              }}
+                              className={`w-full p-3 rounded-xl flex items-center justify-between text-left transition-all ${
+                                isSubActive
+                                  ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white font-bold shadow-md'
+                                  : 'hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-white/70 font-medium'
+                              }`}
+                            >
+                              <div className="flex items-center gap-3">
+                                <item.icon className="w-4 h-4 shrink-0" />
+                                <div>
+                                  <p className="text-xs leading-tight">{item.label}</p>
+                                  <p className={`text-[10px] mt-0.5 ${isSubActive ? 'text-white/80' : 'text-slate-400 dark:text-white/35'}`}>{item.desc}</p>
+                                </div>
+                              </div>
+                              {item.badge !== undefined && item.badge > 0 && (
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${isSubActive ? 'bg-white/20 text-white' : 'bg-violet-500/20 text-violet-300'}`}>
+                                  {item.badge}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <main className="relative z-10 max-w-6xl mx-auto px-3 sm:px-6 pt-4 pb-16 sm:pb-24 pb-safe">
+        
+        {/* 💻 Desktop Categorized Dropdown Navbar */}
+        <div ref={dropdownRef} className="hidden md:flex items-center justify-start gap-2.5 mb-8 relative z-30 flex-wrap">
+          {navCategories.map(cat => {
+            if (cat.type === 'single') {
+              const isActive = activeTab === cat.tabId
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveTab(cat.tabId)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 ${
+                    isActive
+                      ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/25'
+                      : 'bg-white/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.06] text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08]'
+                  }`}
+                >
+                  <cat.icon className="w-4 h-4 shrink-0" />
+                  <span>{cat.label}</span>
+                </button>
+              )
+            }
+
+            const isDropdownOpen = activeDropdown === cat.id
+            const hasActiveSub = cat.items.some(item => item.id === activeTab)
+
+            return (
+              <div key={cat.id} className="relative">
+                <button
+                  onClick={() => setActiveDropdown(isDropdownOpen ? null : cat.id)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all duration-300 ${
+                    hasActiveSub
+                      ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-violet-600/25'
+                      : isDropdownOpen
+                        ? 'bg-slate-200 dark:bg-white/15 text-slate-900 dark:text-white border border-slate-300 dark:border-white/20'
+                        : 'bg-white/80 dark:bg-white/[0.04] border border-slate-200/80 dark:border-white/[0.06] text-slate-700 dark:text-white/70 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.08]'
+                  }`}
+                >
+                  <cat.icon className="w-4 h-4 shrink-0" />
+                  <span>{cat.label}</span>
+                  {cat.badge !== undefined && (
+                    <span className="bg-white/20 text-white text-[10px] font-extrabold px-1.5 py-0.5 rounded-full">
+                      {cat.badge}
+                    </span>
+                  )}
+                  <ChevronDown className={`w-3.5 h-3.5 shrink-0 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                </button>
+
+                {/* Dropdown Floating Card */}
+                {isDropdownOpen && (
+                  <div className="absolute left-0 top-full mt-2.5 w-72 bg-white dark:bg-[#0D111E] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl p-2 z-50 animate-scale-in">
+                    <div className="px-3 py-2 border-b border-slate-100 dark:border-white/[0.06] mb-1">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-white/30">Módulo: {cat.label}</p>
+                    </div>
+                    <div className="space-y-1">
+                      {cat.items.map(item => {
+                        const isSubActive = activeTab === item.id
+                        return (
+                          <button
+                            key={item.id}
+                            onClick={() => {
+                              if (subscription?.status === 'inactive' && item.id !== 'faturamento') {
+                                setShowPaywall(true)
+                              } else {
+                                setActiveTab(item.id)
+                              }
+                              setActiveDropdown(null)
+                            }}
+                            className={`w-full p-2.5 rounded-xl flex items-start gap-3 text-left transition-all ${
+                              isSubActive
+                                ? 'bg-gradient-to-r from-violet-600/15 to-pink-600/15 border border-violet-500/30 text-violet-600 dark:text-violet-300 font-bold'
+                                : 'hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-700 dark:text-white/70'
+                            }`}
+                          >
+                            <div className={`p-2 rounded-lg shrink-0 mt-0.5 ${isSubActive ? 'bg-violet-600 text-white' : 'bg-slate-100 dark:bg-white/[0.06] text-slate-500 dark:text-white/40'}`}>
+                              <item.icon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-slate-900 dark:text-white truncate">{item.label}</span>
+                                {item.badge !== undefined && item.badge > 0 && (
+                                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-violet-500/20 text-violet-400">
+                                    {item.badge}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-slate-500 dark:text-white/40 leading-snug mt-0.5 line-clamp-2">{item.desc}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             )
           })}
         </div>
@@ -2307,7 +2727,7 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'overview' && (
           <div className="animate-slide-up space-y-8">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
               <StatCard title="Total de Clientes" value={stats.totalBookings} icon={Users} color="#8b5cf6" />
               <StatCard title="Saldo Financeiro" value={formatCurrency(financeStats.balance)} icon={Wallet} color="#10b981" />
               <StatCard title="A Receber" value={formatCurrency(financeStats.pendingReceivable)} icon={TrendingUp} color="#06b6d4" />
@@ -3024,42 +3444,44 @@ export default function Dashboard() {
         {activeTab === 'links' && (
            <div className="animate-slide-up space-y-6">
               {/* Profile Link Section */}
-              <div className="card-simple p-6 bg-gradient-to-br from-orange-500 to-pink-500 text-white border-none shadow-xl shadow-pink-500/20">
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-6">
+              <div className="card-simple p-4 sm:p-6 bg-gradient-to-br from-orange-500 to-pink-500 text-white border-none shadow-xl shadow-pink-500/20">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div className="flex-1">
-                    <h3 className="text-xl font-black mb-1">Seu Link Mestre</h3>
-                    <p className="text-pink-100 text-sm font-medium">Envie este link para seus clientes verem TODOS os seus serviços de uma vez.</p>
+                    <h3 className="text-lg sm:text-xl font-black mb-1">Seu Link Mestre</h3>
+                    <p className="text-pink-100 text-xs sm:text-sm font-medium leading-relaxed">Envie este link para seus clientes verem TODOS os seus serviços de uma vez.</p>
                   </div>
-                  <div className="flex gap-2 w-full sm:w-auto">
+                  <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 w-full sm:w-auto">
                     <button 
                       onClick={() => { 
                         const url = `${window.location.origin}/p/${adminInfo?.username}`; 
                         navigator.clipboard.writeText(url); 
                         showToast('Link do perfil copiado!') 
                       }} 
-                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-pink-500 font-black py-3 px-6 rounded-xl hover:bg-pink-50 transition-all shadow-lg"
+                      className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white text-pink-600 font-bold py-2.5 px-4 rounded-xl hover:bg-pink-50 transition-all text-xs sm:text-sm shadow-md min-h-[42px]"
                     >
                       <Copy className="w-4 h-4" /> Copiar Perfil
                     </button>
                      <button 
                        onClick={() => setActiveTab('personalizar')} 
-                       className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-pink-600/40 text-white font-black py-3 px-6 rounded-xl hover:bg-pink-600/60 transition-all border border-white/20 shadow-lg"
+                       className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white/15 text-white font-bold py-2.5 px-4 rounded-xl hover:bg-white/25 transition-all border border-white/20 text-xs sm:text-sm shadow-md min-h-[42px]"
                      >
                        <Palette className="w-4 h-4" /> Personalizar Página
                      </button>
                     <a 
                       href={`/p/${adminInfo?.username}`} 
                       target="_blank" 
-                      className="p-3 bg-pink-500/30 text-white rounded-xl hover:bg-pink-500/50 transition-all border border-white/20"
+                      rel="noreferrer"
+                      className="p-2.5 bg-white/15 text-white rounded-xl hover:bg-white/25 transition-all border border-white/20 shrink-0 flex items-center justify-center min-h-[42px] min-w-[42px]"
+                      title="Abrir em nova aba"
                     >
-                      <ExternalLink className="w-5 h-5" />
+                      <ExternalLink className="w-4.5 h-4.5" />
                     </a>
                   </div>
                 </div>
               </div>
 
               {editingLink ? (
-                <div className="card-simple p-8 border-pink-200 dark:border-pink-500/30 shadow-xl mb-6 animate-scale-in">
+                <div className="card-simple p-5 sm:p-8 border-pink-200 dark:border-pink-500/30 shadow-xl mb-6 animate-scale-in">
                   <h3 className="font-black text-slate-900 dark:text-white mb-6 text-xl">Editar Link de Venda</h3>
                   <div className="space-y-4">
                     <div>
@@ -3081,7 +3503,7 @@ export default function Dashboard() {
                     </div>
                     
                     {/* Taxa de Agendamento */}
-                    <div className="bg-slate-50 dark:bg-slate-805/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -3114,11 +3536,11 @@ export default function Dashboard() {
                   </div>
                 </div>
               ) : !showNewLink ? (
-                <button onClick={() => setShowNewLink(true)} className="w-full btn-primary-simple py-5 flex items-center justify-center gap-3 text-xl font-black shadow-xl shadow-pink-500/20 border-2 border-white/20 mb-6">
-                  <Plus className="w-8 h-8" /> CRIAR NOVO LINK DE VENDA
+                <button onClick={() => setShowNewLink(true)} className="w-full bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white py-3.5 px-5 rounded-2xl flex items-center justify-center gap-2.5 text-sm sm:text-base font-extrabold shadow-lg shadow-pink-500/20 transition-all mb-6">
+                  <Plus className="w-5 h-5" /> CRIAR NOVO LINK DE VENDA
                 </button>
               ) : (
-                <div className="card-simple p-8 border-pink-200 dark:border-pink-500/30 shadow-xl mb-6 animate-scale-in">
+                <div className="card-simple p-5 sm:p-8 border-pink-200 dark:border-pink-500/30 shadow-xl mb-6 animate-scale-in">
                   <h3 className="font-black text-slate-900 dark:text-white mb-6 text-xl">Criar Novo Link de Venda</h3>
                   <div className="space-y-4">
                     <div>
@@ -3140,7 +3562,7 @@ export default function Dashboard() {
                     </div>
 
                     {/* Taxa de Agendamento */}
-                    <div className="bg-slate-50 dark:bg-slate-805/50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-3">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
                           type="checkbox"
@@ -3175,11 +3597,11 @@ export default function Dashboard() {
               )}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {links.map(link => (
-                  <div key={link.id} className="card-simple p-6 hover:shadow-xl transition-all border-l-4 border-pink-500 flex flex-col justify-between">
+                  <div key={link.id} className="card-simple p-4 sm:p-5 hover:shadow-xl transition-all border-l-4 border-pink-500 flex flex-col justify-between">
                     <div>
-                      <div className="flex justify-between items-start mb-4">
+                      <div className="flex justify-between items-start mb-3">
                         <div>
-                          <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{link.title}</h3>
+                          <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-tight">{link.title}</h3>
                           {link.service && <p className="text-xs font-bold text-pink-500 mt-1">{link.service.name} • {formatCurrency(link.service.price)}</p>}
                           {link.bookingFeeEnabled ? (
                             <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
@@ -3190,16 +3612,25 @@ export default function Dashboard() {
                           )}
                         </div>
                       </div>
-                      <div className="grid grid-cols-3 gap-2 mb-6">
-                        <div className="bg-slate-50 dark:bg-slate-800 p-2 rounded-xl text-center"><p className="text-2xl font-black text-slate-700 dark:text-slate-200">{link.totalSlots}</p><p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Total</p></div>
-                        <div className="bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-xl text-center"><p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{link.availableSlots}</p><p className="text-[9px] font-bold text-emerald-600/70 dark:text-emerald-500 uppercase tracking-widest">Livres</p></div>
-                        <div className="bg-pink-50 dark:bg-pink-500/10 p-2 rounded-xl text-center"><p className="text-2xl font-black text-pink-500">{link.bookedSlots}</p><p className="text-[9px] font-bold text-pink-400 uppercase tracking-widest">Agend.</p></div>
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        <div className="bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl text-center">
+                          <p className="text-xl sm:text-2xl font-black text-slate-700 dark:text-slate-200">{link.totalSlots}</p>
+                          <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Total</p>
+                        </div>
+                        <div className="bg-emerald-50 dark:bg-emerald-500/10 p-2 rounded-xl text-center">
+                          <p className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">{link.availableSlots}</p>
+                          <p className="text-[9px] font-bold text-emerald-600/70 dark:text-emerald-500 uppercase tracking-wider">Livres</p>
+                        </div>
+                        <div className="bg-pink-50 dark:bg-pink-500/10 p-2 rounded-xl text-center">
+                          <p className="text-xl sm:text-2xl font-black text-pink-500">{link.bookedSlots}</p>
+                          <p className="text-[9px] font-bold text-pink-400 uppercase tracking-wider">Agendados</p>
+                        </div>
                       </div>
                     </div>
-                    <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-800">
-                      <button onClick={() => { const url = `${window.location.origin}/agendar/${link.token}`; navigator.clipboard.writeText(url); showToast('Link copiado!') }} className="flex-1 text-center py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 bg-slate-50 dark:bg-slate-800 rounded-lg transition-all flex items-center justify-center gap-1.5"><Copy className="w-3.5 h-3.5" /> COPIAR</button>
-                      <button onClick={() => startEditingLink(link)} className="flex-1 text-center py-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-pink-500 dark:hover:text-pink-400 bg-slate-50 dark:bg-slate-800 rounded-lg transition-all flex items-center justify-center gap-1.5"><Pencil className="w-3.5 h-3.5" /> EDITAR</button>
-                      <button onClick={() => handleDeleteLink(link.id)} className="flex-1 text-center py-2 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all flex items-center justify-center gap-1.5"><Trash2 className="w-3.5 h-3.5" /> EXCLUIR</button>
+                    <div className="flex items-center gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                      <button onClick={() => { const url = `${window.location.origin}/agendar/${link.token}`; navigator.clipboard.writeText(url); showToast('Link copiado!') }} className="flex-1 text-center py-2 px-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-pink-500 dark:hover:text-pink-400 bg-slate-100 dark:bg-slate-800/70 rounded-xl transition-all flex items-center justify-center gap-1"><Copy className="w-3.5 h-3.5" /> COPIAR</button>
+                      <button onClick={() => startEditingLink(link)} className="flex-1 text-center py-2 px-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-pink-500 dark:hover:text-pink-400 bg-slate-100 dark:bg-slate-800/70 rounded-xl transition-all flex items-center justify-center gap-1"><Pencil className="w-3.5 h-3.5" /> EDITAR</button>
+                      <button onClick={() => handleDeleteLink(link.id)} className="flex-1 text-center py-2 px-1.5 text-xs font-bold text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-500/15 bg-red-500/10 rounded-xl transition-all flex items-center justify-center gap-1"><Trash2 className="w-3.5 h-3.5" /> EXCLUIR</button>
                     </div>
                   </div>
                 ))}
@@ -3775,11 +4206,11 @@ export default function Dashboard() {
               </div>
 
               {/* Subscription Status Card */}
-              <div className="card-simple p-8 border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-[#131826] space-y-6">
+              <div className="card-simple p-4 sm:p-8 border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-[#131826] space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
                   <div className="space-y-1">
                     <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Status da Conta</span>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       {subscription?.status === 'active' && (
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
                           <CheckCircle2 className="w-4 h-4" /> Ativo
@@ -3808,7 +4239,7 @@ export default function Dashboard() {
 
                   <div className="text-left sm:text-right">
                     <span className="text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">Validade / Próxima Cobrança</span>
-                    <span className="text-lg font-black text-slate-900 dark:text-white block mt-1">
+                    <span className="text-base sm:text-lg font-black text-slate-900 dark:text-white block mt-1">
                       {subscription?.status === 'active' && subscription.expiresAt
                         ? new Date(subscription.expiresAt).toLocaleDateString('pt-BR')
                         : subscription?.status === 'trialing' && subscription.trialEndsAt
@@ -3850,7 +4281,7 @@ export default function Dashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     
                     {/* Monthly Card */}
-                    <div className={`border p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left ${
+                    <div className={`border p-4 sm:p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left ${
                       subscription?.plan === 'mensal' && subscription?.status === 'active'
                         ? 'border-orange-500 bg-orange-500/5 dark:bg-orange-500/10'
                         : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#1A2235]/40 hover:border-slate-300 dark:hover:border-slate-700'
@@ -5529,6 +5960,19 @@ export default function Dashboard() {
                 <p className="text-[10px] text-orange-500 font-bold mt-1.5 px-1 leading-tight">
                   Atenção: mudar o @ altera seu link de agendamento e login de acesso ao painel.
                 </p>
+              </div>
+              <div>
+                <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">E-mail para Notificações e Recuperação de Senha</label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                  <input
+                    type="email"
+                    value={profileForm.email || ''}
+                    onChange={e => setProfileForm({...profileForm, email: e.target.value})}
+                    placeholder="seu@email.com"
+                    className="input-simple font-bold text-sm pl-12"
+                  />
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Nome do Negócio</label>

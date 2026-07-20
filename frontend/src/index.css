@@ -432,3 +432,43 @@ html { scroll-behavior: smooth; }
   filter: blur(40px);
 }
 
+/* ═══════════════════════════════════════════════════════
+   RESPONSIVENESS & TOUCH ERGONOMICS (ALL DEVICES)
+   ═══════════════════════════════════════════════════════ */
+
+/* Previne zoom automático do iOS Safari ao focar em inputs */
+@media (max-width: 640px) {
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="tel"],
+  input[type="date"],
+  input[type="time"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Safe Area Inset Helpers */
+.pb-safe { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+.pt-safe { padding-top: max(1rem, env(safe-area-inset-top)); }
+
+/* Rolagem interna otimizada para modais e contêineres touch */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.4);
+}
+
+
