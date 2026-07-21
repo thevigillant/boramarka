@@ -319,10 +319,6 @@ export default function Register() {
     }
   }
 
-  const handleBack = () => {
-    setError('')
-    setStep(s => Math.max(s - 1, 1))
-  }
 
   const handleSubmit = async () => {
     setError('')
