@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
 import {
   Store, User, Lock, Phone, FileText, MapPin, Clock,
   ChevronRight, ChevronLeft, Loader2, AlertCircle,
-  Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft, Mail
+  Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft, Mail, RefreshCw, KeyRound, Edit2, ShieldCheck
 } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
@@ -89,6 +89,42 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
 
+  // E-mail Verification Modal state
+  const [showVerifyModal, setShowVerifyModal] = useState(false)
+  const [verifiedEmail, setVerifiedEmail] = useState('')
+  const [isEmailVerified, setIsEmailVerified] = useState(false)
+  const [sendingCode, setSendingCode] = useState(false)
+  const [verifying, setVerifying] = useState(false)
+  const [verifiedSuccess, setVerifiedSuccess] = useState(false)
+  const [verifyError, setVerifyError] = useState('')
+  const [resendTimer, setResendTimer] = useState(60)
+  const [pin, setPin] = useState(['', '', '', ''])
+
+  const pinInputRefs = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+  ]
+
+  // Countdown timer effect
+  useEffect(() => {
+    let interval: any = null
+    if (showVerifyModal && resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer(t => t - 1)
+      }, 1000)
+    }
+    return () => clearInterval(interval)
+  }, [showVerifyModal, resendTimer])
+
+  // Focus first input when modal opens
+  useEffect(() => {
+    if (showVerifyModal) {
+      setTimeout(() => pinInputRefs[0].current?.focus(), 150)
+    }
+  }, [showVerifyModal])
+
   // Step 2 — Negócio
   const [businessName, setBusinessName] = useState('')
   const [photoUrl, setPhotoUrl] = useState('')
@@ -171,11 +207,116 @@ export default function Register() {
     return null
   }
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setError('')
-    if (step === 1) { const err = validateStep1(); if (err) { setError(err); return } }
-    if (step === 2) { const err = validateStep2(); if (err) { setError(err); return } }
+    if (step === 1) {
+      const err = validateStep1()
+      if (err) { setError(err); return }
+
+      // Se o e-mail mudou desde a última verificação, exige nova verificação
+      if (isEmailVerified && verifiedEmail === email.trim().toLowerCase()) {
+        setStep(2)
+        return
+      }
+
+      // Dispara envio do código de 4 dígitos
+      setSendingCode(true)
+      try {
+        await api.sendVerificationCode(email.trim(), username.trim())
+        setShowVerifyModal(true)
+        setVerifyError('')
+        setPin(['', '', '', ''])
+        setResendTimer(60)
+        setVerifiedSuccess(false)
+      } catch (err: any) {
+        setError(err.message || 'Erro ao enviar código de verificação para o e-mail.')
+      } finally {
+        setSendingCode(false)
+      }
+      return
+    }
+
+    if (step === 2) {
+      const err = validateStep2()
+      if (err) { setError(err); return }
+    }
+
     setStep(s => Math.min(s + 1, 3))
+  }
+
+  const handleBack = () => {
+    setError('')
+    setStep(s => Math.max(s - 1, 1))
+  }
+
+  // Pin Input Handlers
+  const handlePinChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1)
+    
+    // Suporte a colar código completo de 4 dígitos
+    if (value.length > 1) {
+      const digits = value.replace(/\D/g, '').slice(0, 4).split('')
+      if (digits.length === 4) {
+        setPin(digits)
+        pinInputRefs[3].current?.focus()
+        return
+      }
+    }
+
+    const newPin = [...pin]
+    newPin[index] = digit
+    setPin(newPin)
+
+    if (digit && index < 3) {
+      pinInputRefs[index + 1].current?.focus()
+    }
+  }
+
+  const handlePinKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !pin[index] && index > 0) {
+      pinInputRefs[index - 1].current?.focus()
+    }
+  }
+
+  const handleVerifyCode = async () => {
+    const code = pin.join('')
+    if (code.length < 4) {
+      setVerifyError('Por favor, digite os 4 dígitos do código.')
+      return
+    }
+
+    setVerifying(true)
+    setVerifyError('')
+
+    try {
+      await api.verifyEmailCode(email.trim(), code)
+      setVerifiedSuccess(true)
+      setIsEmailVerified(true)
+      setVerifiedEmail(email.trim().toLowerCase())
+      
+      setTimeout(() => {
+        setShowVerifyModal(false)
+        setStep(2)
+      }, 900)
+    } catch (err: any) {
+      setVerifyError(err.message || 'Código incorreto ou expirado. Verifique e tente novamente.')
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  const handleResendCode = async () => {
+    if (resendTimer > 0 || sendingCode) return
+    setSendingCode(true)
+    setVerifyError('')
+    try {
+      await api.sendVerificationCode(email.trim(), username.trim())
+      setResendTimer(60)
+    } catch (err: any) {
+      setVerifyError(err.message || 'Erro ao reenviar código.')
+    } finally {
+      setSendingCode(false)
+    }
   }
 
   const handleBack = () => {
@@ -491,6 +632,122 @@ export default function Register() {
             <ArrowLeft className="w-3.5 h-3.5" /> Voltar para o início
           </button>
         </div>
+
+        {/* ═══ E-MAIL VERIFICATION MODAL ═══ */}
+        {showVerifyModal && (
+          <div className="fixed inset-0 bg-black/85 backdrop-blur-xl z-50 flex items-center justify-center p-4 animate-fadeIn">
+            <div className="bg-[#0c0c14] border border-white/10 rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl shadow-violet-950/60 relative overflow-hidden animate-slide-up">
+              
+              {/* Top Neon Accent Gradient Bar */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-violet-600 via-pink-600 to-emerald-400" />
+              
+              {/* Close Button */}
+              <button 
+                onClick={() => setShowVerifyModal(false)}
+                className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+
+              {verifiedSuccess ? (
+                <div className="text-center py-8 space-y-4 animate-scaleUp">
+                  <div className="w-20 h-20 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center mx-auto shadow-2xl shadow-emerald-500/20">
+                    <CheckCircle2 className="w-10 h-10 animate-bounce" />
+                  </div>
+                  <h3 className="text-2xl font-black text-white">E-mail Verificado!</h3>
+                  <p className="text-xs text-white/50">Avançando para os dados do negócio...</p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Badge & Icon Header */}
+                  <div className="text-center">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/30 text-pink-400 text-[10px] font-bold uppercase tracking-wider mb-4">
+                      <ShieldCheck className="w-3.5 h-3.5" /> Verificação de Segurança
+                    </div>
+
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-violet-600/20 to-pink-600/20 border border-pink-500/30 flex items-center justify-center text-pink-400 mx-auto shadow-lg shadow-pink-500/10 mb-3">
+                      <Mail className="w-8 h-8" />
+                    </div>
+
+                    <h3 className="text-xl font-extrabold text-white">Confirme seu E-mail</h3>
+                    <p className="text-[12px] text-white/50 mt-1">
+                      Enviamos um código de verificação de <strong className="text-white">4 dígitos</strong> para:
+                    </p>
+                    <div className="inline-flex items-center gap-2 mt-2 px-3 py-1.5 bg-white/[0.04] border border-white/10 rounded-xl text-xs font-semibold text-pink-300">
+                      <span>{email}</span>
+                      <button 
+                        onClick={() => setShowVerifyModal(false)}
+                        className="text-white/40 hover:text-white transition-colors"
+                        title="Alterar e-mail"
+                      >
+                        <Edit2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+
+                  {verifyError && (
+                    <div className="flex items-center gap-2.5 bg-red-500/10 border border-red-500/20 p-3 rounded-xl text-red-400 text-xs font-medium">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{verifyError}</span>
+                    </div>
+                  )}
+
+                  {/* 4-Digit PIN Boxes */}
+                  <div className="flex items-center justify-center gap-3 py-2">
+                    {pin.map((digit, index) => (
+                      <input
+                        key={index}
+                        ref={pinInputRefs[index]}
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={1}
+                        value={digit}
+                        onChange={e => handlePinChange(index, e.target.value)}
+                        onKeyDown={e => handlePinKeyDown(index, e)}
+                        className="w-14 h-16 sm:w-16 sm:h-18 bg-white/[0.04] border border-white/10 focus:border-pink-500 focus:bg-pink-500/10 focus:shadow-[0_0_20px_rgba(236,72,153,0.25)] text-center text-2xl font-black text-white rounded-2xl outline-none transition-all duration-300"
+                      />
+                    ))}
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleVerifyCode}
+                      disabled={verifying || pin.join('').length < 4}
+                      className="w-full py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-xs font-bold text-white shadow-lg shadow-violet-600/20 flex items-center justify-center gap-2 disabled:opacity-50 transition-all duration-300 hover:scale-[1.01]"
+                    >
+                      {verifying ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <KeyRound className="w-4 h-4" />
+                          Confirmar Código
+                        </>
+                      )}
+                    </button>
+
+                    <div className="flex items-center justify-between px-1 text-[11px] font-semibold text-white/40">
+                      <span>Não recebeu?</span>
+                      {resendTimer > 0 ? (
+                        <span className="text-white/30">Reenviar em {resendTimer}s</span>
+                      ) : (
+                        <button
+                          onClick={handleResendCode}
+                          disabled={sendingCode}
+                          className="text-pink-400 hover:text-pink-300 font-bold flex items-center gap-1 transition-colors"
+                        >
+                          {sendingCode ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+                          Reenviar Código
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

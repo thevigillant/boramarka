@@ -48,6 +48,18 @@ export const api = {
   checkAccount: () =>
     request<{ hasAccount: boolean }>('/auth/check'),
 
+  sendVerificationCode: (email: string, username?: string) =>
+    request<{ success: boolean; message: string }>('/auth/send-verification-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, username }),
+    }),
+
+  verifyEmailCode: (email: string, code: string) =>
+    request<{ verified: boolean; message: string }>('/auth/verify-code', {
+      method: 'POST',
+      body: JSON.stringify({ email, code }),
+    }),
+
   register: (data: {
     username: string;
     email?: string;
