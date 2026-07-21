@@ -298,7 +298,6 @@ export default function Register() {
       
       setTimeout(() => {
         setShowVerifyModal(false)
-        setStep(2)
       }, 900)
     } catch (err: any) {
       setVerifyError(err.message || 'Código incorreto ou expirado. Verifique e tente novamente.')
