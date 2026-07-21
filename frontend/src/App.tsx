@@ -27,19 +27,18 @@ function RootRouteWrapper() {
   const hostname = window.location.hostname;
   const parts = hostname.split('.');
   
-  // Exclude main domains: localhost, 127.0.0.1, boramarka.com.br, www.boramarka.com.br
+  // Exclude main domains: localhost, 127.0.0.1, vercel.app, boramarka.com.br, www.boramarka.com.br
   const isMainDomain = 
     hostname === 'localhost' || 
     hostname === '127.0.0.1' ||
-    (parts.length === 2 && parts[0] === 'boramarka') ||
-    (parts.length === 3 && parts[1] === 'boramarka' && parts[0] === 'www');
+    hostname === 'boramarka.com.br' ||
+    hostname === 'www.boramarka.com.br' ||
+    hostname.endsWith('.vercel.app');
 
-  // Also local subdomain test: e.g. salao.localhost
   const isLocalSubdomain = parts.length === 2 && parts[1] === 'localhost' && parts[0] !== 'www';
+  const isCustomSubdomain = (!isMainDomain && parts.length >= 3) || isLocalSubdomain;
 
-  const isDomainAccess = (!isMainDomain && parts.length >= 2) || isLocalSubdomain;
-
-  if (isDomainAccess) {
+  if (isCustomSubdomain) {
     return <PublicProfile />;
   }
 
