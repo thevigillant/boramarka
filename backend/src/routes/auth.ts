@@ -50,9 +50,12 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(500).send({ error: 'Erro ao enviar e-mail de verificação. Verifique as configurações de SMTP.' });
     }
 
+    const isSmtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+
     return {
       success: true,
       message: `Código de verificação de 4 dígitos enviado para ${cleanEmail}`,
+      devCode: isSmtpConfigured ? undefined : code,
     };
   });
 
