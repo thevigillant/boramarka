@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "prisma generate && tsc",
+    "build": "node -e \"const fs=require('fs'); let s=fs.readFileSync('prisma/schema.prisma','utf8'); s=s.replace('provider = \\\"sqlite\\\"', 'provider = \\\"postgresql\\\"'); fs.writeFileSync('prisma/schema.prisma', s);\" && prisma generate && tsc",
     "start": "prisma db push && node dist/server.js",
     "seed": "tsx prisma/seed.ts",
     "db:migrate": "npx prisma migrate dev",
