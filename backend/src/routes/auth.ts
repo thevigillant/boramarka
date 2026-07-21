@@ -2,13 +2,93 @@ import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { createAuditLog } from '../utils/auditLogger';
-import { sendPasswordResetEmail } from '../utils/mailer';
+import { sendPasswordResetEmail, sendEmailVerificationCode } from '../utils/mailer';
+
+// In-memory verification code store with expiration (10 min)
+const verificationStore = new Map<string, { code: string; expiresAt: number }>();
 
 export default async function authRoutes(app: FastifyInstance) {
   // GET /api/auth/check — Check if any admin account exists
   app.get('/check', async () => {
     const count = await prisma.admin.count();
     return { hasAccount: count > 0 };
+  });
+
+  // POST /api/auth/send-verification-code — Envia código de 4 dígitos por e-mail
+  app.post('/send-verification-code', async (request, reply) => {
+    const { email, username } = request.body as { email: string; username?: string };
+
+    if (!email?.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
+      return reply.status(400).send({ error: 'E-mail inválido.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanUsername = (username || '').trim().toLowerCase();
+
+    // Valida se o usuário ou e-mail já existem no banco
+    if (cleanUsername) {
+      const existingUser = await prisma.admin.findUnique({ where: { username: cleanUsername } });
+      if (existingUser) {
+        return reply.status(409).send({ error: 'Este nome de usuário já está em uso.' });
+      }
+    }
+
+    const existingEmail = await prisma.admin.findFirst({ where: { email: cleanEmail } });
+    if (existingEmail) {
+      return reply.status(409).send({ error: 'Este endereço de e-mail já está cadastrado.' });
+    }
+
+    // Gera código numérico de 4 dígitos
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutos
+
+    verificationStore.set(cleanEmail, { code, expiresAt });
+
+    const emailSent = await sendEmailVerificationCode(cleanEmail, cleanUsername || 'Profissional', code);
+
+    if (!emailSent) {
+      return reply.status(500).send({ error: 'Erro ao enviar e-mail de verificação. Verifique as configurações de SMTP.' });
+    }
+
+    return {
+      success: true,
+      message: `Código de verificação de 4 dígitos enviado para ${cleanEmail}`,
+    };
+  });
+
+  // POST /api/auth/verify-code — Valida o código de 4 dígitos digitado pelo usuário
+  app.post('/verify-code', async (request, reply) => {
+    const { email, code } = request.body as { email: string; code: string };
+
+    if (!email?.trim() || !code?.trim()) {
+      return reply.status(400).send({ error: 'E-mail e código são obrigatórios.' });
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const cleanCode = code.trim();
+
+    const storedData = verificationStore.get(cleanEmail);
+
+    if (!storedData) {
+      return reply.status(400).send({ error: 'Nenhum código encontrado para este e-mail. Solicite um novo código.' });
+    }
+
+    if (Date.now() > storedData.expiresAt) {
+      verificationStore.delete(cleanEmail);
+      return reply.status(400).send({ error: 'O código de verificação expirou (10 min). Solicite um novo.' });
+    }
+
+    if (storedData.code !== cleanCode) {
+      return reply.status(400).send({ error: 'Código de verificação incorreto. Verifique os 4 dígitos e tente novamente.' });
+    }
+
+    // Código correto -> remove do store
+    verificationStore.delete(cleanEmail);
+
+    return {
+      verified: true,
+      message: 'E-mail verificado com sucesso!',
+    };
   });
 
   // POST /api/auth/register — Create the admin account (only if none exists)
