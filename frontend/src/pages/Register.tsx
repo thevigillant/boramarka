@@ -99,6 +99,7 @@ export default function Register() {
   const [verifyError, setVerifyError] = useState('')
   const [resendTimer, setResendTimer] = useState(60)
   const [pin, setPin] = useState(['', '', '', ''])
+  const [devCode, setDevCode] = useState('')
 
   const pinInputRefs = [
     useRef<HTMLInputElement>(null),
@@ -222,7 +223,8 @@ export default function Register() {
       // Dispara envio do código de 4 dígitos
       setSendingCode(true)
       try {
-        await api.sendVerificationCode(email.trim(), username.trim())
+        const res = await api.sendVerificationCode(email.trim(), username.trim())
+        if (res.devCode) setDevCode(res.devCode)
         setShowVerifyModal(true)
         setVerifyError('')
         setPin(['', '', '', ''])
@@ -447,7 +449,8 @@ export default function Register() {
                           if (!/\S+@\S+\.\S+/.test(email.trim())) { setError('Digite um e-mail válido'); return }
                           setSendingCode(true)
                           try {
-                            await api.sendVerificationCode(email.trim(), username.trim())
+                            const res = await api.sendVerificationCode(email.trim(), username.trim())
+                            if (res.devCode) setDevCode(res.devCode)
                             setShowVerifyModal(true)
                             setVerifyError('')
                             setPin(['', '', '', ''])
@@ -740,6 +743,12 @@ export default function Register() {
                         <Edit2 className="w-3 h-3" />
                       </button>
                     </div>
+
+                    {devCode && (
+                      <div className="mt-3 bg-violet-500/10 border border-violet-500/20 p-3 rounded-xl text-center text-xs text-violet-300 font-semibold animate-fadeIn">
+                        💡 Modo de Testes (Sem SMTP): Seu código é <strong className="text-pink-400 text-sm font-mono tracking-widest bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">{devCode}</strong>
+                      </div>
+                    )}
                   </div>
 
                   {verifyError && (

@@ -49,7 +49,7 @@ export const api = {
     request<{ hasAccount: boolean }>('/auth/check'),
 
   sendVerificationCode: (email: string, username?: string) =>
-    request<{ success: boolean; message: string }>('/auth/send-verification-code', {
+    request<{ success: boolean; message: string; devCode?: string }>('/auth/send-verification-code', {
       method: 'POST',
       body: JSON.stringify({ email, username }),
     }),
