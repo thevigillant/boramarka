@@ -414,13 +414,74 @@ export default function Register() {
                 </div>
 
                 <div>
-                  <label className={labelClass}>E-mail</label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                    <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-                      placeholder="seu@email.com" className={inputIconClass} />
+                  <div className="flex items-center justify-between mb-2">
+                    <label className={labelClass}>E-mail</label>
+                    {isEmailVerified && verifiedEmail === email.trim().toLowerCase() && (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full animate-fadeIn">
+                        <CheckCircle2 className="w-3 h-3" /> E-mail Verificado
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[10px] text-white/15 mt-1.5 px-1 font-medium">Usado para enviar notificações e recuperação de senha</p>
+                  <div className="relative flex items-center">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
+                    <input 
+                      type="email" 
+                      value={email} 
+                      onChange={e => {
+                        setEmail(e.target.value)
+                        if (isEmailVerified && e.target.value.trim().toLowerCase() !== verifiedEmail) {
+                          setIsEmailVerified(false)
+                        }
+                      }}
+                      placeholder="seu@email.com" 
+                      className={`${inputIconClass} ${isEmailVerified && verifiedEmail === email.trim().toLowerCase() ? 'border-emerald-500/40 bg-emerald-500/[0.02]' : ''} ${/\S+@\S+\.\S+/.test(email.trim()) && (!isEmailVerified || verifiedEmail !== email.trim().toLowerCase()) ? 'pr-32' : ''}`} 
+                    />
+                    
+                    {/* Botão Recheado com nosso esquema de cores (Pink & Violet) */}
+                    {/\S+@\S+\.\S+/.test(email.trim()) && (!isEmailVerified || verifiedEmail !== email.trim().toLowerCase()) && (
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          setError('')
+                          if (!email.trim()) { setError('Digite seu e-mail'); return }
+                          if (!/\S+@\S+\.\S+/.test(email.trim())) { setError('Digite um e-mail válido'); return }
+                          setSendingCode(true)
+                          try {
+                            await api.sendVerificationCode(email.trim(), username.trim())
+                            setShowVerifyModal(true)
+                            setVerifyError('')
+                            setPin(['', '', '', ''])
+                            setResendTimer(60)
+                            setVerifiedSuccess(false)
+                          } catch (err: any) {
+                            setError(err.message || 'Erro ao enviar código de verificação.')
+                          } finally {
+                            setSendingCode(false)
+                          }
+                        }}
+                        disabled={sendingCode}
+                        className="absolute right-1.5 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white text-[11px] font-bold shadow-md shadow-pink-500/20 flex items-center gap-1.5 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                      >
+                        {sendingCode ? (
+                          <>
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Verificar E-mail
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-white/25 mt-1.5 px-1 font-medium flex items-center justify-between">
+                    <span>Usado para notificações e segurança da sua conta</span>
+                    {/\S+@\S+\.\S+/.test(email.trim()) && !isEmailVerified && (
+                      <span className="text-pink-400 font-bold text-[10px]">Clique em 'Verificar E-mail' para receber o PIN de 4 dígitos</span>
+                    )}
+                  </p>
                 </div>
 
                 <div>
