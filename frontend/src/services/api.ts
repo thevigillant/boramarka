@@ -1,4 +1,5 @@
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+const API_URL = rawApiUrl.replace(/\/+$/, '');
 
 function getToken(): string | null {
   return localStorage.getItem('token') || sessionStorage.getItem('token');
