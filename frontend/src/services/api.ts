@@ -16,14 +16,35 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    // Timeout de 15 segundos para evitar requests pendurados
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    response = await fetch(`${API_URL}${path}`, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+  } catch (networkError: any) {
+    // Erro de rede — servidor indisponível, sem internet, timeout, etc.
+    if (networkError.name === 'AbortError') {
+      throw new Error('O servidor demorou muito para responder. Tente novamente em alguns instantes.');
+    }
+    throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente em instantes.');
+  }
 
   // Handle 204 No Content
   if (response.status === 204) {
     return undefined as T;
+  }
+
+  // Handle 502/503/504 — servidor temporariamente indisponível
+  if (response.status >= 502 && response.status <= 504) {
+    throw new Error('O servidor está temporariamente indisponível. Tente novamente em alguns minutos.');
   }
 
   const data = await response.json().catch(() => ({}));
@@ -231,6 +252,7 @@ export const api = {
       clientName: string;
       clientPhone: string;
       status: string;
+      notes?: string;
       createdAt: string;
       timeSlot: {
         date: string;
@@ -250,6 +272,12 @@ export const api = {
 
   confirmBooking: (id: number) =>
     request(`/admin/bookings/${id}/confirm`, { method: 'PUT' }),
+
+  updateBookingStatus: (id: number, status: string) =>
+    request(`/admin/bookings/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+
+  updateBookingNotes: (id: number, notes: string) =>
+    request(`/admin/bookings/${id}/notes`, { method: 'PUT', body: JSON.stringify({ notes }) }),
 
   createManualBooking: (data: {
     linkId: number;

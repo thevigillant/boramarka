@@ -539,6 +539,96 @@ export default async function adminRoutes(app: FastifyInstance) {
     return updated;
   });
 
+  // Update booking status (e.g. CONCLUIDO, CONFIRMADO, PENDENTE)
+  app.put('/bookings/:id/status', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { id } = request.params as { id: string };
+    const { status } = request.body as { status: string };
+
+    if (!status) {
+      return reply.status(400).send({ error: 'Status é obrigatório' });
+    }
+
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: parseInt(id),
+        timeSlot: { link: { adminId: user.id } }
+      },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: { service: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id: parseInt(id) },
+      data: { status }
+    });
+
+    // If changing to CONFIRMADO or CONCLUIDO, create receivable transaction if needed
+    if ((status === 'CONFIRMADO' || status === 'CONCLUIDO') && booking.status !== 'CONFIRMADO' && booking.status !== 'CONCLUIDO') {
+      const service = booking.timeSlot.link.service;
+      const link = booking.timeSlot.link;
+      let amount = service?.price ?? 0;
+
+      if (booking.status === 'PAGO' && link.bookingFeeEnabled && link.bookingFeeAmount > 0) {
+        amount = Math.max(0, amount - link.bookingFeeAmount);
+      }
+
+      if (amount > 0) {
+        await prisma.transaction.create({
+          data: {
+            type: 'receivable',
+            description: `${service?.name ?? 'Serviço'} - ${booking.clientName}`,
+            amount: amount,
+            dueDate: new Date().toISOString().split('T')[0],
+            paid: status === 'CONCLUIDO',
+            paidAt: status === 'CONCLUIDO' ? new Date().toISOString() : null,
+            clientName: booking.clientName,
+            category: service?.name ?? 'Serviço',
+            adminId: user.id
+          }
+        });
+      }
+    }
+
+    return updated;
+  });
+
+  // Update booking notes
+  app.put('/bookings/:id/notes', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { id } = request.params as { id: string };
+    const { notes } = request.body as { notes: string };
+
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: parseInt(id),
+        timeSlot: { link: { adminId: user.id } }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    const updated = await prisma.booking.update({
+      where: { id: parseInt(id) },
+      data: { notes: notes ?? '' }
+    });
+
+    return updated;
+  });
+
   // Create booking manually by admin
   app.post('/bookings/manual', async (request, reply) => {
     const user = request.user as { id: number };

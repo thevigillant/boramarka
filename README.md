@@ -37,55 +37,63 @@ Desenvolvida especialmente para **profissionais autônomos e estabelecimentos co
 ## 🛠️ Funcionalidades Principais
 
 ### 🔒 Autenticação & Verificação por E-mail (Código PIN de 4 Dígitos)
-- **Modal de Segurança com PIN 4-Dígitos:** Fluxo de cadastro protegido por verificação de e-mail em tempo real.
-- **Validação com Expiração:** Códigos numéricos de 4 dígitos válidos por 10 minutos com suporte a contagem regressiva e reenvio.
-- **Suporte Duplo SMTP:** Integração nativa com serviços SMTP reais (Gmail, Resend, SendGrid) e Modo de Teste Automático quando em ambiente local.
-- **Prevenção de E-mails Duplicados:** Validação prévia de existência de conta antes de disparar verificação.
+- **Design de E-mail Premium Dark (SaaS/Cyberpunk)**: E-mails transacionais com tema escuro de alto contraste, contornos neon, cards de dígitos estilo 2FA Key e 100% de compatibilidade com Gmail, Outlook e Apple Mail.
+- **Configuração Oficial**: Conta oficial `contatoboramarka@gmail.com` totalmente integrada e autenticada.
+- **Modal de Segurança com PIN 4-Dígitos**: Fluxo de cadastro protegido por verificação de e-mail em tempo real.
+- **Validação com Expiração**: Códigos numéricos de 4 dígitos válidos por 10 minutos com suporte a contagem regressiva e reenvio.
+- **Suporte Duplo SMTP**: Integração nativa com serviços SMTP reais (Gmail, Resend, SendGrid) e Modo de Teste Automático quando em ambiente local.
+- **Prevenção de E-mails Duplicados**: Validação prévia de existência de conta antes de disparar verificação.
+
+### 📅 Agenda Inteligente & Gestão de Agendamentos Enxuta
+- **1-Click "Dar Check" (Conclusão Rápida)**: Botão de checkbox no Dashboard que permite concluir agendamentos em 1 clique, atualizando o status para `CONCLUIDO` e integrando automaticamente o faturamento no fluxo de caixa (contas a receber) se ainda não lançado.
+- **Barra de Anotações Inline (Notas no Agendamento)**: Campo rápido direto no card do agendamento para salvar e editar observações personalizadas sobre o cliente ou serviço, sem sair da tela.
+- **Links de Venda Dedicados**: Links personalizáveis no formato `boramarka.com.br/p/@username` para divulgação direta aos clientes.
+- **Geração de Slots em Lote**: Criação inteligente de horários disponíveis em bloco (por intervalo de minutos) ou horários específicos únicos.
+- **Catálogo de Serviços Click-to-Book**: Apresentação elegante com nome, duração, descrição e preço de cada serviço oferecido.
 
 ### 🔍 Busca Global Inteligente (Atalho `Ctrl + K` / `Cmd + K`)
-- **Pesquisa Instantânea:** Ativação global via atalho de teclado `Ctrl + K`.
-- **Filtro Unificado:** Pesquisa em tempo real por nome de clientes, agendamentos, serviços, links de venda e lançamentos financeiros com redirecionamento em 1 clique.
+- **Pesquisa Instantânea**: Ativação global via atalho de teclado `Ctrl + K`.
+- **Filtro Unificado**: Pesquisa em tempo real por nome de clientes, agendamentos, serviços, links de venda e lançamentos financeiros com redirecionamento em 1 clique.
 
 ### 💼 Gestão de RH & Controle de Equipe
-- **Equipe Ativa:** Cadastro completo de colaboradores com foto/iniciais, CPF, RG, data de nascimento, admissão, salário base, porcentagem de comissão e carga horária.
-- **Anexo & Gestão de Documentos:** Envio de arquivos e documentos vinculados ao colaborador (contratos, holerites, atestados) com suporte a limite de 50MB, indicador de validade e download direto.
-- **Fluxo de Demissão & Controle de Pendências:** Registro de desligamento com motivo, data e anotações. Categorização de pendências (*Equipamentos, Financeira, Documentos, Outros*), permitindo filtrar ex-colaboradores com pendências em aberto e resolver com 1 clique.
-- **Arquivo Morto:** Histórico organizado de ex-funcionários com pendências resolvidas, permitindo reativação rápida para a equipe ativa ou exclusão definitiva.
+- **Equipe Ativa**: Cadastro completo de colaboradores com foto/iniciais, CPF, RG, data de nascimento, admissão, salário base, porcentagem de comissão e carga horária.
+- **Anexo & Gestão de Documentos**: Envio de arquivos e documentos vinculados ao colaborador (contratos, holerites, atestados) com suporte a limite de 50MB, indicador de validade e download direto.
+- **Fluxo de Demissão & Controle de Pendências**: Registro de desligamento com motivo, data e anotações. Categorização de pendências (*Equipamentos, Financeira, Documentos, Outros*), permitindo filtrar ex-colaboradores com pendências em aberto e resolver com 1 clique.
+- **Arquivo Morto**: Histórico organizado de ex-funcionários com pendências resolvidas, permitindo reativação rápida para a equipe ativa ou exclusão definitiva.
 
 ### 🛡️ Logs & Auditoria de Segurança Avançada
-- **Resolução Inteligente de IP:** Identificação do IP do cliente através dos cabeçalhos Cloudflare (`CF-Connecting-IP`), proxies (`X-Real-IP`, `X-Forwarded-For`), com indicação clara de conexões de desenvolvimento local (`127.0.0.1 (Localhost / Loopback)`).
-- **Detecção de Dispositivo & Navegador:** Parser de `User-Agent` para identificação do Sistema Operacional (*Windows, macOS, Linux, Android, iOS*) e Navegador (*Chrome, Edge, Firefox, Safari, Opera*).
-- **Classificação por Severidade de Risco:**
-  - 🚨 **CRÍTICO:** Exclusões definitivas de serviços, cupons, colaboradores, documentos e trocas de senha (*destacado em vermelho pulsante*).
-  - ⚠️ **ALTO:** Demissões, arquivamentos no Arquivo Morto e criação de cupons de desconto (*destacado em amarelo*).
-  - 🔮 **MÉDIO:** Adição ou atualização de serviços, alteração de cadastro de funcionários (*destacado em roxo*).
-  - ℹ️ **INFORMATIVO:** Logins efetuados e consultas de relatórios (*destacado em azul*).
-- **Timeline Interativa no Dashboard:** Linha do tempo com busca textual dinâmica e filtros por categoria ou severidade de risco.
-
-### 📅 Agenda Inteligente & Multi-Agendamento
-- **Links de Venda Dedicados:** Links personalizáveis no formato `boramarka.com.br/p/@username` para divulgação direta aos clientes.
-- **Geração de Slots em Lote:** Criação inteligente de horários disponíveis em bloco (por intervalo de minutos) ou horários específicos únicos.
-- **Catálogo de Serviços Click-to-Book:** Apresentação elegante com nome, duração, descrição e preço de cada serviço oferecido.
+- **Resolução Inteligente de IP**: Identificação do IP do cliente através dos cabeçalhos Cloudflare (`CF-Connecting-IP`), proxies (`X-Real-IP`, `X-Forwarded-For`), com indicação clara de conexões de desenvolvimento local (`127.0.0.1 (Localhost / Loopback)`).
+- **Detecção de Dispositivo & Navegador**: Parser de `User-Agent` para identificação do Sistema Operacional (*Windows, macOS, Linux, Android, iOS*) e Navegador (*Chrome, Edge, Firefox, Safari, Opera*).
+- **Classificação por Severidade de Risco**:
+  - 🚨 **CRÍTICO**: Exclusões definitivas de serviços, cupons, colaboradores, documentos e trocas de senha (*destacado em vermelho concluído/pulsante*).
+  - ⚠️ **ALTO**: Demissões, arquivamentos no Arquivo Morto e criação de cupons de desconto (*destacado em amarelo*).
+  - 🔮 **MÉDIO**: Adição ou atualização de serviços, alteração de cadastro de funcionários (*destacado em roxo*).
+  - ℹ️ **INFORMATIVO**: Logins efetuados e consultas de relatórios (*destacado em azul*).
+- **Timeline Interativa no Dashboard**: Linha do tempo com busca textual dinâmica e filtros por categoria ou severidade de risco.
 
 ### 🔄 Portal do Cliente Online (Cancelamentos & Remarcação)
-- **Portal de Auto-atendimento:** Links seguros enviáveis por WhatsApp que permitem ao cliente final cancelar ou remarcar o próprio horário com 1 clique (sem necessidade de login).
-- **Remarcação Integrada:** Seletor de slots livre no calendário com validação da antecedência limite configurada.
+- **Portal de Auto-atendimento**: Links seguros enviáveis por WhatsApp que permitem ao cliente final cancelar ou remarcar o próprio horário com 1 clique (sem necessidade de login).
+- **Remarcação Integrada**: Seletor de slots livre no calendário com validação da antecedência limite configurada.
 
 ### 📅 Sincronização com Google Calendar
-- **Sincronização Bidirecional:** Conexão automática com a agenda pessoal do profissional.
-- **Bloqueio de Double Booking:** O sistema detecta compromissos pessoais externos marcados no Google Calendar e bloqueia automaticamente os slots equivalentes no BoraMarka.
+- **Sincronização Bidirecional**: Conexão automática com a agenda pessoal do profissional.
+- **Bloqueio de Double Booking**: O sistema detecta compromissos pessoais externos marcados no Google Calendar e bloqueia automaticamente os slots equivalentes no BoraMarka.
 
 ### 👥 CRM & Relacionamento com Clientes
-- **Painel de Relacionamento:** Lista dinâmica de clientes com histórico completo de interações, anotações de progresso e histórico de agendamentos.
-- **Métricas por Cliente:** Valor total investido (faturamento gerado) e número total de agendamentos confirmados.
+- **Painel de Relacionamento**: Lista dinâmica de clientes com histórico completo de interações, anotações de progresso e histórico de agendamentos.
+- **Métricas por Cliente**: Valor total investido (faturamento gerado) e número total de agendamentos confirmados.
 
 ### 🌐 Rede de Networking & Chat Global
-- **Explorar Rede:** Espaço para descobrir profissionais cadastrados na plataforma.
-- **Chat em Tempo Real (DMs):** Mensagens diretas e chat interativo com histórico completo de conversas.
+- **Explorar Rede**: Espaço para descobrir profissionais cadastrados na plataforma.
+- **Chat em Tempo Real (DMs)**: Mensagens diretas e chat interativo com histórico completo de conversas.
 
 ### 📊 Gestão Financeira & Relatórios PDF
-- **Fluxo de Caixa:** Lançamentos rápidos de contas a pagar (Saídas) e a receber (Entradas) com controle de status de pagamento.
-- **Exportação de Relatórios PDF:** Emissão de relatórios estruturados baseados nos filtros de período de tempo, com opção de incluir logotipo personalizado da empresa.
+- **Fluxo de Caixa**: Lançamentos rápidos de contas a pagar (Saídas) e a receber (Entradas) com controle de status de pagamento.
+- **Exportação de Relatórios PDF**: Emissão de relatórios estruturados baseados nos filtros de período de tempo, com opção de incluir logotipo personalizado da empresa.
+
+### 🛡️ Estabilidade & Infraestrutura em Produção
+- **Backend Crash Shield**: Handlers de exceção global (`uncaughtException` e `unhandledRejection`) integrados para evitar quedas no Railway.
+- **Suporte a SPA no Vercel**: Configuração SPA (`vercel.json`) para impedir erros 404 em rotas e atualizações diretas de página.
 
 ---
 

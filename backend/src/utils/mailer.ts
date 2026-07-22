@@ -5,9 +5,8 @@ export async function sendPasswordResetEmail(toEmail: string, username: string, 
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || 'BoraMarka <noreply@boramarka.com.br>';
+  const from = process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>';
 
-  // Se SMTP não estiver configurado, usa fallback para console (ideal para desenvolvimento)
   if (!host || !user || !pass) {
     console.log('\n======================================================');
     console.log('📧 [MAILER DEV FALLBACK] E-mail de Recuperação de Senha');
@@ -27,49 +26,121 @@ export async function sendPasswordResetEmail(toEmail: string, username: string, 
         user,
         pass,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
 
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="pt-BR">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Recuperar Senha — BoraMarka</title>
         <style>
-          body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #050507; color: #ffffff; margin: 0; padding: 40px 20px; }
-          .container { max-width: 500px; margin: 0 auto; background: #0c0c12; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 32px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); }
-          .header { display: flex; align-items: center; margin-bottom: 24px; }
-          .logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #8b5cf6, #ec4899); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 18px; color: #ffffff; margin-right: 12px; }
-          .title { font-size: 20px; font-weight: 800; color: #ffffff; margin: 0; }
-          .subtitle { font-size: 12px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 1px; margin-top: 2px; }
-          .content { margin-top: 24px; font-size: 14px; line-height: 1.6; color: rgba(255,255,255,0.8); }
-          .code-box { background: rgba(139, 92, 246, 0.1); border: 1px dashed rgba(139, 92, 246, 0.4); border-radius: 16px; padding: 20px; text-align: center; margin: 28px 0; }
-          .code { font-family: monospace; font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #a78bfa; margin: 0; }
-          .footer { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 32px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 16px; text-align: center; }
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+          body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0f19;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #f1f5f9;
+          }
+          table {
+            border-collapse: collapse;
+          }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <div class="logo">B</div>
-            <div>
-              <div class="title">BoraMarka</div>
-              <div class="subtitle">Recuperação de Senha</div>
-            </div>
-          </div>
-          <div class="content">
-            <p>Olá <strong>${username}</strong>,</p>
-            <p>Recebemos uma solicitação para redefinir a senha da sua conta no BoraMarka. Utilize o código de verificação abaixo para continuar:</p>
-            
-            <div class="code-box">
-              <div class="code">${code}</div>
-            </div>
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0b0f19; padding: 60px 16px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #111827; border-radius: 28px; border: 1.5px solid #1f2937; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+                
+                <!-- Sleek Top Branding Line -->
+                <tr>
+                  <td height="6" style="background: linear-gradient(90deg, #8b5cf6 0%, #ec4899 50%, #f43f5e 100%);"></td>
+                </tr>
 
-            <p style="font-size: 13px; color: rgba(255,255,255,0.5);">Este código é válido por <strong>15 minutos</strong>. Se você não solicitou a redefinição de senha, ignore este e-mail.</p>
-          </div>
-          <div class="footer">
-            &copy; ${new Date().getFullYear()} BoraMarka — Sistema de Agendamentos. Todos os direitos reservados.
-          </div>
-        </div>
+                <!-- Main Content Area -->
+                <tr>
+                  <td style="padding: 56px 48px 44px 48px; text-align: center;">
+                    
+                    <!-- Logo Mark -->
+                    <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center" style="margin-bottom: 36px;">
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); width: 48px; height: 48px; border-radius: 14px; text-align: center; color: #ffffff; font-weight: 800; font-size: 24px; line-height: 48px; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.45);">
+                          B
+                        </td>
+                        <td style="padding-left: 14px; text-align: left;">
+                          <div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height: 1;">
+                            Bora<span style="color: #8b5cf6;">Marka</span>
+                          </div>
+                          <div style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px;">
+                            Segurança da Conta
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Header Title -->
+                    <h1 style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 0 0 16px 0; letter-spacing: -0.5px; line-height: 1.2;">
+                      Redefinição de Senha
+                    </h1>
+                    
+                    <p style="font-size: 15px; color: #cbd5e1; line-height: 1.6; margin: 0 0 36px 0; font-weight: 500;">
+                      Olá, <strong>${username}</strong>. Recebemos uma solicitação para redefinir a senha da sua conta no BoraMarka. Use o código de 4 dígitos abaixo para prosseguir:
+                    </p>
+
+                    <!-- Code Hero Section (Expanded) -->
+                    <div style="background-color: #1e1b4b; border: 1.5px solid #6d28d9; border-radius: 24px; padding: 32px 28px; margin-bottom: 36px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);">
+                      <div style="font-size: 11px; font-weight: 800; color: #d8b4fe; text-transform: uppercase; letter-spacing: 2.5px; margin-bottom: 20px;">
+                        CÓDIGO DE AUTORIZAÇÃO
+                      </div>
+                      
+                      <!-- Digit Cards Layout (Enlarged) -->
+                      <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center">
+                        <tr>
+                          ${code.split('').map(d => `
+                            <td style="padding: 0 6px;">
+                              <div style="width: 64px; height: 72px; background-color: #111827; border: 2px solid #a855f7; border-radius: 16px; text-align: center; line-height: 68px; font-size: 34px; font-weight: 800; color: #f3e8ff; text-shadow: 0 0 12px rgba(168, 85, 247, 0.6); box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);">
+                                ${d}
+                              </div>
+                            </td>
+                          `).join('')}
+                        </tr>
+                      </table>
+                    </div>
+
+                    <!-- Expiration / Warning notice -->
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
+                      <tr>
+                        <td style="background-color: #1f2937; border: 1px solid #374151; border-radius: 16px; padding: 16px 20px; text-align: center; font-size: 13.5px; color: #9ca3af; line-height: 1.6;">
+                          ⏱️ Este código expira em <strong>15 minutos</strong>. Se você não fez esta solicitação, pode ignorar este e-mail com segurança.
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+
+                <!-- Elegant Footer Area -->
+                <tr>
+                  <td style="padding: 28px 48px 40px 48px; background-color: #1f2937; border-top: 1px solid #374151; text-align: center;">
+                    <p style="font-size: 11px; color: #9ca3af; margin: 0 0 6px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                      BoraMarka — Sua agenda cheia, sem complicação.
+                    </p>
+                    <p style="font-size: 11px; color: #6b7280; margin: 0;">
+                      Plataforma de Agendamentos & Gestão Inteligente.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `;
@@ -77,7 +148,7 @@ export async function sendPasswordResetEmail(toEmail: string, username: string, 
     await transporter.sendMail({
       from,
       to: toEmail,
-      subject: `🔑 Código de Recuperação de Senha: ${code} — BoraMarka`,
+      subject: `🔑 Código de Recuperação: ${code} — BoraMarka`,
       html: htmlContent,
     });
 
@@ -93,9 +164,8 @@ export async function sendEmailVerificationCode(toEmail: string, username: strin
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const user = process.env.SMTP_USER;
   const pass = process.env.SMTP_PASS;
-  const from = process.env.SMTP_FROM || 'BoraMarka <noreply@boramarka.com.br>';
+  const from = process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>';
 
-  // Se SMTP não estiver configurado, usa fallback para console (ideal para desenvolvimento)
   if (!host || !user || !pass) {
     console.log('\n======================================================');
     console.log('📧 [VERIFICAÇÃO DE E-MAIL - BORAMARKA]');
@@ -115,46 +185,121 @@ export async function sendEmailVerificationCode(toEmail: string, username: strin
         user,
         pass,
       },
+      tls: {
+        rejectUnauthorized: false,
+      },
     });
 
     const htmlContent = `
       <!DOCTYPE html>
-      <html>
+      <html lang="pt-BR">
       <head>
         <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Verificação de Conta — BoraMarka</title>
         <style>
-          body { font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif; background-color: #050507; color: #ffffff; margin: 0; padding: 40px 20px; }
-          .container { max-width: 500px; margin: 0 auto; background: #0c0c14; border: 1px solid rgba(255,255,255,0.08); border-radius: 24px; padding: 36px; box-shadow: 0 24px 48px rgba(0,0,0,0.6); }
-          .header { text-align: center; margin-bottom: 28px; }
-          .badge { display: inline-block; padding: 6px 16px; border-radius: 999px; background: rgba(236, 72, 153, 0.12); border: 1px solid rgba(236, 72, 153, 0.3); color: #ec4899; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }
-          .logo { font-size: 28px; font-weight: 900; background: linear-gradient(135deg, #a78bfa, #ec4899); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin: 0; }
-          .title { font-size: 20px; font-weight: 800; color: #ffffff; margin-top: 16px; margin-bottom: 8px; }
-          .subtitle { font-size: 14px; color: rgba(255,255,255,0.6); line-height: 1.5; margin: 0; }
-          .code-box { background: linear-gradient(135deg, rgba(167, 139, 250, 0.08), rgba(236, 72, 153, 0.08)); border: 1.5px dashed rgba(236, 72, 153, 0.35); border-radius: 20px; padding: 24px; text-align: center; margin: 32px 0; }
-          .code { font-family: 'Courier New', Courier, monospace; font-size: 42px; font-weight: 900; letter-spacing: 14px; color: #f472b6; text-shadow: 0 0 20px rgba(244, 114, 182, 0.4); margin: 0; padding-left: 14px; }
-          .footer { font-size: 12px; color: rgba(255,255,255,0.3); margin-top: 36px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 20px; text-align: center; line-height: 1.5; }
+          @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+          body {
+            margin: 0;
+            padding: 0;
+            background-color: #0b0f19;
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: #f1f5f9;
+          }
+          table {
+            border-collapse: collapse;
+          }
         </style>
       </head>
       <body>
-        <div class="container">
-          <div class="header">
-            <div class="badge">BoraMarka • Verificação</div>
-            <h1 class="logo">🤙 BoraMarka</h1>
-            <div class="title">Confirme seu E-mail</div>
-            <p class="subtitle">Olá, <strong>${username}</strong>! Insira o código abaixo na tela de cadastro para verificar seu endereço de e-mail com segurança:</p>
-          </div>
-          
-          <div class="code-box">
-            <div class="code">${code}</div>
-          </div>
+        <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #0b0f19; padding: 60px 16px;">
+          <tr>
+            <td align="center">
+              <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #111827; border-radius: 28px; border: 1.5px solid #1f2937; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);">
+                
+                <!-- Sleek Top Branding Line -->
+                <tr>
+                  <td height="6" style="background: linear-gradient(90deg, #ec4899 0%, #8b5cf6 50%, #6366f1 100%);"></td>
+                </tr>
 
-          <p style="font-size: 13px; color: rgba(255,255,255,0.4); text-align: center; margin: 0;">Este código expira em <strong>10 minutos</strong>.<br>Se você não iniciou esta ação no BoraMarka, pode ignorar este e-mail.</p>
-          
-          <div class="footer">
-            &copy; ${new Date().getFullYear()} BoraMarka — Sua agenda cheia, sem complicação.<br>
-            Plataforma de Agendamentos & Gestão Inteligente.
-          </div>
-        </div>
+                <!-- Main Content Area -->
+                <tr>
+                  <td style="padding: 56px 48px 44px 48px; text-align: center;">
+                    
+                    <!-- Logo Mark -->
+                    <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center" style="margin-bottom: 36px;">
+                      <tr>
+                        <td style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%); width: 48px; height: 48px; border-radius: 14px; text-align: center; color: #ffffff; font-weight: 800; font-size: 22px; line-height: 48px; box-shadow: 0 4px 20px rgba(236, 72, 153, 0.45);">
+                          ⚡
+                        </td>
+                        <td style="padding-left: 14px; text-align: left;">
+                          <div style="font-size: 22px; font-weight: 900; color: #ffffff; letter-spacing: -0.5px; line-height: 1;">
+                            Bora<span style="color: #ec4899;">Marka</span>
+                          </div>
+                          <div style="font-size: 10px; font-weight: 700; color: #9ca3af; text-transform: uppercase; letter-spacing: 2px; margin-top: 4px;">
+                            Verificação de E-mail
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Header Title -->
+                    <h1 style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 0 0 16px 0; letter-spacing: -0.5px; line-height: 1.2;">
+                      Confirme seu Cadastro
+                    </h1>
+                    
+                    <p style="font-size: 15px; color: #cbd5e1; line-height: 1.6; margin: 0 0 36px 0; font-weight: 500;">
+                      Olá, <strong>${username}</strong>! Use o código de 4 dígitos abaixo para verificar o seu endereço de e-mail e ativar a sua conta:
+                    </p>
+
+                    <!-- Code Hero Section (Expanded) -->
+                    <div style="background-color: #1e1b4b; border: 1.5px solid #6d28d9; border-radius: 24px; padding: 32px 28px; margin-bottom: 36px; box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);">
+                      <div style="font-size: 11px; font-weight: 800; color: #d8b4fe; text-transform: uppercase; letter-spacing: 2.5px; margin-bottom: 20px;">
+                        SEU CÓDIGO DE ACESSO
+                      </div>
+                      
+                      <!-- Digit Cards Layout (Enlarged) -->
+                      <table role="presentation" border="0" cellspacing="0" cellpadding="0" align="center">
+                        <tr>
+                          ${code.split('').map(d => `
+                            <td style="padding: 0 6px;">
+                              <div style="width: 64px; height: 72px; background-color: #111827; border: 2px solid #a855f7; border-radius: 16px; text-align: center; line-height: 68px; font-size: 34px; font-weight: 800; color: #f3e8ff; text-shadow: 0 0 12px rgba(168, 85, 247, 0.6); box-shadow: 0 6px 15px rgba(0, 0, 0, 0.3);">
+                                ${d}
+                              </div>
+                            </td>
+                          `).join('')}
+                        </tr>
+                      </table>
+                    </div>
+
+                    <!-- Expiration / Warning notice -->
+                    <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 20px;">
+                      <tr>
+                        <td style="background-color: #1f2937; border: 1px solid #374151; border-radius: 16px; padding: 16px 20px; text-align: center; font-size: 13.5px; color: #9ca3af; line-height: 1.6;">
+                          ⏱️ Este código expira em <strong>10 minutos</strong>. Se você não iniciou esta ação, pode ignorar este e-mail com segurança.
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+
+                <!-- Elegant Footer Area -->
+                <tr>
+                  <td style="padding: 28px 48px 40px 48px; background-color: #1f2937; border-top: 1px solid #374151; text-align: center;">
+                    <p style="font-size: 11px; color: #9ca3af; margin: 0 0 6px 0; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">
+                      BoraMarka — Sua agenda cheia, sem complicação.
+                    </p>
+                    <p style="font-size: 11px; color: #6b7280; margin: 0;">
+                      Plataforma de Agendamentos & Gestão Inteligente.
+                    </p>
+                  </td>
+                </tr>
+
+              </table>
+            </td>
+          </tr>
+        </table>
       </body>
       </html>
     `;
