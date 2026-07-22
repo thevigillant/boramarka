@@ -125,6 +125,7 @@ model Booking {
   timeSlot     TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
   paidAmount   Float    @default(0) @map("paid_amount")
   reminderSent Boolean  @default(false) @map("reminder_sent")
+  notes        String   @default("")
   createdAt    DateTime @default(now()) @map("created_at")
 
   @@map("bookings")

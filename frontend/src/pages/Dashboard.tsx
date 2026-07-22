@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
+import { BookingCard } from '../components/BookingCard'
 
 // ════════════════════════════════════════════
 // Types
@@ -2025,6 +2026,27 @@ export default function Dashboard() {
     }
   }
 
+  const handleToggleBookingDone = async (booking: any) => {
+    const newStatus = booking.status === 'CONCLUIDO' ? 'CONFIRMADO' : 'CONCLUIDO'
+    try {
+      await api.updateBookingStatus(booking.id, newStatus)
+      showToast(newStatus === 'CONCLUIDO' ? 'Agendamento concluído com sucesso! ✓' : 'Status alterado')
+      fetchData()
+    } catch (err: any) {
+      showToast(err.message, 'error')
+    }
+  }
+
+  const handleSaveBookingNotes = async (bookingId: number, notesText: string) => {
+    try {
+      await api.updateBookingNotes(bookingId, notesText)
+      showToast('Anotação salva com sucesso!')
+      fetchData()
+    } catch (err: any) {
+      showToast(err.message, 'error')
+    }
+  }
+
   const handleCancelBooking = async (id: number) => {
     if (!confirm('Deseja realmente cancelar este agendamento?')) return
     try {
@@ -3086,110 +3108,18 @@ export default function Dashboard() {
                        linkTitle.toLowerCase().includes(query)
                      )
                    })
-                   .map(booking => {
-                     // Initials logic
-                     const parts = booking.clientName.trim().split(/\s+/)
-                     const initials = parts.length >= 2 
-                       ? (parts[0][0] + parts[1][0]).toUpperCase() 
-                       : (parts[0] ? parts[0][0].toUpperCase() : '')
-
-                     return (
-                       <div key={booking.id} className="card-simple p-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-pink-200 dark:hover:border-pink-500/50 transition-all">
-                         <div className="flex gap-4 items-center flex-1">
-                           <div className="w-12 h-12 bg-gradient-to-br from-pink-50 to-pink-100 dark:from-pink-500/10 dark:to-pink-500/20 rounded-2xl flex items-center justify-center text-pink-500 text-base font-black border border-pink-200/50 dark:border-pink-500/30">
-                             {initials}
-                           </div>
-                           <div>
-                             <div className="flex items-center gap-2.5">
-                               <h4 className="font-bold text-lg text-slate-900 dark:text-white leading-none">{booking.clientName}</h4>
-{booking.status === 'PENDENTE' ? (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                                    Pendente
-                                  </span>
-                                ) : booking.status === 'AGUARDANDO_PAGAMENTO' ? (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-                                    ⏳ Aguardando Pgto
-                                  </span>
-                                ) : booking.status === 'PAGO' && (booking.paidAmount || 0) > 0 ? (
-                                  (booking.paidAmount || 0) >= (booking.timeSlot.link?.service?.price || Infinity) ? (
-                                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                      💰 Pago Total
-                                    </span>
-                                  ) : (
-                                    <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                                      💳 Sinal Pago
-                                    </span>
-                                  )
-                                ) : (
-                                  <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                                    Confirmado
-                                  </span>
-                                )}
-                             </div>
-                             <p className="text-xs font-bold text-pink-500 mt-1.5">
-                               {booking.timeSlot.link?.service?.name || booking.timeSlot.link?.title}
-                             </p>
-                             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-xs text-slate-500 dark:text-slate-400">
-                               <span className="flex items-center gap-1 font-bold">
-                                 <Clock className="w-3.5 h-3.5" />
-                                 {formatDate(booking.timeSlot.date)} às {booking.timeSlot.time}
-                               </span>
-                               {booking.timeSlot.link?.service && (
-                                 <span className="flex items-center gap-1 font-bold">
-                                   • {formatCurrency(booking.timeSlot.link.service.price)}
-                                 </span>
-                               )}
-                               <span className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
-                                 📞 {booking.clientPhone}
-                               </span>
-                             </div>
-                           </div>
-                         </div>
-                         <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end border-t sm:border-t-0 border-slate-100 dark:border-slate-800 pt-3 sm:pt-0">
-                           {booking.status === 'PENDENTE' && (
-                             <button
-                               onClick={() => handleConfirmBooking(booking.id)}
-                               className="p-2.5 text-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/10 rounded-xl transition-all"
-                               title="Confirmar Agendamento"
-                             >
-                               <Check className="w-5 h-5" />
-                             </button>
-                           )}
-                           <button
-                              onClick={() => {
-                                const token = booking.timeSlot.link?.token;
-                                if (!token) return;
-                                const cancelLink = `${window.location.origin}/agendar/${token}/cancelar/${booking.id}`;
-                                const msg = `Olá, ${booking.clientName}! ✨\n\nCaso precise cancelar ou remarcar o seu agendamento de *${booking.timeSlot.link?.service?.name || 'Serviço'}*:\n\n📅 Data: *${formatDate(booking.timeSlot.date)}*\n⏰ Hora: *${booking.timeSlot.time}*\n\nAcesse o link do seu portal de atendimento para remarcar ou cancelar:\n🔗 ${cancelLink}\n\nQualquer dúvida, estamos à disposição!`;
-                                const cleanPhone = booking.clientPhone.replace(/\D/g, '');
-                                const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-                                window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank');
-                              }}
-                              className="px-3 py-1.5 bg-[#8b5cf6]/10 hover:bg-[#8b5cf6]/20 text-[#8b5cf6] text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-[#8b5cf6]/20"
-                              title="Enviar link de cancelamento/remarcação para o cliente"
-                            >
-                              <RefreshCw className="w-3.5 h-3.5" />
-                              <span>Cancelamento</span>
-                            </button>
-                            <a href={`https://wa.me/${booking.clientPhone}`}
-                             target="_blank"
-                             rel="noreferrer"
-                             className="p-2.5 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"
-                             title="Chamar no WhatsApp"
-                           >
-                             <Phone className="w-5 h-5" />
-                           </a>
-                           <button
-                             onClick={() => handleCancelBooking(booking.id)}
-                             className="p-2.5 text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 rounded-xl transition-all"
-                             title="Cancelar Agendamento"
-                           >
-                             <Trash2 className="w-5 h-5" />
-                           </button>
-                         </div>
-                       </div>
-                     )
-                   })}
+                   .map(booking => (
+                     <BookingCard
+                       key={booking.id}
+                       booking={booking}
+                       onToggleDone={handleToggleBookingDone}
+                       onConfirm={handleConfirmBooking}
+                       onCancel={handleCancelBooking}
+                       onSaveNotes={handleSaveBookingNotes}
+                       formatDate={formatDate}
+                       formatCurrency={formatCurrency}
+                     />
+                   ))}
                  {bookings.filter(booking => {
                      const query = searchBookingQuery.toLowerCase().trim()
                      if (!query) return true

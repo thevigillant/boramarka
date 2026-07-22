@@ -16,6 +16,22 @@ import employeeRoutes from './routes/employees';
 import auditRoutes from './routes/audit';
 import { startReminderService } from './services/reminder';
 
+// ═══════════════════════════════════════════════════════════
+// Global error handlers — prevent silent crashes (502 fix)
+// ═══════════════════════════════════════════════════════════
+process.on('uncaughtException', (error) => {
+  console.error('💀 [FATAL] Uncaught Exception — o servidor capturou um erro não-tratado:');
+  console.error(error);
+  // NÃO mata o processo — loga e continua rodando
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('⚠️ [WARN] Unhandled Promise Rejection:');
+  console.error('Promise:', promise);
+  console.error('Reason:', reason);
+  // NÃO mata o processo — loga e continua rodando
+});
+
 // Augment Fastify JWT types
 declare module '@fastify/jwt' {
   interface FastifyJWT {
@@ -32,6 +48,15 @@ const app = Fastify({
       options: { colorize: true },
     },
   },
+});
+
+// ═══ Global Fastify error handler ═══
+app.setErrorHandler((error, request, reply) => {
+  console.error(`❌ [ERROR] ${request.method} ${request.url}:`, error.message);
+  const statusCode = error.statusCode || 500;
+  reply.status(statusCode).send({
+    error: statusCode >= 500 ? 'Erro interno do servidor' : error.message,
+  });
 });
 
 // CORS
@@ -71,8 +96,12 @@ const start = async () => {
     console.log(`\n🚀 Servidor rodando em http://localhost:${port}`);
     console.log(`📋 API Health: http://localhost:${port}/api/health\n`);
     
-    // Inicia o serviço de lembretes automáticos por WhatsApp
-    startReminderService();
+    // Inicia o serviço de lembretes automáticos por WhatsApp (com proteção)
+    try {
+      startReminderService();
+    } catch (reminderError) {
+      console.error('⚠️ Falha ao iniciar serviço de lembretes (servidor continua rodando):', reminderError);
+    }
   } catch (err) {
     app.log.error(err);
     process.exit(1);
