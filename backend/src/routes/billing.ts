@@ -4,12 +4,6 @@ import { checkAndUpdateSubscription } from '../services/subscription';
 import { authenticate } from '../plugins/auth';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
-// Configura o client do Mercado Pago
-// Em produção, isso virá do .env
-const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADOPAGO_ACCESS_TOKEN || '',
-});
-
 export default async function billingRoutes(app: FastifyInstance) {
   // Rota para pegar o status atual da assinatura do usuário
   app.get('/status', { preHandler: [authenticate] }, async (request, reply) => {
@@ -23,7 +17,8 @@ export default async function billingRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const { plan } = request.body as { plan: 'mensal' | 'anual' | 'premium' };
 
-    if (!process.env.MERCADOPAGO_ACCESS_TOKEN) {
+    const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
+    if (!mpToken) {
       return reply.status(500).send({ error: 'Gateway de pagamento não configurado no servidor.' });
     }
 
@@ -39,6 +34,7 @@ export default async function billingRoutes(app: FastifyInstance) {
     }
 
     try {
+      const client = new MercadoPagoConfig({ accessToken: mpToken });
       const preference = new Preference(client);
       
       const baseUrl = process.env.CORS_ORIGIN 
