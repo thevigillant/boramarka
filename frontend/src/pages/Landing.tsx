@@ -280,20 +280,20 @@ export default function Landing() {
           ═══════════════════════════════════════════════════ */}
       <main className="relative z-10">
         <section className="min-h-[100dvh] flex items-center px-4 sm:px-6">
-          <div className="max-w-[1200px] mx-auto w-full pt-32 pb-24 md:pt-40 md:pb-32">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 lg:gap-20 items-center">
+          <div className="max-w-[1200px] mx-auto w-full pt-24 pb-16 sm:pt-36 sm:pb-24 md:pt-40 md:pb-32">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
 
               {/* Left — Copy */}
               <div className="lg:col-span-5 flex flex-col items-start text-left">
                 <Reveal>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-4 py-1.5 text-[11px] font-semibold tracking-[0.15em] uppercase text-violet-400 mb-8">
+                  <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3.5 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold tracking-[0.12em] sm:tracking-[0.15em] uppercase text-violet-400 mb-5 sm:mb-8">
                     <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
                     Usado por +500 profissionais
                   </div>
                 </Reveal>
 
                 <Reveal>
-                  <h1 className="text-[clamp(2.4rem,5.5vw,4.2rem)] font-extrabold tracking-[-0.035em] leading-[1.05] mb-7 text-white/95">
+                  <h1 className="text-[clamp(1.65rem,6vw,4.2rem)] font-extrabold tracking-[-0.035em] leading-[1.08] mb-4 sm:mb-7 text-white/95">
                     Pare de perder clientes
                     <br />
                     <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
@@ -303,19 +303,19 @@ export default function Landing() {
                 </Reveal>
 
                 <Reveal>
-                  <p className="text-[17px] leading-[1.7] text-white/40 font-medium max-w-md mb-6">
+                  <p className="text-[14px] sm:text-[17px] leading-[1.65] sm:leading-[1.7] text-white/40 font-medium max-w-md mb-5 sm:mb-6">
                     Cada mensagem manual é um cliente que pode desistir. Automatize seus agendamentos, elimine no-shows com lembretes inteligentes e receba pagamentos antecipados — <span className="text-white/60 font-semibold">enquanto você foca no seu trabalho.</span>
                   </p>
                 </Reveal>
 
                 <Reveal>
-                  <div className="flex items-center gap-4 mb-10">
-                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-white/30">
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-10">
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-white/40">
                       <Clock className="w-3.5 h-3.5 text-orange-400" />
                       <span>12h economizadas/semana</span>
                     </div>
-                    <div className="w-px h-3 bg-white/10" />
-                    <div className="flex items-center gap-1.5 text-[12px] font-medium text-white/30">
+                    <div className="hidden sm:block w-px h-3 bg-white/10" />
+                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-white/40">
                       <BellOff className="w-3.5 h-3.5 text-pink-400" />
                       <span>-98% no-shows</span>
                     </div>
@@ -326,16 +326,16 @@ export default function Landing() {
                   <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                     <a
                       href="#pricing"
-                      className="mag-btn group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 px-7 py-3.5 text-[14px] font-bold text-white shadow-lg shadow-violet-600/20"
+                      className="mag-btn group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 px-6 sm:px-7 py-3 sm:py-3.5 text-[13px] sm:text-[14px] font-bold text-white shadow-lg shadow-violet-600/20"
                     >
                       Começar 7 dias grátis
-                      <span className="w-6 h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-                        <ArrowRight className="w-3.5 h-3.5" />
+                      <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                       </span>
                     </a>
                     <a
                       href="#how-it-works"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-7 py-3.5 text-[14px] font-semibold text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-6 sm:px-7 py-3 sm:py-3.5 text-[13px] sm:text-[14px] font-semibold text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
                     >
                       Como funciona
                     </a>
@@ -343,7 +343,7 @@ export default function Landing() {
                 </Reveal>
 
                 <Reveal>
-                  <p className="mt-5 text-[12px] text-white/25 font-medium">
+                  <p className="mt-4 sm:mt-5 text-[11px] sm:text-[12px] text-white/25 font-medium">
                     Sem cartão de crédito · Cancele quando quiser
                   </p>
                 </Reveal>
@@ -375,7 +375,7 @@ export default function Landing() {
                   <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 via-pink-500/25 to-orange-500/20 rounded-[4rem] blur-3xl pointer-events-none scale-110" />
 
                   {/* High-End Titanium Smartphone Chassis */}
-                  <div className="relative w-[315px] sm:w-[325px] h-[620px] p-3 rounded-[2.8rem] bg-gradient-to-b from-[#3a3b4e] via-[#222332] to-[#0f1019] shadow-[0_30px_80px_-10px_rgba(124,58,237,0.45)] border border-white/20 shrink-0">
+                  <div className="relative w-full max-w-[290px] xs:max-w-[315px] sm:max-w-[325px] h-[560px] xs:h-[600px] sm:h-[620px] p-2.5 sm:p-3 rounded-[2.4rem] sm:rounded-[2.8rem] bg-gradient-to-b from-[#3a3b4e] via-[#222332] to-[#0f1019] shadow-[0_30px_80px_-10px_rgba(124,58,237,0.45)] border border-white/20 shrink-0">
                     
                     {/* Metallic Hardware Buttons */}
                     <div className="absolute -left-[5px] top-24 w-[5px] h-9 rounded-l-md bg-gradient-to-r from-[#20212f] to-[#45475e] border-l border-white/30 shadow-md" />
