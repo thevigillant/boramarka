@@ -247,36 +247,36 @@ function TrialBanner({
   const isUrgent = timeLeft.days <= 1
 
   return (
-    <div className={`fixed top-0 left-0 right-0 z-[60] ${isUrgent ? 'bg-gradient-to-r from-red-600 to-pink-600' : 'bg-gradient-to-r from-orange-500 to-pink-500'} text-white shadow-lg`}>
-      <div className="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <span className="text-sm font-bold">⏳ Período Grátis</span>
-          <div className="flex items-center gap-1.5">
-            <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-lg text-center min-w-[36px]">
-              <span className="text-sm font-black leading-none">{timeLeft.days}</span>
-              <p className="text-[7px] font-bold uppercase opacity-80">dias</p>
+    <div className={`relative z-50 ${isUrgent ? 'bg-gradient-to-r from-red-600 to-pink-600' : 'bg-gradient-to-r from-orange-500 to-pink-500'} text-white shadow-md`}>
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
+          <span className="text-xs sm:text-sm font-bold">⏳ Período Grátis</span>
+          <div className="flex items-center gap-1 sm:gap-1.5">
+            <div className="bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-lg text-center min-w-[28px] sm:min-w-[36px]">
+              <span className="text-xs sm:text-sm font-black leading-none">{timeLeft.days}</span>
+              <p className="text-[6px] sm:text-[7px] font-bold uppercase opacity-80">dias</p>
             </div>
-            <span className="font-black text-sm">:</span>
-            <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-lg text-center min-w-[36px]">
-              <span className="text-sm font-black leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
-              <p className="text-[7px] font-bold uppercase opacity-80">hrs</p>
+            <span className="font-black text-xs sm:text-sm">:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-lg text-center min-w-[28px] sm:min-w-[36px]">
+              <span className="text-xs sm:text-sm font-black leading-none">{String(timeLeft.hours).padStart(2, '0')}</span>
+              <p className="text-[6px] sm:text-[7px] font-bold uppercase opacity-80">hrs</p>
             </div>
-            <span className="font-black text-sm">:</span>
-            <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-lg text-center min-w-[36px]">
-              <span className="text-sm font-black leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
-              <p className="text-[7px] font-bold uppercase opacity-80">min</p>
+            <span className="font-black text-xs sm:text-sm">:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-lg text-center min-w-[28px] sm:min-w-[36px]">
+              <span className="text-xs sm:text-sm font-black leading-none">{String(timeLeft.minutes).padStart(2, '0')}</span>
+              <p className="text-[6px] sm:text-[7px] font-bold uppercase opacity-80">min</p>
             </div>
-            <span className="font-black text-sm">:</span>
-            <div className="bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-lg text-center min-w-[36px]">
-              <span className="text-sm font-black leading-none">{String(timeLeft.seconds).padStart(2, '0')}</span>
-              <p className="text-[7px] font-bold uppercase opacity-80">seg</p>
+            <span className="font-black text-xs sm:text-sm">:</span>
+            <div className="bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-lg text-center min-w-[28px] sm:min-w-[36px]">
+              <span className="text-xs sm:text-sm font-black leading-none">{String(timeLeft.seconds).padStart(2, '0')}</span>
+              <p className="text-[6px] sm:text-[7px] font-bold uppercase opacity-80">seg</p>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={() => onCheckout('mensal')}
-            className="bg-white text-pink-600 px-4 py-1.5 rounded-xl text-xs font-black hover:bg-white/90 transition-all hover:scale-105 shadow-md cursor-pointer"
+            className="bg-white text-pink-600 px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black hover:bg-white/90 transition-all hover:scale-105 shadow-md cursor-pointer"
           >
             Assinar Agora
           </button>
@@ -284,15 +284,15 @@ function TrialBanner({
           {onRestoreSuperAdmin && (
             <button
               onClick={onRestoreSuperAdmin}
-              className="bg-emerald-500 hover:bg-emerald-600 text-white px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1 border border-white/25"
+              className="bg-emerald-500 hover:bg-emerald-600 text-white px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all cursor-pointer flex items-center gap-1 border border-white/25"
             >
-              Voltar SuperAdmin
+              SuperAdmin
             </button>
           )}
 
           <button
             onClick={onLogout}
-            className="bg-black/30 hover:bg-black/55 text-white px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer"
+            className="bg-black/30 hover:bg-black/55 text-white px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all cursor-pointer"
           >
             Sair
           </button>
@@ -315,20 +315,20 @@ function InactiveBanner({
   onRestoreSuperAdmin?: (() => void) | null;
 }) {
   return (
-    <div className="fixed top-0 left-0 right-0 z-[60] bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 text-white shadow-lg">
-      <div className="max-w-6xl mx-auto px-4 py-2 flex flex-wrap items-center justify-between gap-3">
+    <div className="relative z-50 bg-gradient-to-r from-red-600 via-pink-600 to-purple-600 text-white shadow-md">
+      <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-bold flex items-center gap-1.5">
+          <span className="text-xs sm:text-sm font-bold flex items-center gap-1.5">
             ⚠️ Assinatura Inativa
           </span>
-          <span className="text-xs opacity-90 hidden sm:inline">— Seu catálogo está visível, mas novas marcações e edições estão suspensas.</span>
+          <span className="text-[11px] sm:text-xs opacity-90 hidden sm:inline">— Seu catálogo está visível, mas novas marcações e edições estão suspensas.</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onSubscribe}
-            className="bg-white text-red-600 px-4 py-1.5 rounded-xl text-xs font-black hover:bg-white/90 transition-all hover:scale-105 shadow-md cursor-pointer"
+            className="bg-white text-red-600 px-3 sm:px-4 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black hover:bg-white/90 transition-all hover:scale-105 shadow-md cursor-pointer"
           >
-            Ativar Conta
+            Assinar Agora
           </button>
 
           {onRestoreSuperAdmin && (
@@ -2359,7 +2359,6 @@ export default function Dashboard() {
 
       {/* Navbar Premium — Glass Island */}
       <header 
-        style={hasBanner ? { top: '48px', marginTop: '48px' } : undefined}
         className="sticky top-0 z-40 px-3 sm:px-6 pt-3 sm:pt-4 pb-2 transition-all duration-300"
       >
         <div className="bg-white/85 dark:bg-[#131826]/80 backdrop-blur-md border border-slate-200/50 dark:border-white/[0.06] rounded-2xl max-w-6xl mx-auto px-3.5 sm:px-5 h-16 flex items-center justify-between shadow-lg shadow-black/5">
