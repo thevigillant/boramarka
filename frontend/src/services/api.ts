@@ -439,17 +439,30 @@ export const api = {
       businessUsername: string;
       serviceName: string;
       price: number;
+      paidAmount?: number;
+      status?: string;
+      cancellationCode?: string;
+      refundStatus?: string;
     }>(`/schedule/booking/${id}`),
 
-  cancelPublicBooking: (id: number) =>
-    request<{ success: boolean }>(`/schedule/booking/${id}/cancel`, {
-      method: 'POST'
+  cancelPublicBooking: (id: number, code?: string) =>
+    request<{ success: boolean; refundPending?: boolean; refundAmount?: number; message?: string }>(`/schedule/booking/${id}/cancel`, {
+      method: 'POST',
+      body: JSON.stringify({ code })
     }),
 
   reschedulePublicBooking: (id: number, newTimeSlotId: number) =>
     request<{ success: boolean }>(`/schedule/booking/${id}/reschedule`, {
       method: 'POST',
       body: JSON.stringify({ newTimeSlotId })
+    }),
+
+  getRefundRequests: () =>
+    request<any[]>('/admin/bookings/refunds'),
+
+  processRefund: (id: number) =>
+    request<{ success: boolean; message: string }>(`/admin/bookings/${id}/refund`, {
+      method: 'POST'
     }),
 
   // ═══ Billing (Assinaturas) ═══

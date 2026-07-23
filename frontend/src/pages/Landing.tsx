@@ -349,71 +349,134 @@ export default function Landing() {
                 </Reveal>
               </div>
 
-              {/* Right — Phone Simulator */}
+              {/* Right — Phone Simulator (Ultra-Premium 3D Hardware) */}
               <div className="lg:col-span-7 flex justify-center relative">
-                <Reveal>
-                  {/* Glow behind phone */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-600/15 via-pink-500/10 to-transparent rounded-[3rem] blur-3xl pointer-events-none" />
+                <Reveal className="flex justify-center w-full relative">
+                  
+                  {/* Floating WhatsApp Live Toast Notification */}
+                  <div className="hidden sm:flex absolute -right-4 md:-right-8 top-12 z-30 animate-bounce pointer-events-none" style={{ animationDuration: '5s' }}>
+                    <div className="bg-[#10162a]/95 border border-emerald-500/40 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl p-3 rounded-2xl flex items-center gap-2.5 max-w-[215px]">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-500/30">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="text-[9.5px] font-extrabold text-white">WhatsApp Auto</p>
+                          <span className="text-[8px] font-bold text-emerald-400">Agora</span>
+                        </div>
+                        <p className="text-[9px] text-slate-300 font-medium leading-tight mt-0.5">
+                          "✅ Horário confirmado para hoje às 14:00!"
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-                  {/* Double-Bezel Phone Frame */}
-                  <div className="doppelrand max-w-[340px] w-full">
-                    <div className="doppelrand-inner overflow-hidden flex flex-col" style={{ aspectRatio: '9/18.5' }}>
+                  {/* Ambient Multi-Layer Glow behind phone */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 via-pink-500/25 to-orange-500/20 rounded-[4rem] blur-3xl pointer-events-none scale-110" />
+
+                  {/* High-End Titanium Smartphone Chassis */}
+                  <div className="relative w-[315px] sm:w-[325px] h-[620px] p-3 rounded-[2.8rem] bg-gradient-to-b from-[#3a3b4e] via-[#222332] to-[#0f1019] shadow-[0_30px_80px_-10px_rgba(124,58,237,0.45)] border border-white/20 shrink-0">
+                    
+                    {/* Metallic Hardware Buttons */}
+                    <div className="absolute -left-[5px] top-24 w-[5px] h-9 rounded-l-md bg-gradient-to-r from-[#20212f] to-[#45475e] border-l border-white/30 shadow-md" />
+                    <div className="absolute -left-[5px] top-36 w-[5px] h-9 rounded-l-md bg-gradient-to-r from-[#20212f] to-[#45475e] border-l border-white/30 shadow-md" />
+                    <div className="absolute -right-[5px] top-28 w-[5px] h-14 rounded-r-md bg-gradient-to-l from-[#20212f] to-[#45475e] border-r border-white/30 shadow-md" />
+
+                    {/* Inner Glass Screen Frame */}
+                    <div className="w-full h-full rounded-[2.2rem] bg-[#0b0e1b] overflow-hidden border border-white/15 flex flex-col shadow-2xl relative">
                       
+                      {/* Glass Sheen Overlay */}
+                      <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-white/[0.03] to-transparent z-20" />
+
                       {/* Dynamic Island */}
-                      <div className="flex justify-center pt-3 pb-2 bg-[#080a16]">
-                        <div className="w-24 h-5 bg-black rounded-full flex items-center justify-between px-2.5">
-                          <div className="w-2 h-2 bg-[#111] rounded-full" />
-                          <div className="w-7 h-0.5 bg-[#111] rounded-full" />
+                      <div className="flex justify-center pt-2.5 pb-1 bg-[#0b0e1b] shrink-0 z-10">
+                        <div className="w-24 h-5 bg-black rounded-full flex items-center justify-between px-2.5 border border-white/15 shadow-inner">
+                          <div className="w-2 h-2 rounded-full bg-[#161616] ring-1 ring-white/10 flex items-center justify-center">
+                            <div className="w-0.5 h-0.5 rounded-full bg-blue-500/80" />
+                          </div>
+                          <div className="w-6 h-0.5 bg-[#161616] rounded-full" />
                         </div>
                       </div>
 
                       {/* Status Bar */}
-                      <div className="flex justify-between items-center text-[9px] font-bold text-white/30 px-5 pb-1 bg-[#080a16]">
+                      <div className="flex justify-between items-center text-[9.5px] font-extrabold text-white/80 px-4 pb-1 bg-[#0b0e1b] shrink-0 z-10">
                         <span>09:41</span>
                         <div className="flex items-center gap-1">
-                          <Signal className="w-2.5 h-2.5" />
-                          <Wifi className="w-2.5 h-2.5" />
-                          <Battery className="w-3 h-3" />
+                          <Signal className="w-2.5 h-2.5 text-white/90" />
+                          <Wifi className="w-2.5 h-2.5 text-white/90" />
+                          <Battery className="w-3 h-3 text-white" />
                         </div>
                       </div>
 
                       {/* App Header */}
-                      <div className="flex items-center justify-between px-4 py-3 border-b border-white/[0.04] bg-[#080a16]/90">
+                      <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/10 bg-[#12172b]/95 backdrop-blur-xl shrink-0 z-10">
                         <div className="flex items-center gap-2">
                           <BoraMarkaLogo size="sm" showText={false} />
                           <div>
-                            <p className="text-[11px] font-bold text-white/90 leading-none">BoraMarka Barber</p>
-                            <span className="text-[8px] text-emerald-400 font-semibold flex items-center gap-0.5 mt-0.5">
-                              <span className="w-1 h-1 rounded-full bg-emerald-400 animate-pulse" /> Online
+                            <p className="text-[11.5px] font-extrabold text-white leading-none tracking-tight">BoraMarka Barber</p>
+                            <span className="text-[8.5px] text-emerald-400 font-bold flex items-center gap-1 mt-0.5">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> • Online
                             </span>
                           </div>
                         </div>
+                        <span className="px-2 py-0.5 rounded-full bg-violet-500/20 border border-violet-400/30 text-violet-200 text-[7.5px] font-extrabold uppercase tracking-wider">
+                          Agendamento
+                        </span>
                       </div>
 
-                      {/* Steps Content */}
-                      <div className="flex-1 flex flex-col px-4 py-3 overflow-y-auto no-scrollbar bg-[#080a16]">
+                      {/* Steps Content Screen */}
+                      <div className="flex-1 flex flex-col px-3 py-3 overflow-y-auto no-scrollbar bg-gradient-to-b from-[#0b0e1b] via-[#10162a] to-[#070914] z-10">
 
                         {/* Step 1: Serviço */}
                         {simStep === 1 && (
-                          <div className="animate-scale-in flex flex-col gap-2">
-                            <p className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em] text-center mb-1">Escolha o Serviço</p>
+                          <div className="animate-fade-in flex flex-col gap-2">
+                            <div className="flex items-center justify-between px-1 mb-0.5">
+                              <p className="text-[9.5px] font-extrabold text-violet-300/90 uppercase tracking-[0.18em]">
+                                Escolha o Serviço
+                              </p>
+                              <span className="text-[8px] font-bold text-white/40">3 opções</span>
+                            </div>
+
                             {mockServices.map((svc, i) => {
                               const Icon = svc.icon
+                              const isCombo = svc.name.includes('Combo')
+                              const isPopular = svc.name.includes('Degradê')
+
                               return (
                                 <button key={i} onClick={() => { setSimService(svc); setSimStep(2) }}
-                                  className="w-full p-3 rounded-2xl bg-white/[0.03] border border-white/[0.04] hover:border-violet-500/30 text-left flex items-center justify-between group transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-xl bg-violet-500/[0.08] border border-violet-500/10 flex items-center justify-center text-violet-400 group-hover:text-pink-400 transition-colors duration-500">
+                                  className="w-full p-2.5 rounded-2xl bg-gradient-to-r from-[#151c33]/90 to-[#18203a]/90 backdrop-blur-md border border-white/10 hover:border-violet-500/60 hover:from-[#1b2340] hover:to-[#202a49] text-left flex items-center justify-between gap-2 group transition-all duration-300 active:scale-[0.98] shadow-md shadow-black/30 relative overflow-hidden">
+                                  
+                                  {/* Featured Badge */}
+                                  {isCombo && (
+                                    <span className="absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
+                                      ⭐ Mais Pedido
+                                    </span>
+                                  )}
+                                  {isPopular && (
+                                    <span className="absolute top-0 right-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
+                                      🔥 Popular
+                                    </span>
+                                  )}
+
+                                  <div className="flex items-center gap-2.5 min-w-0 flex-1 pt-1">
+                                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-violet-600/30 via-pink-600/20 to-purple-600/30 border border-violet-400/30 flex items-center justify-center text-violet-200 group-hover:scale-105 transition-transform shrink-0 shadow-inner">
                                       <Icon className="w-3.5 h-3.5" />
                                     </div>
-                                    <div>
-                                      <p className="text-[11px] font-semibold text-white/80 group-hover:text-white transition-colors duration-500">{svc.name}</p>
-                                      <p className="text-[9px] text-white/25 font-medium">{svc.duration} min</p>
+                                    <div className="min-w-0 flex-1">
+                                      <p className="text-[11px] font-extrabold text-white leading-tight group-hover:text-violet-200 transition-colors">
+                                        {svc.name}
+                                      </p>
+                                      <p className="text-[9px] text-slate-400 font-semibold flex items-center gap-1 mt-0.5">
+                                        <Clock className="w-2.5 h-2.5 text-slate-400" /> {svc.duration} min
+                                      </p>
                                     </div>
                                   </div>
-                                  <div className="flex items-center gap-1">
-                                    <span className="text-[11px] font-bold text-white/60">R$ {svc.price}</span>
-                                    <ChevronRight className="w-3 h-3 text-white/20 group-hover:text-violet-400 transition-colors duration-500" />
+
+                                  <div className="flex items-center gap-1 shrink-0 pt-1">
+                                    <span className="text-[10.5px] font-black text-emerald-300 bg-gradient-to-r from-emerald-500/20 to-teal-500/20 px-2 py-0.5 rounded-xl border border-emerald-400/30 shadow-sm">
+                                      R$ {svc.price}
+                                    </span>
+                                    <ChevronRight className="w-3.5 h-3.5 text-white/40 group-hover:text-violet-400 group-hover:translate-x-0.5 transition-all" />
                                   </div>
                                 </button>
                               )
@@ -423,35 +486,35 @@ export default function Landing() {
 
                         {/* Step 2: Horário */}
                         {simStep === 2 && (
-                          <div className="animate-scale-in flex flex-col gap-3">
+                          <div className="animate-fade-in flex flex-col gap-3">
                             <div className="flex justify-between items-center">
-                              <p className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em]">Data & Horário</p>
-                              <button onClick={() => setSimStep(1)} className="text-[9px] font-semibold text-violet-400">Voltar</button>
+                              <p className="text-[9.5px] font-extrabold text-violet-300/90 uppercase tracking-[0.18em]">Data & Horário</p>
+                              <button onClick={() => setSimStep(1)} className="text-[9.5px] font-bold text-violet-400 hover:underline">Voltar</button>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.04] text-[10px] font-medium text-white/50 flex justify-between items-center">
-                              <span className="flex items-center gap-1.5"><Scissors className="w-3 h-3 text-violet-400" /> {simService?.name}</span>
-                              <span className="text-violet-400 font-bold">R$ {simService?.price}</span>
+                            <div className="p-2.5 rounded-xl bg-[#151c33]/90 border border-white/10 text-[10.5px] font-semibold text-white flex justify-between items-center shadow-md">
+                              <span className="flex items-center gap-1.5 truncate"><Scissors className="w-3.5 h-3.5 text-violet-400 shrink-0" /> {simService?.name}</span>
+                              <span className="text-emerald-300 font-black shrink-0 pl-2">R$ {simService?.price}</span>
                             </div>
 
                             <div className="grid grid-cols-4 gap-1.5">
                               {mockDays.map((d, i) => (
                                 <button key={i} onClick={() => setSelectedDay(d.label)}
-                                  className={`p-2 rounded-xl text-center border transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] ${selectedDay === d.label
-                                    ? 'bg-gradient-to-br from-violet-600 to-pink-600 border-transparent text-white font-bold'
-                                    : 'bg-white/[0.02] border-white/[0.04] text-white/40 font-medium hover:border-white/10'
+                                  className={`p-2 rounded-xl text-center border transition-all duration-300 ${selectedDay === d.label
+                                    ? 'bg-gradient-to-br from-violet-600 to-pink-600 border-transparent text-white font-black shadow-lg shadow-violet-600/30'
+                                    : 'bg-[#151c33]/80 border-white/10 text-white/60 font-semibold hover:border-white/20'
                                   }`}>
-                                  <p className="text-[9px] uppercase leading-none">{d.label.split(',')[0]}</p>
-                                  <p className="text-[11px] font-bold mt-0.5">{d.label.split(',')[1]}</p>
+                                  <p className="text-[9px] uppercase leading-none opacity-80">{d.label.split(',')[0]}</p>
+                                  <p className="text-[12px] font-black mt-0.5">{d.label.split(',')[1]}</p>
                                 </button>
                               ))}
                             </div>
 
-                            <p className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em]">Horários</p>
+                            <p className="text-[9.5px] font-extrabold text-violet-300/90 uppercase tracking-[0.18em] mt-1">Horários Disponíveis</p>
                             <div className="grid grid-cols-3 gap-1.5">
                               {mockTimes.map((t, i) => (
                                 <button key={i} onClick={() => { setSimTime(t); setSimStep(3) }}
-                                  className="p-2 rounded-xl bg-white/[0.02] border border-white/[0.04] hover:border-violet-500/40 text-center font-bold text-[11px] text-white/60 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98]">
+                                  className="p-2.5 rounded-xl bg-[#151c33]/90 border border-white/10 hover:border-violet-500/60 hover:bg-[#1c2542] text-center font-extrabold text-[11.5px] text-white transition-all active:scale-[0.98] shadow-sm">
                                   {t}
                                 </button>
                               ))}
@@ -461,100 +524,100 @@ export default function Landing() {
 
                         {/* Step 3: Dados */}
                         {simStep === 3 && (
-                          <div className="animate-scale-in flex flex-col gap-3">
+                          <div className="animate-fade-in flex flex-col gap-3">
                             <div className="flex justify-between items-center">
-                              <p className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em]">Seus Dados</p>
-                              <button onClick={() => setSimStep(2)} className="text-[9px] font-semibold text-violet-400">Voltar</button>
+                              <p className="text-[9.5px] font-extrabold text-violet-300/90 uppercase tracking-[0.18em]">Seus Dados</p>
+                              <button onClick={() => setSimStep(2)} className="text-[9.5px] font-bold text-violet-400 hover:underline">Voltar</button>
                             </div>
 
-                            <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.04] text-[10px] font-medium text-white/50 space-y-1">
-                              <div className="flex justify-between"><span className="text-white/30">Serviço:</span><span className="text-white/70 font-bold">{simService?.name}</span></div>
-                              <div className="flex justify-between"><span className="text-white/30">Horário:</span><span className="text-violet-400 font-bold">{selectedDay} às {simTime}</span></div>
+                            <div className="p-3 rounded-xl bg-[#151c33]/90 border border-white/10 text-[10.5px] font-medium text-white space-y-1.5 shadow-md">
+                              <div className="flex justify-between"><span className="text-white/40">Serviço:</span><span className="text-white font-bold">{simService?.name}</span></div>
+                              <div className="flex justify-between"><span className="text-white/40">Horário:</span><span className="text-violet-300 font-bold">{selectedDay} às {simTime}</span></div>
                             </div>
 
                             <div className="space-y-2.5">
                               <div>
-                                <label className="text-[8px] font-bold uppercase text-white/20 tracking-[0.15em] block mb-1">Nome</label>
+                                <label className="text-[9px] font-extrabold uppercase text-white/50 tracking-[0.15em] block mb-1">Nome Completo</label>
                                 <div className="relative">
-                                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20" />
+                                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
                                   <input type="text" placeholder="João Silva" value={simName} onChange={e => setSimName(e.target.value)}
-                                    className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-9 pr-3 py-2.5 text-[11px] text-white/80 font-medium focus:outline-none transition-colors placeholder:text-white/15" />
+                                    className="w-full bg-[#151c33] border border-white/10 focus:border-violet-500 rounded-xl pl-9 pr-3 py-2.5 text-[11.5px] text-white font-semibold focus:outline-none transition-colors placeholder:text-white/20" />
                                 </div>
                               </div>
                               <div>
-                                <label className="text-[8px] font-bold uppercase text-white/20 tracking-[0.15em] block mb-1">WhatsApp</label>
+                                <label className="text-[9px] font-extrabold uppercase text-white/50 tracking-[0.15em] block mb-1">WhatsApp</label>
                                 <div className="relative">
-                                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/20" />
+                                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-white/40" />
                                   <input type="text" placeholder="(11) 99999-9999" value={simPhone} onChange={e => setSimPhone(e.target.value)}
-                                    className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-9 pr-3 py-2.5 text-[11px] text-white/80 font-medium focus:outline-none transition-colors placeholder:text-white/15" />
+                                    className="w-full bg-[#151c33] border border-white/10 focus:border-violet-500 rounded-xl pl-9 pr-3 py-2.5 text-[11.5px] text-white font-semibold focus:outline-none transition-colors placeholder:text-white/20" />
                                 </div>
                               </div>
 
                               <button onClick={() => setSimStep(4)} disabled={!simName || !simPhone}
-                                className="w-full py-3 bg-gradient-to-r from-violet-600 to-pink-600 disabled:opacity-40 rounded-xl text-white font-bold text-[11px] transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 mt-1">
-                                Confirmar <Check className="w-3 h-3" />
+                                className="w-full py-3 bg-gradient-to-r from-violet-600 via-pink-600 to-rose-600 disabled:opacity-40 rounded-xl text-white font-black text-[12px] shadow-lg shadow-violet-600/30 transition-all active:scale-[0.98] flex items-center justify-center gap-1.5 mt-1">
+                                Confirmar Agendamento <Check className="w-3.5 h-3.5" />
                               </button>
-                              <p className="text-[8px] text-white/15 font-medium text-center">Sinal de R$ 10,00 via Mercado Pago</p>
+                              <p className="text-[8.5px] text-white/40 font-medium text-center">Sinal de R$ 10,00 via Mercado Pago</p>
                             </div>
                           </div>
                         )}
 
                         {/* Step 4: Pagamento */}
                         {simStep === 4 && (
-                          <div className="animate-scale-in flex flex-col gap-3">
+                          <div className="animate-fade-in flex flex-col gap-3">
                             <div className="flex justify-between items-center">
-                              <p className="text-[9px] font-bold text-white/25 uppercase tracking-[0.2em]">Pagamento</p>
-                              <button onClick={() => setSimStep(3)} className="text-[9px] font-semibold text-violet-400">Voltar</button>
+                              <p className="text-[9.5px] font-extrabold text-violet-300/90 uppercase tracking-[0.18em]">Pagamento</p>
+                              <button onClick={() => setSimStep(3)} className="text-[9.5px] font-bold text-violet-400 hover:underline">Voltar</button>
                             </div>
 
-                            <div className="text-center py-2">
-                              <span className="text-xl">💳</span>
-                              <h4 className="text-[11px] font-bold text-white/80 mt-1">Sinal de Reserva</h4>
-                              <p className="text-[9px] text-white/30 font-medium mt-1 max-w-[200px] mx-auto leading-relaxed">
-                                Pague o sinal diretamente ao profissional. O restante é pago no atendimento.
+                            <div className="text-center py-2.5 bg-[#151c33]/90 border border-white/10 rounded-xl shadow-md">
+                              <span className="text-2xl">💳</span>
+                              <h4 className="text-[12px] font-black text-white mt-1">Sinal de Reserva</h4>
+                              <p className="text-[9.5px] text-slate-300 font-medium mt-0.5 max-w-[210px] mx-auto leading-relaxed">
+                                Pague R$ 10,00 para garantir seu horário. O restante (R$ {(simService?.price || 0) - 10}) é pago no atendimento.
                               </p>
                             </div>
 
-                            <div className="rounded-xl bg-white/[0.03] border border-white/[0.04] p-3 text-[10px] space-y-1.5">
-                              <div className="flex justify-between border-b border-white/[0.03] pb-1.5"><span className="text-white/25">Serviço</span><span className="text-white/60 font-medium">{simService?.name}</span></div>
-                              <div className="flex justify-between border-b border-white/[0.03] pb-1.5"><span className="text-white/25">Horário</span><span className="text-violet-400 font-medium">{selectedDay} · {simTime}</span></div>
-                              <div className="flex justify-between border-b border-white/[0.03] pb-1.5"><span className="text-white/25">Total</span><span className="text-white/60 font-medium">R$ {simService?.price}</span></div>
-                              <div className="flex justify-between pt-0.5"><span className="text-white/50 font-bold">Sinal agora</span><span className="text-emerald-400 font-bold">R$ 10,00</span></div>
+                            <div className="rounded-xl bg-[#151c33]/90 border border-white/10 p-3 text-[10.5px] space-y-1.5 shadow-md">
+                              <div className="flex justify-between border-b border-white/5 pb-1.5"><span className="text-white/40">Serviço</span><span className="text-white font-bold">{simService?.name}</span></div>
+                              <div className="flex justify-between border-b border-white/5 pb-1.5"><span className="text-white/40">Horário</span><span className="text-violet-300 font-bold">{selectedDay} · {simTime}</span></div>
+                              <div className="flex justify-between border-b border-white/5 pb-1.5"><span className="text-white/40">Total</span><span className="text-white font-bold">R$ {simService?.price}</span></div>
+                              <div className="flex justify-between pt-0.5"><span className="text-white/90 font-black">Sinal agora</span><span className="text-emerald-300 font-black text-[12px]">R$ 10,00</span></div>
                             </div>
 
                             <button onClick={() => setSimStep(5)}
-                              className="w-full py-3 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl text-white font-bold text-[11px] active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+                              className="w-full py-3 bg-gradient-to-r from-violet-600 via-pink-600 to-rose-600 rounded-xl text-white font-black text-[12px] shadow-lg shadow-violet-600/30 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
                               Pagar com Mercado Pago
                             </button>
 
-                            <p className="text-[7px] text-white/15 font-medium text-center leading-relaxed">
-                              Pagamento processado direto pelo Mercado Pago do profissional.
+                            <p className="text-[8px] text-white/40 font-medium text-center leading-relaxed">
+                              🔒 Pagamento 100% seguro via Mercado Pago.
                             </p>
                           </div>
                         )}
 
                         {/* Step 5: Sucesso */}
                         {simStep === 5 && (
-                          <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
-                            <div className="w-12 h-12 rounded-full bg-emerald-500/[0.08] border border-emerald-500/20 flex items-center justify-center text-emerald-400 mb-3 animate-bounce">
+                          <div className="animate-fade-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 mb-3 animate-bounce shadow-lg shadow-emerald-500/20">
                               <CheckCircle2 className="w-6 h-6" />
                             </div>
-                            <h4 className="text-[12px] font-bold text-white/90 mb-0.5">Confirmado!</h4>
-                            <p className="text-[9px] text-emerald-400 font-semibold mb-3">Sinal recebido pelo profissional</p>
+                            <h4 className="text-[13px] font-black text-white mb-0.5">Agendamento Confirmado!</h4>
+                            <p className="text-[10px] text-emerald-400 font-bold mb-3">Sinal recebido com sucesso 🎉</p>
 
-                            <div className="w-full rounded-xl bg-white/[0.03] border border-white/[0.04] p-3 text-[10px] space-y-1.5 text-left mb-4">
-                              <div className="flex justify-between border-b border-white/[0.03] pb-1"><span className="text-white/20">Cliente</span><span className="text-white/60 font-medium">{simName}</span></div>
-                              <div className="flex justify-between border-b border-white/[0.03] pb-1"><span className="text-white/20">Serviço</span><span className="text-white/60 font-medium">{simService?.name}</span></div>
-                              <div className="flex justify-between border-b border-white/[0.03] pb-1"><span className="text-white/20">Quando</span><span className="text-violet-400 font-medium">{selectedDay} · {simTime}</span></div>
-                              <div className="flex justify-between pt-0.5"><span className="text-white/30 font-bold">Restante</span><span className="text-white/70 font-bold">R$ {(simService?.price || 0) - 10}</span></div>
+                            <div className="w-full rounded-xl bg-[#151c33]/90 border border-white/10 p-3 text-[10.5px] space-y-1.5 text-left mb-4 shadow-md">
+                              <div className="flex justify-between border-b border-white/5 pb-1"><span className="text-white/40">Cliente</span><span className="text-white font-bold">{simName}</span></div>
+                              <div className="flex justify-between border-b border-white/5 pb-1"><span className="text-white/40">Serviço</span><span className="text-white font-bold">{simService?.name}</span></div>
+                              <div className="flex justify-between border-b border-white/5 pb-1"><span className="text-white/40">Data & Hora</span><span className="text-violet-300 font-bold">{selectedDay} · {simTime}</span></div>
+                              <div className="flex justify-between pt-0.5"><span className="text-white/70 font-bold">Pagar no local</span><span className="text-emerald-300 font-black">R$ {(simService?.price || 0) - 10}</span></div>
                             </div>
 
-                            <div className="flex flex-col gap-1.5 w-full">
-                              <button onClick={resetSimulator} className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl text-[10px] font-bold text-white active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
-                                <RotateCcw className="w-3 h-3" /> Agendar Outro
+                            <div className="flex flex-col gap-2 w-full">
+                              <button onClick={resetSimulator} className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl text-[10.5px] font-black text-white shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-1.5">
+                                <RotateCcw className="w-3.5 h-3.5" /> Agendar Outro
                               </button>
                               <button onClick={() => { const close = selectedDay === 'Qui, 18' && (simTime === '09:00' || simTime === '10:30'); setSimStep(close ? 8 : 6) }}
-                                className="w-full py-2 border border-red-500/20 bg-red-500/[0.03] rounded-xl text-[9px] font-bold text-red-400/80 active:scale-[0.98] transition-all">
+                                className="w-full py-2 border border-red-500/30 bg-red-500/10 rounded-xl text-[9.5px] font-bold text-red-300 hover:bg-red-500/20 active:scale-[0.98] transition-all">
                                 Cancelar Agendamento
                               </button>
                             </div>
@@ -563,54 +626,54 @@ export default function Landing() {
 
                         {/* Step 6: Confirma cancelamento */}
                         {simStep === 6 && (
-                          <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
-                            <div className="w-10 h-10 rounded-full bg-red-500/[0.08] border border-red-500/20 flex items-center justify-center text-red-400 mb-3 animate-pulse">
+                          <div className="animate-fade-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                            <div className="w-11 h-11 rounded-full bg-red-500/20 border border-red-500/40 flex items-center justify-center text-red-400 mb-3 animate-pulse">
                               <Shield className="w-5 h-5" />
                             </div>
-                            <h4 className="text-[11px] font-bold text-white/80 mb-1.5">Cancelar agendamento?</h4>
-                            <p className="text-[9px] text-white/30 font-medium mb-4 max-w-[200px] leading-relaxed">
-                              <span className="text-white/50 font-bold">{simService?.name}</span> em <span className="text-violet-400 font-bold">{selectedDay} às {simTime}</span>
+                            <h4 className="text-[12px] font-black text-white mb-1.5">Cancelar agendamento?</h4>
+                            <p className="text-[10px] text-slate-300 font-medium mb-4 max-w-[210px] leading-relaxed">
+                              <span className="text-white font-bold">{simService?.name}</span> em <span className="text-violet-300 font-bold">{selectedDay} às {simTime}</span>
                             </p>
-                            <div className="flex flex-col gap-1.5 w-full">
-                              <button onClick={() => setSimStep(7)} className="w-full py-2.5 bg-red-500 rounded-xl text-white font-bold text-[10px] active:scale-[0.98] transition-all">Sim, cancelar</button>
-                              <button onClick={() => setSimStep(5)} className="w-full py-2 border border-white/[0.06] rounded-xl text-[10px] font-bold text-white/40 active:scale-[0.98] transition-all">Não, voltar</button>
+                            <div className="flex flex-col gap-2 w-full">
+                              <button onClick={() => setSimStep(7)} className="w-full py-2.5 bg-red-600 hover:bg-red-500 rounded-xl text-white font-black text-[10.5px] active:scale-[0.98] transition-all">Sim, cancelar horário</button>
+                              <button onClick={() => setSimStep(5)} className="w-full py-2 border border-white/10 rounded-xl text-[10.5px] font-bold text-white/70 active:scale-[0.98] transition-all">Não, manter horário</button>
                             </div>
                           </div>
                         )}
 
                         {/* Step 7: Cancelado */}
                         {simStep === 7 && (
-                          <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
-                            <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.06] flex items-center justify-center text-white/30 mb-3"><Check className="w-5 h-5" /></div>
-                            <h4 className="text-[11px] font-bold text-white/80 mb-1.5">Cancelado</h4>
-                            <p className="text-[9px] text-white/30 font-medium mb-4 max-w-[200px] leading-relaxed">A vaga foi liberada e o profissional foi notificado.</p>
-                            <button onClick={resetSimulator} className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl text-[10px] font-bold text-white active:scale-[0.98] transition-all">Novo Agendamento</button>
+                          <div className="animate-fade-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                            <div className="w-11 h-11 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-white/80 mb-3"><Check className="w-5.5 h-5.5" /></div>
+                            <h4 className="text-[12px] font-black text-white mb-1.5">Agendamento Cancelado</h4>
+                            <p className="text-[10px] text-slate-300 font-medium mb-4 max-w-[210px] leading-relaxed">A vaga foi liberada instantaneamente no seu sistema.</p>
+                            <button onClick={resetSimulator} className="w-full py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl text-[10.5px] font-black text-white active:scale-[0.98] transition-all">Novo Agendamento</button>
                           </div>
                         )}
 
                         {/* Step 8: Prazo expirado */}
                         {simStep === 8 && (
-                          <div className="animate-scale-in flex flex-col items-center justify-center text-center flex-1 py-2">
-                            <div className="w-10 h-10 rounded-full bg-orange-500/[0.08] border border-orange-500/20 flex items-center justify-center text-orange-400 mb-3 animate-bounce"><AlertCircle className="w-5 h-5" /></div>
-                            <h4 className="text-[11px] font-bold text-white/80 mb-1.5">Prazo Expirado</h4>
-                            <p className="text-[9px] text-white/30 font-medium mb-4 max-w-[200px] leading-relaxed">
-                              Cancelamento online permitido apenas com <span className="text-white/60 font-bold">2h</span> de antecedência. Fale com o profissional.
+                          <div className="animate-fade-in flex flex-col items-center justify-center text-center flex-1 py-2">
+                            <div className="w-11 h-11 rounded-full bg-orange-500/20 border border-orange-500/40 flex items-center justify-center text-orange-400 mb-3 animate-bounce"><AlertCircle className="w-5.5 h-5.5" /></div>
+                            <h4 className="text-[12px] font-black text-white mb-1.5">Prazo Expirado</h4>
+                            <p className="text-[10px] text-slate-300 font-medium mb-4 max-w-[210px] leading-relaxed">
+                              Cancelamentos online só são permitidos com <span className="text-white font-bold">2h</span> de antecedência.
                             </p>
-                            <div className="flex flex-col gap-1.5 w-full">
+                            <div className="flex flex-col gap-2 w-full">
                               <a href={`https://wa.me/5511999999999`} target="_blank" rel="noopener noreferrer"
-                                className="w-full py-2.5 bg-emerald-500 rounded-xl text-white font-bold text-[10px] flex items-center justify-center gap-1.5">
-                                <Phone className="w-3 h-3" /> WhatsApp
+                                className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-black text-[10.5px] flex items-center justify-center gap-1.5">
+                                <Phone className="w-3.5 h-3.5" /> Falar via WhatsApp
                               </a>
-                              <button onClick={() => setSimStep(5)} className="w-full py-2 border border-white/[0.06] rounded-xl text-[10px] font-bold text-white/40 active:scale-[0.98]">Voltar</button>
+                              <button onClick={() => setSimStep(5)} className="w-full py-2 border border-white/10 rounded-xl text-[10.5px] font-bold text-white/70 active:scale-[0.98]">Voltar</button>
                             </div>
                           </div>
                         )}
 
                       </div>
 
-                      {/* Home indicator */}
-                      <div className="flex justify-center py-2 bg-[#080a16]">
-                        <div className="w-24 h-1 bg-white/10 rounded-full" />
+                      {/* Home Bar Indicator */}
+                      <div className="flex justify-center py-2 bg-[#0b0e1b] shrink-0 z-10">
+                        <div className="w-28 h-1 bg-white/20 rounded-full" />
                       </div>
                     </div>
                   </div>

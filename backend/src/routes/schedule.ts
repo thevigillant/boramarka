@@ -30,6 +30,15 @@ async function cleanupExpiredBookings(token: string) {
   }
 }
 
+function generateCancellationCode(): string {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'BM-';
+  for (let i = 0; i < 4; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export default async function scheduleRoutes(app: FastifyInstance) {
   // GET /api/schedule/p/:username — Get public profile + services catalog
   app.get('/p/:username', async (request, reply) => {
@@ -423,6 +432,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
             clientPhone: cleanPhone,
             timeSlotId,
             status: 'AGUARDANDO_PAGAMENTO',
+            cancellationCode: generateCancellationCode(),
           },
           include: {
             timeSlot: true,
@@ -456,6 +466,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
             clientPhone: booking.clientPhone,
             date: booking.timeSlot.date,
             time: booking.timeSlot.time,
+            cancellationCode: booking.cancellationCode,
           },
           paymentRequired: true,
           paymentAmount,
@@ -471,6 +482,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           const baseUrl = process.env.CORS_ORIGIN 
             ? process.env.CORS_ORIGIN.split(',')[0] 
             : 'http://localhost:5173';
+          const backendUrl = process.env.BACKEND_URL || process.env.RAILWAY_STATIC_URL || 'http://localhost:3001';
 
           const response = await preference.create({
             body: {
@@ -490,6 +502,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
                 pending: `${baseUrl}/agendar/${token}/sucesso?bookingId=${booking.id}&payment=pending`
               },
               auto_return: 'approved',
+              ...(backendUrl.startsWith('https://') ? { notification_url: `${backendUrl}/api/schedule/webhook` } : {})
             }
           });
 
@@ -500,6 +513,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               clientPhone: booking.clientPhone,
               date: booking.timeSlot.date,
               time: booking.timeSlot.time,
+              cancellationCode: booking.cancellationCode,
             },
             paymentRequired: true,
             paymentAmount,
@@ -536,6 +550,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           clientPhone: cleanPhone,
           timeSlotId,
           status: 'PENDENTE',
+          cancellationCode: generateCancellationCode(),
         },
         include: {
           timeSlot: true,
@@ -552,11 +567,16 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(409).send({ error: 'Este horário acabou de ser reservado. Escolha outro.' });
     }
 
-    // Generate and send WhatsApp message to client
+    // Generate and send WhatsApp message to client with cancellation link
+    const frontendUrl = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:5173';
+    const cancelUrl = `${frontendUrl}/agendar/cancelar/${token}/${booking.id}?code=${booking.cancellationCode}`;
     const message = generateBookingMessage(
       clientName.trim(),
       booking.timeSlot.date,
-      booking.timeSlot.time
+      booking.timeSlot.time,
+      link.service?.name,
+      booking.cancellationCode,
+      cancelUrl
     );
     const whatsappResult = await sendWhatsAppMessage(cleanPhone, message);
 
@@ -575,6 +595,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         `📅 Data: *${formattedDate}*`,
         `🕐 Hora: *${booking.timeSlot.time}*`,
         `💼 Serviço: *${link.service?.name || 'Serviço'}*`,
+        `🔑 Cód. Cancelamento: *${booking.cancellationCode}*`,
         '',
         `Confira no seu painel BoraMarka! 🚀`,
       ].join('\n');
@@ -588,6 +609,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         clientPhone: booking.clientPhone,
         date: booking.timeSlot.date,
         time: booking.timeSlot.time,
+        cancellationCode: booking.cancellationCode,
       },
       whatsapp: whatsappResult,
     });
@@ -639,12 +661,17 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       businessUsername: booking.timeSlot.link.admin.username,
       serviceName: booking.timeSlot.link.service?.name || 'Serviço',
       price: booking.timeSlot.link.service?.price || 0,
+      paidAmount: booking.paidAmount,
+      status: booking.status,
+      cancellationCode: booking.cancellationCode,
+      refundStatus: booking.refundStatus,
     };
   });
 
-  // POST /api/schedule/booking/:id/cancel — Public cancellation with 2-hour deadline check
+  // POST /api/schedule/booking/:id/cancel — Public cancellation with 2-hour deadline check & refund handling
   app.post('/booking/:id/cancel', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { code } = (request.body || {}) as { code?: string };
 
     const booking = await prisma.booking.findUnique({
       where: { id: parseInt(id) },
@@ -655,6 +682,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               include: {
                 admin: {
                   select: {
+                    id: true,
                     businessName: true,
                     phone: true
                   }
@@ -675,8 +703,12 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Agendamento não encontrado' });
     }
 
+    // Optional validation of cancellation code if supplied
+    if (code && booking.cancellationCode && code.trim().toUpperCase() !== booking.cancellationCode.toUpperCase()) {
+      return reply.status(400).send({ error: 'Código de cancelamento inválido.' });
+    }
+
     // Check cancellation policy (2-hour limit)
-    // Parse date and time in Brazilian timezone (-03:00)
     const appointmentDate = new Date(`${booking.timeSlot.date}T${booking.timeSlot.time}:00-03:00`);
     const now = new Date();
     const diffMs = appointmentDate.getTime() - now.getTime();
@@ -690,22 +722,72 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       });
     }
 
-    // Cancel booking: Restore slot and delete booking
-    await prisma.$transaction(async (tx) => {
-      await tx.timeSlot.update({
-        where: { id: booking.timeSlotId },
-        data: { isAvailable: true },
-      });
-      await tx.booking.delete({
-        where: { id: booking.id }
-      });
+    // Free the time slot so another client can book it immediately
+    await prisma.timeSlot.update({
+      where: { id: booking.timeSlotId },
+      data: { isAvailable: true },
     });
 
-    // Send WhatsApp notification
-    const cancelMessage = `❌ *Cancelamento automático:* Olá ${booking.clientName}, seu agendamento para *${booking.timeSlot.link.service?.name || 'Serviço'}* no dia ${booking.timeSlot.date} às *${booking.timeSlot.time}* foi CANCELADO com sucesso.`;
-    await sendWhatsAppMessage(booking.clientPhone, cancelMessage);
+    const isRefundPending = booking.paidAmount > 0;
 
-    return { success: true };
+    if (isRefundPending) {
+      // Mark booking as CANCELADO with PENDING refund status
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: {
+          status: 'CANCELADO',
+          refundStatus: 'PENDING',
+          refundAmount: booking.paidAmount
+        }
+      });
+
+      // Notify Professional via WhatsApp
+      const adminPhone = booking.timeSlot.link.admin.phone;
+      if (adminPhone) {
+        const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+        const adminRefundMsg = [
+          `⚠️ *Solicitação de Estorno!*`,
+          '',
+          `👤 Cliente: *${booking.clientName}* (${booking.clientPhone})`,
+          `💼 Serviço: *${booking.timeSlot.link.service?.name || 'Serviço'}*`,
+          `📅 Data: *${formattedDate} às ${booking.timeSlot.time}*`,
+          `💰 Sinal/Valor Pago: *R$ ${booking.paidAmount.toFixed(2)}*`,
+          '',
+          `O agendamento foi cancelado e a vaga liberada. Acesse seu painel BoraMarka para processar o estorno! 🚀`
+        ].join('\n');
+        await sendWhatsAppMessage(adminPhone, adminRefundMsg);
+      }
+
+      // Notify Client via WhatsApp
+      const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+      const clientCancelMsg = [
+        `❌ *Agendamento Cancelado!*`,
+        '',
+        `Olá ${booking.clientName}, seu agendamento para *${booking.timeSlot.link.service?.name || 'Serviço'}* em ${formattedDate} às *${booking.timeSlot.time}* foi cancelado.`,
+        '',
+        `💰 *Reembolso/Estorno:* Como havia um sinal de *R$ ${booking.paidAmount.toFixed(2)}* pago, a solicitação de estorno foi enviada ao profissional para devolução.`,
+      ].join('\n');
+      await sendWhatsAppMessage(booking.clientPhone, clientCancelMsg);
+
+      return {
+        success: true,
+        refundPending: true,
+        refundAmount: booking.paidAmount,
+        message: 'Agendamento cancelado com sucesso. A solicitação de estorno do sinal foi enviada ao profissional.'
+      };
+    } else {
+      // Normal cancellation without paid deposit
+      await prisma.booking.update({
+        where: { id: booking.id },
+        data: { status: 'CANCELADO' }
+      });
+
+      // Send WhatsApp notification
+      const cancelMessage = `❌ *Cancelamento automático:* Olá ${booking.clientName}, seu agendamento para *${booking.timeSlot.link.service?.name || 'Serviço'}* no dia ${booking.timeSlot.date} às *${booking.timeSlot.time}* foi CANCELADO com sucesso.`;
+      await sendWhatsAppMessage(booking.clientPhone, cancelMessage);
+
+      return { success: true, refundPending: false };
+    }
   });
 
   // POST /api/schedule/booking/:id/reschedule — Public reschedule with 2-hour deadline check

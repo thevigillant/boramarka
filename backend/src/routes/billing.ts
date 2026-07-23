@@ -44,6 +44,7 @@ export default async function billingRoutes(app: FastifyInstance) {
       const baseUrl = process.env.CORS_ORIGIN 
         ? process.env.CORS_ORIGIN.split(',')[0] 
         : 'http://localhost:5173';
+      const backendUrl = process.env.BACKEND_URL || process.env.RAILWAY_STATIC_URL || 'http://localhost:3001';
 
       const response = await preference.create({
         body: {
@@ -56,14 +57,14 @@ export default async function billingRoutes(app: FastifyInstance) {
               currency_id: 'BRL',
             }
           ],
-          external_reference: user.id.toString(), // ID do Admin para sabermos quem pagou
+          external_reference: user.id.toString(),
           back_urls: {
             success: `${baseUrl}/dashboard?payment=success`,
             failure: `${baseUrl}/dashboard?payment=failure`,
             pending: `${baseUrl}/dashboard?payment=pending`
           },
-          // auto_return: 'approved',
-          // notification_url: 'https://seu-dominio.com.br/api/billing/webhook' // URL QUE O MERCADO PAGO VAI CHAMAR
+          auto_return: 'approved',
+          ...(backendUrl.startsWith('https://') ? { notification_url: `${backendUrl}/api/billing/webhook` } : {})
         }
       });
 

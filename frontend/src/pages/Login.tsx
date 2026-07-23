@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
-import { ArrowLeft, Lock, User, AlertCircle, Loader2, Sparkles, ArrowRight, Mail, KeyRound, CheckCircle2, X } from 'lucide-react'
+import { ArrowLeft, Lock, User, AlertCircle, Loader2, Sparkles, ArrowRight, Mail, KeyRound, CheckCircle2, X, Eye, EyeOff } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
 export default function Login() {
@@ -23,6 +23,11 @@ export default function Login() {
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotError, setForgotError] = useState('')
   const [forgotSuccess, setForgotSuccess] = useState('')
+
+  // Estados de visibilidade de senha
+  const [showPassword, setShowPassword] = useState(false)
+  const [showNewPassword, setShowNewPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // Redirect if already logged in
   useEffect(() => {
@@ -223,13 +228,21 @@ export default function Login() {
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Sua senha"
                     required
-                    className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-4 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
+                    className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-10 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
+                    tabIndex={-1}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -416,13 +429,21 @@ export default function Login() {
                       <div className="relative">
                         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                         <input
-                          type="password"
+                          type={showNewPassword ? 'text' : 'password'}
                           value={newPassword}
                           onChange={(e) => setNewPassword(e.target.value)}
                           placeholder="Mínimo 6 caracteres"
                           required
-                          className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-4 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
+                          className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-10 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
+                          tabIndex={-1}
+                        >
+                          {showNewPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
 
@@ -431,13 +452,21 @@ export default function Login() {
                       <div className="relative">
                         <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                         <input
-                          type="password"
+                          type={showConfirmPassword ? 'text' : 'password'}
                           value={confirmNewPassword}
                           onChange={(e) => setConfirmNewPassword(e.target.value)}
                           placeholder="Digite a senha novamente"
                           required
-                          className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-4 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
+                          className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-10 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
                         />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
+                          tabIndex={-1}
+                        >
+                          {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
                       </div>
                     </div>
 

@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { createAuditLog } from '../utils/auditLogger';
+import { sendWhatsAppMessage } from '../services/whatsapp';
 
 export default async function adminRoutes(app: FastifyInstance) {
   // All admin routes require authentication
@@ -740,6 +741,133 @@ export default async function adminRoutes(app: FastifyInstance) {
     });
 
     return reply.status(204).send();
+  });
+
+  // GET /api/admin/bookings/refunds — List all refund requests for professional
+  app.get('/bookings/refunds', async (request) => {
+    const user = request.user as { id: number };
+
+    const refundBookings = await prisma.booking.findMany({
+      where: {
+        timeSlot: { link: { adminId: user.id } },
+        OR: [
+          { refundStatus: 'PENDING' },
+          { refundStatus: 'REFUNDED' },
+          { status: 'CANCELADO', paidAmount: { gt: 0 } }
+        ]
+      },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: { service: true }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    return refundBookings;
+  });
+
+  // POST /api/admin/bookings/:id/refund — Process refund for a booking
+  app.post('/bookings/:id/refund', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { id } = request.params as { id: string };
+
+    const admin = await prisma.admin.findUnique({ where: { id: user.id } });
+    if (!admin) return reply.status(404).send({ error: 'Profissional não encontrado' });
+
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: parseInt(id),
+        timeSlot: { link: { adminId: user.id } }
+      },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: { service: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    if (booking.paidAmount <= 0) {
+      return reply.status(400).send({ error: 'Este agendamento não possui pagamento a ser estornado.' });
+    }
+
+    if (booking.refundStatus === 'REFUNDED') {
+      return reply.status(400).send({ error: 'O estorno para este agendamento já foi realizado anteriormente.' });
+    }
+
+    // Call Mercado Pago Refund API if mpPaymentId and valid access token exist
+    if (booking.mpPaymentId && admin.mpAccessToken && admin.mpAccessToken !== 'SIMULADOR') {
+      try {
+        const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${booking.mpPaymentId}/refunds`, {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${admin.mpAccessToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        if (!mpResponse.ok) {
+          const errData = await mpResponse.json().catch(() => ({}));
+          console.error('Erro Mercado Pago refund API:', errData);
+        }
+      } catch (err) {
+        console.error('Falha ao conectar com Mercado Pago refund:', err);
+      }
+    }
+
+    // Update booking status
+    const updated = await prisma.booking.update({
+      where: { id: booking.id },
+      data: {
+        status: 'ESTORNADO',
+        refundStatus: 'REFUNDED',
+        refundAmount: booking.paidAmount
+      }
+    });
+
+    // Record payable transaction (debit/outflow) in Cash Flow
+    await prisma.transaction.create({
+      data: {
+        type: 'payable',
+        description: `Estorno Agendamento - ${booking.clientName}`,
+        amount: booking.paidAmount,
+        dueDate: new Date().toISOString().split('T')[0],
+        paid: true,
+        paidAt: new Date().toISOString().split('T')[0],
+        clientName: booking.clientName,
+        category: 'Estorno',
+        notes: `Estorno efetuado via BoraMarka (Agendamento #${booking.id})`,
+        adminId: user.id
+      }
+    });
+
+    // Notify client via WhatsApp
+    const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+    const refundClientMsg = [
+      `🎉 *Estorno Realizado!*`,
+      '',
+      `Olá ${booking.clientName}! O valor de *R$ ${booking.paidAmount.toFixed(2)}* referente ao seu agendamento de *${booking.timeSlot.link.service?.name || 'Serviço'}* (${formattedDate} às ${booking.timeSlot.time}) foi estornado com sucesso!`,
+      '',
+      `Qualquer dúvida, estamos à disposição. 😊`
+    ].join('\n');
+    await sendWhatsAppMessage(booking.clientPhone, refundClientMsg);
+
+    return {
+      success: true,
+      booking: updated,
+      message: `Estorno de R$ ${booking.paidAmount.toFixed(2)} realizado com sucesso!`
+    };
   });
 
   // GET /api/admin/coupons — Get all coupons

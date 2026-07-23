@@ -65,19 +65,35 @@ export async function sendWhatsAppMessage(
 export function generateBookingMessage(
   clientName: string,
   date: string,
-  time: string
+  time: string,
+  serviceName?: string,
+  cancellationCode?: string,
+  cancelUrl?: string
 ): string {
   // Format date from YYYY-MM-DD to DD/MM/YYYY
   const [year, month, day] = date.split('-');
   const formattedDate = `${day}/${month}/${year}`;
 
-  return [
+  const lines = [
     `Olá, ${clientName}! ✅`,
     '',
-    `Seu horário foi confirmado:`,
+    `Seu horário foi agendado com sucesso:`,
+    ...(serviceName ? [`💼 Serviço: *${serviceName}*`] : []),
     `📅 Data: *${formattedDate}*`,
     `🕐 Hora: *${time}*`,
-    '',
-    `Obrigado pela preferência! 😊`,
-  ].join('\n');
+  ];
+
+  if (cancellationCode) {
+    lines.push('');
+    lines.push(`🔑 Código de Gerenciamento: *${cancellationCode}*`);
+  }
+
+  if (cancelUrl) {
+    lines.push(`🔗 Cancelar ou Remarcar: ${cancelUrl}`);
+  }
+
+  lines.push('');
+  lines.push(`Obrigado pela preferência! 😊`);
+
+  return lines.join('\n');
 }
