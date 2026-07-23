@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
 import {
-  Calendar, Plus, Trash2, Copy, RefreshCw, Link2,
+  Calendar, Plus, Trash2, Copy, RefreshCw, RotateCcw, Link2,
   Clock, Users, LogOut, X, Check, ExternalLink,
   AlertCircle, Loader2, ChevronDown, DollarSign,
   TrendingUp, TrendingDown, Wallet, CreditCard, Gift, Tag,
@@ -507,7 +507,7 @@ function maskPhone(value: string): string {
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos'>('overview')
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>('operacional')
@@ -561,6 +561,22 @@ export default function Dashboard() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
+  const [refundRequests, setRefundRequests] = useState<any[]>([])
+  const [processingRefundId, setProcessingRefundId] = useState<number | null>(null)
+
+  const fetchRefundRequests = useCallback(async () => {
+    try {
+      const data = await api.getRefundRequests()
+      setRefundRequests(data)
+    } catch (err) {
+      console.error('Erro ao carregar solicitações de estorno:', err)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchRefundRequests()
+  }, [fetchRefundRequests])
+
   // Data
   const [stats, setStats] = useState<Stats>({ totalLinks: 0, totalSlots: 0, totalBookings: 0, availableSlots: 0 })
   const [financeStats, setFinanceStats] = useState<FinanceStats>({
@@ -573,7 +589,7 @@ export default function Dashboard() {
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
-    type TabIdType = 'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit'
+    type TabIdType = 'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos'
     interface NavItem {
       id: TabIdType
       label: string
@@ -581,6 +597,8 @@ export default function Dashboard() {
       desc: string
       badge?: number
     }
+
+    const pendingRefundsCount = refundRequests.filter(r => r.refundStatus === 'PENDING').length
 
     return [
       {
@@ -595,9 +613,10 @@ export default function Dashboard() {
         label: 'Operacional',
         icon: Calendar,
         type: 'dropdown' as const,
-        badge: bookings.length > 0 ? bookings.length : undefined,
+        badge: (bookings.length + pendingRefundsCount) > 0 ? (bookings.length + pendingRefundsCount) : undefined,
         items: [
           { id: 'agendamentos', label: 'Agendamentos', icon: Calendar, desc: 'Lista e confirmação de horários agendados', badge: bookings.length },
+          { id: 'estornos', label: 'Solicitações de Estorno', icon: RotateCcw, desc: 'Gerenciar cancelamentos com reembolso pendente', badge: pendingRefundsCount > 0 ? pendingRefundsCount : undefined },
           { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Base completa e histórico de clientes' },
           { id: 'horarios', label: 'Gerenciar Agenda', icon: Clock, desc: 'Configuração da grade de horários disponíveis' },
         ] as NavItem[]
@@ -3059,6 +3078,106 @@ export default function Dashboard() {
                     <div className="text-center py-20 italic text-slate-450 dark:text-slate-500">Nenhum lançamento encontrado</div>
                   )}
                </div>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'estornos' && (
+          <div className="animate-slide-up space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white leading-tight flex items-center gap-2">
+                  <RotateCcw className="w-6 h-6 text-amber-500" />
+                  Central de Estornos & Reembolsos
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                  Gerencie o reembolso de agendamentos cancelados que continham sinal ou pagamento efetuado.
+                </p>
+              </div>
+              <button
+                onClick={fetchRefundRequests}
+                className="flex items-center gap-2 bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 dark:hover:bg-white/[0.1] text-slate-700 dark:text-white font-bold py-2.5 px-4 rounded-xl transition-all text-xs border border-slate-200 dark:border-white/10"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Atualizar Lista
+              </button>
+            </div>
+
+            <div className="grid gap-4">
+              {refundRequests.map(item => {
+                const isPending = item.refundStatus === 'PENDING'
+                const serviceName = item.timeSlot?.link?.service?.name || 'Serviço'
+                const isProcessing = processingRefundId === item.id
+
+                return (
+                  <div key={item.id} className="bg-white dark:bg-[#0d0d12]/80 backdrop-blur-xl border border-slate-200 dark:border-white/10 rounded-2xl p-5 shadow-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 transition-all">
+                    <div className="space-y-1.5 min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="font-extrabold text-base text-slate-900 dark:text-white">{item.clientName}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">({item.clientPhone})</span>
+                        {isPending ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/20 uppercase tracking-wider">
+                            Estorno Pendente
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 uppercase tracking-wider">
+                            Estornado / Reembolsado
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                        💼 Serviço: <strong className="text-slate-900 dark:text-white">{serviceName}</strong> • 📅 Data: <strong className="text-slate-900 dark:text-white">{formatDate(item.timeSlot?.date || '')} às {item.timeSlot?.time}</strong>
+                      </p>
+                      {item.cancellationCode && (
+                        <p className="text-[11px] text-slate-400 font-mono">
+                          🔑 Cód: {item.cancellationCode} {item.mpPaymentId ? `• Ref MP: ${item.mpPaymentId}` : ''}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-4 shrink-0 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-slate-100 dark:border-white/5 pt-3 md:pt-0">
+                      <div className="text-right">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Valor a Estornar</p>
+                        <p className="text-lg font-black text-amber-500 dark:text-amber-400">
+                          {formatCurrency(item.paidAmount || 0)}
+                        </p>
+                      </div>
+
+                      {isPending ? (
+                        <button
+                          onClick={async () => {
+                            if (!window.confirm(`Confirma o estorno de ${formatCurrency(item.paidAmount || 0)} para ${item.clientName}?`)) return
+                            setProcessingRefundId(item.id)
+                            try {
+                              const res = await api.processRefund(item.id)
+                              setToast({ message: res.message || 'Estorno realizado com sucesso!', type: 'success' })
+                              fetchRefundRequests()
+                            } catch (err: any) {
+                              setToast({ message: err.message || 'Erro ao processar estorno.', type: 'error' })
+                            } finally {
+                              setProcessingRefundId(null)
+                            }
+                          }}
+                          disabled={isProcessing}
+                          className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-extrabold px-5 py-2.5 rounded-xl transition-all shadow-md shadow-amber-500/20 text-xs flex items-center gap-1.5 disabled:opacity-50"
+                        >
+                          {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+                          Realizar Estorno
+                        </button>
+                      ) : (
+                        <span className="text-xs font-bold text-emerald-500 dark:text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-4 h-4" /> Concluído
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+
+              {refundRequests.length === 0 && (
+                <div className="text-center py-20 bg-white dark:bg-[#0d0d12]/40 rounded-3xl border border-slate-200 dark:border-white/5 text-slate-400 dark:text-slate-600 italic">
+                  Nenhuma solicitação de estorno pendente.
+                </div>
+              )}
             </div>
           </div>
         )}

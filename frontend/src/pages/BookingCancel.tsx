@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
-import { Calendar, Clock, Loader2, AlertCircle, Phone, XCircle, CheckCircle2, ChevronLeft, Sparkles, RefreshCw } from 'lucide-react'
+import { Calendar, Clock, Loader2, AlertCircle, Phone, XCircle, CheckCircle2, ChevronLeft, Sparkles, RefreshCw, Key } from 'lucide-react'
 
 function formatDate(dateStr: string): string {
   if (!dateStr) return ''
@@ -19,11 +19,17 @@ function getWeekday(dateStr: string): string {
 
 export default function BookingCancel() {
   const { token, bookingId } = useParams<{ token: string; bookingId: string }>()
+  const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+
+  // Query parameter code
+  const urlCode = searchParams.get('code') || ''
 
   // General States
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [cancelCodeInput, setCancelCodeInput] = useState(urlCode)
+  const [refundInfo, setRefundInfo] = useState<{ isPending: boolean; amount: number; message: string } | null>(null)
   const [booking, setBooking] = useState<{
     id: number
     clientName: string
@@ -34,6 +40,10 @@ export default function BookingCancel() {
     businessPhone: string
     serviceName: string
     price: number
+    paidAmount?: number
+    status?: string
+    cancellationCode?: string
+    refundStatus?: string
   } | null>(null)
 
   // Booking Flow States
@@ -57,6 +67,9 @@ export default function BookingCancel() {
       .then(data => {
         setBooking(data)
         setBusinessPhone(data.businessPhone)
+        if (data.cancellationCode && !urlCode) {
+          setCancelCodeInput(data.cancellationCode)
+        }
       })
       .catch(err => {
         setError(err.message || 'Agendamento não encontrado.')
@@ -89,7 +102,14 @@ export default function BookingCancel() {
     setPolicyError('')
 
     try {
-      await api.cancelPublicBooking(Number(bookingId))
+      const res = await api.cancelPublicBooking(Number(bookingId), cancelCodeInput)
+      if (res.refundPending) {
+        setRefundInfo({
+          isPending: true,
+          amount: res.refundAmount || booking?.paidAmount || 0,
+          message: res.message || 'Solicitação de estorno enviada ao profissional.'
+        })
+      }
       setMode('cancelled')
     } catch (err: any) {
       if (err.error === 'PRAZO_LIMITE_EXPIRADO') {
@@ -173,9 +193,21 @@ export default function BookingCancel() {
             <CheckCircle2 className="w-9 h-9" />
           </div>
           <h1 className="text-2xl font-black mb-2">Cancelado com Sucesso!</h1>
-          <p className="text-white/45 text-sm font-semibold mb-6 leading-relaxed">
-            Seu horário foi cancelado. A vaga foi liberada na agenda de <span className="text-white font-bold">{booking?.businessName}</span>.
+          <p className="text-white/60 text-sm font-semibold mb-4 leading-relaxed">
+            Seu horário foi cancelado e a vaga foi liberada na agenda de <span className="text-white font-bold">{booking?.businessName}</span>.
           </p>
+
+          {refundInfo?.isPending && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 mb-6 text-left space-y-1">
+              <p className="text-xs font-black text-amber-300 flex items-center gap-1.5">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" /> Solicitação de Estorno Enviada
+              </p>
+              <p className="text-[11.5px] text-amber-200/80 leading-relaxed">
+                Como você realizou o pagamento de <strong className="text-white">R$ {refundInfo.amount.toFixed(2)}</strong>, o profissional foi notificado para efetuar o reembolso.
+              </p>
+            </div>
+          )}
+
           <button
             onClick={() => navigate(`/agendar/${token}`)}
             className="w-full bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-700 hover:to-pink-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-violet-600/20 text-sm"
@@ -289,6 +321,14 @@ export default function BookingCancel() {
                     <span className="text-[11px] text-white/30 font-bold uppercase tracking-wider">Serviço</span>
                     <span className="text-xs font-bold text-white/80">{booking?.serviceName}</span>
                   </div>
+                  {booking?.cancellationCode && (
+                    <div className="flex justify-between items-center pb-2.5 border-b border-white/[0.04]">
+                      <span className="text-[11px] text-white/30 font-bold uppercase tracking-wider">Cód. Cancelamento</span>
+                      <span className="text-xs font-black text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-md border border-amber-500/20 font-mono tracking-widest">
+                        {booking.cancellationCode}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex justify-between items-center pb-2.5 border-b border-white/[0.04]">
                     <span className="text-[11px] text-white/30 font-bold uppercase tracking-wider">Valor</span>
                     <span className="text-xs font-bold text-violet-400">

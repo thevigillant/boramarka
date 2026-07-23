@@ -117,16 +117,20 @@ model TimeSlot {
 }
 
 model Booking {
-  id           Int      @id @default(autoincrement())
-  clientName   String   @map("client_name")
-  clientPhone  String   @map("client_phone")
-  status       String   @default("PENDENTE")
-  timeSlotId   Int      @unique @map("time_slot_id")
-  timeSlot     TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
-  paidAmount   Float    @default(0) @map("paid_amount")
-  reminderSent Boolean  @default(false) @map("reminder_sent")
-  notes        String   @default("")
-  createdAt    DateTime @default(now()) @map("created_at")
+  id               Int      @id @default(autoincrement())
+  clientName       String   @map("client_name")
+  clientPhone      String   @map("client_phone")
+  status           String   @default("PENDENTE")
+  timeSlotId       Int      @unique @map("time_slot_id")
+  timeSlot         TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
+  paidAmount       Float    @default(0) @map("paid_amount")
+  reminderSent     Boolean  @default(false) @map("reminder_sent")
+  notes            String   @default("")
+  cancellationCode String   @default("") @map("cancellation_code")
+  mpPaymentId      String   @default("") @map("mp_payment_id")
+  refundStatus     String   @default("NONE") @map("refund_status")
+  refundAmount     Float    @default(0) @map("refund_amount")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   @@map("bookings")
 }
