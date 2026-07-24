@@ -135,6 +135,9 @@ export const api = {
       publicTheme?: string;
       bannerUrl?: string;
       customDomain?: string;
+      reminderEnabled?: boolean;
+      reminderHours?: string;
+      reminderChannels?: string;
     }>('/admin/profile'),
 
   updateProfile: (data: {
@@ -153,6 +156,9 @@ export const api = {
     publicTheme?: string;
     bannerUrl?: string;
     customDomain?: string | null;
+    reminderEnabled?: boolean;
+    reminderHours?: string;
+    reminderChannels?: string;
   }) =>
     request('/admin/profile', {
       method: 'PUT',
@@ -233,13 +239,44 @@ export const api = {
       description: string | null;
       price: number;
       duration: number;
+      isUpsellable?: boolean;
+      upsellDiscount?: number;
       createdAt: string;
+      mainUpsells?: Array<{
+        id: number;
+        addonService: {
+          id: number;
+          name: string;
+          price: number;
+          duration: number;
+          description?: string;
+        };
+      }>;
     }>>('/services'),
 
-  createService: (data: { name: string; description?: string; price: number; duration: number }) =>
+  createService: (data: {
+    name: string;
+    description?: string;
+    price: number;
+    duration: number;
+    isUpsellable?: boolean;
+    upsellDiscount?: number;
+    addonServiceIds?: number[];
+  }) =>
     request('/services', { method: 'POST', body: JSON.stringify(data) }),
 
-  updateService: (id: number, data: { name?: string; description?: string; price?: number; duration?: number }) =>
+  updateService: (
+    id: number,
+    data: {
+      name?: string;
+      description?: string;
+      price?: number;
+      duration?: number;
+      isUpsellable?: boolean;
+      upsellDiscount?: number;
+      addonServiceIds?: number[];
+    }
+  ) =>
     request(`/services/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 
   deleteService: (id: number) =>
@@ -278,6 +315,12 @@ export const api = {
 
   updateBookingNotes: (id: number, notes: string) =>
     request(`/admin/bookings/${id}/notes`, { method: 'PUT', body: JSON.stringify({ notes }) }),
+
+  rescheduleBooking: (id: number, data: { newTimeSlotId?: number; newDate?: string; newTime?: string }) =>
+    request(`/admin/bookings/${id}/reschedule`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
 
   createManualBooking: (data: {
     linkId: number;
@@ -346,6 +389,31 @@ export const api = {
   deleteTransaction: (id: number) =>
     request(`/finance/transactions/${id}`, { method: 'DELETE' }),
 
+  getRevenueReport: (startDate?: string, endDate?: string) => {
+    const query = new URLSearchParams();
+    if (startDate) query.append('startDate', startDate);
+    if (endDate) query.append('endDate', endDate);
+    return request<{
+      period: { startDate: string | null; endDate: string | null };
+      summary: {
+        totalRevenue: number;
+        pendingRevenue: number;
+        totalCompletedBookings: number;
+        averageTicket: number;
+      };
+      byService: Array<{
+        serviceId: number | null;
+        serviceName: string;
+        totalBookings: number;
+        completedBookings: number;
+        totalRevenue: number;
+        pendingRevenue: number;
+        avgTicket: number;
+        percentageOfTotal: number;
+      }>;
+    }>(`/finance/revenue-report?${query.toString()}`);
+  },
+
   // ═══ Schedule (Public) ═══
   getPublicProfile: (username: string) =>
     request<{
@@ -403,12 +471,20 @@ export const api = {
         discountType: 'percentage' | 'fixed';
         discountValue: number;
       }>;
+      availableUpsells?: Array<{
+        id: number;
+        name: string;
+        price: number;
+        duration: number;
+        description?: string;
+        upsellDiscount?: number;
+      }>;
       accentColor?: string;
       secondaryColor?: string;
       publicTheme?: string;
     }>(`/schedule/${token}`),
 
-  bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string; payFullPrice?: boolean }) =>
+  bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string; payFullPrice?: boolean; addonIds?: number[] }) =>
     request<{
       booking: { id: number; clientName: string; clientPhone: string; date: string; time: string };
       whatsapp: { success: boolean; method: 'api' | 'link'; link?: string };
@@ -443,6 +519,8 @@ export const api = {
       status?: string;
       cancellationCode?: string;
       refundStatus?: string;
+      selectedAddons?: string;
+      totalAmount?: number;
     }>(`/schedule/booking/${id}`),
 
   cancelPublicBooking: (id: number, code?: string) =>
@@ -849,4 +927,31 @@ export const api = {
       createdAt: string;
     }>>(`/admin/audit-logs?${query.toString()}`);
   },
+
+  // ═══ Reminders ═══
+  getReminderLogs: (limit = 50, offset = 0) =>
+    request<{
+      logs: Array<{
+        id: number;
+        bookingId: number;
+        channel: string;
+        status: string;
+        message: string;
+        hoursLabel: string;
+        clientName: string;
+        clientPhone: string;
+        createdAt: string;
+      }>;
+      total: number;
+    }>(`/admin/reminders/log?limit=${limit}&offset=${offset}`),
+
+  // ═══ Push Notifications (Public) ═══
+  getVapidKey: () =>
+    request<{ vapidPublicKey: string; configured: boolean }>('/schedule/vapid-key'),
+
+  subscribeToPush: (token: string, subscription: PushSubscriptionJSON, clientPhone: string) =>
+    request<{ success: boolean }>('/schedule/push-subscribe', {
+      method: 'POST',
+      body: JSON.stringify({ token, subscription, clientPhone }),
+    }),
 };

@@ -31,6 +31,8 @@ interface BookingCardProps {
   onConfirm: (id: number) => void
   onCancel: (id: number) => void
   onSaveNotes: (id: number, notes: string) => void
+  onReschedule?: (booking: BookingData) => void
+  onOpenClientHistory?: (name: string, phone: string) => void
   formatDate: (dateStr: string) => string
   formatCurrency: (value: number) => string
 }
@@ -41,6 +43,8 @@ export function BookingCard({
   onConfirm,
   onCancel,
   onSaveNotes,
+  onReschedule,
+  onOpenClientHistory,
   formatDate,
   formatCurrency
 }: BookingCardProps) {
@@ -56,7 +60,7 @@ export function BookingCard({
 
   return (
     <div
-      className={`card-simple p-5 flex flex-col justify-between gap-3.5 transition-all ${
+      className={`card-simple p-5 flex flex-col justify-between gap-3.5 transition-all group ${
         isDone
           ? 'border-emerald-500/40 bg-emerald-500/[0.03] dark:bg-emerald-500/[0.04]'
           : 'hover:border-pink-200 dark:hover:border-pink-500/50'
@@ -80,11 +84,14 @@ export function BookingCard({
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
               <h4
-                className={`font-black text-lg leading-none ${
+                onClick={() => onOpenClientHistory?.(booking.clientName, booking.clientPhone)}
+                className={`font-black text-lg leading-none transition-colors cursor-pointer hover:text-pink-500 flex items-center gap-1.5 ${
                   isDone ? 'line-through text-slate-400 dark:text-slate-400 opacity-80' : 'text-slate-900 dark:text-white'
                 }`}
+                title="Clique para ver Ficha Rápida & Histórico do Cliente"
               >
-                {booking.clientName}
+                <span>{booking.clientName}</span>
+                <span className="text-[10px] font-bold bg-pink-500/10 text-pink-500 px-2 py-0.5 rounded-full border border-pink-500/20 opacity-80 group-hover:opacity-100 transition-opacity">Ficha</span>
               </h4>
               {isDone ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
@@ -135,6 +142,17 @@ export function BookingCard({
         </div>
 
         <div className="flex items-center gap-2 self-stretch sm:self-auto justify-end border-t sm:border-t-0 border-slate-100 dark:border-slate-800 pt-3 sm:pt-0">
+          {onReschedule && (
+            <button
+              onClick={() => onReschedule(booking)}
+              className="px-3 py-1.5 bg-pink-500/10 hover:bg-pink-500/20 text-pink-500 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 border border-pink-500/20 cursor-pointer"
+              title="Reagendar data e horário deste cliente"
+            >
+              <Clock className="w-3.5 h-3.5 text-pink-500" />
+              <span>Reagendar</span>
+            </button>
+          )}
+
           {booking.status === 'PENDENTE' && (
             <button
               onClick={() => onConfirm(booking.id)}

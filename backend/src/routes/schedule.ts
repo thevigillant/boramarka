@@ -4,6 +4,7 @@ import { sendWhatsAppMessage, generateBookingMessage } from '../services/whatsap
 import { checkAndUpdateSubscription } from '../services/subscription';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getGoogleCalendarEvents } from '../services/googleCalendar';
+import { getVapidPublicKey, isPushConfigured } from '../services/pushNotification';
 
 async function cleanupExpiredBookings(token: string) {
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -316,6 +317,50 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       }
     });
 
+    // Buscar upsells/serviços adicionais recomendados para este serviço
+    let availableUpsells: any[] = [];
+    if (link.serviceId) {
+      const specificUpsells = await prisma.serviceUpsell.findMany({
+        where: { mainServiceId: link.serviceId },
+        include: {
+          addonService: {
+            select: {
+              id: true,
+              name: true,
+              price: true,
+              duration: true,
+              description: true,
+              upsellDiscount: true,
+            },
+          },
+        },
+      });
+
+      if (specificUpsells.length > 0) {
+        availableUpsells = specificUpsells.map((u) => u.addonService);
+      }
+    }
+
+    // Fallback: se não houver upsells específicos cadastrados, oferecer outros serviços ativos do mesmo profissional
+    if (availableUpsells.length === 0) {
+      availableUpsells = await prisma.service.findMany({
+        where: {
+          adminId: link.adminId,
+          isUpsellable: true,
+          id: link.serviceId ? { not: link.serviceId } : undefined,
+        },
+        select: {
+          id: true,
+          name: true,
+          price: true,
+          duration: true,
+          description: true,
+          upsellDiscount: true,
+        },
+        take: 6,
+      });
+    }
+
     return {
       title: link.title,
       dates: Object.keys(slotsByDate).sort(),
@@ -325,6 +370,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       serviceName: link.service?.name || '',
       servicePrice: link.service?.price || 0,
       activeCoupons: coupons,
+      availableUpsells,
       accentColor: link.admin.accentColor,
       secondaryColor: link.admin.secondaryColor,
       publicTheme: link.admin.publicTheme,
@@ -334,11 +380,12 @@ export default async function scheduleRoutes(app: FastifyInstance) {
   // POST /api/schedule/:token/book — Book a time slot
   app.post('/:token/book', async (request, reply) => {
     const { token } = request.params as { token: string };
-    const { timeSlotId, clientName, clientPhone, payFullPrice } = request.body as {
+    const { timeSlotId, clientName, clientPhone, payFullPrice, addonIds } = request.body as {
       timeSlotId: number;
       clientName: string;
       clientPhone: string;
       payFullPrice?: boolean;
+      addonIds?: number[];
     };
 
     // Validate input
@@ -401,6 +448,33 @@ export default async function scheduleRoutes(app: FastifyInstance) {
 
     const isFeeRequired = link.bookingFeeEnabled && link.bookingFeeAmount > 0 && !activeSub;
 
+    // Fetch addon details & calculate total amount
+    const mainPrice = link.service?.price || 0;
+    let computedTotal = mainPrice;
+    const selectedAddonsData: Array<{ id: number; name: string; price: number; duration: number }> = [];
+
+    if (Array.isArray(addonIds) && addonIds.length > 0) {
+      const addons = await prisma.service.findMany({
+        where: {
+          id: { in: addonIds },
+          adminId: link.adminId,
+          isUpsellable: true,
+        },
+      });
+
+      for (const addon of addons) {
+        const discount = addon.upsellDiscount > 0 ? addon.upsellDiscount : 0;
+        const finalPrice = Math.max(0, addon.price * (1 - discount / 100));
+        computedTotal += finalPrice;
+        selectedAddonsData.push({
+          id: addon.id,
+          name: addon.name,
+          price: finalPrice,
+          duration: addon.duration,
+        });
+      }
+    }
+
     // Check if Booking Fee is enabled and required (not bypassed by active membership)
     if (isFeeRequired) {
       const admin = await prisma.admin.findUnique({
@@ -433,6 +507,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
             timeSlotId,
             status: 'AGUARDANDO_PAGAMENTO',
             cancellationCode: generateCancellationCode(),
+            selectedAddons: JSON.stringify(selectedAddonsData),
+            totalAmount: computedTotal,
           },
           include: {
             timeSlot: true,
@@ -449,9 +525,9 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         return reply.status(409).send({ error: 'Este horário acabou de ser reservado. Escolha outro.' });
       }
 
-      // Determine payment amount: full service price or just the booking fee
-      const paymentAmount = payFullPrice && link.service?.price
-        ? link.service.price
+      // Determine payment amount: full computed price or just the booking fee
+      const paymentAmount = payFullPrice && computedTotal > 0
+        ? computedTotal
         : link.bookingFeeAmount;
       const paymentLabel = payFullPrice && link.service?.price
         ? `Pagamento Total - ${admin.businessName || 'Profissional'}`
@@ -551,6 +627,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           timeSlotId,
           status: 'PENDENTE',
           cancellationCode: generateCancellationCode(),
+          selectedAddons: JSON.stringify(selectedAddonsData),
+          totalAmount: computedTotal,
         },
         include: {
           timeSlot: true,
@@ -1185,5 +1263,69 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       planName: subscription.plan.name,
       expiresAt: subscription.expiresAt
     };
+  });
+
+  // ═══════════════════════════════════════════
+  //  PUSH NOTIFICATIONS (PUBLIC)
+  // ═══════════════════════════════════════════
+
+  // GET /api/schedule/vapid-key — Public VAPID key for client subscription
+  app.get('/vapid-key', async () => {
+    const key = getVapidPublicKey();
+    return { vapidPublicKey: key, configured: isPushConfigured() };
+  });
+
+  // POST /api/schedule/push-subscribe — Register push subscription for a client
+  app.post('/push-subscribe', async (request, reply) => {
+    const { token, subscription, clientPhone } = request.body as {
+      token: string;
+      subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+      clientPhone: string;
+    };
+
+    if (!token || !subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth || !clientPhone) {
+      return reply.status(400).send({ error: 'Dados incompletos para registar push subscription.' });
+    }
+
+    // Find the scheduling link to get adminId
+    const link = await prisma.schedulingLink.findUnique({
+      where: { token },
+      select: { adminId: true },
+    });
+
+    if (!link) {
+      return reply.status(404).send({ error: 'Link de agendamento não encontrado.' });
+    }
+
+    const cleanPhone = clientPhone.replace(/\D/g, '');
+
+    // Upsert — avoid duplicate subscriptions for same endpoint
+    const existing = await prisma.pushSubscription.findFirst({
+      where: { endpoint: subscription.endpoint, adminId: link.adminId },
+    });
+
+    if (existing) {
+      await prisma.pushSubscription.update({
+        where: { id: existing.id },
+        data: {
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth,
+          clientPhone: cleanPhone,
+        },
+      });
+    } else {
+      await prisma.pushSubscription.create({
+        data: {
+          endpoint: subscription.endpoint,
+          p256dh: subscription.keys.p256dh,
+          auth: subscription.keys.auth,
+          clientPhone: cleanPhone,
+          adminId: link.adminId,
+        },
+      });
+    }
+
+    console.log(`🔔 Push subscription registada para ${cleanPhone} (admin ${link.adminId})`);
+    return { success: true };
   });
 }

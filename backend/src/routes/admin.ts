@@ -46,6 +46,9 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
       customDomain: admin.customDomain,
+      reminderEnabled: admin.reminderEnabled,
+      reminderHours: admin.reminderHours,
+      reminderChannels: admin.reminderChannels,
     };
   });
 
@@ -66,7 +69,10 @@ export default async function adminRoutes(app: FastifyInstance) {
       secondaryColor,
       publicTheme,
       bannerUrl,
-      customDomain
+      customDomain,
+      reminderEnabled,
+      reminderHours,
+      reminderChannels
     } = request.body as {
       username?: string;
       email?: string;
@@ -83,6 +89,9 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme?: string;
       bannerUrl?: string;
       customDomain?: string | null;
+      reminderEnabled?: boolean;
+      reminderHours?: string;
+      reminderChannels?: string;
     };
 
     let newUsername: string | undefined;
@@ -147,6 +156,9 @@ export default async function adminRoutes(app: FastifyInstance) {
         ...(publicTheme !== undefined && { publicTheme: publicTheme.trim() }),
         ...(bannerUrl !== undefined && { bannerUrl: bannerUrl.trim() }),
         ...(finalCustomDomain !== undefined && { customDomain: finalCustomDomain }),
+        ...(reminderEnabled !== undefined && { reminderEnabled }),
+        ...(reminderHours !== undefined && { reminderHours: reminderHours.trim() }),
+        ...(reminderChannels !== undefined && { reminderChannels: reminderChannels.trim().toLowerCase() }),
       },
     });
 
@@ -165,6 +177,9 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
       customDomain: admin.customDomain,
+      reminderEnabled: admin.reminderEnabled,
+      reminderHours: admin.reminderHours,
+      reminderChannels: admin.reminderChannels,
     };
   });
 
@@ -605,6 +620,103 @@ export default async function adminRoutes(app: FastifyInstance) {
     return updated;
   });
 
+  // Reschedule booking by Admin (Etapa 2-D)
+  app.put('/bookings/:id/reschedule', async (request, reply) => {
+    const user = request.user as { id: number };
+    const { id } = request.params as { id: string };
+    const { newTimeSlotId, newDate, newTime } = request.body as {
+      newTimeSlotId?: number;
+      newDate?: string;
+      newTime?: string;
+    };
+
+    const booking = await prisma.booking.findFirst({
+      where: {
+        id: parseInt(id),
+        timeSlot: { link: { adminId: user.id } }
+      },
+      include: {
+        timeSlot: true
+      }
+    });
+
+    if (!booking) {
+      return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    let targetSlotId: number | null = null;
+
+    if (newTimeSlotId) {
+      const targetSlot = await prisma.timeSlot.findFirst({
+        where: {
+          id: newTimeSlotId,
+          link: { adminId: user.id }
+        }
+      });
+      if (!targetSlot) {
+        return reply.status(404).send({ error: 'Novo horário não encontrado' });
+      }
+      targetSlotId = targetSlot.id;
+    } else if (newDate && newTime) {
+      let targetSlot = await prisma.timeSlot.findFirst({
+        where: {
+          linkId: booking.timeSlot.linkId,
+          date: newDate,
+          time: newTime
+        }
+      });
+
+      if (!targetSlot) {
+        targetSlot = await prisma.timeSlot.create({
+          data: {
+            linkId: booking.timeSlot.linkId,
+            date: newDate,
+            time: newTime,
+            isAvailable: false
+          }
+        });
+      }
+      targetSlotId = targetSlot.id;
+    } else {
+      return reply.status(400).send({ error: 'Informe o novo horário (newTimeSlotId ou newDate + newTime)' });
+    }
+
+    const oldSlotId = booking.timeSlotId;
+
+    const updated = await prisma.booking.update({
+      where: { id: parseInt(id) },
+      data: {
+        timeSlotId: targetSlotId
+      },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: { service: true }
+            }
+          }
+        }
+      }
+    });
+
+    const otherBookings = await prisma.booking.findMany({
+      where: { timeSlotId: oldSlotId, id: { not: parseInt(id) } }
+    });
+    if (otherBookings.length === 0) {
+      await prisma.timeSlot.update({
+        where: { id: oldSlotId },
+        data: { isAvailable: true }
+      });
+    }
+
+    await prisma.timeSlot.update({
+      where: { id: targetSlotId },
+      data: { isAvailable: false }
+    });
+
+    return updated;
+  });
+
   // Update booking notes
   app.put('/bookings/:id/notes', async (request, reply) => {
     const user = request.user as { id: number };
@@ -954,5 +1066,28 @@ export default async function adminRoutes(app: FastifyInstance) {
     });
 
     return reply.status(204).send();
+  });
+
+  // ═══════════════════════════════════════════
+  //  REMINDER LOGS
+  // ═══════════════════════════════════════════
+  app.get('/reminders/log', async (request) => {
+    const user = request.user as { id: number };
+    const { limit, offset } = request.query as { limit?: string; offset?: string };
+
+    const take = Math.min(parseInt(limit || '50'), 200);
+    const skip = parseInt(offset || '0');
+
+    const [logs, total] = await Promise.all([
+      prisma.reminderLog.findMany({
+        where: { adminId: user.id },
+        orderBy: { createdAt: 'desc' },
+        take,
+        skip,
+      }),
+      prisma.reminderLog.count({ where: { adminId: user.id } }),
+    ]);
+
+    return { logs, total, limit: take, offset: skip };
   });
 }
