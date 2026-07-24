@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useParams, useNavigate, Link } from 'react-router-dom'
-import { Check, Calendar, Clock, ArrowLeft, Loader2, Sparkles } from 'lucide-react'
+import { Check, Calendar, Clock, ArrowLeft, Loader2, Sparkles, Bell } from 'lucide-react'
 import { api } from '../services/api'
 
 function formatDate(dateStr: string): string {
@@ -33,9 +33,12 @@ export default function BookingSuccess() {
   const [fetchedBooking, setFetchedBooking] = useState<{
     id: number; clientName: string; clientPhone: string; date: string; time: string;
     businessName: string; businessPhone: string; businessUsername: string; serviceName: string; price: number;
+    selectedAddons?: string; totalAmount?: number;
   } | null>(null)
   const [fetchLoading, setFetchLoading] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(true)
+  const [pushStatus, setPushStatus] = useState<'idle' | 'granted' | 'denied' | 'unsupported'>('idle')
+  const [pushRequesting, setPushRequesting] = useState(false)
 
   const bookingId = state?.booking?.id || (queryBookingId ? parseInt(queryBookingId) : null)
   const isPayFullPrice = state?.payFullPrice || false
@@ -49,6 +52,68 @@ export default function BookingSuccess() {
         .finally(() => setFetchLoading(false))
     }
   }, [bookingId])
+
+  // Check push notification support
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setPushStatus('unsupported');
+    } else if (Notification.permission === 'granted') {
+      setPushStatus('granted');
+    } else if (Notification.permission === 'denied') {
+      setPushStatus('denied');
+    }
+  }, []);
+
+  // Request push notification permission and subscribe
+  const handlePushSubscribe = async () => {
+    if (!token || !booking) return;
+    setPushRequesting(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setPushStatus('denied');
+        setPushRequesting(false);
+        return;
+      }
+
+      // Register service worker
+      const sw = await navigator.serviceWorker.register('/sw.js');
+      await navigator.serviceWorker.ready;
+
+      // Get VAPID key
+      const { vapidPublicKey, configured } = await api.getVapidKey();
+      if (!configured || !vapidPublicKey) {
+        setPushStatus('granted');
+        setPushRequesting(false);
+        return;
+      }
+
+      // Convert VAPID key to Uint8Array
+      const urlBase64ToUint8Array = (base64String: string) => {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+          outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+      };
+
+      const subscription = await sw.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+      });
+
+      // Send subscription to backend
+      await api.subscribeToPush(token, subscription.toJSON(), booking.clientPhone);
+      setPushStatus('granted');
+    } catch (err) {
+      console.error('Erro ao registar push:', err);
+    } finally {
+      setPushRequesting(false);
+    }
+  };
 
   const booking = fetchedBooking || (state?.booking ? {
     id: state.booking.id,
@@ -142,10 +207,34 @@ export default function BookingSuccess() {
               </div>
             </div>
 
-            {booking.price > 0 && (
+            {/* Addons List if present */}
+            {(() => {
+              let addons: Array<{ id: number; name: string; price: number }> = [];
+              try {
+                if (booking.selectedAddons) {
+                  addons = JSON.parse(booking.selectedAddons);
+                }
+              } catch {
+                addons = [];
+              }
+              if (addons.length === 0) return null;
+              return (
+                <div className="pt-2 border-t border-slate-800/80 space-y-1">
+                  <span className="text-[10px] text-pink-500 font-black uppercase tracking-wider block">Adicionais Contratados:</span>
+                  {addons.map((a, i) => (
+                    <div key={i} className="flex justify-between items-center text-xs font-bold text-slate-300">
+                      <span>➕ {a.name}</span>
+                      <span className="font-mono text-emerald-400">+{formatCurrency(a.price)}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {(booking.totalAmount || booking.price) > 0 && (
               <div className="pt-3 border-t border-slate-800 flex justify-between items-center">
                 <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider">Valor total</span>
-                <span className="text-sm font-black text-pink-500">{formatCurrency(booking.price)}</span>
+                <span className="text-sm font-black text-pink-500">{formatCurrency(booking.totalAmount || booking.price)}</span>
               </div>
             )}
           </div>
@@ -223,6 +312,25 @@ export default function BookingSuccess() {
             >
               Ver Detalhes do Comprovante
             </button>
+
+            {/* Push Notification Opt-In */}
+            {pushStatus === 'idle' && (
+              <button
+                onClick={handlePushSubscribe}
+                disabled={pushRequesting}
+                className="w-full mt-3 py-3 flex items-center justify-center gap-2 bg-[#0B0F19] border border-violet-500/30 text-violet-300 font-bold rounded-2xl transition-all hover:border-violet-500/60 hover:text-violet-200 text-xs"
+              >
+                {pushRequesting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Bell className="w-4 h-4" />
+                )}
+                🔔 Ativar lembretes por notificação
+              </button>
+            )}
+            {pushStatus === 'granted' && (
+              <p className="mt-3 text-xs text-emerald-400 font-bold">✅ Notificações ativadas!</p>
+            )}
 
             <button
               onClick={() => navigate(profileLink)}

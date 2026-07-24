@@ -62,6 +62,10 @@ export default function BookingPage() {
   const [accentColor, setAccentColor] = useState('#f97316')
   const [secondaryColor, setSecondaryColor] = useState('#ec4899')
   const [publicTheme, setPublicTheme] = useState('light')
+  
+  // Upsell / Addons state
+  const [availableUpsells, setAvailableUpsells] = useState<Array<{ id: number; name: string; price: number; duration: number; description?: string; upsellDiscount?: number }>>([])
+  const [selectedAddonIds, setSelectedAddonIds] = useState<number[]>([])
 
   useEffect(() => {
     if (!token) return
@@ -75,6 +79,7 @@ export default function BookingPage() {
         setServiceName(data.serviceName)
         setServicePrice(data.servicePrice)
         setActiveCoupons(data.activeCoupons || [])
+        setAvailableUpsells(data.availableUpsells || [])
         setAccentColor(data.accentColor || '#f97316')
         setSecondaryColor(data.secondaryColor || '#ec4899')
         setPublicTheme(data.publicTheme || 'light')
@@ -106,6 +111,27 @@ export default function BookingPage() {
     const slot = slotsByDate[selectedDate]?.find(s => s.id === selectedSlotId)
     return slot?.time || null
   }, [selectedDate, selectedSlotId, slotsByDate])
+
+  const selectedAddonsTotal = useMemo(() => {
+    if (!availableUpsells || availableUpsells.length === 0) return 0;
+    return selectedAddonIds.reduce((sum, id) => {
+      const addon = availableUpsells.find(u => u.id === id);
+      if (!addon) return sum;
+      const discount = addon.upsellDiscount || 0;
+      const finalPrice = Math.max(0, addon.price * (1 - discount / 100));
+      return sum + finalPrice;
+    }, 0);
+  }, [availableUpsells, selectedAddonIds]);
+
+  const selectedAddonsDuration = useMemo(() => {
+    if (!availableUpsells || availableUpsells.length === 0) return 0;
+    return selectedAddonIds.reduce((sum, id) => {
+      const addon = availableUpsells.find(u => u.id === id);
+      return sum + (addon?.duration || 0);
+    }, 0);
+  }, [availableUpsells, selectedAddonIds]);
+
+  const totalServicePrice = servicePrice + selectedAddonsTotal;
 
   const handleApplyCoupon = async () => {
     if (!couponCode.trim() || !token) return
@@ -140,6 +166,7 @@ export default function BookingPage() {
         clientName: clientName.trim(),
         clientPhone: cleanPhone,
         payFullPrice: bookingFeeEnabled && bookingFeeAmount > 0 && !activeMembership ? payFullPrice : undefined,
+        addonIds: selectedAddonIds,
       })
 
       if (result.paymentRequired) {
@@ -449,6 +476,83 @@ export default function BookingPage() {
                 <button type="button" onClick={() => setSelectedSlotId(null)} className="text-pink-600 dark:text-pink-400 font-bold text-sm hover:text-pink-500 transition-colors">Mudar</button>
               </div>
 
+              {/* Upsell / Addons Selection Card */}
+              {availableUpsells.length > 0 && (
+                <div className="mb-6 bg-gradient-to-r from-violet-600/15 via-pink-600/15 to-orange-500/15 border-2 border-pink-500/30 dark:border-pink-500/40 rounded-3xl p-5 space-y-3.5 shadow-xl shadow-pink-500/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-violet-600 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-pink-500/20">
+                        ✨
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                          Aproveite a visita e complete seu visual!
+                        </h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Adicione cuidados extras ao seu horário com 1 clique</p>
+                      </div>
+                    </div>
+                    {selectedAddonIds.length > 0 && (
+                      <span className="text-[10px] font-black bg-gradient-to-r from-pink-500 to-violet-500 text-white px-3 py-1 rounded-full shadow-md shadow-pink-500/20 animate-pulse">
+                        +{selectedAddonIds.length} adicionado(s)
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="space-y-2.5 pt-1">
+                    {availableUpsells.map(addon => {
+                      const isSelected = selectedAddonIds.includes(addon.id);
+                      const discount = addon.upsellDiscount || 0;
+                      const finalPrice = Math.max(0, addon.price * (1 - discount / 100));
+
+                      return (
+                        <div
+                          key={addon.id}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedAddonIds(prev => prev.filter(id => id !== addon.id));
+                            } else {
+                              setSelectedAddonIds(prev => [...prev, addon.id]);
+                            }
+                          }}
+                          className={`p-4 rounded-2xl border text-left flex items-center justify-between cursor-pointer transition-all ${
+                            isSelected
+                              ? 'bg-white dark:bg-[#1A2235] border-pink-500 shadow-lg shadow-pink-500/10 scale-[1.01]'
+                              : 'bg-white/80 dark:bg-[#131826]/90 border-slate-200 dark:border-slate-800 hover:border-pink-500/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                              isSelected ? 'bg-gradient-to-tr from-pink-500 to-violet-500 border-transparent text-white shadow-md' : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
+                            }`}>
+                              {isSelected && <span className="text-xs font-black">✓</span>}
+                            </div>
+                            <div>
+                              <p className="text-xs font-black text-slate-900 dark:text-white">{addon.name}</p>
+                              {addon.description && (
+                                <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium line-clamp-1">{addon.description}</p>
+                              )}
+                              <span className="text-[10px] text-slate-400 font-bold">⏱️ +{addon.duration} min</span>
+                            </div>
+                          </div>
+
+                          <div className="text-right">
+                            {discount > 0 ? (
+                              <div>
+                                <span className="text-[10px] text-slate-400 line-through mr-1 font-mono">R$ {addon.price.toFixed(2)}</span>
+                                <span className="text-sm font-black text-emerald-500 font-mono">R$ {finalPrice.toFixed(2)}</span>
+                                <span className="block text-[9px] font-black text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded-full border border-emerald-500/20">-{discount}% OFF</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm font-black text-pink-600 dark:text-pink-400 font-mono">+R$ {finalPrice.toFixed(2)}</span>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {submitError && (
                 <div className="bg-red-500/10 border border-red-500/20 p-3 rounded-xl text-red-400 text-sm font-semibold mb-4">
                   {submitError}
@@ -567,9 +671,15 @@ export default function BookingPage() {
               {/* Price Summary Breakdown */}
               <div className="bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-800 rounded-2xl p-4 mb-6 space-y-2.5 text-left shadow-sm">
                 <div className="flex justify-between items-center text-xs font-bold text-slate-600 dark:text-slate-350">
-                  <span>Preço do Serviço</span>
+                  <span>Preço do Serviço Principal</span>
                   <span className="text-slate-800 dark:text-slate-200">R$ {servicePrice.toFixed(2)}</span>
                 </div>
+                {selectedAddonsTotal > 0 && (
+                  <div className="flex justify-between items-center text-xs font-bold text-pink-500">
+                    <span>Adicionais ({selectedAddonIds.length})</span>
+                    <span>+R$ {selectedAddonsTotal.toFixed(2)}</span>
+                  </div>
+                )}
                 {appliedCoupon && (
                   <div className="flex justify-between items-center text-emerald-600 dark:text-emerald-400 text-xs font-bold">
                     <span>Cupom ({appliedCoupon.code})</span>
@@ -580,11 +690,11 @@ export default function BookingPage() {
                   <span className="text-xs font-black text-slate-700 dark:text-slate-300">Total a pagar no local</span>
                   <span className="text-lg font-black text-pink-600 dark:text-pink-500">
                     R$ {(() => {
-                      if (!appliedCoupon) return servicePrice;
+                      if (!appliedCoupon) return totalServicePrice;
                       if (appliedCoupon.discountType === 'percentage') {
-                        return Math.max(0, servicePrice - (servicePrice * (appliedCoupon.discountValue / 100)));
+                        return Math.max(0, totalServicePrice - (totalServicePrice * (appliedCoupon.discountValue / 100)));
                       } else {
-                        return Math.max(0, servicePrice - appliedCoupon.discountValue);
+                        return Math.max(0, totalServicePrice - appliedCoupon.discountValue);
                       }
                     })().toFixed(2)}
                   </span>

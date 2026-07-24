@@ -45,6 +45,118 @@ export default async function financeRoutes(app: FastifyInstance) {
   });
 
   // ═══════════════════════════════════════════
+  //  REVENUE REPORT BY SERVICE & PERIOD (Etapa 3-F)
+  // ═══════════════════════════════════════════
+  app.get('/revenue-report', async (request) => {
+    const user = request.user as { id: number };
+    const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
+
+    const whereSlot: any = {
+      link: { adminId: user.id }
+    };
+
+    if (startDate || endDate) {
+      whereSlot.date = {};
+      if (startDate) whereSlot.date.gte = startDate;
+      if (endDate) whereSlot.date.lte = endDate;
+    }
+
+    const bookings = await prisma.booking.findMany({
+      where: {
+        timeSlot: whereSlot
+      },
+      include: {
+        timeSlot: {
+          include: {
+            link: {
+              include: {
+                service: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    let overallTotalRevenue = 0;
+    let overallPendingRevenue = 0;
+    let overallCompletedBookings = 0;
+
+    const serviceMap = new Map<string, {
+      serviceId: number | null;
+      serviceName: string;
+      totalBookings: number;
+      completedBookings: number;
+      totalRevenue: number;
+      pendingRevenue: number;
+    }>();
+
+    bookings.forEach(b => {
+      const serviceName = b.timeSlot?.link?.service?.name || b.timeSlot?.link?.title || 'Serviço Personalizado';
+      const serviceId = b.timeSlot?.link?.service?.id || null;
+      const price = b.totalAmount || b.timeSlot?.link?.service?.price || 0;
+      const isCompleted = b.status === 'CONCLUIDO' || b.status === 'CONFIRMADO';
+      const isCancelled = b.status === 'cancelled' || b.status === 'CANCELADO';
+
+      if (isCancelled) return;
+
+      if (!serviceMap.has(serviceName)) {
+        serviceMap.set(serviceName, {
+          serviceId,
+          serviceName,
+          totalBookings: 0,
+          completedBookings: 0,
+          totalRevenue: 0,
+          pendingRevenue: 0
+        });
+      }
+
+      const item = serviceMap.get(serviceName)!;
+      item.totalBookings += 1;
+
+      if (isCompleted) {
+        item.completedBookings += 1;
+        item.totalRevenue += price;
+        overallTotalRevenue += price;
+        overallCompletedBookings += 1;
+      } else {
+        item.pendingRevenue += price;
+        overallPendingRevenue += price;
+      }
+    });
+
+    const byService = Array.from(serviceMap.values()).map(s => {
+      const avgTicket = s.completedBookings > 0 ? s.totalRevenue / s.completedBookings : 0;
+      const percentage = overallTotalRevenue > 0 ? (s.totalRevenue / overallTotalRevenue) * 100 : 0;
+      return {
+        ...s,
+        avgTicket: Number(avgTicket.toFixed(2)),
+        percentageOfTotal: Number(percentage.toFixed(1))
+      };
+    });
+
+    // Sort by revenue descending
+    byService.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+    const overallAvgTicket = overallCompletedBookings > 0 ? overallTotalRevenue / overallCompletedBookings : 0;
+
+    return {
+      period: {
+        startDate: startDate || null,
+        endDate: endDate || null
+      },
+      summary: {
+        totalRevenue: overallTotalRevenue,
+        pendingRevenue: overallPendingRevenue,
+        totalCompletedBookings: overallCompletedBookings,
+        averageTicket: Number(overallAvgTicket.toFixed(2))
+      },
+      byService
+    };
+  });
+
+  // ═══════════════════════════════════════════
   //  LIST TRANSACTIONS
   // ═══════════════════════════════════════════
   app.get('/transactions', async (request) => {

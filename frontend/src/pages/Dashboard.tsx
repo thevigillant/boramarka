@@ -12,6 +12,7 @@ import {
   FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop, Mail, Menu, ChevronUp, Layers
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
+import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 import { BookingCard } from '../components/BookingCard'
 
@@ -1205,6 +1206,79 @@ export default function Dashboard() {
     price: '',
     duration: '30'
   })
+
+  // Relatório de Faturamento por Serviço & Período (Etapa 3-F)
+  const [revenuePeriod, setRevenuePeriod] = useState<'today' | 'thisWeek' | 'thisMonth' | 'lastMonth' | 'thisYear' | 'custom'>('thisMonth')
+  const [revenueStartDate, setRevenueStartDate] = useState('')
+  const [revenueEndDate, setRevenueEndDate] = useState('')
+  const [revenueReportData, setRevenueReportData] = useState<{
+    summary: { totalRevenue: number; pendingRevenue: number; totalCompletedBookings: number; averageTicket: number };
+    byService: Array<{ serviceId: number | null; serviceName: string; totalBookings: number; completedBookings: number; totalRevenue: number; pendingRevenue: number; avgTicket: number; percentageOfTotal: number }>;
+  } | null>(null)
+  const [revenueLoading, setRevenueLoading] = useState(false)
+
+  const fetchRevenueReport = useCallback(async (start?: string, end?: string) => {
+    setRevenueLoading(true)
+    try {
+      const data = await api.getRevenueReport(start, end)
+      setRevenueReportData(data)
+    } catch (err) {
+      console.error('Erro ao buscar relatório de faturamento:', err)
+    } finally {
+      setRevenueLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    let start = ''
+    let end = ''
+    const now = new Date()
+
+    if (revenuePeriod === 'today') {
+      start = end = now.toISOString().split('T')[0]
+    } else if (revenuePeriod === 'thisWeek') {
+      const day = now.getDay()
+      const firstDay = new Date(now)
+      firstDay.setDate(now.getDate() - day)
+      start = firstDay.toISOString().split('T')[0]
+      end = now.toISOString().split('T')[0]
+    } else if (revenuePeriod === 'thisMonth') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
+    } else if (revenuePeriod === 'lastMonth') {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
+      end = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
+    } else if (revenuePeriod === 'thisYear') {
+      start = `${now.getFullYear()}-01-01`
+      end = `${now.getFullYear()}-12-31`
+    } else if (revenuePeriod === 'custom') {
+      start = revenueStartDate
+      end = revenueEndDate
+    }
+
+    fetchRevenueReport(start, end)
+  }, [revenuePeriod, revenueStartDate, revenueEndDate, fetchRevenueReport])
+
+  const exportRevenueCSV = () => {
+    if (!revenueReportData || revenueReportData.byService.length === 0) {
+      showToast('Nenhum dado de faturamento para exportar.', 'error')
+      return
+    }
+
+    let csvContent = 'data:text/csv;charset=utf-8,Serviço;Total Vendas;Atendimentos Concluídos;Faturamento Total (R$);Ticket Médio (R$);Participação (%)\n'
+    revenueReportData.byService.forEach(s => {
+      csvContent += `"${s.serviceName}";${s.totalBookings};${s.completedBookings};${s.totalRevenue.toFixed(2)};${s.avgTicket.toFixed(2)};${s.percentageOfTotal}%\n`
+    })
+
+    const encodedUri = encodeURI(csvContent)
+    const link = document.createElement('a')
+    link.setAttribute('href', encodedUri)
+    link.setAttribute('download', `relatorio_faturamento_servicos_${new Date().toISOString().split('T')[0]}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    showToast('Relatório de faturamento exportado em CSV!', 'success')
+  }
 
   // Booking Management States
   const [searchBookingQuery, setSearchBookingQuery] = useState('')
@@ -2839,12 +2913,175 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'financeiro' && (
           <div className="animate-slide-up space-y-6">
+            {/* Relatório Executivo de Faturamento por Serviço & Período (Etapa 3-F) */}
+            <div className="card-simple p-6 sm:p-8 bg-gradient-to-br from-white to-slate-50 dark:from-[#131826] dark:to-[#0D111E] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-xl space-y-6">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-black">
+                      📊
+                    </div>
+                    <h3 className="text-xl font-black text-slate-900 dark:text-white">Faturamento por Serviço & Período</h3>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold mt-1">Análise detalhada de rentabilidade, ticket médio e participação de receitas</p>
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                  <button
+                    onClick={exportRevenueCSV}
+                    className="px-3.5 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 text-xs font-bold rounded-xl transition-all border border-emerald-500/20 flex items-center gap-1.5 cursor-pointer"
+                    title="Exportar dados do relatório em arquivo CSV/Excel"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    <span>Exportar CSV</span>
+                  </button>
+                  <button
+                    onClick={() => openPdfExportModal('finance')}
+                    className="px-3.5 py-2 bg-pink-500/10 hover:bg-pink-500/20 text-pink-500 text-xs font-bold rounded-xl transition-all border border-pink-500/20 flex items-center gap-1.5 cursor-pointer"
+                    title="Gerar relatório em formato PDF"
+                  >
+                    <FileText className="w-3.5 h-3.5" />
+                    <span>Imprimir PDF</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Filtros de Período */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-100/80 dark:bg-[#1A2235] p-2 rounded-2xl border border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center gap-1 overflow-x-auto w-full sm:w-auto custom-scrollbar pb-1 sm:pb-0">
+                  {[
+                    { id: 'today', label: 'Hoje' },
+                    { id: 'thisWeek', label: 'Esta Semana' },
+                    { id: 'thisMonth', label: 'Este Mês' },
+                    { id: 'lastMonth', label: 'Mês Passado' },
+                    { id: 'thisYear', label: 'Ano Atual' },
+                    { id: 'custom', label: 'Personalizado' }
+                  ].map(p => (
+                    <button
+                      key={p.id}
+                      onClick={() => setRevenuePeriod(p.id as any)}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 cursor-pointer ${
+                        revenuePeriod === p.id
+                          ? 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-md shadow-pink-500/20 scale-[1.02]'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+
+                {revenuePeriod === 'custom' && (
+                  <div className="flex items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
+                    <input
+                      type="date"
+                      value={revenueStartDate}
+                      onChange={e => setRevenueStartDate(e.target.value)}
+                      className="input-simple text-xs py-1.5 px-3 font-mono font-bold"
+                    />
+                    <span className="text-xs text-slate-400 font-bold">até</span>
+                    <input
+                      type="date"
+                      value={revenueEndDate}
+                      onChange={e => setRevenueEndDate(e.target.value)}
+                      className="input-simple text-xs py-1.5 px-3 font-mono font-bold"
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Cards de Métricas do Período */}
+              {revenueReportData && (
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                  <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 block mb-1">Faturamento Realizado</span>
+                    <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{formatCurrency(revenueReportData.summary.totalRevenue)}</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 block mb-1">Faturamento Pendente</span>
+                    <span className="text-xl font-black text-amber-600 dark:text-amber-400 font-mono">{formatCurrency(revenueReportData.summary.pendingRevenue)}</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-pink-500/10 border border-pink-500/20">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-pink-600 dark:text-pink-400 block mb-1">Atendimentos Concluídos</span>
+                    <span className="text-xl font-black text-pink-600 dark:text-pink-400">{revenueReportData.summary.totalCompletedBookings} serviço(s)</span>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-violet-600 dark:text-violet-400 block mb-1">Ticket Médio Geral</span>
+                    <span className="text-xl font-black text-violet-600 dark:text-violet-400 font-mono">{formatCurrency(revenueReportData.summary.averageTicket)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Tabela & Barras Visuais por Serviço */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-black uppercase tracking-widest text-slate-400">Detalhamento de Faturamento por Serviço</h4>
+                {revenueLoading ? (
+                  <div className="py-12 text-center space-y-2">
+                    <Loader2 className="w-6 h-6 animate-spin text-pink-500 mx-auto" />
+                    <p className="text-xs font-bold text-slate-400">Gerando relatório do período...</p>
+                  </div>
+                ) : !revenueReportData || revenueReportData.byService.length === 0 ? (
+                  <div className="p-8 text-center text-xs font-medium text-slate-400 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800">
+                    Nenhum serviço faturado neste período.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {revenueReportData.byService.map((s, i) => (
+                      <div key={i} className="p-4 rounded-2xl bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-800 space-y-2">
+                        <div className="flex justify-between items-center text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-lg bg-pink-500/10 text-pink-500 font-black text-[10px] flex items-center justify-center">
+                              #{i + 1}
+                            </span>
+                            <div>
+                              <p className="font-black text-slate-900 dark:text-white text-sm">{s.serviceName}</p>
+                              <p className="text-[11px] text-slate-400 font-bold mt-0.5">
+                                {s.completedBookings} de {s.totalBookings} atendimento(s) concluído(s) • Ticket Médio: <span className="font-mono">{formatCurrency(s.avgTicket)}</span>
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <span className="font-black text-emerald-500 font-mono text-base block">{formatCurrency(s.totalRevenue)}</span>
+                            <span className="text-[10px] font-bold text-pink-500 bg-pink-500/10 px-2 py-0.5 rounded-full border border-pink-500/20 inline-block mt-0.5">
+                              {s.percentageOfTotal}% da receita
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Barra de Progresso da Receita */}
+                        <div className="w-full h-2 bg-slate-200 dark:bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-orange-500 to-pink-500 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.max(s.percentageOfTotal, 2)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">Financeiro</h2>
                 <p className="text-sm text-slate-500 dark:text-slate-400">Contas a pagar e a receber</p>
               </div>
               <div className="flex flex-wrap w-full sm:w-auto items-center gap-3">
+                <button
+                  onClick={() => {
+                    const ok = exportFinanceToCSV(filteredTransactions)
+                    if (!ok) showToast('Nenhuma transação para exportar.', 'error')
+                    else showToast('Lançamentos financeiros exportados para Excel (CSV)!', 'success')
+                  }}
+                  disabled={filteredTransactions.length === 0}
+                  className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black py-2.5 px-4 rounded-xl transition-all shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
+                  title="Exportar lançamentos financeiros em planilha Excel (CSV)"
+                >
+                  <Download className="w-4 h-4 text-white" />
+                  Exportar Excel (CSV)
+                </button>
                 <button
                   onClick={() => openPdfExportModal('finance')}
                   disabled={transactions.length === 0}
@@ -3204,6 +3441,28 @@ export default function Dashboard() {
                      />
                    </div>
                    <button
+                      onClick={() => {
+                        const ok = exportBookingsToCSV(filteredBookings)
+                        if (!ok) showToast('Nenhum agendamento para exportar.', 'error')
+                        else showToast('Agendamentos exportados para Excel (CSV)!', 'success')
+                      }}
+                      disabled={filteredBookings.length === 0}
+                      className="px-3.5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-500 font-bold text-xs rounded-xl transition-all border border-emerald-500/20 cursor-pointer disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                      title="Exportar agendamentos em planilha Excel (CSV)"
+                    >
+                      <Download className="w-4 h-4 text-emerald-500" />
+                      <span>Exportar Excel (CSV)</span>
+                    </button>
+                    <button
+                      onClick={() => openPdfExportModal('bookings')}
+                      disabled={bookings.length === 0}
+                      className="px-3.5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-black text-xs rounded-xl transition-all border border-slate-700 shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                      title="Exportar Relatório PDF de Agendamentos"
+                    >
+                      <FileText className="w-4 h-4 text-pink-400" />
+                      <span>Exportar PDF</span>
+                    </button>
+                    <button
                      onClick={() => setShowNewBookingModal(true)}
                      className="flex items-center gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-black py-2.5 px-6 rounded-xl transition-all shadow-md shadow-pink-500/20 whitespace-nowrap text-sm"
                    >

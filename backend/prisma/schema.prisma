@@ -32,6 +32,12 @@ model Admin {
   email               String @default("")
   resetToken          String? @map("reset_token")
   resetTokenExpiry    DateTime? @map("reset_token_expiry")
+
+  // Reminder configuration
+  reminderEnabled     Boolean @default(true) @map("reminder_enabled")
+  reminderHours       String  @default("24,2") @map("reminder_hours")
+  reminderChannels    String  @default("whatsapp") @map("reminder_channels")
+
   createdAt      DateTime @default(now()) @map("created_at")
 
   links          SchedulingLink[]
@@ -45,6 +51,8 @@ model Admin {
   receivedMessages ChatMessage[] @relation("ReceivedMessages")
   employees        Employee[]
   auditLogs        AuditLog[]
+  pushSubscriptions PushSubscription[]
+  reminderLogs      ReminderLog[]
 
   @@map("admin")
 }
@@ -72,14 +80,32 @@ model Service {
   description String?
   price       Float
   duration    Int      // duration in minutes
+  isUpsellable   Boolean  @default(true) @map("is_upsellable")
+  upsellDiscount Float    @default(0.0) @map("upsell_discount")
   createdAt   DateTime @default(now()) @map("created_at")
 
   adminId     Int      @map("admin_id")
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
   links       SchedulingLink[]
+  mainUpsells  ServiceUpsell[] @relation("MainService")
+  addonUpsells ServiceUpsell[] @relation("AddonService")
 
   @@map("services")
+}
+
+model ServiceUpsell {
+  id            Int      @id @default(autoincrement())
+  mainServiceId Int      @map("main_service_id")
+  mainService   Service  @relation("MainService", fields: [mainServiceId], references: [id], onDelete: Cascade)
+
+  addonServiceId Int     @map("addon_service_id")
+  addonService   Service @relation("AddonService", fields: [addonServiceId], references: [id], onDelete: Cascade)
+
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@unique([mainServiceId, addonServiceId])
+  @@map("service_upsells")
 }
 
 model SchedulingLink {
@@ -125,11 +151,15 @@ model Booking {
   timeSlot         TimeSlot @relation(fields: [timeSlotId], references: [id], onDelete: Cascade)
   paidAmount       Float    @default(0) @map("paid_amount")
   reminderSent     Boolean  @default(false) @map("reminder_sent")
+  reminder24hSent  Boolean  @default(false) @map("reminder_24h_sent")
+  reminderCustomSent Boolean @default(false) @map("reminder_custom_sent")
   notes            String   @default("")
   cancellationCode String   @default("") @map("cancellation_code")
   mpPaymentId      String   @default("") @map("mp_payment_id")
   refundStatus     String   @default("NONE") @map("refund_status")
   refundAmount     Float    @default(0) @map("refund_amount")
+  selectedAddons   String   @default("[]") @map("selected_addons")
+  totalAmount      Float    @default(0) @map("total_amount")
   createdAt        DateTime @default(now()) @map("created_at")
 
   @@map("bookings")
@@ -298,4 +328,35 @@ model AuditLog {
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   @@map("audit_logs")
+}
+
+model PushSubscription {
+  id          Int      @id @default(autoincrement())
+  endpoint    String
+  p256dh      String
+  auth        String
+  clientPhone String   @default("") @map("client_phone")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("push_subscriptions")
+}
+
+model ReminderLog {
+  id          Int      @id @default(autoincrement())
+  bookingId   Int      @map("booking_id")
+  channel     String   // "whatsapp", "email", "push"
+  status      String   // "sent", "failed", "skipped"
+  message     String   @default("")
+  hoursLabel  String   @default("") @map("hours_label")
+  clientName  String   @default("") @map("client_name")
+  clientPhone String   @default("") @map("client_phone")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("reminder_logs")
 }
