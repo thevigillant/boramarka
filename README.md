@@ -1,12 +1,13 @@
-# 🚀 BoraMarka — Sua agenda cheia, sem complicação
+# 🚀 BoraMarka — Plataforma SaaS de Agendamento Online & Gestão Inteligente
 
 <p align="center">
   <img src="https://img.shields.io/badge/Status-Em_Produção-emerald?style=for-the-badge&logo=vercel" alt="Status">
+  <img src="https://img.shields.io/badge/PWA-Instalável_Android%2FiOS-ec4899?style=for-the-badge&logo=pwa" alt="PWA">
   <img src="https://img.shields.io/badge/Frontend-React_18_%2B_Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
-  <img src="https://img.shields.io/badge/Backend-Fastify_%2B_TypeScript-000000?style=for-the-badge&logo=fastify" alt="Fastify">
-  <img src="https://img.shields.io/badge/Database-Prisma_%2B_PostgreSQL-2D3748?style=for-the-badge&logo=prisma" alt="Prisma">
+  <img src="https://img.shields.io/badge/Backend-Fastify_v4_%2B_TypeScript-000000?style=for-the-badge&logo=fastify" alt="Fastify">
+  <img src="https://img.shields.io/badge/Database-Prisma_5_%2B_PostgreSQL-2D3748?style=for-the-badge&logo=prisma" alt="Prisma">
   <img src="https://img.shields.io/badge/Gateway-Mercado_Pago_API_v1-009EE3?style=for-the-badge&logo=mercadopago" alt="Mercado Pago">
-  <img src="https://img.shields.io/badge/Deploy-Vercel_%2B_Railway-000000?style=for-the-badge&logo=railway" alt="Deploy">
+  <img src="https://img.shields.io/badge/Segurança-Helmet_%2B_Rate_Limit-violet?style=for-the-badge&logo=shield" alt="Security">
 </p>
 
 ---
@@ -21,106 +22,61 @@
 
 ## 💡 Sobre o BoraMarka
 
-O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para agendamento online inteligente, cobrança antecipada com Mercado Pago, gestão financeira automatizada de fluxo de caixa, controle completo de RH com arquivo morto, logs de auditoria de segurança e networking profissional.
+O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos e estabelecimentos comerciais que atendem com hora marcada. 
 
-Desenvolvido para **profissionais autônomos e estabelecimentos comerciais** (barbeiros, manicures, clínicas estéticas, salões de beleza, consultores e prestadores de serviço), o BoraMarka oferece total autonomia para que o profissional reduza o *no-show* a zero, automatize confirmações via WhatsApp e receba pagamentos diretamente na sua conta bancária.
+A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Cartão Fidelidade Digital**, **Onboarding Inteligente por Nicho**, **Venda Casada (Upsell)**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Gestão de Equipe & RH**.
+
+### 🎯 Para quem foi feito:
+- 💈 **Barbearias** & Barbadeiros
+- 💅 **Salões de Beleza, Manicures & Esmalterias**
+- ✒️ **Estúdios de Tatuagem & Piercing**
+- 🧴 **Clínicas de Estética, Lash Designers & Sobrancelhas**
+- 🏋️ **Personal Trainers, Fisioterapeutas & Profissionais de Saúde**
+- 🐾 **Pet Shops & Serviços de Banho e Tosa**
+- 🩺 **Consultórios & Clínicas Médicas**
 
 ---
 
-## ✨ Identidade da Marca & Design System
+## 💎 Destaques & Funcionalidades Principais
 
-* 💬 **Slogan Oficial:** *"Sua agenda cheia, sem complicação."*
-* 🤙 **Símbolo / Logo:** **Shaka Hangloose Neon (Rosa `#ec4899` & Violeta `#8b5cf6`) + Checkmark (Esmeralda `#10b981`)**. Representa a energia acolhedora (*"Bora!"*) unida à confirmação instantânea de agendamento (*"Marka!"*).
-* 🎨 **Aesthetic:** Dark Mode Profundo (`#050507`), Glassmorphism avançado, Doppelrand Cards, micro-animações fluidas e tipografia fluida com `clamp()` 100% otimizada para smartphones (iOS e Android).
-* 📱 **Mockup 3D Ultra-Premium na Landing Page**: Celular interativo com chassis estilo Titanium usinado, Dynamic Island, barra de status ativa e simulador em tempo real de agendamento, pagamento de sinal e cancelamento.
+### 🚀 Onboarding Personalizado por Nicho (Auto-Seeding)
+- Ao se cadastrar, o profissional escolhe o seu nicho de atuação (Barbearia, Salão, Tatuagem, Estética, Personal, Pet Shop, Clínicas).
+- O sistema popula automaticamente o catálogo inicial com **3 serviços de alta conversão** customizados com nomes, preços e durações recomendados para o seu setor.
 
----
-
-## 🛠️ Funcionalidades Principais
-
-### 💳 Integração Completa Mercado Pago (Produção & Taxa de Sinal)
-- **Cobrança de Sinal dos Clientes Finais**: O cliente faz a reserva e paga uma taxa de sinal ou o valor total do serviço. O dinheiro cai **diretamente na conta do Mercado Pago do profissional**.
-- **Assinaturas da Plataforma BoraMarka**: Cobrança automatizada dos planos de assinatura do BoraMarka (Mensal, Anual e Premium) integrada à conta oficial da plataforma.
-- **Redirecionamento Automático (`auto_return: approved`)**: Retorno instantâneo para a tela de confirmação após o pagamento via PIX ou Cartão de Crédito.
-- **Webhooks em Tempo Real**: Atualização instantânea dos status de agendamentos e assinaturas no banco de dados assim que o pagamento for aprovado.
-
-### 🔑 Código de Cancelamento & Gestão via WhatsApp
-- **Código de Gerenciamento Exclusivo**: Cada agendamento gera um código alfanumérico único (ex: `BM-9A82`).
-- **Mensagens Automáticas com Link Direto**: Notificação enviada ao WhatsApp do cliente com o código e um link direto para remarcar ou cancelar (`/agendar/cancelar/TOKEN/BOOKING_ID?code=BM-9A82`).
-- **Olhinho de Visualizar Senha**: Alternador de visibilidade de senha (*toggle eye*) em todos os formulários de autenticação e redefinição.
-
-### ⚠️ Central de Estornos & Reembolso Automatizado
-- **Solicitações de Estorno Pendentes**: Agendamentos cancelados com sinal pago têm o horário liberado na agenda instantaneamente e entram na **Central de Estornos** do profissional.
-- **Botão "Realizar Estorno" no Dashboard**:
-  - Aciona a API de reembolsos do Mercado Pago (`POST /v1/payments/{mpPaymentId}/refunds`).
-  - Atualiza o status do agendamento para `ESTORNADO` (`refundStatus = "REFUNDED"`).
-  - Lança o débito de saída no **Fluxo de Caixa**.
-  - Notifica o cliente via WhatsApp confirmando a devolução do valor.
-
-### 🔒 Autenticação & Verificação por E-mail (Código PIN de 4 Dígitos)
-- **Template E-mail Premium Dark**: Mensagens transacionais estilizadas em dark mode com cartões 2FA Key e suporte a Gmail, Outlook e Apple Mail.
-- **Conta SMTP Oficial**: `contatoboramarka@gmail.com` integrada com suporte a códigos temporários de 4 dígitos (validade de 10 minutos).
-- **Validação Anti-Duplicidade**: Verificação de cadastro prévio e proteção de dados.
-
-### 📅 Agenda Inteligente & Conclusão Rápida em 1 Clique
-- **Conclusão Rápida em 1-Click**: Checkbox no Dashboard para concluir agendamentos, atualizando o status para `CONCLUIDO` e lançando o faturamento no fluxo de caixa automaticamente.
-- **Barra de Anotações Inline**: Campo rápido nos cards de agendamento para salvar e editar observações sobre o cliente.
-- **Links de Venda Personalizados**: URLs no formato `boramarka.com.br/p/@username`.
-- **Slots em Lote**: Geração automática de horários por intervalo configurável.
-
-### 🔍 Busca Global Inteligente (`Ctrl + K` / `Cmd + K`)
-- Ativação global via atalho de teclado.
-- Pesquisa unificada por clientes, agendamentos, serviços, links e lançamentos financeiros com navegação direta.
-
-### 💼 Gestão de RH & Arquivo Morto
-- Cadastro completo de colaboradores com fotos, documentos, salários e comissões.
-- Controle de demissões e pendências (*Equipamentos, Financeira, Documentos, Outros*).
-- Arquivo Morto organizado para ex-funcionários com histórico mantido.
-
-### 🛡️ Audit Logger & Logs de Segurança
-- Identificação de IP via Cloudflare / Proxies (`CF-Connecting-IP`, `X-Forwarded-For`).
-- Detecção de Sistema Operacional e Navegador via parser de `User-Agent`.
-- Classificação por severidade de risco (Crítico, Alto, Médio e Informativo) com visualização em linha do tempo.
-
-### 📅 Sincronização Bidirecional com Google Calendar
-- Conexão nativa com a agenda Google do profissional.
-- Bloqueio automático de *double booking* caso haja compromissos pessoais no Google Calendar.
-
-### 📊 Fluxo de Caixa & Exportação em PDF
-- Registro de Entradas (Recebimentos) e Saídas (Despesas/Estornos).
-- Emissão de relatórios estruturados em PDF com logomarca e filtros personalizados.
-
-### 📈 Relatório de Receitas & Ticket Médio por Serviço
-- Detalhamento visual da participação de cada serviço no faturamento total do profissional.
-- Acompanhamento da quantidade de agendamentos concluídos e ticket médio gerado por período selecionado.
-
-### 📥 Exportação de Dados em CSV
-- Download direto no painel administrativo dos relatórios de Agendamentos e Fluxo de Caixa em formato CSV.
-- Arquivos formatados com a marcação UTF-8 BOM, garantindo que o Microsoft Excel abra os dados com acentuação e formatação corretas (como ã, ç, é).
-
-### 🔄 Reagendamento Flexível de Horários
-- Interface administrativa integrada que permite ao profissional reagendar datas, horários e slots de atendimento diretamente pelo painel.
-
-### 🛍️ Venda Casada (Upsell) & Serviços Adicionais
-- Possibilidade de vincular serviços adicionais (com desconto configurável) a serviços principais.
-- Clientes podem selecionar complementos durante o fluxo de agendamento online, recalculando o valor total de forma dinâmica.
-
-### 🔔 Lembretes Automáticos Multicanis & Central de Logs
-- Configuração personalizada de janelas de aviso (ex: 24h e 2h antes do atendimento).
-- Disparo de notificações via WhatsApp, E-mail e Notificações Web Push.
-- Painel de auditoria de logs de lembretes (`ReminderLog`) para verificar se cada envio foi concluído, falhou ou foi pulado.
-
-### 📲 Notificações Web Push Nativa
-- Suporte a inscrição de notificações no navegador usando chaves VAPID e Service Worker (`sw.js`) ativo, notificando o cliente direto na tela do celular ou desktop.
-
-### 📱 PWA Instalável (App na Tela do Celular)
-- Manifesto Web App (`manifest.json`) completo permitindo a instalação nativa do BoraMarka na tela de início em dispositivos Android, iOS e Desktops.
-- Banner flutuante inteligente (`PWAInstallBanner.tsx`) que sugere a instalação ao usuário com instrução guiada de 2 passos para dispositivos iOS (Safari).
+### 📱 PWA Nativo (App Instalável no Celular)
+- Suporte completo a Progressive Web App via `manifest.json`.
+- Permite a instalação nativa do BoraMarka na tela inicial em dispositivos Android, iOS (Safari) e Desktops.
+- Banner flutuante inteligente (`PWAInstallBanner.tsx`) com instruções de 2 passos guiadas para usuários de iPhone/iPad.
 
 ### 🎁 Cartão Fidelidade Digital & Cupons Automáticos
-- Mapeamento e contabilização automática de selos (`LoyaltyCard`) a cada atendimento concluído pelo profissional.
-- Meta de selos customizável (ex: 10 atendimentos) e geração automática de cupons de recompensa (`FIDELIDADE-XXXXXX`) com desconto em porcentagem ou valor fixo.
-- Widget público interativo (`LoyaltyWidget.tsx`) para o cliente consultar sua cartela de selos informando o número do WhatsApp.
+- Contabilização automática de selos (`LoyaltyCard`) a cada atendimento concluído pelo profissional.
+- Meta de selos customizável (ex: 10 atendimentos) com geração automática de cupons promocionais únicos (`FIDELIDADE-XXXXXX`).
+- Widget público interativo (`LoyaltyWidget.tsx`) para o cliente consultar sua cartela e resgatar recompensas informando seu WhatsApp.
+
+### 💳 Cobrança de Sinal Antecipado & Checkout Mercado Pago
+- **Redução de No-Shows a Zero**: Clientes pagam taxa de sinal ou o valor integral via PIX / Cartão no agendamento. O valor é creditado direto no Mercado Pago do profissional.
+- **Central de Estornos Automatizados**: Permite ao profissional realizar reembolso direto no Mercado Pago via 1-click no painel administrativo, registrando o estorno no fluxo de caixa e notificando o cliente pelo WhatsApp.
+
+### 🏷️ Estrutura de Planos 3-Tier (Good-Better-Best)
+1. **⚡ BoraTestar**: 7 dias de acesso grátis completo sem necessidade de cartão de crédito.
+2. **📘 BoraMensal (R$ 29,90/mês)**: Ideal para começar (agenda 24h, sinal Mercado Pago, WhatsApp, até 5 serviços ativos).
+3. **🔥 BoraAnual (R$ 260,00/ano ~ R$ 21,66/mês)**: **O Mais Vendido**. Serviços e links ilimitados, Venda Casada (Upsell), Cartão Fidelidade e exportação em Excel/PDF.
+4. **👑 BoraPremium (R$ 69,90/mês)**: Gestão de Equipe/RH, Notificações Web Push, Sincronização Google Calendar, Domínio Próprio e Remoção Total da marca BoraMarka (Whitelabel).
+
+### 🛍️ Venda Casada (Upsell) & Serviços Adicionais
+- Associação de serviços secundários (com desconto percentual configurável) a serviços principais.
+- Recálculo automático do valor total e tempo de atendimento no agendamento do cliente.
+
+### 📄 Exportação de Dados Financeiros e de Agendamentos
+- **Relatórios em PDF**: Relatórios estruturados de fluxo de caixa e agendamentos com logomarca e período customizável.
+- **Planilhas CSV (UTF-8 BOM)**: Exportação compatível com Microsoft Excel sem problemas de acentuação ou caracteres especiais.
+
+### 🔒 Segurança Defensiva & Audit Logs
+- Proteção contra vulnerabilidades com **Fastify Helmet** (HTTP Headers de segurança) e **Rate Limiting** (120 req/min por IP).
+- Auditoria de acessos (`AuditLog`) rastreando IP de origem, Navegador, Sistema Operacional e Nível de Risco.
+
+### 🗓️ Integração Bidirecional com Google Calendar
+- Sincronização automática dos compromissos da plataforma com a agenda pessoal do profissional no Google, bloqueando horários concorrentes.
 
 ---
 
@@ -128,89 +84,67 @@ Desenvolvido para **profissionais autônomos e estabelecimentos comerciais** (ba
 
 | Camada | Tecnologia | Descrição |
 | :--- | :--- | :--- |
-| **Frontend** | React 18 + Vite | Interface SPA ultrarrápida com Tailwind CSS, Lucide Icons e Glassmorphism |
-| **Backend** | Fastify + TypeScript | Servidor HTTP RESTful de alta performance |
-| **ORM** | Prisma ORM | Modelagem de dados com suporte dual a SQLite (Dev) e PostgreSQL (Prod) |
-| **Banco de Dados** | SQLite / PostgreSQL | Banco de dados local para dev e PostgreSQL gerenciado no Railway para prod |
-| **Gateway de Pagamento** | Mercado Pago SDK | Processamento de PIX, cartão, preferências checkout e refunds |
-| **Deploy Frontend** | Vercel | Deploy contínuo com SSL e distribuição Edge global |
-| **Deploy Backend** | Railway | Containerização e infraestrutura escalável |
-| **Segurança** | JWT & `bcryptjs` | Autenticação segura, hashes de senha e tokens revogáveis |
+| **Frontend** | React 18 + Vite | Single Page Application com Tailwind CSS, Lucide Icons e UI fluida |
+| **Backend** | Fastify v4 + TypeScript | Servidor RESTful otimizado de alta velocidade |
+| **ORM** | Prisma ORM 5.x | Modelagem e migrations com suporte a SQLite (Dev) e PostgreSQL (Prod) |
+| **Banco de Dados** | SQLite / PostgreSQL | Banco de dados relacional com relatórios otimizados |
+| **Gateway de Pagamento** | Mercado Pago API v1 | Processamento de cobranças PIX, Cartão e Refunds |
+| **E-mail Transacional** | Nodemailer (Gmail SSL 465) | Envio resiliente de códigos de verificação de 4 dígitos com fallback inteligente |
+| **Notificações** | Web Push (VAPID) | Notificações nativas no navegador/dispositivo |
 
 ---
 
-## 📂 Estrutura do Projeto
+## 🛠️ Como Executar o Projeto Localmente
 
-```
-Sistema Marcação/
-├── backend/
-│   ├── prisma/
-│   │   ├── schema.prisma       # Entidades da base de dados (Bookings, RefundStatus, etc)
-│   │   └── dev.db              # Banco SQLite de desenvolvimento
-│   ├── src/
-│   │   ├── routes/             # Rotas Fastify (auth, admin, schedule, billing, RH, audit)
-│   │   ├── services/           # Lógicas de negócio (WhatsApp, Mercado Pago, email)
-│   │   ├── scripts/            # Scripts de automação e testes (testRefund, testEmail)
-│   │   ├── utils/              # Audit logger, parser de IP/User-Agent
-│   │   ├── db.ts               # Instância do PrismaClient
-│   │   └── server.ts           # Servidor Fastify principal
-│   ├── package.json
-│   └── tsconfig.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/         # Modais, Navbar, Busca Global, Cards, Logo 3D
-│   │   ├── pages/              # Landing, Login, Register, Dashboard, BookingCancel
-│   │   ├── services/           # Cliente API Axios/Fetch unificado
-│   │   ├── utils/              # Exportação de relatórios PDF, formatadores de moeda
-│   │   ├── App.tsx             # Gerenciador de rotas
-│   │   └── main.tsx            # Entry point Vite
-│   ├── index.html
-│   ├── package.json
-│   └── vite.config.ts
-└── README.md
-```
-
----
-
-## 🚀 Como Executar Localmente
-
-### 🔧 Pré-requisitos
-* Node.js v18+ instalado.
-* NPM ou Yarn.
-
-### 📦 1. Configuração do Backend
+### 1. Clonar o Repositório
 ```bash
-# Entrar na pasta do backend
+git clone https://github.com/thevigillant/boramarka.git
+cd boramarka
+```
+
+### 2. Configurar o Backend
+```bash
 cd backend
-
-# Instalar dependências
 npm install
-
-# Sincronizar o banco de dados SQLite local
 npx prisma db push
-
-# Iniciar o servidor de desenvolvimento
+npx prisma generate
 npm run dev
 ```
-*Servidor rodando em **http://localhost:3001**.*
+> O servidor backend iniciará em `http://localhost:3001`
 
-### 🎨 2. Configuração do Frontend
+### 3. Configurar o Frontend
 ```bash
-# Entrar na pasta do frontend
 cd ../frontend
-
-# Instalar dependências
 npm install
-
-# Iniciar a aplicação web
 npm run dev
 ```
-*Aplicação web rodando em **http://localhost:5173**.*
+> A aplicação frontend iniciará em `http://localhost:5173`
 
 ---
 
-## 📄 Licença & Créditos
+## ⚙️ Variáveis de Ambiente (`.env`)
 
-Desenvolvido com 💖 pela equipe **BoraMarka**. Todos os direitos reservados.
+Exemplo de configuração para o `backend/.env`:
 
-*BoraMarka — Sua agenda cheia, sem complicação.*
+```env
+PORT=3001
+JWT_SECRET=sua-chave-secreta-jwt-aqui
+DATABASE_URL="file:./dev.db"
+
+# Mercado Pago API
+MERCADOPAGO_ACCESS_TOKEN=seu_access_token
+MERCADOPAGO_PUBLIC_KEY=sua_public_key
+
+# E-mail Transacional (Gmail SMTP)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_USER=contatoboramarka@gmail.com
+SMTP_PASS=sua_senha_de_app_do_gmail
+SMTP_FROM="BoraMarka <contatoboramarka@gmail.com>"
+```
+
+---
+
+## 📄 Licença
+
+Este projeto é um software proprietário mantido por **BoraMarka** (Bruno Santana Reis). Todos os direitos reservados.
