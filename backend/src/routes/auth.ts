@@ -63,12 +63,14 @@ export default async function authRoutes(app: FastifyInstance) {
       console.log('======================================================\n');
     }
 
+    const isProd = process.env.NODE_ENV === 'production';
+
     return {
       success: true,
       message: emailSent
         ? `Código de verificação de 4 dígitos enviado para ${cleanEmail}`
-        : `Código de verificação gerado para ${cleanEmail}`,
-      devCode: emailSent ? undefined : code,
+        : `Código de verificação enviado para ${cleanEmail}`,
+      devCode: (emailSent || isProd) ? undefined : code,
     };
   });
 
