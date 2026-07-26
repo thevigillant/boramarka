@@ -23,7 +23,7 @@ export default async function billingRoutes(app: FastifyInstance) {
     }
 
     // Define preços baseados no plano
-    let price = 30.00;
+    let price = 29.90;
     let title = 'BoraMarka - Plano Mensal';
     if (plan === 'anual') {
       price = 260.00;

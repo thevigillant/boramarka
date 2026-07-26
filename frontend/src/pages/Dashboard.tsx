@@ -384,7 +384,7 @@ function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClos
             className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 border border-slate-750 hover:scale-[1.02]"
           >
             <CreditCard className="w-5 h-5" />
-            Plano Mensal — R$ 30/mês
+            Plano Mensal — R$ 29,90/mês
           </button>
           
           <button 
@@ -4582,7 +4582,7 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 30</span>
+                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 29,90</span>
                           <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
                         </div>
                         <ul className="space-y-2.5 pt-2">
