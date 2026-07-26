@@ -3,8 +3,9 @@ import nodemailer from 'nodemailer';
 function createTransporter() {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const port = parseInt(process.env.SMTP_PORT || '465', 10);
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = process.env.SMTP_USER?.replace(/^["']|["']$/g, '').trim();
+  const rawPass = process.env.SMTP_PASS || '';
+  const pass = rawPass.replace(/^["']|["']$/g, '').trim();
 
   if (!host || !user || !pass) return null;
 
