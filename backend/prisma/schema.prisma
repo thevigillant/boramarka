@@ -61,6 +61,7 @@ model Admin {
   pushSubscriptions PushSubscription[]
   reminderLogs      ReminderLog[]
   loyaltyCards      LoyaltyCard[]
+  userPermissions   UserPermission[]
 
   @@map("admin")
 }
@@ -384,5 +385,37 @@ model LoyaltyCard {
 
   @@unique([adminId, clientPhone])
   @@map("loyalty_cards")
+}
+
+model UserPermission {
+  id                Int      @id @default(autoincrement())
+  userName          String   @map("user_name")
+  email             String   @default("")
+  roleTitle         String   @default("Operador") @map("role_title") // "Gerente", "Recepcionista", "Atendente", "Barbeiro", "Financeiro"
+  
+  // Specific Module Permission Flags
+  canViewBookings   Boolean  @default(true)  @map("can_view_bookings")
+  canManageBookings Boolean  @default(true)  @map("can_manage_bookings")
+  
+  canViewFinance    Boolean  @default(false) @map("can_view_finance")
+  canManageFinance  Boolean  @default(false) @map("can_manage_finance")
+  
+  canManageServices Boolean  @default(false) @map("can_manage_services")
+  canViewClients    Boolean  @default(true)  @map("can_view_clients")
+  canManageClients  Boolean  @default(false) @map("can_manage_clients")
+  
+  canManageLoyalty  Boolean  @default(false) @map("can_manage_loyalty")
+  canManageStaff    Boolean  @default(false) @map("can_manage_staff")
+  canManageSettings Boolean  @default(false) @map("can_manage_settings")
+  canViewAuditLogs  Boolean  @default(false) @map("can_view_audit_logs")
+  
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @default(now()) @map("updated_at")
+
+  adminId           Int      @map("admin_id")
+  admin             Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("user_permissions")
 }
 

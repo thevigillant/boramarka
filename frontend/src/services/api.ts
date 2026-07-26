@@ -1003,4 +1003,38 @@ export const api = {
       rewardsEarned?: number;
       rewardCouponCode?: string;
     }>(`/loyalty/public/${username}/${clientPhone}`),
+
+  // Security & User Permissions Module
+  getSecurityPermissions: () =>
+    request<UserPermissionItem[]>('/security/permissions'),
+
+  createSecurityPermission: (data: Partial<UserPermissionItem>) =>
+    request<UserPermissionItem>('/security/permissions', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateSecurityPermission: (id: number, data: Partial<UserPermissionItem>) =>
+    request<UserPermissionItem>(`/security/permissions/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteSecurityPermission: (id: number) =>
+    request<{ success: boolean; message: string }>(`/security/permissions/${id}`, { method: 'DELETE' }),
 };
+
+export interface UserPermissionItem {
+  id: number;
+  userName: string;
+  email: string;
+  roleTitle: string;
+  canViewBookings: boolean;
+  canManageBookings: boolean;
+  canViewFinance: boolean;
+  canManageFinance: boolean;
+  canManageServices: boolean;
+  canViewClients: boolean;
+  canManageClients: boolean;
+  canManageLoyalty: boolean;
+  canManageStaff: boolean;
+  canManageSettings: boolean;
+  canViewAuditLogs: boolean;
+  active: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
