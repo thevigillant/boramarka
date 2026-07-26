@@ -38,6 +38,12 @@ model Admin {
   reminderHours       String  @default("24,2") @map("reminder_hours")
   reminderChannels    String  @default("whatsapp") @map("reminder_channels")
 
+  // Loyalty Program configuration
+  loyaltyEnabled      Boolean @default(true) @map("loyalty_enabled")
+  loyaltyTarget       Int     @default(10) @map("loyalty_target")
+  loyaltyRewardType   String  @default("percentage") @map("loyalty_reward_type")
+  loyaltyRewardValue  Float   @default(20.0) @map("loyalty_reward_value")
+
   createdAt      DateTime @default(now()) @map("created_at")
 
   links          SchedulingLink[]
@@ -53,6 +59,7 @@ model Admin {
   auditLogs        AuditLog[]
   pushSubscriptions PushSubscription[]
   reminderLogs      ReminderLog[]
+  loyaltyCards      LoyaltyCard[]
 
   @@map("admin")
 }
@@ -360,3 +367,21 @@ model ReminderLog {
 
   @@map("reminder_logs")
 }
+
+model LoyaltyCard {
+  id               Int      @id @default(autoincrement())
+  clientPhone      String   @map("client_phone")
+  clientName       String   @default("") @map("client_name")
+  stampsCount      Int      @default(0) @map("stamps_count")
+  rewardsEarned    Int      @default(0) @map("rewards_earned")
+  rewardCouponCode String   @default("") @map("reward_coupon_code")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  adminId          Int      @map("admin_id")
+  admin            Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@unique([adminId, clientPhone])
+  @@map("loyalty_cards")
+}
+

@@ -16,6 +16,7 @@ import clientRoutes from './routes/clients';
 import socialRoutes from './routes/social';
 import employeeRoutes from './routes/employees';
 import auditRoutes from './routes/audit';
+import loyaltyRoutes from './routes/loyalty';
 import { startReminderService } from './services/reminder';
 
 // ═══════════════════════════════════════════════════════════
@@ -120,6 +121,7 @@ app.register(clientRoutes, { prefix: '/api/admin/clients' });
 app.register(socialRoutes, { prefix: '/api/admin/social' });
 app.register(employeeRoutes, { prefix: '/api/admin/employees' });
 app.register(auditRoutes, { prefix: '/api/admin/audit-logs' });
+app.register(loyaltyRoutes, { prefix: '/api/loyalty' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
