@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, UserPermissionItem } from '../services/api'
 import {
   Calendar, Plus, Trash2, Copy, RefreshCw, RotateCcw, Link2,
   Clock, Users, LogOut, X, Check, ExternalLink,
@@ -9,7 +9,7 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop, Mail, Menu, ChevronUp, Layers
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
@@ -508,7 +508,7 @@ function maskPhone(value: string): string {
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>('operacional')
@@ -651,6 +651,7 @@ export default function Dashboard() {
         icon: Palette,
         type: 'dropdown' as const,
         items: [
+          { id: 'seguranca', label: 'Segurança & Permissões', icon: ShieldCheck, desc: 'Controle granular de acesso por operador e perfil (RBAC)' },
           { id: 'personalizar', label: 'Personalizar Página', icon: Palette, desc: 'Identidade visual, tema, cores e banner' },
           { id: 'social', label: 'Explorar Rede', icon: Globe, desc: 'Rede de contatos e chat com profissionais' },
           { id: 'audit', label: 'Logs & Auditoria', icon: ShieldAlert, desc: 'Registro de ações, logins e segurança' },
@@ -1278,6 +1279,188 @@ export default function Dashboard() {
     link.click()
     document.body.removeChild(link)
     showToast('Relatório de faturamento exportado em CSV!', 'success')
+  }
+
+  // 🛡️ Security & Access Control Module States (RBAC)
+  const [securityPermissions, setSecurityPermissions] = useState<UserPermissionItem[]>([])
+  const [loadingSecurity, setLoadingSecurity] = useState(false)
+  const [showSecurityModal, setShowSecurityModal] = useState(false)
+  const [editingSecurityPerm, setEditingSecurityPerm] = useState<UserPermissionItem | null>(null)
+  const [securityForm, setSecurityForm] = useState({
+    userName: '',
+    email: '',
+    roleTitle: 'Operador',
+    canViewBookings: true,
+    canManageBookings: true,
+    canViewFinance: false,
+    canManageFinance: false,
+    canManageServices: false,
+    canViewClients: true,
+    canManageClients: false,
+    canManageLoyalty: false,
+    canManageStaff: false,
+    canManageSettings: false,
+    canViewAuditLogs: false,
+    active: true,
+  })
+
+  const fetchSecurityPermissions = useCallback(async () => {
+    setLoadingSecurity(true)
+    try {
+      const data = await api.getSecurityPermissions()
+      setSecurityPermissions(data)
+    } catch (err: any) {
+      console.error('Erro ao buscar permissões de segurança:', err)
+    } finally {
+      setLoadingSecurity(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'seguranca') {
+      fetchSecurityPermissions()
+    }
+  }, [activeTab, fetchSecurityPermissions])
+
+  const openNewSecurityModal = () => {
+    setEditingSecurityPerm(null)
+    setSecurityForm({
+      userName: '',
+      email: '',
+      roleTitle: 'Operador',
+      canViewBookings: true,
+      canManageBookings: true,
+      canViewFinance: false,
+      canManageFinance: false,
+      canManageServices: false,
+      canViewClients: true,
+      canManageClients: false,
+      canManageLoyalty: false,
+      canManageStaff: false,
+      canManageSettings: false,
+      canViewAuditLogs: false,
+      active: true,
+    })
+    setShowSecurityModal(true)
+  }
+
+  const openEditSecurityModal = (item: UserPermissionItem) => {
+    setEditingSecurityPerm(item)
+    setSecurityForm({
+      userName: item.userName,
+      email: item.email || '',
+      roleTitle: item.roleTitle || 'Operador',
+      canViewBookings: item.canViewBookings,
+      canManageBookings: item.canManageBookings,
+      canViewFinance: item.canViewFinance,
+      canManageFinance: item.canManageFinance,
+      canManageServices: item.canManageServices,
+      canViewClients: item.canViewClients,
+      canManageClients: item.canManageClients,
+      canManageLoyalty: item.canManageLoyalty,
+      canManageStaff: item.canManageStaff,
+      canManageSettings: item.canManageSettings,
+      canViewAuditLogs: item.canViewAuditLogs,
+      active: item.active,
+    })
+    setShowSecurityModal(true)
+  }
+
+  const handleApplyRolePreset = (preset: 'admin' | 'gerente' | 'recepcionista' | 'financeiro' | 'profissional') => {
+    if (preset === 'admin') {
+      setSecurityForm(prev => ({
+        ...prev,
+        roleTitle: 'Administrador Total',
+        canViewBookings: true, canManageBookings: true,
+        canViewFinance: true, canManageFinance: true,
+        canManageServices: true, canViewClients: true, canManageClients: true,
+        canManageLoyalty: true, canManageStaff: true, canManageSettings: true,
+        canViewAuditLogs: true,
+      }))
+    } else if (preset === 'gerente') {
+      setSecurityForm(prev => ({
+        ...prev,
+        roleTitle: 'Gerente de Operação',
+        canViewBookings: true, canManageBookings: true,
+        canViewFinance: false, canManageFinance: false,
+        canManageServices: true, canViewClients: true, canManageClients: true,
+        canManageLoyalty: true, canManageStaff: false, canManageSettings: false,
+        canViewAuditLogs: true,
+      }))
+    } else if (preset === 'recepcionista') {
+      setSecurityForm(prev => ({
+        ...prev,
+        roleTitle: 'Recepcionista / Atendente',
+        canViewBookings: true, canManageBookings: true,
+        canViewFinance: false, canManageFinance: false,
+        canManageServices: false, canViewClients: true, canManageClients: true,
+        canManageLoyalty: true, canManageStaff: false, canManageSettings: false,
+        canViewAuditLogs: false,
+      }))
+    } else if (preset === 'financeiro') {
+      setSecurityForm(prev => ({
+        ...prev,
+        roleTitle: 'Financeiro / Contabilidade',
+        canViewBookings: true, canManageBookings: false,
+        canViewFinance: true, canManageFinance: true,
+        canManageServices: false, canViewClients: true, canManageClients: false,
+        canManageLoyalty: false, canManageStaff: false, canManageSettings: false,
+        canViewAuditLogs: false,
+      }))
+    } else if (preset === 'profissional') {
+      setSecurityForm(prev => ({
+        ...prev,
+        roleTitle: 'Profissional / Atendedor',
+        canViewBookings: true, canManageBookings: true,
+        canViewFinance: false, canManageFinance: false,
+        canManageServices: false, canViewClients: true, canManageClients: false,
+        canManageLoyalty: false, canManageStaff: false, canManageSettings: false,
+        canViewAuditLogs: false,
+      }))
+    }
+  }
+
+  const handleSaveSecurityPermission = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!securityForm.userName.trim()) {
+      showToast('Digite o nome do operador ou perfil.', 'error')
+      return
+    }
+
+    try {
+      if (editingSecurityPerm) {
+        await api.updateSecurityPermission(editingSecurityPerm.id, securityForm)
+        showToast('Perfil de permissões atualizado com sucesso!')
+      } else {
+        await api.createSecurityPermission(securityForm)
+        showToast('Novo operador/perfil de segurança criado com sucesso!')
+      }
+      setShowSecurityModal(false)
+      fetchSecurityPermissions()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao salvar regras de segurança.', 'error')
+    }
+  }
+
+  const handleDeleteSecurityPermission = async (id: number) => {
+    if (!window.confirm('Tem certeza que deseja remover este perfil de permissão?')) return
+    try {
+      await api.deleteSecurityPermission(id)
+      showToast('Perfil de permissão excluído!')
+      fetchSecurityPermissions()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao excluir perfil.', 'error')
+    }
+  }
+
+  const handleToggleSecurityActive = async (item: UserPermissionItem) => {
+    try {
+      await api.updateSecurityPermission(item.id, { active: !item.active })
+      showToast(`Status de ${item.userName} alterado para ${!item.active ? 'Ativo' : 'Inativo'}`)
+      fetchSecurityPermissions()
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao alterar status.', 'error')
+    }
   }
 
   // Booking Management States
@@ -5752,6 +5935,175 @@ export default function Dashboard() {
         )}
 
         {/* ═══════════════════════════════════════════ */}
+        {/* TAB: Módulo de Segurança & Controle de Permissões (RBAC) */}
+        {/* ═══════════════════════════════════════════ */}
+        {activeTab === 'seguranca' && (
+          <div className="animate-slide-up space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-3xl border border-violet-500/20 shadow-xl text-white">
+              <div>
+                <div className="flex items-center gap-2.5 mb-1.5">
+                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                    <ShieldCheck className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black tracking-tight">Segurança & Controle de Acessos (RBAC)</h2>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Proteção Defensiva & Permissões Granulares</span>
+                  </div>
+                </div>
+                <p className="text-xs text-slate-300 max-w-2xl font-medium leading-relaxed">
+                  Gerencie o nível de privilégios de cada funcionário, recepcionista ou gerente do seu estabelecimento. Defina exatamente quais seções, relatórios financeiro e botões estarão visíveis para cada usuário.
+                </p>
+              </div>
+              <button
+                onClick={openNewSecurityModal}
+                className="px-5 py-3 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white font-black text-xs rounded-2xl uppercase tracking-wider transition-all shadow-lg shadow-violet-600/30 flex items-center gap-2 shrink-0 cursor-pointer"
+              >
+                <UserPlus className="w-4 h-4" /> Novo Operador / Perfil
+              </button>
+            </div>
+
+            {/* Metrics Bar */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Operadores Cadastrados</p>
+                  <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{securityPermissions.length}</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center font-bold">
+                  <Users className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status do Acesso</p>
+                  <p className="text-2xl font-black text-emerald-500 mt-0.5">{securityPermissions.filter(p => p.active).length} Ativos</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+              </div>
+
+              <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] p-4 rounded-2xl flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Criptografia & Sessões</p>
+                  <p className="text-xs font-bold text-violet-400 mt-1">JWT 256-bit & Fastify Shield</p>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
+                  <Lock className="w-5 h-5" />
+                </div>
+              </div>
+            </div>
+
+            {/* Operator List Table / Grid */}
+            <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] rounded-3xl p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
+                  <Key className="w-4 h-4 text-violet-500" /> Matriz de Privilégios por Operador
+                </h3>
+                <button
+                  onClick={() => fetchSecurityPermissions()}
+                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  title="Atualizar Tabela"
+                >
+                  <RefreshCw className={`w-4 h-4 ${loadingSecurity ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+
+              {loadingSecurity ? (
+                <div className="py-16 text-center space-y-3">
+                  <Loader2 className="w-8 h-8 text-violet-500 animate-spin mx-auto" />
+                  <p className="text-xs font-bold text-slate-400">Carregando operadores e privilégios...</p>
+                </div>
+              ) : securityPermissions.length === 0 ? (
+                <div className="py-16 text-center bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+                  <Shield className="w-12 h-12 text-slate-400 mx-auto opacity-40 animate-pulse" />
+                  <h4 className="text-sm font-black text-slate-700 dark:text-slate-300">Nenhum operador configurado</h4>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">
+                    Cadastre gerentes, recepcionistas ou atendentes para restringir o acesso a módulos confidenciais como o Financeiro.
+                  </p>
+                  <button
+                    onClick={openNewSecurityModal}
+                    className="px-4 py-2.5 bg-violet-600 text-white font-black text-xs rounded-xl uppercase tracking-wider hover:bg-violet-700 transition-all shadow-md inline-flex items-center gap-2 cursor-pointer"
+                  >
+                    <UserPlus className="w-4 h-4" /> Criar Primeiro Perfil
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {securityPermissions.map(perm => (
+                    <div
+                      key={perm.id}
+                      className="p-4 bg-white dark:bg-[#0f131f]/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-violet-500/30"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600/20 to-pink-500/20 text-violet-500 flex items-center justify-center font-black text-base border border-violet-500/20">
+                          {perm.userName[0]?.toUpperCase()}
+                        </div>
+                        <div className="text-left">
+                          <div className="flex items-center gap-2">
+                            <h4 className="text-sm font-black text-slate-900 dark:text-white">{perm.userName}</h4>
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                              {perm.roleTitle}
+                            </span>
+                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${perm.active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                              {perm.active ? 'Ativo' : 'Bloqueado'}
+                            </span>
+                          </div>
+                          {perm.email && (
+                            <p className="text-xs text-slate-400 font-semibold mt-0.5">{perm.email}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Permissions Badges */}
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        {perm.canViewBookings && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">📅 Agenda</span>}
+                        {perm.canViewFinance && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">💰 Financeiro</span>}
+                        {perm.canManageServices && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">✂️ Serviços</span>}
+                        {perm.canViewClients && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">👥 Clientes</span>}
+                        {perm.canManageLoyalty && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20">🎁 Fidelidade</span>}
+                        {perm.canManageStaff && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">👔 RH</span>}
+                        {perm.canManageSettings && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20">⚙️ Configurações</span>}
+                        {perm.canViewAuditLogs && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">🛡️ Audit Logs</span>}
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => handleToggleSecurityActive(perm)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                            perm.active
+                              ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white'
+                              : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'
+                          }`}
+                        >
+                          {perm.active ? 'Suspender' : 'Ativar'}
+                        </button>
+                        <button
+                          onClick={() => openEditSecurityModal(perm)}
+                          className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-violet-600 hover:text-white rounded-xl transition-all cursor-pointer"
+                          title="Editar Permissões"
+                        >
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSecurityPermission(perm.id)}
+                          className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all cursor-pointer"
+                          title="Remover Perfil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ═══════════════════════════════════════════ */}
         {/* TAB: Social Network & Direct Messages Chat */}
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'social' && (
@@ -7072,6 +7424,277 @@ export default function Dashboard() {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Security & Access Control Modal */}
+      {showSecurityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-900 dark:text-slate-100">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-scale-in border border-violet-500/30 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-6 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-500 text-white flex items-center justify-center font-black">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white">
+                    {editingSecurityPerm ? 'Editar Perfil de Segurança' : 'Novo Operador / Perfil de Acesso'}
+                  </h3>
+                  <p className="text-xs text-violet-400 font-bold">Defina as permissões individuais do operador</p>
+                </div>
+              </div>
+              <button onClick={() => setShowSecurityModal(false)} className="p-2 text-slate-400 hover:text-white">
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSecurityPermission} className="space-y-6 text-left">
+              {/* Profile Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Nome do Operador / Usuário *</label>
+                  <input
+                    type="text"
+                    value={securityForm.userName}
+                    onChange={e => setSecurityForm({ ...securityForm, userName: e.target.value })}
+                    placeholder="Ex: Amanda Lima (Recepção)"
+                    className="input-simple font-bold text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">E-mail (opcional)</label>
+                  <input
+                    type="email"
+                    value={securityForm.email}
+                    onChange={e => setSecurityForm({ ...securityForm, email: e.target.value })}
+                    placeholder="Ex: amanda@empresa.com"
+                    className="input-simple font-bold text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase mb-1">Título da Função / Cargo *</label>
+                <input
+                  type="text"
+                  value={securityForm.roleTitle}
+                  onChange={e => setSecurityForm({ ...securityForm, roleTitle: e.target.value })}
+                  placeholder="Ex: Recepcionista, Gerente, Barbeiro..."
+                  className="input-simple font-bold text-xs"
+                  required
+                />
+              </div>
+
+              {/* Quick Role Presets */}
+              <div className="p-4 bg-violet-500/5 border border-violet-500/20 rounded-2xl space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 block">
+                  ⚡ Perfis Rápidos Pré-configurados (1-Clique)
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleApplyRolePreset('admin')}
+                    className="px-3 py-1.5 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition-all cursor-pointer"
+                  >
+                    👑 Administrador Total
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyRolePreset('gerente')}
+                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    📊 Gerente de Operação
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyRolePreset('recepcionista')}
+                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    🛎️ Recepcionista
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyRolePreset('financeiro')}
+                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    💵 Financeiro
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleApplyRolePreset('profissional')}
+                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    ✂️ Profissional
+                  </button>
+                </div>
+              </div>
+
+              {/* Toggles Matrix */}
+              <div className="space-y-4">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
+                  Matriz de Permissões Granulares
+                </h4>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Agendamentos */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">🗓️ Visualizar Agenda</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Ver horários e atendimentos</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canViewBookings}
+                      onChange={e => setSecurityForm({ ...securityForm, canViewBookings: e.target.checked })}
+                      className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">✏️ Editar / Concluir Agendamentos</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Remarcar, concluir e cancelar</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canManageBookings}
+                      onChange={e => setSecurityForm({ ...securityForm, canManageBookings: e.target.checked })}
+                      className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Financeiro */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">💰 Visualizar Fluxo de Caixa</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Ver receitas, relatórios e saldos</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canViewFinance}
+                      onChange={e => setSecurityForm({ ...securityForm, canViewFinance: e.target.checked })}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">💵 Lançar / Editar Transações</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Criar e excluir entradas e saídas</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canManageFinance}
+                      onChange={e => setSecurityForm({ ...securityForm, canManageFinance: e.target.checked })}
+                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Serviços */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">✂️ Gerenciar Catálogo & Preços</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Cadastrar e alterar serviços e valores</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canManageServices}
+                      onChange={e => setSecurityForm({ ...securityForm, canManageServices: e.target.checked })}
+                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Clientes */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">👥 Base de Clientes</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Visualizar cadastro e histórico</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canViewClients}
+                      onChange={e => setSecurityForm({ ...securityForm, canViewClients: e.target.checked })}
+                      className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Fidelidade */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">🎁 Cartão Fidelidade & Cupons</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Dar selos e criar promoções</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canManageLoyalty}
+                      onChange={e => setSecurityForm({ ...securityForm, canManageLoyalty: e.target.checked })}
+                      className="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* RH */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">👔 Gestão de RH & Funcionários</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Cadastrar equipe, comissões e salários</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canManageStaff}
+                      onChange={e => setSecurityForm({ ...securityForm, canManageStaff: e.target.checked })}
+                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Configurações */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">⚙️ Configurações & Mercado Pago</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Alterar dados da empresa e chaves PIX</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canManageSettings}
+                      onChange={e => setSecurityForm({ ...securityForm, canManageSettings: e.target.checked })}
+                      className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
+                    />
+                  </label>
+
+                  {/* Audit Logs */}
+                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <div>
+                      <span className="text-xs font-black text-slate-900 dark:text-white block">🛡️ Logs de Segurança & IP</span>
+                      <span className="text-[10px] text-slate-400 font-semibold">Acessar auditoria e rastreamento</span>
+                    </div>
+                    <input
+                      type="checkbox"
+                      checked={securityForm.canViewAuditLogs}
+                      onChange={e => setSecurityForm({ ...securityForm, canViewAuditLogs: e.target.checked })}
+                      className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Submit Buttons */}
+              <div className="flex gap-3 pt-4">
+                <button
+                  type="submit"
+                  className="flex-1 py-4 bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black rounded-2xl transition-all shadow-lg shadow-violet-600/25 hover:opacity-95 text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  {editingSecurityPerm ? 'Salvar Alterações de Permissão' : 'Cadastrar Operador & Atribuir Regras'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowSecurityModal(false)}
+                  className="px-5 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-2xl transition-all text-xs uppercase tracking-wider cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
