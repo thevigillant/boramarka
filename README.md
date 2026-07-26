@@ -113,6 +113,10 @@ Desenvolvido para **profissionais autônomos e estabelecimentos comerciais** (ba
 ### 📲 Notificações Web Push Nativa
 - Suporte a inscrição de notificações no navegador usando chaves VAPID e Service Worker (`sw.js`) ativo, notificando o cliente direto na tela do celular ou desktop.
 
+### 📱 PWA Instalável (App na Tela do Celular)
+- Manifesto Web App (`manifest.json`) completo permitindo a instalação nativa do BoraMarka na tela de início em dispositivos Android, iOS e Desktops.
+- Banner flutuante inteligente (`PWAInstallBanner.tsx`) que sugere a instalação ao usuário com instrução guiada de 2 passos para dispositivos iOS (Safari).
+
 ---
 
 ## 🏗️ Arquitetura e Stack Tecnológica

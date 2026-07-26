@@ -1,0 +1,25 @@
+{
+  "short_name": "BoraMarka",
+  "name": "BoraMarka — Sua agenda cheia, sem complicação",
+  "description": "Plataforma de agendamento online inteligente, cobrança antecipada com Mercado Pago e gestão financeira.",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "64x64 32x32 24x24 16x16"
+    }
+  ],
+  "start_url": "/?utm_source=pwa",
+  "background_color": "#050507",
+  "theme_color": "#ec4899",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/",
+  "categories": ["business", "productivity", "utilities"]
+}
