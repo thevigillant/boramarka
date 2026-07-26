@@ -1241,7 +1241,7 @@ export default function Landing() {
                       <h3 className="text-[17px] font-bold text-white/90 mb-1 tracking-tight">BoraMensal</h3>
                       <div className="flex items-baseline gap-1 mb-3">
                         <span className="text-[11px] text-white/25 font-medium">R$</span>
-                        <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">30</span>
+                        <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">29<span className="text-[22px]">,90</span></span>
                         <span className="text-[11px] text-white/25 font-medium">/mês</span>
                       </div>
                       <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Ideal para começar e crescer.</p>
