@@ -172,11 +172,41 @@ export default function Landing() {
   const timeSavedHours = Math.round((weeklyAppts * 6 * 4) / 60)
   const recoveredRevenue = Math.round(weeklyAppts * 4 * 0.22 * avgTicket)
 
-  const baseFeatures = [
-    'Agendamentos Ilimitados',
-    'Links de agendamento próprios',
-    'Notificações automáticas WhatsApp',
-    'Fluxo de Caixa integrado'
+  const testFeatures = [
+    '7 Dias de acesso completo sem cartão',
+    'Agenda Inteligente com horários 24h',
+    'Cobrança de sinal via Mercado Pago',
+    'Notificações de confirmação via WhatsApp',
+    'Até 3 Serviços e 3 Links ativos'
+  ]
+
+  const mensalFeatures = [
+    'Agenda Inteligente com horários 24h',
+    'Cobrança de sinal via Mercado Pago',
+    'Notificações de confirmação via WhatsApp',
+    'Até 5 Serviços e 5 Links ativos',
+    'Fluxo de Caixa e Relatórios básicos',
+    'Suporte padrão por WhatsApp'
+  ]
+
+  const anualFeatures = [
+    'Tudo do Plano Mensal',
+    'Serviços e Links Ilimitados',
+    'Venda Casada (Upsell & Adicionais)',
+    'Cartão Fidelidade Digital com Cupons',
+    'Exportação em Excel (CSV) e PDF',
+    'Economia de R$ 100/ano no plano'
+  ]
+
+  const premiumFeatures = [
+    'Tudo do Plano Anual',
+    'Gestão de Equipe & RH Completo',
+    'Notificações Web Push no Celular',
+    'Sincronização com Google Calendar',
+    'Domínio Próprio e Subdomínio grátis',
+    'Remoção total da marca BoraMarka',
+    'Audit Logs de Segurança por IP',
+    'Suporte VIP Prioritário 24/7'
   ]
 
   // CountUp stats
@@ -1187,7 +1217,7 @@ export default function Landing() {
                       </div>
                       <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Todos os recursos. Sem cartão.</p>
                       <ul className="space-y-3 mb-8">
-                        {baseFeatures.map((f, i) => (
+                        {testFeatures.map((f, i) => (
                           <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
                             <div className="w-4 h-4 rounded-full bg-emerald-500/[0.08] border border-emerald-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-emerald-400" /></div>
                             {f}
@@ -1216,7 +1246,7 @@ export default function Landing() {
                       </div>
                       <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Ideal para começar e crescer.</p>
                       <ul className="space-y-3 mb-8">
-                        {baseFeatures.map((f, i) => (
+                        {mensalFeatures.map((f, i) => (
                           <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
                             <div className="w-4 h-4 rounded-full bg-blue-500/[0.08] border border-blue-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-blue-400" /></div>
                             {f}
@@ -1233,10 +1263,13 @@ export default function Landing() {
 
               {/* BoraAnual */}
               <Reveal>
-                <div className="doppelrand h-full">
-                  <div className="doppelrand-inner p-7 h-full flex flex-col justify-between text-left">
+                <div className="glow-ring rounded-[2rem] h-full">
+                  <div className="bg-[#080a16] rounded-[calc(2rem-2px)] p-7 h-full flex flex-col justify-between text-left relative">
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-amber-500 text-[7px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full text-white shadow-md shadow-orange-500/20">
+                      Mais Vendido 🔥
+                    </div>
                     <div>
-                      <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-orange-400 mb-5">Anual</p>
+                      <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-orange-400 mb-5 mt-1">Anual</p>
                       <h3 className="text-[17px] font-bold text-white/90 mb-1 tracking-tight">BoraAnual</h3>
                       <div className="flex items-baseline gap-1 mb-1">
                         <span className="text-[11px] text-white/25 font-medium">R$</span>
@@ -1244,9 +1277,9 @@ export default function Landing() {
                         <span className="text-[11px] text-white/25 font-medium">/ano</span>
                       </div>
                       <p className="text-emerald-400 text-[9px] font-bold bg-emerald-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-3 tracking-wider uppercase">Economize R$ 100/ano</p>
-                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Melhor custo-benefício.</p>
+                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Melhor custo-benefício para profissionais.</p>
                       <ul className="space-y-3 mb-8">
-                        {baseFeatures.map((f, i) => (
+                        {anualFeatures.map((f, i) => (
                           <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
                             <div className="w-4 h-4 rounded-full bg-orange-500/[0.08] border border-orange-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-orange-400" /></div>
                             {f}
@@ -1254,19 +1287,19 @@ export default function Landing() {
                         ))}
                       </ul>
                     </div>
-                    <button onClick={() => navigate('/register')} className="mag-btn w-full py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-[12px] font-bold text-white shadow-lg shadow-violet-600/15 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
+                    <button onClick={() => navigate('/register')} className="mag-btn w-full py-3.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-600 text-[12px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
                       Assinar Anual
                     </button>
                   </div>
                 </div>
               </Reveal>
 
-              {/* BoraPremium — Glow Ring */}
+              {/* BoraPremium */}
               <Reveal>
-                <div className="glow-ring rounded-[2rem] h-full">
-                  <div className="bg-[#080a16] rounded-[calc(2rem-2px)] p-7 h-full flex flex-col justify-between text-left relative">
+                <div className="doppelrand h-full">
+                  <div className="doppelrand-inner p-7 h-full flex flex-col justify-between text-left relative">
                     <div className="absolute top-4 right-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-[7px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full text-white">
-                      Completo
+                      Equipes & RH
                     </div>
                     <div>
                       <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-violet-400 mb-5 mt-1">Premium</p>
@@ -1277,9 +1310,9 @@ export default function Landing() {
                         <span className="text-[11px] text-white/25 font-medium">/mês</span>
                       </div>
                       <p className="text-violet-400 text-[9px] font-bold bg-violet-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-3 tracking-wider uppercase">Domínio Próprio & RH</p>
-                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Sua marca, seu domínio, seu controle.</p>
+                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Para barbearias, clínicas e salões com equipe.</p>
                       <ul className="space-y-3 mb-8">
-                        {['Tudo dos outros planos', 'Gestão de RH para equipes', 'Subdomínio profissional grátis', 'Domínio próprio personalizado', 'Remoção total da marca BoraMarka', 'Suporte VIP prioritário'].map((f, i) => (
+                        {premiumFeatures.map((f, i) => (
                           <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
                             <div className="w-4 h-4 rounded-full bg-violet-500/[0.08] border border-violet-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-violet-400" /></div>
                             {f}
