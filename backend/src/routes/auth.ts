@@ -49,7 +49,13 @@ export default async function authRoutes(app: FastifyInstance) {
     let emailSent = false;
     if (isSmtpConfigured) {
       try {
-        emailSent = await sendEmailVerificationCode(cleanEmail, cleanUsername || 'Profissional', code);
+        const timeoutPromise = new Promise<boolean>((resolve) =>
+          setTimeout(() => resolve(false), 4500)
+        );
+        emailSent = await Promise.race([
+          sendEmailVerificationCode(cleanEmail, cleanUsername || 'Profissional', code),
+          timeoutPromise,
+        ]);
       } catch (err: any) {
         console.error('Erro ao enviar e-mail por SMTP:', err.message);
       }
