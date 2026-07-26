@@ -44,18 +44,31 @@ export default async function authRoutes(app: FastifyInstance) {
 
     verificationStore.set(cleanEmail, { code, expiresAt });
 
-    const emailSent = await sendEmailVerificationCode(cleanEmail, cleanUsername || 'Profissional', code);
+    const isSmtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
 
-    if (!emailSent) {
-      return reply.status(500).send({ error: 'Erro ao enviar e-mail de verificação. Verifique as configurações de SMTP.' });
+    let emailSent = false;
+    if (isSmtpConfigured) {
+      try {
+        emailSent = await sendEmailVerificationCode(cleanEmail, cleanUsername || 'Profissional', code);
+      } catch (err: any) {
+        console.error('Erro ao enviar e-mail por SMTP:', err.message);
+      }
     }
 
-    const isSmtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+    if (!emailSent) {
+      console.log('\n======================================================');
+      console.log('📧 [FALLBACK DE VERIFICAÇÃO DE E-MAIL]');
+      console.log(`Para: ${cleanEmail}`);
+      console.log(`✨ CÓDIGO DE VERIFICAÇÃO (4 DÍGITOS): [ ${code} ]`);
+      console.log('======================================================\n');
+    }
 
     return {
       success: true,
-      message: `Código de verificação de 4 dígitos enviado para ${cleanEmail}`,
-      devCode: isSmtpConfigured ? undefined : code,
+      message: emailSent
+        ? `Código de verificação de 4 dígitos enviado para ${cleanEmail}`
+        : `Código de verificação gerado para ${cleanEmail}`,
+      devCode: emailSent ? undefined : code,
     };
   });
 
