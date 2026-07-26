@@ -90,6 +90,29 @@ Desenvolvido para **profissionais autônomos e estabelecimentos comerciais** (ba
 - Registro de Entradas (Recebimentos) e Saídas (Despesas/Estornos).
 - Emissão de relatórios estruturados em PDF com logomarca e filtros personalizados.
 
+### 📈 Relatório de Receitas & Ticket Médio por Serviço
+- Detalhamento visual da participação de cada serviço no faturamento total do profissional.
+- Acompanhamento da quantidade de agendamentos concluídos e ticket médio gerado por período selecionado.
+
+### 📥 Exportação de Dados em CSV
+- Download direto no painel administrativo dos relatórios de Agendamentos e Fluxo de Caixa em formato CSV.
+- Arquivos formatados com a marcação UTF-8 BOM, garantindo que o Microsoft Excel abra os dados com acentuação e formatação corretas (como ã, ç, é).
+
+### 🔄 Reagendamento Flexível de Horários
+- Interface administrativa integrada que permite ao profissional reagendar datas, horários e slots de atendimento diretamente pelo painel.
+
+### 🛍️ Venda Casada (Upsell) & Serviços Adicionais
+- Possibilidade de vincular serviços adicionais (com desconto configurável) a serviços principais.
+- Clientes podem selecionar complementos durante o fluxo de agendamento online, recalculando o valor total de forma dinâmica.
+
+### 🔔 Lembretes Automáticos Multicanis & Central de Logs
+- Configuração personalizada de janelas de aviso (ex: 24h e 2h antes do atendimento).
+- Disparo de notificações via WhatsApp, E-mail e Notificações Web Push.
+- Painel de auditoria de logs de lembretes (`ReminderLog`) para verificar se cada envio foi concluído, falhou ou foi pulado.
+
+### 📲 Notificações Web Push Nativa
+- Suporte a inscrição de notificações no navegador usando chaves VAPID e Service Worker (`sw.js`) ativo, notificando o cliente direto na tela do celular ou desktop.
+
 ---
 
 ## 🏗️ Arquitetura e Stack Tecnológica
