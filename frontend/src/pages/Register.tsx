@@ -128,10 +128,21 @@ export default function Register() {
 
   // Step 2 — Negócio
   const [businessName, setBusinessName] = useState('')
+  const [category, setCategory] = useState('barber')
   const [photoUrl, setPhotoUrl] = useState('')
   const [cnpj, setCnpj] = useState('')
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
+
+  const categories = [
+    { id: 'barber', icon: '💈', name: 'Barbearia', desc: 'Cortes, Barba & Combos' },
+    { id: 'beauty', icon: '💅', name: 'Salão & Esmalteria', desc: 'Pé & Mão, Cabelo, Gel' },
+    { id: 'tattoo', icon: '✒️', name: 'Tatuagem & Piercing', desc: 'Sessões & Perfurações' },
+    { id: 'aesthetics', icon: '🧴', name: 'Estética & Cílios/Sobrancelhas', desc: 'Design, Henna, Cílios' },
+    { id: 'health', icon: '🏋️', name: 'Personal & Saúde/Fisio', desc: 'Treinos & Fisioterapia' },
+    { id: 'pet', icon: '🐾', name: 'Pet Shop & Banho e Tosa', desc: 'Banho, Tosa & Pet Care' },
+    { id: 'clinic', icon: '🩺', name: 'Consultório & Clínica', desc: 'Consultas & Retornos' },
+  ]
 
   // Step 3 — Perfil
   const [description, setDescription] = useState('')
@@ -337,6 +348,7 @@ export default function Register() {
         photoUrl: photoUrl.trim(),
         address: address.trim(),
         operatingHours,
+        category,
       })
 
       localStorage.removeItem('token')
@@ -520,6 +532,34 @@ export default function Register() {
                     <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                     <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)}
                       placeholder="Ex: Barbearia do João" className={inputIconClass} autoFocus />
+                  </div>
+                </div>
+
+                <div>
+                  <label className={labelClass}>Nicho / Categoria do Negócio <span className="text-red-400">*</span></label>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
+                    {categories.map((cat) => {
+                      const isSelected = category === cat.id
+                      return (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setCategory(cat.id)}
+                          className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all duration-300 ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
+                              : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
+                          }`}
+                        >
+                          <span className="text-xl shrink-0">{cat.icon}</span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[12px] font-bold tracking-tight text-white/90 leading-tight">{cat.name}</p>
+                            <p className="text-[10px] text-white/30 truncate mt-0.5">{cat.desc}</p>
+                          </div>
+                          {isSelected && <CheckCircle2 className="w-4 h-4 text-pink-400 shrink-0 ml-auto" />}
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
 

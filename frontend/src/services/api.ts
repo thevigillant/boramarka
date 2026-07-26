@@ -92,6 +92,7 @@ export const api = {
     photoUrl?: string;
     address?: string;
     operatingHours?: string;
+    category?: string;
   }) =>
     request<{ token: string; username: string; businessName: string; role?: string }>('/auth/register', {
       method: 'POST',

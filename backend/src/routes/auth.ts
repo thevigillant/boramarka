@@ -108,6 +108,7 @@ export default async function authRoutes(app: FastifyInstance) {
       photoUrl,
       address,
       operatingHours,
+      category,
     } = request.body as {
       username: string;
       email?: string;
@@ -119,6 +120,7 @@ export default async function authRoutes(app: FastifyInstance) {
       photoUrl?: string;
       address?: string;
       operatingHours?: string;
+      category?: string;
     };
 
     if (!username?.trim() || !password) {
@@ -130,6 +132,8 @@ export default async function authRoutes(app: FastifyInstance) {
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
+
+    const chosenCategory = category?.trim() || 'barber';
 
     let admin;
     try {
@@ -145,6 +149,7 @@ export default async function authRoutes(app: FastifyInstance) {
           photoUrl: photoUrl?.trim() || '',
           address: address?.trim() || '',
           operatingHours: operatingHours || '',
+          category: chosenCategory,
         },
       });
     } catch (error: any) {
@@ -152,6 +157,62 @@ export default async function authRoutes(app: FastifyInstance) {
         return reply.status(409).send({ error: 'Este nome de usuário já está em uso. Escolha outro.' });
       }
       throw error;
+    }
+
+    // Auto-seed default services based on category
+    const defaultServices: Record<string, Array<{ name: string; price: number; durationMinutes: number; description: string }>> = {
+      barber: [
+        { name: 'Corte Social / Degradê', price: 35.0, durationMinutes: 30, description: 'Corte moderno com acabamento e alinhamento do pezinho' },
+        { name: 'Barba Completa + Toalha Quente', price: 30.0, durationMinutes: 25, description: 'Modelagem de barba com esfoliação e toalha quente' },
+        { name: 'Combo Cabelo & Barba Premium', price: 60.0, durationMinutes: 50, description: 'Corte completo + barba tratada e finalizada' },
+      ],
+      beauty: [
+        { name: 'Pé & Mão Completo', price: 55.0, durationMinutes: 50, description: 'Cutilagem, esmaltação e hidratação das mãos e pés' },
+        { name: 'Escova & Modelagem', price: 60.0, durationMinutes: 45, description: 'Lavagem especial com lavatório e escova modelada' },
+        { name: 'Esmaltação em Gel', price: 70.0, durationMinutes: 60, description: 'Aplicação e secagem com luz UV de alta durabilidade' },
+      ],
+      tattoo: [
+        { name: 'Sessão Tatuagem (1 hora)', price: 150.0, durationMinutes: 60, description: 'Sessão inicial de tatuagem personalizada' },
+        { name: 'Aplicação de Piercing', price: 70.0, durationMinutes: 30, description: 'Perfuração asséptica com joia em titânio inclusa' },
+        { name: 'Avaliação & Decalque', price: 50.0, durationMinutes: 30, description: 'Criação de arte e teste de posicionamento' },
+      ],
+      aesthetics: [
+        { name: 'Design de Sobrancelha com Henna', price: 45.0, durationMinutes: 35, description: 'Mapeamento facial e pigmentação com henna' },
+        { name: 'Extensão de Cílios (Volume Russo)', price: 120.0, durationMinutes: 90, description: 'Aplicação fio a fio com curvatura marcante' },
+        { name: 'Limpeza de Pele Profunda', price: 130.0, durationMinutes: 60, description: 'Higienização, extração de cravos e máscara calmante' },
+      ],
+      health: [
+        { name: 'Avaliação Física & Anamnese', price: 80.0, durationMinutes: 45, description: 'Medição de dobras, bioimpedância e metas' },
+        { name: 'Treino Acompanhado / Personal (1h)', price: 90.0, durationMinutes: 60, description: 'Sessão individual com correção postural' },
+        { name: 'Fisioterapia & Liberação Miofascial', price: 120.0, durationMinutes: 50, description: 'Alívio de dores e liberação muscular profunda' },
+      ],
+      pet: [
+        { name: 'Banho & Tosa Higiênica (Pequeno Porte)', price: 50.0, durationMinutes: 45, description: 'Banho com shampoo neutro, corte de unhas e higienização' },
+        { name: 'Banho & Tosa Completa (Médio/Grande Porte)', price: 80.0, durationMinutes: 60, description: 'Banho completo com toalha morna e tosa da raça' },
+        { name: 'Hidratação de Pelagem Profunda', price: 35.0, durationMinutes: 20, description: 'Tratamento de brilho e maciez dos pelos' },
+      ],
+      clinic: [
+        { name: 'Consulta Inicial / Avaliação', price: 150.0, durationMinutes: 50, description: 'Primeira consulta diagnóstica e plano de tratamento' },
+        { name: 'Sessão de Acompanhamento', price: 120.0, durationMinutes: 40, description: 'Retorno e acompanhamento evolutivo' },
+      ],
+    };
+
+    const initialServices = defaultServices[chosenCategory] || defaultServices.barber;
+
+    try {
+      for (const s of initialServices) {
+        await prisma.service.create({
+          data: {
+            adminId: admin.id,
+            name: s.name,
+            price: s.price,
+            duration: s.durationMinutes,
+            description: s.description,
+          },
+        });
+      }
+    } catch (err: any) {
+      console.error('Erro ao semear serviços padrão para categoria:', err.message);
     }
 
     // Cria a assinatura com 7 dias de trial grátis
