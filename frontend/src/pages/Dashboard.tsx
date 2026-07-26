@@ -1282,6 +1282,20 @@ export default function Dashboard() {
 
   // Booking Management States
   const [searchBookingQuery, setSearchBookingQuery] = useState('')
+  const filteredBookings = useMemo(() => {
+    return bookings.filter(booking => {
+      const query = searchBookingQuery.toLowerCase().trim()
+      if (!query) return true
+      const serviceName = booking.timeSlot?.link?.service?.name || ''
+      const linkTitle = booking.timeSlot?.link?.title || ''
+      return (
+        booking.clientName.toLowerCase().includes(query) ||
+        booking.clientPhone.includes(query) ||
+        serviceName.toLowerCase().includes(query) ||
+        linkTitle.toLowerCase().includes(query)
+      )
+    })
+  }, [bookings, searchBookingQuery])
   const [showNewBookingModal, setShowNewBookingModal] = useState(false)
   const [showDeleteSlotModal, setShowDeleteSlotModal] = useState(false)
   const [slotToDelete, setSlotToDelete] = useState<number | null>(null)
@@ -2005,18 +2019,6 @@ export default function Dashboard() {
     setExportingPdf(true)
     try {
       if (pdfReportType === 'bookings') {
-        const filteredBookings = bookings.filter(booking => {
-          const query = searchBookingQuery.toLowerCase().trim()
-          if (!query) return true
-          const serviceName = booking.timeSlot?.link?.service?.name || ''
-          const linkTitle = booking.timeSlot?.link?.title || ''
-          return (
-            booking.clientName.toLowerCase().includes(query) ||
-            booking.clientPhone.includes(query) ||
-            serviceName.toLowerCase().includes(query) ||
-            linkTitle.toLowerCase().includes(query)
-          )
-        })
         await exportBookingsToPDF({
           bookings: filteredBookings,
           adminInfo,
@@ -3472,20 +3474,7 @@ export default function Dashboard() {
                  </div>
               </div>
               <div className="grid gap-4">
-                 {bookings
-                   .filter(booking => {
-                     const query = searchBookingQuery.toLowerCase().trim()
-                     if (!query) return true
-                     const serviceName = booking.timeSlot.link?.service?.name || ''
-                     const linkTitle = booking.timeSlot.link?.title || ''
-                     return (
-                       booking.clientName.toLowerCase().includes(query) ||
-                       booking.clientPhone.includes(query) ||
-                       serviceName.toLowerCase().includes(query) ||
-                       linkTitle.toLowerCase().includes(query)
-                     )
-                   })
-                   .map(booking => (
+                 {filteredBookings.map(booking => (
                      <BookingCard
                        key={booking.id}
                        booking={booking}
@@ -3497,18 +3486,7 @@ export default function Dashboard() {
                        formatCurrency={formatCurrency}
                      />
                    ))}
-                 {bookings.filter(booking => {
-                     const query = searchBookingQuery.toLowerCase().trim()
-                     if (!query) return true
-                     const serviceName = booking.timeSlot.link?.service?.name || ''
-                     const linkTitle = booking.timeSlot.link?.title || ''
-                     return (
-                       booking.clientName.toLowerCase().includes(query) ||
-                       booking.clientPhone.includes(query) ||
-                       serviceName.toLowerCase().includes(query) ||
-                       linkTitle.toLowerCase().includes(query)
-                     )
-                   }).length === 0 && (
+                 {filteredBookings.length === 0 && (
                    <div className="text-center py-20 italic text-slate-400 dark:text-slate-600">
                      Nenhum agendamento encontrado
                    </div>
