@@ -14,6 +14,9 @@ function createTransporter() {
     secure: port === 465,
     auth: { user, pass },
     tls: { rejectUnauthorized: false },
+    connectionTimeout: 5000,
+    greetingTimeout: 5000,
+    socketTimeout: 5000,
   });
 }
 
