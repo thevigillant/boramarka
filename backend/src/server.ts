@@ -1,6 +1,8 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import helmet from '@fastify/helmet';
+import rateLimit from '@fastify/rate-limit';
 import authRoutes from './routes/auth';
 import adminRoutes from './routes/admin';
 import scheduleRoutes from './routes/schedule';
@@ -59,15 +61,49 @@ app.setErrorHandler((error, request, reply) => {
   });
 });
 
-// CORS
+// 🛡️ Security Headers (HTTP Helmet)
+app.register(helmet, {
+  contentSecurityPolicy: false,
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+});
+
+// 🛡️ Rate Limiting (Proteção Anti Brute-force / DoS)
+app.register(rateLimit, {
+  max: 120, // no máximo 120 requisições por minuto por IP
+  timeWindow: '1 minute',
+  errorResponseBuilder: () => ({
+    statusCode: 429,
+    error: 'Muitas requisições. Por favor, aguarde um momento antes de tentar novamente.',
+  }),
+});
+
+// 🛡️ CORS Controlado
+const allowedOrigins = [
+  'https://boramarka.com.br',
+  'https://www.boramarka.com.br',
+  'http://localhost:5173',
+  'http://localhost:3000',
+];
+
 app.register(cors, {
-  origin: true,
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      cb(null, true);
+    } else {
+      cb(new Error('Origem não permitida por políticas de segurança CORS'), false);
+    }
+  },
   credentials: true,
 });
 
-// JWT
+// 🛡️ Autenticação JWT com verificação de segredo
+const jwtSecret = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
+if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
+  console.warn('⚠️ [SEGURANÇA] JWT_SECRET padrão detectado em ambiente de produção!');
+}
+
 app.register(jwt, {
-  secret: process.env.JWT_SECRET || 'super-secret-key-change-in-production',
+  secret: jwtSecret,
 });
 
 // Routes
