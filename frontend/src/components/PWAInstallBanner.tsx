@@ -73,22 +73,46 @@ export default function PWAInstallBanner() {
   return (
     <>
       {/* Floating Bottom PWA Banner */}
-      <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-[99] animate-slide-up">
-        <div className="bg-[#0f1422]/95 backdrop-blur-xl border border-pink-500/30 p-4 rounded-2xl shadow-2xl shadow-pink-500/10 flex items-center justify-between gap-3 text-white">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-pink-500/30">
+      <div
+        className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-6 sm:w-96 z-[9999]"
+        style={{
+          position: 'fixed',
+          bottom: '16px',
+          right: '16px',
+          zIndex: 9999,
+          maxWidth: '380px',
+        }}
+      >
+        <div
+          className="bg-[#0f1422]/95 backdrop-blur-xl border border-pink-500/30 p-4 rounded-2xl shadow-2xl shadow-pink-500/10 flex items-center justify-between gap-3 text-white"
+          style={{
+            backgroundColor: '#0f1422',
+            border: '1px solid rgba(236, 72, 153, 0.3)',
+            borderRadius: '16px',
+            padding: '12px 16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '12px',
+            color: '#ffffff',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.5)',
+          }}
+        >
+          <div className="flex items-center gap-3" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-pink-500/30" style={{ width: '38px', height: '38px', borderRadius: '12px', backgroundColor: '#ec4899', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Smartphone className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs font-black text-white leading-tight">Instalar App BoraMarka</p>
-              <p className="text-[11px] text-slate-400 font-medium">Acesso rápido na tela de início!</p>
+              <p className="text-xs font-black text-white leading-tight" style={{ margin: 0, fontSize: '13px', fontWeight: 'bold', color: '#ffffff' }}>Instalar App BoraMarka</p>
+              <p className="text-[11px] text-slate-400 font-medium" style={{ margin: 0, fontSize: '11px', color: '#94a3b8' }}>Acesso rápido na tela de início!</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2 shrink-0" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <button
               onClick={handleInstallClick}
               className="bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-black text-xs py-2 px-3 rounded-xl transition-all shadow-md shadow-pink-500/20 flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+              style={{ backgroundColor: '#ec4899', color: '#ffffff', border: 'none', borderRadius: '10px', padding: '8px 12px', fontWeight: 'bold', fontSize: '12px', cursor: 'pointer' }}
             >
               <Download className="w-3.5 h-3.5" />
               <span>Instalar</span>
@@ -96,6 +120,7 @@ export default function PWAInstallBanner() {
             <button
               onClick={handleDismiss}
               className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-all cursor-pointer"
+              style={{ backgroundColor: 'transparent', color: '#94a3b8', border: 'none', padding: '6px', cursor: 'pointer' }}
               title="Fechar"
             >
               <X className="w-4 h-4" />
