@@ -4,6 +4,7 @@ import { authenticate } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { createAuditLog } from '../utils/auditLogger';
 import { sendWhatsAppMessage } from '../services/whatsapp';
+import { addLoyaltyStampOnCompletion } from './loyalty';
 
 export default async function adminRoutes(app: FastifyInstance) {
   // All admin routes require authentication
@@ -589,6 +590,11 @@ export default async function adminRoutes(app: FastifyInstance) {
       where: { id: parseInt(id) },
       data: { status }
     });
+
+    // Process Loyalty Stamp if status becomes CONCLUIDO
+    if (status === 'CONCLUIDO' && booking.status !== 'CONCLUIDO') {
+      await addLoyaltyStampOnCompletion(user.id, booking.clientPhone, booking.clientName);
+    }
 
     // If changing to CONFIRMADO or CONCLUIDO, create receivable transaction if needed
     if ((status === 'CONFIRMADO' || status === 'CONCLUIDO') && booking.status !== 'CONFIRMADO' && booking.status !== 'CONCLUIDO') {

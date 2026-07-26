@@ -117,6 +117,11 @@ Desenvolvido para **profissionais autônomos e estabelecimentos comerciais** (ba
 - Manifesto Web App (`manifest.json`) completo permitindo a instalação nativa do BoraMarka na tela de início em dispositivos Android, iOS e Desktops.
 - Banner flutuante inteligente (`PWAInstallBanner.tsx`) que sugere a instalação ao usuário com instrução guiada de 2 passos para dispositivos iOS (Safari).
 
+### 🎁 Cartão Fidelidade Digital & Cupons Automáticos
+- Mapeamento e contabilização automática de selos (`LoyaltyCard`) a cada atendimento concluído pelo profissional.
+- Meta de selos customizável (ex: 10 atendimentos) e geração automática de cupons de recompensa (`FIDELIDADE-XXXXXX`) com desconto em porcentagem ou valor fixo.
+- Widget público interativo (`LoyaltyWidget.tsx`) para o cliente consultar sua cartela de selos informando o número do WhatsApp.
+
 ---
 
 ## 🏗️ Arquitetura e Stack Tecnológica

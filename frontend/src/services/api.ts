@@ -954,4 +954,52 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ token, subscription, clientPhone }),
     }),
+
+  // ═══ Cartões de Fidelidade ═══
+  getLoyaltyConfig: () =>
+    request<{
+      loyaltyEnabled: boolean;
+      loyaltyTarget: number;
+      loyaltyRewardType: string;
+      loyaltyRewardValue: number;
+    }>('/loyalty/config'),
+
+  updateLoyaltyConfig: (data: {
+    loyaltyEnabled?: boolean;
+    loyaltyTarget?: number;
+    loyaltyRewardType?: string;
+    loyaltyRewardValue?: number;
+  }) =>
+    request<{
+      loyaltyEnabled: boolean;
+      loyaltyTarget: number;
+      loyaltyRewardType: string;
+      loyaltyRewardValue: number;
+    }>('/loyalty/config', { method: 'PUT', body: JSON.stringify(data) }),
+
+  getLoyaltyCards: () =>
+    request<Array<{
+      id: number;
+      clientPhone: string;
+      clientName: string;
+      stampsCount: number;
+      rewardsEarned: number;
+      rewardCouponCode: string;
+      createdAt: string;
+      updatedAt: string;
+    }>>('/loyalty/cards'),
+
+  updateLoyaltyStamp: (data: { clientPhone: string; clientName?: string; action: 'add' | 'remove' | 'reset' }) =>
+    request<{ success: boolean; message: string }>('/loyalty/stamp', { method: 'POST', body: JSON.stringify(data) }),
+
+  getPublicLoyaltyStatus: (username: string, clientPhone: string) =>
+    request<{
+      enabled: boolean;
+      target?: number;
+      rewardType?: string;
+      rewardValue?: number;
+      stampsCount?: number;
+      rewardsEarned?: number;
+      rewardCouponCode?: string;
+    }>(`/loyalty/public/${username}/${clientPhone}`),
 };
