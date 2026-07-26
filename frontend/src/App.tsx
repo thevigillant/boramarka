@@ -9,6 +9,8 @@ import PublicProfile from './pages/PublicProfile'
 import Landing from './pages/Landing'
 import SuperAdminDashboard from './pages/SuperAdminDashboard'
 
+import PWAInstallBanner from './components/PWAInstallBanner'
+
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token')
   if (!token) return <Navigate to="/login" replace />
@@ -48,6 +50,7 @@ function RootRouteWrapper() {
 export default function App() {
   return (
     <BrowserRouter>
+      <PWAInstallBanner />
       <Routes>
         <Route path="/" element={<RootRouteWrapper />} />
         <Route path="/login" element={<Login />} />
