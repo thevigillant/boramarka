@@ -262,7 +262,7 @@ export default async function authRoutes(app: FastifyInstance) {
     });
   });
 
-  // POST /api/auth/login
+  // POST /api/auth/login — Autentica tanto Administradores quanto Operadores
   app.post('/login', async (request, reply) => {
     const { username, password } = request.body as {
       username: string;
@@ -273,39 +273,121 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Usuário e senha são obrigatórios' });
     }
 
-    const admin = await prisma.admin.findUnique({
-      where: { username: username.trim().toLowerCase() },
+    const cleanInput = username.trim();
+    const cleanLower = cleanInput.toLowerCase();
+
+    // 1. Tenta autenticar como Admin principal
+    const admin = await prisma.admin.findFirst({
+      where: {
+        OR: [
+          { username: cleanLower },
+          { email: cleanLower },
+        ],
+      },
     });
 
-    if (!admin) {
-      return reply.status(401).send({ error: 'Credenciais inválidas' });
+    if (admin) {
+      const validPassword = await bcrypt.compare(password, admin.passwordHash);
+      if (validPassword) {
+        const token = app.jwt.sign(
+          { id: admin.id, username: admin.username, role: admin.role },
+          { expiresIn: '24h' }
+        );
+
+        request.user = { id: admin.id, username: admin.username, role: admin.role };
+        await createAuditLog(request, {
+          action: 'LOGIN',
+          entity: 'AUTH',
+          entityId: admin.id,
+          details: `Efetuou login no sistema como Administrador "${admin.username}"`,
+          adminId: admin.id,
+        });
+
+        return {
+          token,
+          username: admin.username,
+          businessName: admin.businessName,
+          role: admin.role,
+        };
+      }
     }
 
-    const validPassword = await bcrypt.compare(password, admin.passwordHash);
-    if (!validPassword) {
-      return reply.status(401).send({ error: 'Credenciais inválidas' });
-    }
-
-    const token = app.jwt.sign(
-      { id: admin.id, username: admin.username, role: admin.role },
-      { expiresIn: '24h' }
-    );
-
-    // Record login audit log
-    request.user = { id: admin.id, username: admin.username, role: admin.role };
-    await createAuditLog(request, {
-      action: 'LOGIN',
-      entity: 'AUTH',
-      entityId: admin.id,
-      details: `Efetuou login no sistema como "${admin.username}"`,
-      adminId: admin.id,
+    // 2. Se não for Admin (ou senha de Admin não bater), tenta autenticar como Operador (UserPermission)
+    const operator = await prisma.userPermission.findFirst({
+      where: {
+        OR: [
+          { userName: cleanInput },
+          { email: cleanLower },
+        ],
+      },
+      include: {
+        admin: true,
+      },
     });
 
-    return {
-      token,
-      username: admin.username,
-      role: admin.role,
-    };
+    if (operator) {
+      if (!operator.active) {
+        return reply.status(403).send({ error: 'Este perfil de operador está temporariamente suspenso pelo administrador.' });
+      }
+
+      if (!operator.passwordHash) {
+        return reply.status(400).send({ error: 'Este operador ainda não possui uma senha configurada. Peça ao administrador para definir sua senha em Segurança & Permissões.' });
+      }
+
+      const validOperatorPassword = await bcrypt.compare(password, operator.passwordHash);
+      if (validOperatorPassword) {
+        const permissionsPayload = {
+          canAgendamentos: operator.canAgendamentos,
+          canEstornos: operator.canEstornos,
+          canClientes: operator.canClientes,
+          canHorarios: operator.canHorarios,
+          canServicos: operator.canServicos,
+          canLinks: operator.canLinks,
+          canCupons: operator.canCupons,
+          canMemberships: operator.canMemberships,
+          canFinanceiro: operator.canFinanceiro,
+          canRh: operator.canRh,
+          canFaturamento: operator.canFaturamento,
+          canSeguranca: operator.canSeguranca,
+          canPersonalizar: operator.canPersonalizar,
+          canSocial: operator.canSocial,
+          canAudit: operator.canAudit,
+          canTrash: operator.canTrash,
+        };
+
+        const token = app.jwt.sign(
+          {
+            id: operator.adminId,
+            operatorId: operator.id,
+            username: operator.userName,
+            role: 'operator',
+            roleTitle: operator.roleTitle,
+            permissions: permissionsPayload,
+          },
+          { expiresIn: '24h' }
+        );
+
+        request.user = { id: operator.adminId, username: operator.userName, role: 'operator' };
+        await createAuditLog(request, {
+          action: 'LOGIN',
+          entity: 'AUTH',
+          entityId: operator.id,
+          details: `Operador "${operator.userName}" (${operator.roleTitle}) efetuou login no sistema.`,
+          adminId: operator.adminId,
+        });
+
+        return {
+          token,
+          username: operator.userName,
+          businessName: operator.admin.businessName,
+          role: 'operator',
+          roleTitle: operator.roleTitle,
+          permissions: permissionsPayload,
+        };
+      }
+    }
+
+    return reply.status(401).send({ error: 'Credenciais inválidas. Verifique o usuário/e-mail e a senha.' });
   });
 
   // POST /api/auth/change-password

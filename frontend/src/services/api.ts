@@ -139,6 +139,8 @@ export const api = {
       reminderEnabled?: boolean;
       reminderHours?: string;
       reminderChannels?: string;
+      isOperator?: boolean;
+      currentOperator?: any;
     }>('/admin/profile'),
 
   updateProfile: (data: {

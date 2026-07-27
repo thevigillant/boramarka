@@ -28,12 +28,45 @@ export default async function adminRoutes(app: FastifyInstance) {
   //  PROFILE
   // ═══════════════════════════════════════════
   app.get('/profile', async (request) => {
-    const user = request.user as { id: number };
+    const user = request.user as { id: number; operatorId?: number; role?: string };
     const admin = await prisma.admin.findUnique({ where: { id: user.id } });
     if (!admin) return { error: 'Não encontrado' };
+
+    let operatorData = null;
+    if (user.operatorId) {
+      const op = await prisma.userPermission.findUnique({ where: { id: user.operatorId } });
+      if (op) {
+        operatorData = {
+          id: op.id,
+          userName: op.userName,
+          email: op.email,
+          roleTitle: op.roleTitle,
+          active: op.active,
+          permissions: {
+            canAgendamentos: op.canAgendamentos,
+            canEstornos: op.canEstornos,
+            canClientes: op.canClientes,
+            canHorarios: op.canHorarios,
+            canServicos: op.canServicos,
+            canLinks: op.canLinks,
+            canCupons: op.canCupons,
+            canMemberships: op.canMemberships,
+            canFinanceiro: op.canFinanceiro,
+            canRh: op.canRh,
+            canFaturamento: op.canFaturamento,
+            canSeguranca: op.canSeguranca,
+            canPersonalizar: op.canPersonalizar,
+            canSocial: op.canSocial,
+            canAudit: op.canAudit,
+            canTrash: op.canTrash,
+          }
+        };
+      }
+    }
+
     return {
-      username: admin.username,
-      email: admin.email,
+      username: operatorData ? operatorData.userName : admin.username,
+      email: operatorData ? operatorData.email : admin.email,
       businessName: admin.businessName,
       cnpj: admin.cnpj,
       phone: admin.phone,
@@ -50,6 +83,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       reminderEnabled: admin.reminderEnabled,
       reminderHours: admin.reminderHours,
       reminderChannels: admin.reminderChannels,
+      isOperator: !!user.operatorId,
+      currentOperator: operatorData,
     };
   });
 
