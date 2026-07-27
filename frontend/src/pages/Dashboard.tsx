@@ -1290,17 +1290,26 @@ export default function Dashboard() {
     userName: '',
     email: '',
     roleTitle: 'Operador',
-    canViewBookings: true,
-    canManageBookings: true,
-    canViewFinance: false,
-    canManageFinance: false,
-    canManageServices: false,
-    canViewClients: true,
-    canManageClients: false,
-    canManageLoyalty: false,
-    canManageStaff: false,
-    canManageSettings: false,
-    canViewAuditLogs: false,
+    // 📅 Operacional
+    canAgendamentos: true,
+    canEstornos: false,
+    canClientes: true,
+    canHorarios: true,
+    // 💼 Comercial
+    canServicos: false,
+    canLinks: false,
+    canCupons: false,
+    canMemberships: false,
+    // 💰 Gestão & Finanças
+    canFinanceiro: false,
+    canRh: false,
+    canFaturamento: false,
+    // 🎨 Sistema & Ajustes
+    canSeguranca: false,
+    canPersonalizar: false,
+    canSocial: false,
+    canAudit: false,
+    canTrash: false,
     active: true,
   })
 
@@ -1328,17 +1337,22 @@ export default function Dashboard() {
       userName: '',
       email: '',
       roleTitle: 'Operador',
-      canViewBookings: true,
-      canManageBookings: true,
-      canViewFinance: false,
-      canManageFinance: false,
-      canManageServices: false,
-      canViewClients: true,
-      canManageClients: false,
-      canManageLoyalty: false,
-      canManageStaff: false,
-      canManageSettings: false,
-      canViewAuditLogs: false,
+      canAgendamentos: true,
+      canEstornos: false,
+      canClientes: true,
+      canHorarios: true,
+      canServicos: false,
+      canLinks: false,
+      canCupons: false,
+      canMemberships: false,
+      canFinanceiro: false,
+      canRh: false,
+      canFaturamento: false,
+      canSeguranca: false,
+      canPersonalizar: false,
+      canSocial: false,
+      canAudit: false,
+      canTrash: false,
       active: true,
     })
     setShowSecurityModal(true)
@@ -1350,17 +1364,22 @@ export default function Dashboard() {
       userName: item.userName,
       email: item.email || '',
       roleTitle: item.roleTitle || 'Operador',
-      canViewBookings: item.canViewBookings,
-      canManageBookings: item.canManageBookings,
-      canViewFinance: item.canViewFinance,
-      canManageFinance: item.canManageFinance,
-      canManageServices: item.canManageServices,
-      canViewClients: item.canViewClients,
-      canManageClients: item.canManageClients,
-      canManageLoyalty: item.canManageLoyalty,
-      canManageStaff: item.canManageStaff,
-      canManageSettings: item.canManageSettings,
-      canViewAuditLogs: item.canViewAuditLogs,
+      canAgendamentos: item.canAgendamentos ?? true,
+      canEstornos: item.canEstornos ?? false,
+      canClientes: item.canClientes ?? true,
+      canHorarios: item.canHorarios ?? true,
+      canServicos: item.canServicos ?? false,
+      canLinks: item.canLinks ?? false,
+      canCupons: item.canCupons ?? false,
+      canMemberships: item.canMemberships ?? false,
+      canFinanceiro: item.canFinanceiro ?? false,
+      canRh: item.canRh ?? false,
+      canFaturamento: item.canFaturamento ?? false,
+      canSeguranca: item.canSeguranca ?? false,
+      canPersonalizar: item.canPersonalizar ?? false,
+      canSocial: item.canSocial ?? false,
+      canAudit: item.canAudit ?? false,
+      canTrash: item.canTrash ?? false,
       active: item.active,
     })
     setShowSecurityModal(true)
@@ -1371,51 +1390,46 @@ export default function Dashboard() {
       setSecurityForm(prev => ({
         ...prev,
         roleTitle: 'Administrador Total',
-        canViewBookings: true, canManageBookings: true,
-        canViewFinance: true, canManageFinance: true,
-        canManageServices: true, canViewClients: true, canManageClients: true,
-        canManageLoyalty: true, canManageStaff: true, canManageSettings: true,
-        canViewAuditLogs: true,
+        canAgendamentos: true, canEstornos: true, canClientes: true, canHorarios: true,
+        canServicos: true, canLinks: true, canCupons: true, canMemberships: true,
+        canFinanceiro: true, canRh: true, canFaturamento: true,
+        canSeguranca: true, canPersonalizar: true, canSocial: true, canAudit: true, canTrash: true,
       }))
     } else if (preset === 'gerente') {
       setSecurityForm(prev => ({
         ...prev,
         roleTitle: 'Gerente de Operação',
-        canViewBookings: true, canManageBookings: true,
-        canViewFinance: false, canManageFinance: false,
-        canManageServices: true, canViewClients: true, canManageClients: true,
-        canManageLoyalty: true, canManageStaff: false, canManageSettings: false,
-        canViewAuditLogs: true,
+        canAgendamentos: true, canEstornos: true, canClientes: true, canHorarios: true,
+        canServicos: true, canLinks: true, canCupons: true, canMemberships: true,
+        canFinanceiro: false, canRh: false, canFaturamento: false,
+        canSeguranca: false, canPersonalizar: true, canSocial: true, canAudit: true, canTrash: true,
       }))
     } else if (preset === 'recepcionista') {
       setSecurityForm(prev => ({
         ...prev,
         roleTitle: 'Recepcionista / Atendente',
-        canViewBookings: true, canManageBookings: true,
-        canViewFinance: false, canManageFinance: false,
-        canManageServices: false, canViewClients: true, canManageClients: true,
-        canManageLoyalty: true, canManageStaff: false, canManageSettings: false,
-        canViewAuditLogs: false,
+        canAgendamentos: true, canEstornos: true, canClientes: true, canHorarios: true,
+        canServicos: false, canLinks: false, canCupons: true, canMemberships: false,
+        canFinanceiro: false, canRh: false, canFaturamento: false,
+        canSeguranca: false, canPersonalizar: false, canSocial: false, canAudit: false, canTrash: false,
       }))
     } else if (preset === 'financeiro') {
       setSecurityForm(prev => ({
         ...prev,
         roleTitle: 'Financeiro / Contabilidade',
-        canViewBookings: true, canManageBookings: false,
-        canViewFinance: true, canManageFinance: true,
-        canManageServices: false, canViewClients: true, canManageClients: false,
-        canManageLoyalty: false, canManageStaff: false, canManageSettings: false,
-        canViewAuditLogs: false,
+        canAgendamentos: true, canEstornos: false, canClientes: true, canHorarios: false,
+        canServicos: false, canLinks: false, canCupons: false, canMemberships: false,
+        canFinanceiro: true, canRh: false, canFaturamento: true,
+        canSeguranca: false, canPersonalizar: false, canSocial: false, canAudit: false, canTrash: false,
       }))
     } else if (preset === 'profissional') {
       setSecurityForm(prev => ({
         ...prev,
         roleTitle: 'Profissional / Atendedor',
-        canViewBookings: true, canManageBookings: true,
-        canViewFinance: false, canManageFinance: false,
-        canManageServices: false, canViewClients: true, canManageClients: false,
-        canManageLoyalty: false, canManageStaff: false, canManageSettings: false,
-        canViewAuditLogs: false,
+        canAgendamentos: true, canEstornos: false, canClientes: true, canHorarios: true,
+        canServicos: true, canLinks: true, canCupons: false, canMemberships: false,
+        canFinanceiro: false, canRh: false, canFaturamento: false,
+        canSeguranca: false, canPersonalizar: false, canSocial: false, canAudit: false, canTrash: false,
       }))
     }
   }
@@ -7532,149 +7546,249 @@ export default function Dashboard() {
               </div>
 
               {/* Toggles Matrix */}
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
-                  Matriz de Permissões Granulares
+                  Matriz de Permissões Granulares (Módulos & Submenus)
                 </h4>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {/* Agendamentos */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">🗓️ Visualizar Agenda</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Ver horários e atendimentos</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canViewBookings}
-                      onChange={e => setSecurityForm({ ...securityForm, canViewBookings: e.target.checked })}
-                      className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
-                    />
-                  </label>
+                {/* 📅 Módulo Operacional */}
+                <div className="space-y-2">
+                  <span className="text-xs font-black text-violet-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    📅 Módulo: Operacional
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">📅 Agendamentos</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Lista e confirmação de horários agendados</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canAgendamentos}
+                        onChange={e => setSecurityForm({ ...securityForm, canAgendamentos: e.target.checked })}
+                        className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      />
+                    </label>
 
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">✏️ Editar / Concluir Agendamentos</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Remarcar, concluir e cancelar</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canManageBookings}
-                      onChange={e => setSecurityForm({ ...securityForm, canManageBookings: e.target.checked })}
-                      className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🔄 Solicitações de Estorno</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Gerenciar cancelamentos com reembolso</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canEstornos}
+                        onChange={e => setSecurityForm({ ...securityForm, canEstornos: e.target.checked })}
+                        className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      />
+                    </label>
 
-                  {/* Financeiro */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">💰 Visualizar Fluxo de Caixa</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Ver receitas, relatórios e saldos</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canViewFinance}
-                      onChange={e => setSecurityForm({ ...securityForm, canViewFinance: e.target.checked })}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">👥 Clientes</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Base completa e histórico de clientes</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canClientes}
+                        onChange={e => setSecurityForm({ ...securityForm, canClientes: e.target.checked })}
+                        className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      />
+                    </label>
 
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">💵 Lançar / Editar Transações</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Criar e excluir entradas e saídas</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canManageFinance}
-                      onChange={e => setSecurityForm({ ...securityForm, canManageFinance: e.target.checked })}
-                      className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🕒 Gerenciar Agenda</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Configuração da grade de horários</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canHorarios}
+                        onChange={e => setSecurityForm({ ...securityForm, canHorarios: e.target.checked })}
+                        className="w-4 h-4 rounded text-violet-600 focus:ring-violet-500 cursor-pointer"
+                      />
+                    </label>
+                  </div>
+                </div>
 
-                  {/* Serviços */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">✂️ Gerenciar Catálogo & Preços</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Cadastrar e alterar serviços e valores</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canManageServices}
-                      onChange={e => setSecurityForm({ ...securityForm, canManageServices: e.target.checked })}
-                      className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
-                    />
-                  </label>
+                {/* 💼 Módulo Comercial */}
+                <div className="space-y-2">
+                  <span className="text-xs font-black text-pink-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    💼 Módulo: Comercial
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">💼 Serviços</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Catálogo de serviços, preços e durações</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canServicos}
+                        onChange={e => setSecurityForm({ ...securityForm, canServicos: e.target.checked })}
+                        className="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 cursor-pointer"
+                      />
+                    </label>
 
-                  {/* Clientes */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">👥 Base de Clientes</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Visualizar cadastro e histórico</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canViewClients}
-                      onChange={e => setSecurityForm({ ...securityForm, canViewClients: e.target.checked })}
-                      className="w-4 h-4 rounded text-purple-600 focus:ring-purple-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🔗 Links de Venda</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Links para clientes agendarem online</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canLinks}
+                        onChange={e => setSecurityForm({ ...securityForm, canLinks: e.target.checked })}
+                        className="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 cursor-pointer"
+                      />
+                    </label>
 
-                  {/* Fidelidade */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">🎁 Cartão Fidelidade & Cupons</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Dar selos e criar promoções</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canManageLoyalty}
-                      onChange={e => setSecurityForm({ ...securityForm, canManageLoyalty: e.target.checked })}
-                      className="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🏷️ Cupons de Desconto</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Crie códigos promocionais</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canCupons}
+                        onChange={e => setSecurityForm({ ...securityForm, canCupons: e.target.checked })}
+                        className="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 cursor-pointer"
+                      />
+                    </label>
 
-                  {/* RH */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">👔 Gestão de RH & Funcionários</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Cadastrar equipe, comissões e salários</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canManageStaff}
-                      onChange={e => setSecurityForm({ ...securityForm, canManageStaff: e.target.checked })}
-                      className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🎁 Clube de Assinaturas</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Planos e assinaturas recorrentes</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canMemberships}
+                        onChange={e => setSecurityForm({ ...securityForm, canMemberships: e.target.checked })}
+                        className="w-4 h-4 rounded text-pink-600 focus:ring-pink-500 cursor-pointer"
+                      />
+                    </label>
+                  </div>
+                </div>
 
-                  {/* Configurações */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">⚙️ Configurações & Mercado Pago</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Alterar dados da empresa e chaves PIX</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canManageSettings}
-                      onChange={e => setSecurityForm({ ...securityForm, canManageSettings: e.target.checked })}
-                      className="w-4 h-4 rounded text-orange-600 focus:ring-orange-500 cursor-pointer"
-                    />
-                  </label>
+                {/* 💰 Módulo Gestão & Finanças */}
+                <div className="space-y-2">
+                  <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    💰 Módulo: Gestão & Finanças
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">💰 Financeiro</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Fluxo de caixa, recebíveis e despesas</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canFinanceiro}
+                        onChange={e => setSecurityForm({ ...securityForm, canFinanceiro: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </label>
 
-                  {/* Audit Logs */}
-                  <label className="p-3.5 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
-                    <div>
-                      <span className="text-xs font-black text-slate-900 dark:text-white block">🛡️ Logs de Segurança & IP</span>
-                      <span className="text-[10px] text-slate-400 font-semibold">Acessar auditoria e rastreamento</span>
-                    </div>
-                    <input
-                      type="checkbox"
-                      checked={securityForm.canViewAuditLogs}
-                      onChange={e => setSecurityForm({ ...securityForm, canViewAuditLogs: e.target.checked })}
-                      className="w-4 h-4 rounded text-red-600 focus:ring-red-500 cursor-pointer"
-                    />
-                  </label>
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">👔 RH / Equipe</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Gestão de funcionários, funções e comissões</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canRh}
+                        onChange={e => setSecurityForm({ ...securityForm, canRh: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">💳 Plano & Assinatura</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Gerenciar seu plano no BoraMarka</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canFaturamento}
+                        onChange={e => setSecurityForm({ ...securityForm, canFaturamento: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </label>
+                  </div>
+                </div>
+
+                {/* 🎨 Módulo Sistema & Ajustes */}
+                <div className="space-y-2">
+                  <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                    🎨 Módulo: Sistema & Ajustes
+                  </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🛡️ Segurança & Permissões</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Controle granular de acesso por perfil</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canSeguranca}
+                        onChange={e => setSecurityForm({ ...securityForm, canSeguranca: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🎨 Personalizar Página</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Identidade visual, tema e banner</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canPersonalizar}
+                        onChange={e => setSecurityForm({ ...securityForm, canPersonalizar: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🌐 Explorar Rede</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Rede de contatos e chat</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canSocial}
+                        onChange={e => setSecurityForm({ ...securityForm, canSocial: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">📜 Logs & Auditoria</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Registro de ações, logins e IP</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canAudit}
+                        onChange={e => setSecurityForm({ ...securityForm, canAudit: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">🗑️ Lixeira</span>
+                        <span className="text-[10px] text-slate-400 font-semibold">Recuperar itens excluídos recentemente</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canTrash}
+                        onChange={e => setSecurityForm({ ...securityForm, canTrash: e.target.checked })}
+                        className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 cursor-pointer"
+                      />
+                    </label>
+                  </div>
                 </div>
               </div>
 

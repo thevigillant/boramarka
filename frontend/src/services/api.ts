@@ -1023,17 +1023,44 @@ export interface UserPermissionItem {
   userName: string;
   email: string;
   roleTitle: string;
-  canViewBookings: boolean;
-  canManageBookings: boolean;
-  canViewFinance: boolean;
-  canManageFinance: boolean;
-  canManageServices: boolean;
-  canViewClients: boolean;
-  canManageClients: boolean;
-  canManageLoyalty: boolean;
-  canManageStaff: boolean;
-  canManageSettings: boolean;
-  canViewAuditLogs: boolean;
+  
+  // 📅 Módulo: Operacional
+  canAgendamentos?: boolean;
+  canEstornos?: boolean;
+  canClientes?: boolean;
+  canHorarios?: boolean;
+
+  // 💼 Módulo: Comercial
+  canServicos?: boolean;
+  canLinks?: boolean;
+  canCupons?: boolean;
+  canMemberships?: boolean;
+
+  // 💰 Módulo: Gestão & Finanças
+  canFinanceiro?: boolean;
+  canRh?: boolean;
+  canFaturamento?: boolean;
+
+  // 🎨 Módulo: Sistema & Ajustes
+  canSeguranca?: boolean;
+  canPersonalizar?: boolean;
+  canSocial?: boolean;
+  canAudit?: boolean;
+  canTrash?: boolean;
+
+  // Legacy
+  canViewBookings?: boolean;
+  canManageBookings?: boolean;
+  canViewFinance?: boolean;
+  canManageFinance?: boolean;
+  canManageServices?: boolean;
+  canViewClients?: boolean;
+  canManageClients?: boolean;
+  canManageLoyalty?: boolean;
+  canManageStaff?: boolean;
+  canManageSettings?: boolean;
+  canViewAuditLogs?: boolean;
+
   active: boolean;
   createdAt: string;
   updatedAt: string;

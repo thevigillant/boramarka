@@ -393,17 +393,38 @@ model UserPermission {
   email             String   @default("")
   roleTitle         String   @default("Operador") @map("role_title") // "Gerente", "Recepcionista", "Atendente", "Barbeiro", "Financeiro"
   
-  // Specific Module Permission Flags
+  // 📅 Módulo: Operacional
+  canAgendamentos   Boolean  @default(true)  @map("can_agendamentos")
+  canEstornos       Boolean  @default(false) @map("can_estornos")
+  canClientes       Boolean  @default(true)  @map("can_clientes")
+  canHorarios       Boolean  @default(true)  @map("can_horarios")
+  
+  // 💼 Módulo: Comercial
+  canServicos       Boolean  @default(false) @map("can_servicos")
+  canLinks          Boolean  @default(false) @map("can_links")
+  canCupons         Boolean  @default(false) @map("can_cupons")
+  canMemberships    Boolean  @default(false) @map("can_memberships")
+  
+  // 💰 Módulo: Gestão & Finanças
+  canFinanceiro     Boolean  @default(false) @map("can_financeiro")
+  canRh             Boolean  @default(false) @map("can_rh")
+  canFaturamento    Boolean  @default(false) @map("can_faturamento")
+  
+  // 🎨 Módulo: Sistema & Ajustes
+  canSeguranca      Boolean  @default(false) @map("can_seguranca")
+  canPersonalizar   Boolean  @default(false) @map("can_personalizar")
+  canSocial         Boolean  @default(false) @map("can_social")
+  canAudit          Boolean  @default(false) @map("can_audit")
+  canTrash          Boolean  @default(false) @map("can_trash")
+
+  // Legacy compatibility flags
   canViewBookings   Boolean  @default(true)  @map("can_view_bookings")
   canManageBookings Boolean  @default(true)  @map("can_manage_bookings")
-  
   canViewFinance    Boolean  @default(false) @map("can_view_finance")
   canManageFinance  Boolean  @default(false) @map("can_manage_finance")
-  
   canManageServices Boolean  @default(false) @map("can_manage_services")
   canViewClients    Boolean  @default(true)  @map("can_view_clients")
   canManageClients  Boolean  @default(false) @map("can_manage_clients")
-  
   canManageLoyalty  Boolean  @default(false) @map("can_manage_loyalty")
   canManageStaff    Boolean  @default(false) @map("can_manage_staff")
   canManageSettings Boolean  @default(false) @map("can_manage_settings")

@@ -18,46 +18,56 @@ export default async function securityRoutes(app: FastifyInstance) {
   // POST /api/security/permissions — Create a new user permission profile/operator
   app.post('/permissions', { preHandler: [authenticate] }, async (request, reply) => {
     const user = request.user as { id: number };
-    const {
-      userName,
-      email,
-      roleTitle,
-      canViewBookings,
-      canManageBookings,
-      canViewFinance,
-      canManageFinance,
-      canManageServices,
-      canViewClients,
-      canManageClients,
-      canManageLoyalty,
-      canManageStaff,
-      canManageSettings,
-      canViewAuditLogs,
-      active,
-    } = request.body as any;
+    const body = request.body as any;
 
-    if (!userName || !userName.trim()) {
+    if (!body.userName || !body.userName.trim()) {
       return reply.status(400).send({ error: 'O nome do usuário/operador é obrigatório.' });
     }
 
     const permission = await prisma.userPermission.create({
       data: {
         adminId: user.id,
-        userName: userName.trim(),
-        email: email?.trim() || '',
-        roleTitle: roleTitle?.trim() || 'Operador',
-        canViewBookings: canViewBookings ?? true,
-        canManageBookings: canManageBookings ?? true,
-        canViewFinance: canViewFinance ?? false,
-        canManageFinance: canManageFinance ?? false,
-        canManageServices: canManageServices ?? false,
-        canViewClients: canViewClients ?? true,
-        canManageClients: canManageClients ?? false,
-        canManageLoyalty: canManageLoyalty ?? false,
-        canManageStaff: canManageStaff ?? false,
-        canManageSettings: canManageSettings ?? false,
-        canViewAuditLogs: canViewAuditLogs ?? false,
-        active: active ?? true,
+        userName: body.userName.trim(),
+        email: body.email?.trim() || '',
+        roleTitle: body.roleTitle?.trim() || 'Operador',
+        
+        // 📅 Operacional
+        canAgendamentos: body.canAgendamentos ?? true,
+        canEstornos: body.canEstornos ?? false,
+        canClientes: body.canClientes ?? true,
+        canHorarios: body.canHorarios ?? true,
+        
+        // 💼 Comercial
+        canServicos: body.canServicos ?? false,
+        canLinks: body.canLinks ?? false,
+        canCupons: body.canCupons ?? false,
+        canMemberships: body.canMemberships ?? false,
+        
+        // 💰 Gestão & Finanças
+        canFinanceiro: body.canFinanceiro ?? false,
+        canRh: body.canRh ?? false,
+        canFaturamento: body.canFaturamento ?? false,
+        
+        // 🎨 Sistema & Ajustes
+        canSeguranca: body.canSeguranca ?? false,
+        canPersonalizar: body.canPersonalizar ?? false,
+        canSocial: body.canSocial ?? false,
+        canAudit: body.canAudit ?? false,
+        canTrash: body.canTrash ?? false,
+
+        // Legacy compatibility
+        canViewBookings: body.canAgendamentos ?? body.canViewBookings ?? true,
+        canManageBookings: body.canAgendamentos ?? body.canManageBookings ?? true,
+        canViewFinance: body.canFinanceiro ?? body.canViewFinance ?? false,
+        canManageFinance: body.canFinanceiro ?? body.canManageFinance ?? false,
+        canManageServices: body.canServicos ?? body.canManageServices ?? false,
+        canViewClients: body.canClientes ?? body.canViewClients ?? true,
+        canManageClients: body.canClientes ?? body.canManageClients ?? false,
+        canManageLoyalty: body.canCupons ?? body.canManageLoyalty ?? false,
+        canManageStaff: body.canRh ?? body.canManageStaff ?? false,
+        canManageSettings: body.canPersonalizar ?? body.canManageSettings ?? false,
+        canViewAuditLogs: body.canAudit ?? body.canViewAuditLogs ?? false,
+        active: body.active ?? true,
       },
     });
 
@@ -78,42 +88,52 @@ export default async function securityRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Perfil de permissão não encontrado.' });
     }
 
-    const {
-      userName,
-      email,
-      roleTitle,
-      canViewBookings,
-      canManageBookings,
-      canViewFinance,
-      canManageFinance,
-      canManageServices,
-      canViewClients,
-      canManageClients,
-      canManageLoyalty,
-      canManageStaff,
-      canManageSettings,
-      canViewAuditLogs,
-      active,
-    } = request.body as any;
+    const body = request.body as any;
 
     const updated = await prisma.userPermission.update({
       where: { id: permId },
       data: {
-        userName: userName !== undefined ? userName.trim() : existing.userName,
-        email: email !== undefined ? email.trim() : existing.email,
-        roleTitle: roleTitle !== undefined ? roleTitle.trim() : existing.roleTitle,
-        canViewBookings: canViewBookings ?? existing.canViewBookings,
-        canManageBookings: canManageBookings ?? existing.canManageBookings,
-        canViewFinance: canViewFinance ?? existing.canViewFinance,
-        canManageFinance: canManageFinance ?? existing.canManageFinance,
-        canManageServices: canManageServices ?? existing.canManageServices,
-        canViewClients: canViewClients ?? existing.canViewClients,
-        canManageClients: canManageClients ?? existing.canManageClients,
-        canManageLoyalty: canManageLoyalty ?? existing.canManageLoyalty,
-        canManageStaff: canManageStaff ?? existing.canManageStaff,
-        canManageSettings: canManageSettings ?? existing.canManageSettings,
-        canViewAuditLogs: canViewAuditLogs ?? existing.canViewAuditLogs,
-        active: active ?? existing.active,
+        userName: body.userName !== undefined ? body.userName.trim() : existing.userName,
+        email: body.email !== undefined ? body.email.trim() : existing.email,
+        roleTitle: body.roleTitle !== undefined ? body.roleTitle.trim() : existing.roleTitle,
+        
+        // 📅 Operacional
+        canAgendamentos: body.canAgendamentos ?? existing.canAgendamentos,
+        canEstornos: body.canEstornos ?? existing.canEstornos,
+        canClientes: body.canClientes ?? existing.canClientes,
+        canHorarios: body.canHorarios ?? existing.canHorarios,
+        
+        // 💼 Comercial
+        canServicos: body.canServicos ?? existing.canServicos,
+        canLinks: body.canLinks ?? existing.canLinks,
+        canCupons: body.canCupons ?? existing.canCupons,
+        canMemberships: body.canMemberships ?? existing.canMemberships,
+        
+        // 💰 Gestão & Finanças
+        canFinanceiro: body.canFinanceiro ?? existing.canFinanceiro,
+        canRh: body.canRh ?? existing.canRh,
+        canFaturamento: body.canFaturamento ?? existing.canFaturamento,
+        
+        // 🎨 Sistema & Ajustes
+        canSeguranca: body.canSeguranca ?? existing.canSeguranca,
+        canPersonalizar: body.canPersonalizar ?? existing.canPersonalizar,
+        canSocial: body.canSocial ?? existing.canSocial,
+        canAudit: body.canAudit ?? existing.canAudit,
+        canTrash: body.canTrash ?? existing.canTrash,
+
+        // Legacy compatibility
+        canViewBookings: body.canAgendamentos ?? existing.canViewBookings,
+        canManageBookings: body.canAgendamentos ?? existing.canManageBookings,
+        canViewFinance: body.canFinanceiro ?? existing.canViewFinance,
+        canManageFinance: body.canFinanceiro ?? existing.canManageFinance,
+        canManageServices: body.canServicos ?? existing.canManageServices,
+        canViewClients: body.canClientes ?? existing.canViewClients,
+        canManageClients: body.canClientes ?? existing.canManageClients,
+        canManageLoyalty: body.canCupons ?? existing.canManageLoyalty,
+        canManageStaff: body.canRh ?? existing.canManageStaff,
+        canManageSettings: body.canPersonalizar ?? existing.canManageSettings,
+        canViewAuditLogs: body.canAudit ?? existing.canViewAuditLogs,
+        active: body.active ?? existing.active,
       },
     });
 
