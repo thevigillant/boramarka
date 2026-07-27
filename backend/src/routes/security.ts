@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 
@@ -15,7 +16,7 @@ export default async function securityRoutes(app: FastifyInstance) {
     return permissions;
   });
 
-  // POST /api/security/permissions — Create a new user permission profile/operator
+  // POST /api/security/permissions — Create a new user permission profile/operator with password
   app.post('/permissions', { preHandler: [authenticate] }, async (request, reply) => {
     const user = request.user as { id: number };
     const body = request.body as any;
@@ -24,11 +25,16 @@ export default async function securityRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'O nome do usuário/operador é obrigatório.' });
     }
 
+    const passwordHash = body.password && body.password.trim() 
+      ? await bcrypt.hash(body.password.trim(), 10) 
+      : '';
+
     const permission = await prisma.userPermission.create({
       data: {
         adminId: user.id,
         userName: body.userName.trim(),
         email: body.email?.trim() || '',
+        passwordHash,
         roleTitle: body.roleTitle?.trim() || 'Operador',
         
         // 📅 Operacional
@@ -74,7 +80,7 @@ export default async function securityRoutes(app: FastifyInstance) {
     return permission;
   });
 
-  // PUT /api/security/permissions/:id — Update a user permission profile
+  // PUT /api/security/permissions/:id — Update a user permission profile / password
   app.put('/permissions/:id', { preHandler: [authenticate] }, async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
@@ -90,11 +96,16 @@ export default async function securityRoutes(app: FastifyInstance) {
 
     const body = request.body as any;
 
+    const passwordHash = body.password && body.password.trim()
+      ? await bcrypt.hash(body.password.trim(), 10)
+      : existing.passwordHash;
+
     const updated = await prisma.userPermission.update({
       where: { id: permId },
       data: {
         userName: body.userName !== undefined ? body.userName.trim() : existing.userName,
         email: body.email !== undefined ? body.email.trim() : existing.email,
+        passwordHash,
         roleTitle: body.roleTitle !== undefined ? body.roleTitle.trim() : existing.roleTitle,
         
         // 📅 Operacional

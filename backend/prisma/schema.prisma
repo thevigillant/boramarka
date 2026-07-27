@@ -391,6 +391,7 @@ model UserPermission {
   id                Int      @id @default(autoincrement())
   userName          String   @map("user_name")
   email             String   @default("")
+  passwordHash      String   @default("") @map("password_hash")
   roleTitle         String   @default("Operador") @map("role_title") // "Gerente", "Recepcionista", "Atendente", "Barbeiro", "Financeiro"
   
   // 📅 Módulo: Operacional

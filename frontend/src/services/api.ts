@@ -1022,6 +1022,7 @@ export interface UserPermissionItem {
   id: number;
   userName: string;
   email: string;
+  password?: string;
   roleTitle: string;
   
   // 📅 Módulo: Operacional

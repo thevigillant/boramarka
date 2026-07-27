@@ -9,7 +9,7 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
@@ -1286,9 +1286,11 @@ export default function Dashboard() {
   const [loadingSecurity, setLoadingSecurity] = useState(false)
   const [showSecurityModal, setShowSecurityModal] = useState(false)
   const [editingSecurityPerm, setEditingSecurityPerm] = useState<UserPermissionItem | null>(null)
+  const [showOperatorPassword, setShowOperatorPassword] = useState(false)
   const [securityForm, setSecurityForm] = useState({
     userName: '',
     email: '',
+    password: '',
     roleTitle: 'Operador',
     // 📅 Operacional
     canAgendamentos: true,
@@ -1333,9 +1335,11 @@ export default function Dashboard() {
 
   const openNewSecurityModal = () => {
     setEditingSecurityPerm(null)
+    setShowOperatorPassword(false)
     setSecurityForm({
       userName: '',
       email: '',
+      password: '',
       roleTitle: 'Operador',
       canAgendamentos: true,
       canEstornos: false,
@@ -1360,9 +1364,11 @@ export default function Dashboard() {
 
   const openEditSecurityModal = (item: UserPermissionItem) => {
     setEditingSecurityPerm(item)
+    setShowOperatorPassword(false)
     setSecurityForm({
       userName: item.userName,
       email: item.email || '',
+      password: '',
       roleTitle: item.roleTitle || 'Operador',
       canAgendamentos: item.canAgendamentos ?? true,
       canEstornos: item.canEstornos ?? false,
@@ -7489,16 +7495,43 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase mb-1">Título da Função / Cargo *</label>
-                <input
-                  type="text"
-                  value={securityForm.roleTitle}
-                  onChange={e => setSecurityForm({ ...securityForm, roleTitle: e.target.value })}
-                  placeholder="Ex: Recepcionista, Gerente, Barbeiro..."
-                  className="input-simple font-bold text-xs"
-                  required
-                />
+              {/* Password & Role Title Inputs */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">
+                    {editingSecurityPerm ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso do Operador *'}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showOperatorPassword ? 'text' : 'password'}
+                      value={securityForm.password}
+                      onChange={e => setSecurityForm({ ...securityForm, password: e.target.value })}
+                      placeholder={editingSecurityPerm ? 'Deixe em branco para manter a atual' : 'Crie uma senha de acesso'}
+                      className="input-simple font-bold text-xs pr-10"
+                      required={!editingSecurityPerm}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowOperatorPassword(!showOperatorPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                      title={showOperatorPassword ? 'Ocultar Senha' : 'Exibir Senha'}
+                    >
+                      {showOperatorPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Título da Função / Cargo *</label>
+                  <input
+                    type="text"
+                    value={securityForm.roleTitle}
+                    onChange={e => setSecurityForm({ ...securityForm, roleTitle: e.target.value })}
+                    placeholder="Ex: Recepcionista, Gerente, Barbeiro..."
+                    className="input-simple font-bold text-xs"
+                    required
+                  />
+                </div>
               </div>
 
               {/* Quick Role Presets */}
