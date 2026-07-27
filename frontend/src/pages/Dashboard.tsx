@@ -590,7 +590,7 @@ export default function Dashboard() {
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
-    type TabIdType = 'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos'
+    type TabIdType = 'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
     interface NavItem {
       id: TabIdType
       label: string
@@ -661,9 +661,56 @@ export default function Dashboard() {
     ]
   }, [bookings.length])
 
+  const [operatorSession, setOperatorSession] = useState<any | null>(null)
+
+  // Filter navbar categories based on operator permissions (if logged in as operator)
+  const filteredNavCategories = useMemo(() => {
+    if (!operatorSession || !operatorSession.permissions) {
+      return navCategories
+    }
+
+    const perms = operatorSession.permissions
+
+    return navCategories.map(cat => {
+      if (cat.type === 'single') return cat
+      if (cat.type === 'dropdown') {
+        const allowedItems = cat.items.filter(item => {
+          if (item.id === 'agendamentos') return perms.canAgendamentos !== false
+          if (item.id === 'estornos') return perms.canEstornos !== false
+          if (item.id === 'clientes') return perms.canClientes !== false
+          if (item.id === 'horarios') return perms.canHorarios !== false
+          if (item.id === 'servicos') return perms.canServicos !== false
+          if (item.id === 'links') return perms.canLinks !== false
+          if (item.id === 'cupons') return perms.canCupons !== false
+          if (item.id === 'memberships') return perms.canMemberships !== false
+          if (item.id === 'financeiro') return perms.canFinanceiro !== false
+          if (item.id === 'rh') return perms.canRh !== false
+          if (item.id === 'faturamento') return perms.canFaturamento !== false
+          if (item.id === 'seguranca') return perms.canSeguranca !== false
+          if (item.id === 'personalizar') return perms.canPersonalizar !== false
+          if (item.id === 'social') return perms.canSocial !== false
+          if (item.id === 'audit') return perms.canAudit !== false
+          if (item.id === 'trash') return perms.canTrash !== false
+          return true
+        })
+
+        return {
+          ...cat,
+          items: allowedItems,
+        }
+      }
+      return cat
+    }).filter(cat => {
+      if (cat.type === 'dropdown') {
+        return cat.items.length > 0
+      }
+      return true
+    })
+  }, [navCategories, operatorSession])
+
   // Informações da aba atual (Breadcrumb)
   const currentTabInfo = useMemo(() => {
-    for (const cat of navCategories) {
+    for (const cat of filteredNavCategories) {
       if (cat.type === 'single' && cat.tabId === activeTab) {
         return { catLabel: cat.label, itemLabel: cat.label, icon: cat.icon }
       }
@@ -675,7 +722,7 @@ export default function Dashboard() {
       }
     }
     return { catLabel: 'Visão Geral', itemLabel: 'Resumo', icon: LayoutDashboard }
-  }, [activeTab, navCategories])
+  }, [activeTab, filteredNavCategories])
   
   // Get all unique categories for filter
   const uniqueCategories = useMemo(() => {
@@ -953,6 +1000,8 @@ export default function Dashboard() {
     publicTheme?: string;
     bannerUrl?: string;
     customDomain?: string;
+    isOperator?: boolean;
+    currentOperator?: any;
   } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
@@ -1556,6 +1605,11 @@ export default function Dashboard() {
       setBookings(b)
       setTransactions(t)
       setAdminInfo(p)
+      if (p && p.isOperator && p.currentOperator) {
+        setOperatorSession(p.currentOperator)
+      } else {
+        setOperatorSession(null)
+      }
       setServices(sv)
       setDeletedLinks(dl)
       setCoupons(cpList || [])
@@ -2772,11 +2826,15 @@ export default function Dashboard() {
                    <div className="text-right hidden sm:block">
                      <div className="flex items-center justify-end gap-2">
                        <p className="text-[13px] font-bold text-slate-700 dark:text-white/80 leading-none">{adminInfo.businessName || adminInfo.username}</p>
-                       <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-slate-400 dark:text-white/25 hover:text-violet-650 dark:hover:text-violet-400 transition-colors" title="Editar Perfil">
-                         <Pencil className="w-3 h-3" />
-                       </button>
+                       {!operatorSession && (
+                         <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-slate-400 dark:text-white/25 hover:text-violet-650 dark:hover:text-violet-400 transition-colors" title="Editar Perfil">
+                           <Pencil className="w-3 h-3" />
+                         </button>
+                       )}
                      </div>
-                     <p className="text-[10px] text-slate-400 dark:text-white/25 font-semibold mt-1">@{adminInfo.username.toLowerCase()}</p>
+                     <p className="text-[10px] text-violet-400 font-bold mt-0.5">
+                       {operatorSession ? `🛡️ ${operatorSession.userName} (${operatorSession.roleTitle})` : `@${adminInfo.username.toLowerCase()}`}
+                     </p>
                    </div>
                    <button 
                      onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : avatarInputRef.current?.click()}
@@ -2851,7 +2909,7 @@ export default function Dashboard() {
             </div>
 
             <div className="space-y-3 pb-6">
-              {navCategories.map(cat => {
+              {filteredNavCategories.map(cat => {
                 if (cat.type === 'single') {
                   const isActive = activeTab === cat.tabId
                   return (
@@ -2946,7 +3004,7 @@ export default function Dashboard() {
         
         {/* 💻 Desktop Categorized Dropdown Navbar */}
         <div ref={dropdownRef} className="hidden md:flex items-center justify-start gap-2.5 mb-8 relative z-30 flex-wrap">
-          {navCategories.map(cat => {
+          {filteredNavCategories.map(cat => {
             if (cat.type === 'single') {
               const isActive = activeTab === cat.tabId
               return (
