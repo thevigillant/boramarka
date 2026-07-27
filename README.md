@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Backend-Fastify_v4_%2B_TypeScript-000000?style=for-the-badge&logo=fastify" alt="Fastify">
   <img src="https://img.shields.io/badge/Database-Prisma_5_%2B_PostgreSQL-2D3748?style=for-the-badge&logo=prisma" alt="Prisma">
   <img src="https://img.shields.io/badge/Gateway-Mercado_Pago_API_v1-009EE3?style=for-the-badge&logo=mercadopago" alt="Mercado Pago">
-  <img src="https://img.shields.io/badge/Segurança-Helmet_%2B_Rate_Limit-violet?style=for-the-badge&logo=shield" alt="Security">
+  <img src="https://img.shields.io/badge/Segurança-RBAC_%2B_Fastify_Shield-violet?style=for-the-badge&logo=shield" alt="Security">
 </p>
 
 ---
@@ -24,10 +24,10 @@
 
 O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos e estabelecimentos comerciais que atendem com hora marcada. 
 
-A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Cartão Fidelidade Digital**, **Onboarding Inteligente por Nicho**, **Venda Casada (Upsell)**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Gestão de Equipe & RH**.
+A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Login de Colaborador por Empresa**, **Matriz de Segurança & Permissões Granulares (RBAC)**, **Cartão Fidelidade Digital**, **Onboarding Inteligente por Nicho**, **Venda Casada (Upsell)**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Gestão de Equipe & RH**.
 
 ### 🎯 Para quem foi feito:
-- 💈 **Barbearias** & Barbadeiros
+- 💈 **Barbearias** & Barbeiros
 - 💅 **Salões de Beleza, Manicures & Esmalterias**
 - ✒️ **Estúdios de Tatuagem & Piercing**
 - 🧴 **Clínicas de Estética, Lash Designers & Sobrancelhas**
@@ -39,6 +39,19 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cob
 
 ## 💎 Destaques & Funcionalidades Principais
 
+### 👔 Login de Colaborador & Identificação por Empresa
+- **Acesso em 2 Modalidades:** Alternância entre **Gestor / Empresa** (usuário principal da empresa) e **Colaborador / Equipe** (Identificador da Empresa + Nome do Operador + Senha).
+- **Validação de Credenciais em 3 Vias:** O backend valida o identificador da empresa (`companyUsername`) atrelado ao nome do operador (`operatorUsername`), impedindo acessos indevidos.
+- **Identificação Visual:** Exibição do distintivo da empresa (`@empresa`) e do perfil de operador ativo no cabeçalho e modal de perfil.
+
+### 🛡️ Matriz de Segurança & Controle de Acessos Granular (RBAC)
+- **Perfis Rápidos Pré-configurados (1-Clique):** Seleção ágil entre *Gestor Principal*, *Gerente de Operação*, *Recepcionista*, *Financeiro* e *Profissional*.
+- **Controle Defensivo Módulo a Módulo:** Atribuição individual de permissões para os módulos de *Agenda*, *Estornos*, *Clientes*, *Horários*, *Serviços*, *Links*, *Cupons*, *Assinaturas*, *Financeiro*, *RH*, *Segurança*, *Personalização*, *Social*, *Audit Logs* e *Lixeira*.
+
+### 🎨 Design System & Tema Claro como Padrão
+- **Tema Claro (Modo Branco) Padrão:** Apresentação visual limpa baseada em paleta slate neutra (`#F8FAFC`), bordas suaves e contraste executivo de alta definição, eliminando brilhos estourados.
+- **Modo Escuro (`.dark`) com Alternância:** Suporte completo a tema escuro futurista com persistência imediata no `localStorage`.
+
 ### 🚀 Onboarding Personalizado por Nicho (Auto-Seeding)
 - Ao se cadastrar, o profissional escolhe o seu nicho de atuação (Barbearia, Salão, Tatuagem, Estética, Personal, Pet Shop, Clínicas).
 - O sistema popula automaticamente o catálogo inicial com **3 serviços de alta conversão** customizados com nomes, preços e durações recomendados para o seu setor.
@@ -46,7 +59,7 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cob
 ### 📱 PWA Nativo (App Instalável no Celular)
 - Suporte completo a Progressive Web App via `manifest.json`.
 - Permite a instalação nativa do BoraMarka na tela inicial em dispositivos Android, iOS (Safari) e Desktops.
-- Banner flutuante inteligente (`PWAInstallBanner.tsx`) com instruções de 2 passos guiadas para usuários de iPhone/iPad.
+- Banner flutuante inteligente (`PWAInstallBanner.tsx`) com instruções guiadas para iPhone/iPad.
 
 ### 🎁 Cartão Fidelidade Digital & Cupons Automáticos
 - Contabilização automática de selos (`LoyaltyCard`) a cada atendimento concluído pelo profissional.
@@ -63,20 +76,13 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cob
 3. **🔥 BoraAnual (R$ 260,00/ano ~ R$ 21,66/mês)**: **O Mais Vendido**. Serviços e links ilimitados, Venda Casada (Upsell), Cartão Fidelidade e exportação em Excel/PDF.
 4. **👑 BoraPremium (R$ 69,90/mês)**: Gestão de Equipe/RH, Notificações Web Push, Sincronização Google Calendar, Domínio Próprio e Remoção Total da marca BoraMarka (Whitelabel).
 
-### 🛍️ Venda Casada (Upsell) & Serviços Adicionais
-- Associação de serviços secundários (com desconto percentual configurável) a serviços principais.
-- Recálculo automático do valor total e tempo de atendimento no agendamento do cliente.
-
 ### 📄 Exportação de Dados Financeiros e de Agendamentos
 - **Relatórios em PDF**: Relatórios estruturados de fluxo de caixa e agendamentos com logomarca e período customizável.
-- **Planilhas CSV (UTF-8 BOM)**: Exportação compatível com Microsoft Excel sem problemas de acentuação ou caracteres especiais.
+- **Planilhas CSV (UTF-8 BOM)**: Exportação compatível com Microsoft Excel sem problemas de acentuação.
 
 ### 🔒 Segurança Defensiva & Audit Logs
 - Proteção contra vulnerabilidades com **Fastify Helmet** (HTTP Headers de segurança) e **Rate Limiting** (120 req/min por IP).
 - Auditoria de acessos (`AuditLog`) rastreando IP de origem, Navegador, Sistema Operacional e Nível de Risco.
-
-### 🗓️ Integração Bidirecional com Google Calendar
-- Sincronização automática dos compromissos da plataforma com a agenda pessoal do profissional no Google, bloqueando horários concorrentes.
 
 ---
 
@@ -89,7 +95,7 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cob
 | **ORM** | Prisma ORM 5.x | Modelagem e migrations com suporte a SQLite (Dev) e PostgreSQL (Prod) |
 | **Banco de Dados** | SQLite / PostgreSQL | Banco de dados relacional com relatórios otimizados |
 | **Gateway de Pagamento** | Mercado Pago API v1 | Processamento de cobranças PIX, Cartão e Refunds |
-| **E-mail Transacional** | Nodemailer (Gmail SSL 465) | Envio resiliente de códigos de verificação de 4 dígitos com fallback inteligente |
+| **E-mail Transacional** | Nodemailer (Gmail SSL 465) | Envio resiliente de códigos de verificação de 4 dígitos |
 | **Notificações** | Web Push (VAPID) | Notificações nativas no navegador/dispositivo |
 
 ---

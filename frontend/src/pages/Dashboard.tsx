@@ -9,7 +9,7 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
@@ -416,13 +416,13 @@ function StatCard({ title, value, icon: Icon, color, trend }: { title: string; v
     <div className="card-simple">
       <div className="card-simple-inner p-3.5 sm:p-5 flex flex-col justify-between h-full">
         <div className="flex justify-between items-start mb-2.5 sm:mb-4">
-          <p className="text-slate-500 dark:text-white/40 text-[9px] sm:text-[10px] font-bold uppercase tracking-wider truncate mr-1">{title}</p>
-          <div className="p-1.5 sm:p-2.5 rounded-xl bg-slate-50 dark:bg-white/[0.03] border border-slate-200 dark:border-white/[0.06] shrink-0">
+          <p className="text-slate-600 dark:text-white/50 text-[9px] sm:text-[10px] font-black uppercase tracking-wider truncate mr-1">{title}</p>
+          <div className="p-1.5 sm:p-2.5 rounded-xl bg-slate-100/80 dark:bg-white/[0.04] border border-slate-200 dark:border-white/[0.06] shrink-0">
             <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: color }} />
           </div>
         </div>
         <div>
-          <p className="text-lg sm:text-2xl lg:text-3xl font-black text-slate-800 dark:text-white truncate">{value}</p>
+          <p className="text-lg sm:text-2xl lg:text-3xl font-black text-slate-900 dark:text-white truncate">{value}</p>
           {trend && (
             <span className={`text-[10px] sm:text-xs font-bold flex items-center gap-0.5 mt-1 ${trend.up ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
               {trend.up ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
@@ -543,8 +543,7 @@ export default function Dashboard() {
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
   const [clientSearch, setClientSearch] = useState('')
   const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' ||
-      (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)
+    return localStorage.getItem('theme') === 'dark'
   })
 
   // 🔍 Global Header Search State & Shortcut
@@ -1444,7 +1443,7 @@ export default function Dashboard() {
     if (preset === 'admin') {
       setSecurityForm(prev => ({
         ...prev,
-        roleTitle: 'Administrador Total',
+        roleTitle: 'Gestor Principal',
         canAgendamentos: true, canEstornos: true, canClientes: true, canHorarios: true,
         canServicos: true, canLinks: true, canCupons: true, canMemberships: true,
         canFinanceiro: true, canRh: true, canFaturamento: true,
@@ -6017,24 +6016,24 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'seguranca' && (
           <div className="animate-slide-up space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 p-6 rounded-3xl border border-violet-500/20 shadow-xl text-white">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-gradient-to-r from-violet-700 via-purple-700 to-pink-600 dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 p-6 rounded-3xl border border-violet-400/30 dark:border-violet-500/30 shadow-xl text-white">
               <div>
                 <div className="flex items-center gap-2.5 mb-1.5">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center shadow-lg shadow-violet-500/30">
+                  <div className="w-10 h-10 rounded-2xl bg-white/20 dark:bg-gradient-to-tr dark:from-violet-600 dark:to-pink-500 flex items-center justify-center shadow-lg backdrop-blur-md">
                     <ShieldCheck className="w-6 h-6 text-white" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-black tracking-tight">Segurança & Controle de Acessos (RBAC)</h2>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-400">Proteção Defensiva & Permissões Granulares</span>
+                    <h2 className="text-xl font-black tracking-tight text-white">Segurança & Controle de Acessos (RBAC)</h2>
+                    <span className="text-[10px] font-black uppercase tracking-widest text-violet-100 dark:text-violet-300">Proteção Defensiva & Permissões Granulares</span>
                   </div>
                 </div>
-                <p className="text-xs text-slate-300 max-w-2xl font-medium leading-relaxed">
+                <p className="text-xs text-white/95 dark:text-slate-100 max-w-2xl font-semibold leading-relaxed drop-shadow-sm">
                   Gerencie o nível de privilégios de cada funcionário, recepcionista ou gerente do seu estabelecimento. Defina exatamente quais seções, relatórios financeiro e botões estarão visíveis para cada usuário.
                 </p>
               </div>
               <button
                 onClick={openNewSecurityModal}
-                className="px-5 py-3 bg-gradient-to-r from-violet-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 text-white font-black text-xs rounded-2xl uppercase tracking-wider transition-all shadow-lg shadow-violet-600/30 flex items-center gap-2 shrink-0 cursor-pointer"
+                className="px-5 py-3 bg-white text-violet-700 hover:bg-slate-100 dark:bg-gradient-to-r dark:from-violet-600 dark:to-pink-600 dark:hover:from-violet-500 dark:hover:to-pink-500 dark:text-white font-black text-xs rounded-2xl uppercase tracking-wider transition-all shadow-lg flex items-center gap-2 shrink-0 cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" /> Novo Operador / Perfil
               </button>
@@ -6042,46 +6041,46 @@ export default function Dashboard() {
 
             {/* Metrics Bar */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] p-4 rounded-2xl flex items-center justify-between">
+              <div className="bg-white dark:bg-[#131826]/60 border border-slate-200 dark:border-white/[0.08] p-5 rounded-2xl flex items-center justify-between shadow-md dark:shadow-none">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Operadores Cadastrados</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-400">Operadores Cadastrados</p>
                   <p className="text-2xl font-black text-slate-900 dark:text-white mt-0.5">{securityPermissions.length}</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-violet-500/10 text-violet-500 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-violet-100 dark:bg-violet-500/10 text-violet-700 dark:text-violet-400 flex items-center justify-center font-bold">
                   <Users className="w-5 h-5" />
                 </div>
               </div>
 
-              <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] p-4 rounded-2xl flex items-center justify-between">
+              <div className="bg-white dark:bg-[#131826]/60 border border-slate-200 dark:border-white/[0.08] p-5 rounded-2xl flex items-center justify-between shadow-md dark:shadow-none">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Status do Acesso</p>
-                  <p className="text-2xl font-black text-emerald-500 mt-0.5">{securityPermissions.filter(p => p.active).length} Ativos</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-400">Status do Acesso</p>
+                  <p className="text-2xl font-black text-emerald-700 dark:text-emerald-400 mt-0.5">{securityPermissions.filter(p => p.active).length} Ativos</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-500 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-bold">
                   <CheckCircle2 className="w-5 h-5" />
                 </div>
               </div>
 
-              <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] p-4 rounded-2xl flex items-center justify-between">
+              <div className="bg-white dark:bg-[#131826]/60 border border-slate-200 dark:border-white/[0.08] p-5 rounded-2xl flex items-center justify-between shadow-md dark:shadow-none">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Criptografia & Sessões</p>
-                  <p className="text-xs font-bold text-violet-400 mt-1">JWT 256-bit & Fastify Shield</p>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-700 dark:text-slate-400">Criptografia & Sessões</p>
+                  <p className="text-xs font-black text-violet-700 dark:text-violet-400 mt-1">JWT 256-bit & Fastify Shield</p>
                 </div>
-                <div className="w-10 h-10 rounded-xl bg-pink-500/10 text-pink-500 flex items-center justify-center font-bold">
+                <div className="w-10 h-10 rounded-xl bg-pink-100 dark:bg-pink-500/10 text-pink-700 dark:text-pink-400 flex items-center justify-center font-bold">
                   <Lock className="w-5 h-5" />
                 </div>
               </div>
             </div>
 
             {/* Operator List Table / Grid */}
-            <div className="bg-white/40 dark:bg-[#131826]/30 border border-slate-200 dark:border-white/[0.06] rounded-3xl p-6 space-y-4">
+            <div className="bg-white dark:bg-[#131826]/60 border border-slate-200 dark:border-white/[0.08] rounded-3xl p-6 space-y-4 shadow-md dark:shadow-none">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-black uppercase tracking-wider text-slate-900 dark:text-white flex items-center gap-2">
-                  <Key className="w-4 h-4 text-violet-500" /> Matriz de Privilégios por Operador
+                  <Key className="w-4 h-4 text-violet-600 dark:text-violet-400" /> Matriz de Privilégios por Operador
                 </h3>
                 <button
                   onClick={() => fetchSecurityPermissions()}
-                  className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                   title="Atualizar Tabela"
                 >
                   <RefreshCw className={`w-4 h-4 ${loadingSecurity ? 'animate-spin' : ''}`} />
@@ -6090,14 +6089,14 @@ export default function Dashboard() {
 
               {loadingSecurity ? (
                 <div className="py-16 text-center space-y-3">
-                  <Loader2 className="w-8 h-8 text-violet-500 animate-spin mx-auto" />
-                  <p className="text-xs font-bold text-slate-400">Carregando operadores e privilégios...</p>
+                  <Loader2 className="w-8 h-8 text-violet-600 animate-spin mx-auto" />
+                  <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Carregando operadores e privilégios...</p>
                 </div>
               ) : securityPermissions.length === 0 ? (
-                <div className="py-16 text-center bg-slate-50/50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="py-16 text-center bg-slate-50 dark:bg-slate-900/30 rounded-2xl border border-dashed border-slate-300 dark:border-slate-800 space-y-3">
                   <Shield className="w-12 h-12 text-slate-400 mx-auto opacity-40 animate-pulse" />
-                  <h4 className="text-sm font-black text-slate-700 dark:text-slate-300">Nenhum operador configurado</h4>
-                  <p className="text-xs text-slate-400 max-w-sm mx-auto font-medium">
+                  <h4 className="text-sm font-black text-slate-800 dark:text-slate-300">Nenhum operador configurado</h4>
+                  <p className="text-xs text-slate-600 dark:text-slate-400 max-w-sm mx-auto font-medium">
                     Cadastre gerentes, recepcionistas ou atendentes para restringir o acesso a módulos confidenciais como o Financeiro.
                   </p>
                   <button
@@ -6112,62 +6111,62 @@ export default function Dashboard() {
                   {securityPermissions.map(perm => (
                     <div
                       key={perm.id}
-                      className="p-4 bg-white dark:bg-[#0f131f]/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-violet-500/30"
+                      className="p-4 bg-slate-50/80 dark:bg-[#0f131f]/60 border border-slate-200/90 dark:border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-violet-500/40 shadow-xs"
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600/20 to-pink-500/20 text-violet-500 flex items-center justify-center font-black text-base border border-violet-500/20">
+                        <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-gradient-to-tr dark:from-violet-600/20 dark:to-pink-500/20 text-violet-700 dark:text-violet-400 flex items-center justify-center font-black text-base border border-violet-300 dark:border-violet-500/20 shadow-xs">
                           {perm.userName[0]?.toUpperCase()}
                         </div>
                         <div className="text-left">
                           <div className="flex items-center gap-2">
                             <h4 className="text-sm font-black text-slate-900 dark:text-white">{perm.userName}</h4>
-                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30">
                               {perm.roleTitle}
                             </span>
-                            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${perm.active ? 'bg-emerald-500/10 text-emerald-500' : 'bg-red-500/10 text-red-500'}`}>
+                            <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full ${perm.active ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30'}`}>
                               {perm.active ? 'Ativo' : 'Bloqueado'}
                             </span>
                           </div>
                           {perm.email && (
-                            <p className="text-xs text-slate-400 font-semibold mt-0.5">{perm.email}</p>
+                            <p className="text-xs text-slate-600 dark:text-slate-400 font-bold mt-0.5">{perm.email}</p>
                           )}
                         </div>
                       </div>
 
                       {/* Permissions Badges */}
                       <div className="flex flex-wrap items-center gap-1.5">
-                        {perm.canViewBookings && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">📅 Agenda</span>}
-                        {perm.canViewFinance && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">💰 Financeiro</span>}
-                        {perm.canManageServices && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20">✂️ Serviços</span>}
-                        {perm.canViewClients && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">👥 Clientes</span>}
-                        {perm.canManageLoyalty && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-pink-500/10 text-pink-400 border border-pink-500/20">🎁 Fidelidade</span>}
-                        {perm.canManageStaff && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">👔 RH</span>}
-                        {perm.canManageSettings && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-orange-500/10 text-orange-400 border border-orange-500/20">⚙️ Configurações</span>}
-                        {perm.canViewAuditLogs && <span className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20">🛡️ Audit Logs</span>}
+                        {perm.canViewBookings && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30">📅 Agenda</span>}
+                        {perm.canViewFinance && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">💰 Financeiro</span>}
+                        {perm.canManageServices && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30">✂️ Serviços</span>}
+                        {perm.canViewClients && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-purple-100 text-purple-900 border border-purple-300 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30">👥 Clientes</span>}
+                        {perm.canManageLoyalty && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-pink-100 text-pink-900 border border-pink-300 dark:bg-pink-500/20 dark:text-pink-300 dark:border-pink-500/30">🎁 Fidelidade</span>}
+                        {perm.canManageStaff && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">👔 RH</span>}
+                        {perm.canManageSettings && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-orange-100 text-orange-900 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/30">⚙️ Configurações</span>}
+                        {perm.canViewAuditLogs && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-red-100 text-red-900 border border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30">🛡️ Audit Logs</span>}
                       </div>
 
                       {/* Action buttons */}
                       <div className="flex items-center gap-2 shrink-0">
                         <button
                           onClick={() => handleToggleSecurityActive(perm)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer ${
+                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
                             perm.active
-                              ? 'bg-amber-500/10 text-amber-500 hover:bg-amber-500 hover:text-white'
-                              : 'bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white'
+                              ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-600 hover:text-white dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30'
+                              : 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-600 hover:text-white dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
                           }`}
                         >
                           {perm.active ? 'Suspender' : 'Ativar'}
                         </button>
                         <button
                           onClick={() => openEditSecurityModal(perm)}
-                          className="p-2 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-violet-600 hover:text-white rounded-xl transition-all cursor-pointer"
+                          className="p-2 bg-slate-200 text-slate-800 border border-slate-300 hover:bg-violet-600 hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 rounded-xl transition-all cursor-pointer"
                           title="Editar Permissões"
                         >
                           <Pencil className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDeleteSecurityPermission(perm.id)}
-                          className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all cursor-pointer"
+                          className="p-2 bg-red-100 text-red-700 border border-red-300 hover:bg-red-600 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 rounded-xl transition-all cursor-pointer"
                           title="Remover Perfil"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -7509,7 +7508,7 @@ export default function Dashboard() {
       {/* Security & Access Control Modal */}
       {showSecurityModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in text-slate-900 dark:text-slate-100">
-          <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-scale-in border border-violet-500/30 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-8 shadow-2xl animate-scale-in border border-slate-200 dark:border-violet-500/30 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-6 pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-500 text-white flex items-center justify-center font-black">
@@ -7519,19 +7518,37 @@ export default function Dashboard() {
                   <h3 className="text-xl font-black text-slate-900 dark:text-white">
                     {editingSecurityPerm ? 'Editar Perfil de Segurança' : 'Novo Operador / Perfil de Acesso'}
                   </h3>
-                  <p className="text-xs text-violet-400 font-bold">Defina as permissões individuais do operador</p>
+                  <p className="text-xs text-violet-600 dark:text-violet-400 font-bold">Defina as permissões individuais do operador</p>
                 </div>
               </div>
-              <button onClick={() => setShowSecurityModal(false)} className="p-2 text-slate-400 hover:text-white">
+              <button onClick={() => setShowSecurityModal(false)} className="p-2 text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
                 <X className="w-6 h-6" />
               </button>
             </div>
 
             <form onSubmit={handleSaveSecurityPermission} className="space-y-6 text-left">
+              {/* Indicador da Empresa / Conta Principal */}
+              <div className="p-3.5 rounded-2xl bg-violet-50/80 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-violet-200 dark:bg-violet-500/20 text-violet-800 dark:text-violet-400 flex items-center justify-center font-bold shrink-0">
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-700 dark:text-slate-400 block">Empresa / Conta Principal</span>
+                    <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5 flex-wrap">
+                      {adminInfo?.businessName || 'Minha Empresa'}
+                      <span className="text-violet-800 dark:text-violet-300 font-bold bg-violet-100 dark:bg-violet-500/15 px-2.5 py-0.5 rounded-lg border border-violet-300 dark:border-violet-500/30 text-[11px]">
+                        @{adminInfo?.username || 'empresa'}
+                      </span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Profile Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Nome do Operador / Usuário *</label>
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase mb-1">Nome do Operador / Usuário *</label>
                   <input
                     type="text"
                     value={securityForm.userName}
@@ -7540,9 +7557,12 @@ export default function Dashboard() {
                     className="input-simple font-bold text-xs"
                     required
                   />
+                  <div className="mt-1.5 p-2.5 rounded-xl bg-violet-50 dark:bg-white/[0.04] border border-violet-200 dark:border-white/[0.08] text-[11px] text-slate-800 dark:text-slate-300 font-medium">
+                    💡 <span className="font-bold">Para entrar como colaborador:</span> Empresa: <code className="text-pink-600 dark:text-pink-400 font-bold">@{adminInfo?.username || 'empresa'}</code> + Operador: <code className="text-emerald-700 dark:text-emerald-400 font-bold">{securityForm.userName || 'usuario'}</code>
+                  </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">E-mail (opcional)</label>
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase mb-1">E-mail (opcional)</label>
                   <input
                     type="email"
                     value={securityForm.email}
@@ -7556,7 +7576,7 @@ export default function Dashboard() {
               {/* Password & Role Title Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase mb-1">
                     {editingSecurityPerm ? 'Alterar Senha de Acesso (opcional)' : 'Senha de Acesso do Operador *'}
                   </label>
                   <div className="relative">
@@ -7571,7 +7591,7 @@ export default function Dashboard() {
                     <button
                       type="button"
                       onClick={() => setShowOperatorPassword(!showOperatorPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
                       title={showOperatorPassword ? 'Ocultar Senha' : 'Exibir Senha'}
                     >
                       {showOperatorPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -7580,7 +7600,7 @@ export default function Dashboard() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-1">Título da Função / Cargo *</label>
+                  <label className="block text-xs font-extrabold text-slate-700 dark:text-slate-300 uppercase mb-1">Título da Função / Cargo *</label>
                   <input
                     type="text"
                     value={securityForm.roleTitle}
@@ -7593,43 +7613,43 @@ export default function Dashboard() {
               </div>
 
               {/* Quick Role Presets */}
-              <div className="p-4 bg-violet-500/5 border border-violet-500/20 rounded-2xl space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-violet-400 block">
+              <div className="p-4 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 rounded-2xl space-y-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-violet-800 dark:text-violet-300 block">
                   ⚡ Perfis Rápidos Pré-configurados (1-Clique)
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('admin')}
-                    className="px-3 py-1.5 bg-violet-600 text-white rounded-xl text-xs font-bold hover:bg-violet-700 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl text-xs font-black shadow-md cursor-pointer hover:opacity-95 transition-all"
                   >
-                    👑 Administrador Total
+                    👑 Gestor Principal
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('gerente')}
-                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
                   >
                     📊 Gerente de Operação
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('recepcionista')}
-                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
                   >
                     🛎️ Recepcionista
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('financeiro')}
-                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
                   >
                     💵 Financeiro
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('profissional')}
-                    className="px-3 py-1.5 bg-slate-800 text-white rounded-xl text-xs font-bold hover:bg-slate-700 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
                   >
                     ✂️ Profissional
                   </button>
@@ -7638,20 +7658,20 @@ export default function Dashboard() {
 
               {/* Toggles Matrix */}
               <div className="space-y-6">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-2">
+                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 dark:text-slate-300 border-b border-slate-200 dark:border-slate-800 pb-2">
                   Matriz de Permissões Granulares (Módulos & Submenus)
                 </h4>
 
                 {/* 📅 Módulo Operacional */}
                 <div className="space-y-2">
-                  <span className="text-xs font-black text-violet-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span className="text-xs font-black text-violet-700 dark:text-violet-400 flex items-center gap-1.5 uppercase tracking-wider">
                     📅 Módulo: Operacional
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">📅 Agendamentos</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Lista e confirmação de horários agendados</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Lista e confirmação de horários agendados</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7661,10 +7681,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🔄 Solicitações de Estorno</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Gerenciar cancelamentos com reembolso</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gerenciar cancelamentos com reembolso</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7674,10 +7694,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">👥 Clientes</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Base completa e histórico de clientes</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Base completa e histórico de clientes</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7687,10 +7707,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🕒 Gerenciar Agenda</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Configuração da grade de horários</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Configuração da grade de horários</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7704,14 +7724,14 @@ export default function Dashboard() {
 
                 {/* 💼 Módulo Comercial */}
                 <div className="space-y-2">
-                  <span className="text-xs font-black text-pink-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span className="text-xs font-black text-pink-700 dark:text-pink-400 flex items-center gap-1.5 uppercase tracking-wider">
                     💼 Módulo: Comercial
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">💼 Serviços</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Catálogo de serviços, preços e durações</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Catálogo de serviços, preços e durações</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7721,10 +7741,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🔗 Links de Venda</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Links para clientes agendarem online</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Links para clientes agendarem online</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7734,10 +7754,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🏷️ Cupons de Desconto</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Crie códigos promocionais</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Crie códigos promocionais</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7747,10 +7767,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🎁 Clube de Assinaturas</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Planos e assinaturas recorrentes</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Planos e assinaturas recorrentes</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7764,14 +7784,14 @@ export default function Dashboard() {
 
                 {/* 💰 Módulo Gestão & Finanças */}
                 <div className="space-y-2">
-                  <span className="text-xs font-black text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
                     💰 Módulo: Gestão & Finanças
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">💰 Financeiro</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Fluxo de caixa, recebíveis e despesas</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Fluxo de caixa, recebíveis e despesas</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7781,10 +7801,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">👔 RH / Equipe</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Gestão de funcionários, funções e comissões</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gestão de funcionários, funções e comissões</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7794,10 +7814,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">💳 Plano & Assinatura</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Gerenciar seu plano no BoraMarka</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gerenciar seu plano no BoraMarka</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7811,14 +7831,14 @@ export default function Dashboard() {
 
                 {/* 🎨 Módulo Sistema & Ajustes */}
                 <div className="space-y-2">
-                  <span className="text-xs font-black text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
+                  <span className="text-xs font-black text-amber-800 dark:text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
                     🎨 Módulo: Sistema & Ajustes
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🛡️ Segurança & Permissões</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Controle granular de acesso por perfil</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Controle granular de acesso por perfil</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7828,10 +7848,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🎨 Personalizar Página</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Identidade visual, tema e banner</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Identidade visual, tema e banner</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7841,10 +7861,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🌐 Explorar Rede</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Rede de contatos e chat</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Rede de contatos e chat</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7854,10 +7874,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">📜 Logs & Auditoria</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Registro de ações, logins e IP</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Registro de ações, logins e IP</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7867,10 +7887,10 @@ export default function Dashboard() {
                       />
                     </label>
 
-                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer">
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
                         <span className="text-xs font-black text-slate-900 dark:text-white block">🗑️ Lixeira</span>
-                        <span className="text-[10px] text-slate-400 font-semibold">Recuperar itens excluídos recentemente</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Recuperar itens excluídos recentemente</span>
                       </div>
                       <input
                         type="checkbox"
@@ -7894,7 +7914,7 @@ export default function Dashboard() {
                 <button
                   type="button"
                   onClick={() => setShowSecurityModal(false)}
-                  className="px-5 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 font-black rounded-2xl transition-all text-xs uppercase tracking-wider cursor-pointer"
+                  className="px-5 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-2xl transition-all text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Cancelar
                 </button>

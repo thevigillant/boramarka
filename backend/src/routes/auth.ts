@@ -264,17 +264,130 @@ export default async function authRoutes(app: FastifyInstance) {
 
   // POST /api/auth/login — Autentica tanto Administradores quanto Operadores
   app.post('/login', async (request, reply) => {
-    const { username, password } = request.body as {
+    const { username, password, companyUsername } = request.body as {
       username: string;
       password: string;
+      companyUsername?: string;
     };
 
-    if (!username || !password) {
+    if (!username?.trim() || !password) {
       return reply.status(400).send({ error: 'Usuário e senha são obrigatórios' });
     }
 
-    const cleanInput = username.trim();
-    const cleanLower = cleanInput.toLowerCase();
+    let cleanCompany = (companyUsername || '').trim();
+    let cleanUser = username.trim();
+
+    // Se o usuário digitou no formato "empresa/operador" ou "@empresa/operador"
+    if (!cleanCompany && cleanUser.includes('/')) {
+      const parts = cleanUser.split('/');
+      cleanCompany = parts[0].replace(/^@/, '').trim();
+      cleanUser = parts[1].trim();
+    } else if (cleanCompany) {
+      cleanCompany = cleanCompany.replace(/^@/, '').trim();
+    }
+
+    // A. FLUXO SE ESPECIFICOU A EMPRESA (Login de Colaborador)
+    if (cleanCompany) {
+      const cleanCompanyLower = cleanCompany.toLowerCase();
+      const cleanUserLower = cleanUser.toLowerCase();
+
+      // 1. Busca a empresa (Admin principal)
+      const targetAdmin = await prisma.admin.findFirst({
+        where: {
+          OR: [
+            { username: cleanCompanyLower },
+            { email: cleanCompanyLower },
+          ],
+        },
+      });
+
+      if (!targetAdmin) {
+        return reply.status(401).send({ error: 'Empresa não encontrada. Verifique o usuário ou e-mail da empresa.' });
+      }
+
+      // 2. Busca o colaborador nesta empresa específica
+      const operator = await prisma.userPermission.findFirst({
+        where: {
+          adminId: targetAdmin.id,
+          OR: [
+            { userName: cleanUser },
+            { email: cleanUserLower },
+          ],
+        },
+        include: {
+          admin: true,
+        },
+      });
+
+      if (!operator) {
+        return reply.status(401).send({ error: `Colaborador "${cleanUser}" não encontrado na empresa "${targetAdmin.businessName || targetAdmin.username}".` });
+      }
+
+      if (!operator.active) {
+        return reply.status(403).send({ error: 'Este perfil de colaborador está temporariamente suspenso pelo administrador.' });
+      }
+
+      if (!operator.passwordHash) {
+        return reply.status(400).send({ error: 'Este colaborador ainda não possui uma senha configurada. Peça ao administrador para definir sua senha em Segurança & Permissões.' });
+      }
+
+      const validOperatorPassword = await bcrypt.compare(password, operator.passwordHash);
+      if (!validOperatorPassword) {
+        return reply.status(401).send({ error: 'Senha incorreta para este colaborador. Tente novamente.' });
+      }
+
+      const permissionsPayload = {
+        canAgendamentos: operator.canAgendamentos,
+        canEstornos: operator.canEstornos,
+        canClientes: operator.canClientes,
+        canHorarios: operator.canHorarios,
+        canServicos: operator.canServicos,
+        canLinks: operator.canLinks,
+        canCupons: operator.canCupons,
+        canMemberships: operator.canMemberships,
+        canFinanceiro: operator.canFinanceiro,
+        canRh: operator.canRh,
+        canFaturamento: operator.canFaturamento,
+        canSeguranca: operator.canSeguranca,
+        canPersonalizar: operator.canPersonalizar,
+        canSocial: operator.canSocial,
+        canAudit: operator.canAudit,
+        canTrash: operator.canTrash,
+      };
+
+      const token = app.jwt.sign(
+        {
+          id: operator.adminId,
+          operatorId: operator.id,
+          username: operator.userName,
+          role: 'operator',
+          roleTitle: operator.roleTitle,
+          permissions: permissionsPayload,
+        },
+        { expiresIn: '24h' }
+      );
+
+      request.user = { id: operator.adminId, username: operator.userName, role: 'operator' };
+      await createAuditLog(request, {
+        action: 'LOGIN',
+        entity: 'AUTH',
+        entityId: operator.id,
+        details: `Operador "${operator.userName}" (${operator.roleTitle}) efetuou login no sistema da empresa "${operator.admin.businessName}".`,
+        adminId: operator.adminId,
+      });
+
+      return {
+        token,
+        username: operator.userName,
+        businessName: operator.admin.businessName,
+        role: 'operator',
+        roleTitle: operator.roleTitle,
+        permissions: permissionsPayload,
+      };
+    }
+
+    // B. FLUXO PADRÃO (Sem empresa especificada)
+    const cleanLower = cleanUser.toLowerCase();
 
     // 1. Tenta autenticar como Admin principal
     const admin = await prisma.admin.findFirst({
@@ -312,11 +425,11 @@ export default async function authRoutes(app: FastifyInstance) {
       }
     }
 
-    // 2. Se não for Admin (ou senha de Admin não bater), tenta autenticar como Operador (UserPermission)
+    // 2. Tenta autenticar como Operador (fallback sem empresa informada)
     const operator = await prisma.userPermission.findFirst({
       where: {
         OR: [
-          { userName: cleanInput },
+          { userName: cleanUser },
           { email: cleanLower },
         ],
       },
@@ -327,11 +440,11 @@ export default async function authRoutes(app: FastifyInstance) {
 
     if (operator) {
       if (!operator.active) {
-        return reply.status(403).send({ error: 'Este perfil de operador está temporariamente suspenso pelo administrador.' });
+        return reply.status(403).send({ error: 'Este perfil de colaborador está temporariamente suspenso pelo administrador.' });
       }
 
       if (!operator.passwordHash) {
-        return reply.status(400).send({ error: 'Este operador ainda não possui uma senha configurada. Peça ao administrador para definir sua senha em Segurança & Permissões.' });
+        return reply.status(400).send({ error: 'Este colaborador ainda não possui uma senha configurada. Peça ao administrador para definir sua senha em Segurança & Permissões.' });
       }
 
       const validOperatorPassword = await bcrypt.compare(password, operator.passwordHash);
@@ -387,7 +500,7 @@ export default async function authRoutes(app: FastifyInstance) {
       }
     }
 
-    return reply.status(401).send({ error: 'Credenciais inválidas. Verifique o usuário/e-mail e a senha.' });
+    return reply.status(401).send({ error: 'Credenciais inválidas. Verifique os dados de acesso e a senha.' });
   });
 
   // POST /api/auth/change-password

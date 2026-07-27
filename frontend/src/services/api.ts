@@ -99,10 +99,10 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  login: (username: string, password: string) =>
-    request<{ token: string; username: string; role?: string }>('/auth/login', {
+  login: (username: string, password: string, companyUsername?: string) =>
+    request<{ token: string; username: string; role?: string; businessName?: string; roleTitle?: string; permissions?: any }>('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ username, password }),
+      body: JSON.stringify({ username, password, companyUsername }),
     }),
 
   forgotPassword: (email: string) =>

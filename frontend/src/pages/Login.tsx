@@ -1,11 +1,17 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../services/api'
-import { ArrowLeft, Lock, User, AlertCircle, Loader2, Sparkles, ArrowRight, Mail, KeyRound, CheckCircle2, X, Eye, EyeOff } from 'lucide-react'
+import { ArrowLeft, Lock, User, AlertCircle, Loader2, Sparkles, ArrowRight, Mail, KeyRound, CheckCircle2, X, Eye, EyeOff, Building2, Users } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
 export default function Login() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  
+  const [loginMode, setLoginMode] = useState<'admin' | 'operator'>(
+    searchParams.get('mode') === 'collaborator' || searchParams.get('role') === 'operator' ? 'operator' : 'admin'
+  )
+  const [companyUsername, setCompanyUsername] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -42,9 +48,14 @@ export default function Login() {
     }
   }, [navigate])
 
-  // Forçar modo escuro na tela de login
+  // Respeitar tema padrão (Claro) ou salvo no localStorage
   useEffect(() => {
-    document.documentElement.classList.add('dark')
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
   }, [])
 
   // Check if account exists on mount
@@ -67,7 +78,11 @@ export default function Login() {
     setLoading(true)
 
     try {
-      const res = await api.login(username, password)
+      const res = await api.login(
+        username,
+        password,
+        loginMode === 'operator' ? companyUsername : undefined
+      )
       
       localStorage.removeItem('token')
       localStorage.removeItem('role')
@@ -199,7 +214,36 @@ export default function Login() {
         {/* Form Card — Doppelrand */}
         <div className="doppelrand">
           <div className="doppelrand-inner p-7">
-            <form onSubmit={handleSubmit} className="space-y-5">
+            
+            {/* Tabs Selector: Gestor / Empresa vs Colaborador */}
+            <div className="flex bg-white/[0.04] p-1 rounded-2xl border border-white/[0.06] mb-5">
+              <button
+                type="button"
+                onClick={() => { setLoginMode('admin'); setError(''); }}
+                className={`flex-1 py-2.5 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all ${
+                  loginMode === 'admin'
+                    ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md'
+                    : 'text-white/40 hover:text-white/80'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                Gestor / Empresa
+              </button>
+              <button
+                type="button"
+                onClick={() => { setLoginMode('operator'); setError(''); }}
+                className={`flex-1 py-2.5 rounded-xl text-[11px] font-extrabold flex items-center justify-center gap-1.5 transition-all ${
+                  loginMode === 'operator'
+                    ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md'
+                    : 'text-white/40 hover:text-white/80'
+                }`}
+              >
+                <Users className="w-3.5 h-3.5" />
+                Colaborador / Equipe
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
 
               {error && (
                 <div className="flex items-center gap-2.5 bg-red-500/[0.06] border border-red-500/15 p-3 rounded-xl text-red-400 text-[12px] font-medium">
@@ -208,15 +252,37 @@ export default function Login() {
                 </div>
               )}
 
+              {/* Se estiver no modo Colaborador, pede Usuário da Empresa primeiro */}
+              {loginMode === 'operator' && (
+                <div>
+                  <label className="text-[9px] font-bold uppercase text-violet-300 tracking-[0.15em] block mb-1.5">
+                    Usuário ou E-mail da Empresa *
+                  </label>
+                  <div className="relative">
+                    <Building2 className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-violet-400/50" />
+                    <input
+                      type="text"
+                      value={companyUsername}
+                      onChange={(e) => setCompanyUsername(e.target.value)}
+                      placeholder="Ex: @barbearia ou nome da empresa"
+                      required
+                      className="w-full bg-violet-500/[0.05] border border-violet-500/20 focus:border-violet-500/80 rounded-xl pl-10 pr-4 py-3 text-[13px] text-white font-medium focus:outline-none transition-colors placeholder:text-white/20"
+                    />
+                  </div>
+                </div>
+              )}
+
               <div>
-                <label className="text-[9px] font-bold uppercase text-white/25 tracking-[0.15em] block mb-2">Usuário</label>
+                <label className="text-[9px] font-bold uppercase text-white/25 tracking-[0.15em] block mb-1.5">
+                  {loginMode === 'operator' ? 'Usuário do Colaborador *' : 'Usuário ou E-mail *'}
+                </label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                   <input
                     type="text"
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
-                    placeholder="Seu usuário"
+                    placeholder={loginMode === 'operator' ? 'Seu usuário de operador' : 'Seu usuário'}
                     required
                     className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-4 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
                   />
@@ -224,7 +290,7 @@ export default function Login() {
               </div>
 
               <div>
-                <label className="text-[9px] font-bold uppercase text-white/25 tracking-[0.15em] block mb-2">Senha</label>
+                <label className="text-[9px] font-bold uppercase text-white/25 tracking-[0.15em] block mb-1.5">Senha</label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                   <input
@@ -274,13 +340,13 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={loading}
-                className="mag-btn group w-full py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-[13px] font-bold text-white shadow-lg shadow-violet-600/15 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-50"
+                className="mag-btn group w-full py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-[13px] font-bold text-white shadow-lg shadow-violet-600/15 flex items-center justify-center gap-2 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] disabled:opacity-50 cursor-pointer"
               >
                 {loading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
                   <>
-                    Entrar
+                    {loginMode === 'operator' ? 'Entrar como Colaborador' : 'Entrar como Gestor'}
                     <span className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
                       <ArrowRight className="w-3 h-3" />
                     </span>

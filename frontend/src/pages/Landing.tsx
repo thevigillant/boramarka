@@ -92,7 +92,12 @@ export default function Landing() {
   const [showScrollTop, setShowScrollTop] = useState(false)
 
   useEffect(() => {
-    document.documentElement.classList.add('dark')
+    const savedTheme = localStorage.getItem('theme')
+    if (savedTheme === 'dark') {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
     const handleScroll = () => {
       if (window.scrollY > 300) {
         setShowScrollTop(true)
