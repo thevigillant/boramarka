@@ -39,8 +39,22 @@ process.on('unhandledRejection', (reason, promise) => {
 // Augment Fastify JWT types
 declare module '@fastify/jwt' {
   interface FastifyJWT {
-    payload: { id: number; username: string; role: string };
-    user: { id: number; username: string; role: string };
+    payload: {
+      id: number;
+      username: string;
+      role: string;
+      operatorId?: number;
+      roleTitle?: string;
+      permissions?: any;
+    };
+    user: {
+      id: number;
+      username: string;
+      role: string;
+      operatorId?: number;
+      roleTitle?: string;
+      permissions?: any;
+    };
   }
 }
 
