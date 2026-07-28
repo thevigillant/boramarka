@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { sendWhatsAppMessage, generateBookingMessage } from '../services/whatsapp';
-import { checkAndUpdateSubscription } from '../services/subscription';
+import { checkAndUpdateSubscription, checkQuota } from '../services/subscription';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getGoogleCalendarEvents } from '../services/googleCalendar';
 import { getVapidPublicKey, isPushConfigured } from '../services/pushNotification';
@@ -418,6 +418,11 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     const sub = await checkAndUpdateSubscription(link.adminId);
     if (sub.status === 'inactive') {
       return reply.status(403).send({ error: 'Os agendamentos deste profissional estão suspensos temporariamente devido à assinatura pendente.' });
+    }
+
+    const quota = await checkQuota(link.adminId, 'bookings');
+    if (!quota.allowed) {
+      return reply.status(403).send({ error: quota.message });
     }
 
     // Verify slot exists, belongs to this link, and is available

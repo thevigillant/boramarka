@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, UserPermissionItem } from '../services/api'
+import { api, UserPermissionItem, SubscriptionUsageData } from '../services/api'
 import {
   Calendar, Plus, Trash2, Copy, RefreshCw, RotateCcw, Link2,
   Clock, Users, LogOut, X, Check, ExternalLink,
@@ -9,12 +9,13 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 import { BookingCard } from '../components/BookingCard'
+
 
 // ════════════════════════════════════════════
 // Types
@@ -320,7 +321,7 @@ function InactiveBanner({
       <div className="max-w-6xl mx-auto px-3 sm:px-4 py-2 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2">
           <span className="text-xs sm:text-sm font-bold flex items-center gap-1.5">
-            ⚠️ Assinatura Inativa
+            Assinatura Inativa
           </span>
           <span className="text-[11px] sm:text-xs opacity-90 hidden sm:inline">— Seu catálogo está visível, mas novas marcações e edições estão suspensas.</span>
         </div>
@@ -400,7 +401,7 @@ function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean; onClos
             className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
           >
             <Sparkles className="w-5 h-5 text-yellow-300" />
-            Plano Premium — R$ 69,90/mês
+            Plano Premium — R$ 79,90/mês
           </button>
         </div>
       </div>
@@ -509,6 +510,7 @@ function maskPhone(value: string): string {
 export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
+  const [usageData, setUsageData] = useState<SubscriptionUsageData | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>('operacional')
@@ -1583,7 +1585,7 @@ export default function Dashboard() {
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
     try {
-      const [s, f, l, b, t, p, sv, dl, subStatus, cpList, googleStatus, plans, subs] = await Promise.all([
+      const [s, f, l, b, t, p, sv, dl, subStatus, cpList, googleStatus, plans, subs, usage] = await Promise.all([
         api.getStats(),
         api.getFinanceStats(),
         api.getLinks(),
@@ -1596,7 +1598,8 @@ export default function Dashboard() {
         api.getCoupons().catch(() => []), // Não quebrar se falhar
         api.getGoogleCalendarStatus().catch(() => ({ connected: false, email: '' })), // Não quebrar se falhar
         api.getMembershipPlans().catch(() => []),
-        api.getClientSubscriptions().catch(() => [])
+        api.getClientSubscriptions().catch(() => []),
+        api.getSubscriptionUsage().catch(() => null)
       ])
       setStats(s)
       setFinanceStats(f)
@@ -1617,6 +1620,7 @@ export default function Dashboard() {
       setMembershipPlans(plans || [])
       setClientSubscriptions(subs || [])
       if (subStatus) setSubscription(subStatus)
+      if (usage) setUsageData(usage)
       if (isManual) showToast('Dados atualizados!')
     } catch (err: any) {
       showToast(err.message, 'error')
@@ -3097,6 +3101,8 @@ export default function Dashboard() {
             )
           })}
         </div>
+
+
 
         {/* ═══════════════════════════════════════════ */}
         {/* TAB: Overview */}
@@ -4820,6 +4826,140 @@ export default function Dashboard() {
                   </div>
                 )}
 
+                {/* Resource Usage & Quota Limits Card */}
+                {usageData && (
+                  <div className="bg-slate-50 dark:bg-[#1A2235]/60 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl space-y-5 text-left">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-4 border-b border-slate-200/60 dark:border-slate-800">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-orange-500/10 text-orange-500">
+                          <Database className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="text-base font-black text-slate-900 dark:text-white">Uso do Banco de Dados & Armazenamento</h3>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Consumo de cotas do plano ({usageData.plan.toUpperCase()})</p>
+                        </div>
+                      </div>
+                      <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 self-start sm:self-auto">
+                        Ciclo Atual
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {/* 1. Agendamentos */}
+                      {(() => {
+                        const used = usageData.usage.bookingsThisMonth;
+                        const max = usageData.limits.maxBookingsPerMonth;
+                        const pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
+                        const isHigh = pct >= 85;
+                        return (
+                          <div className="bg-white dark:bg-[#131826] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                            <div className="flex justify-between items-center text-xs font-bold">
+                              <span className="text-slate-500 dark:text-slate-400">Agendamentos / Mês</span>
+                              <span className={isHigh ? 'text-red-500 font-black' : 'text-slate-900 dark:text-white font-black'}>
+                                {used} / {max ? max : '∞'}
+                              </span>
+                            </div>
+                            {max ? (
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">Sem limite</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 2. Clientes */}
+                      {(() => {
+                        const used = usageData.usage.customers;
+                        const max = usageData.limits.maxCustomers;
+                        const pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
+                        const isHigh = pct >= 85;
+                        return (
+                          <div className="bg-white dark:bg-[#131826] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                            <div className="flex justify-between items-center text-xs font-bold">
+                              <span className="text-slate-500 dark:text-slate-400">Clientes Salvos</span>
+                              <span className={isHigh ? 'text-red-500 font-black' : 'text-slate-900 dark:text-white font-black'}>
+                                {used} / {max ? max : '∞'}
+                              </span>
+                            </div>
+                            {max ? (
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">Sem limite</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 3. Serviços */}
+                      {(() => {
+                        const used = usageData.usage.services;
+                        const max = usageData.limits.maxServices;
+                        const pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
+                        const isHigh = pct >= 85;
+                        return (
+                          <div className="bg-white dark:bg-[#131826] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                            <div className="flex justify-between items-center text-xs font-bold">
+                              <span className="text-slate-500 dark:text-slate-400">Serviços Cadastrados</span>
+                              <span className={isHigh ? 'text-red-500 font-black' : 'text-slate-900 dark:text-white font-black'}>
+                                {used} / {max ? max : '∞'}
+                              </span>
+                            </div>
+                            {max ? (
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">Sem limite</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+
+                      {/* 4. Colaboradores */}
+                      {(() => {
+                        const used = usageData.usage.employees;
+                        const max = usageData.limits.maxEmployees;
+                        const pct = max ? Math.min(100, Math.round((used / max) * 100)) : 0;
+                        const isHigh = pct >= 85;
+                        return (
+                          <div className="bg-white dark:bg-[#131826] p-4 rounded-2xl border border-slate-200/80 dark:border-slate-800 space-y-2">
+                            <div className="flex justify-between items-center text-xs font-bold">
+                              <span className="text-slate-500 dark:text-slate-400">Colaboradores</span>
+                              <span className={isHigh ? 'text-red-500 font-black' : 'text-slate-900 dark:text-white font-black'}>
+                                {used} / {max ? max : '∞'}
+                              </span>
+                            </div>
+                            {max ? (
+                              <div className="w-full bg-slate-100 dark:bg-slate-800 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full transition-all rounded-full ${pct >= 90 ? 'bg-red-500' : pct >= 75 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            ) : (
+                              <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">Sem limite</span>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  </div>
+                )}
+
                  {/* Plan Options */}
                 <div>
                   <h3 className="text-md font-black text-slate-900 dark:text-white mb-6">Planos Disponíveis</h3>
@@ -4845,8 +4985,20 @@ export default function Dashboard() {
                           <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 29,90</span>
                           <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
                         </div>
-                        <ul className="space-y-2.5 pt-2">
-                          {['Agenda online 24h sem limites', 'Até 10 links de agendamento simultâneos', 'Taxa de agendamento (cobrança de sinal)', 'Lembretes de WhatsApp ilimitados', 'Financeiro e fluxo de caixa integrados'].map((feat, i) => (
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1.5 rounded-xl">
+                          <Target className="w-3.5 h-3.5 shrink-0" />
+                          <span>Para autônomos e estúdios (1 a 5 pessoas)</span>
+                        </div>
+
+                        <ul className="space-y-2.5 pt-1">
+                          {[
+                            'Até 500 agendamentos por mês',
+                            'Até 1.500 clientes salvos na base',
+                            'Até 30 serviços e 10 links ativos',
+                            'Até 5 colaboradores na equipe',
+                            'Cobrança de Sinal via Mercado Pago (Zero No-Show)',
+                            'Fluxo de Caixa e Relatórios em PDF/CSV'
+                          ].map((feat, i) => (
                             <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
                               <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                               <span>{feat}</span>
@@ -4893,13 +5045,28 @@ export default function Dashboard() {
                           <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 260</span>
                           <span className="text-xs text-slate-400 font-bold uppercase">/ ano</span>
                         </div>
-                        <ul className="space-y-2.5 pt-2">
-                          {['Tudo do plano mensal sem restrições', 'Acesso imediato a novas funcionalidades', 'Links de agendamento ilimitados', 'Suporte VIP e prioritário via WhatsApp', 'Equivalente a apenas R$ 21,60 por mês'].map((feat, i) => (
-                            <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-                              <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                              <span>{feat}</span>
-                            </li>
-                          ))}
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2.5 py-1.5 rounded-xl">
+                          <Target className="w-3.5 h-3.5 shrink-0" />
+                          <span>Para negócios em expansão (até 20 pessoas)</span>
+                        </div>
+
+                        <ul className="space-y-2.5 pt-1">
+                          {[
+                            { text: 'Até 2.500 agendamentos/mês & 8.000 clientes', icon: Check },
+                            { text: 'Até 20 colaboradores na equipe', icon: Check },
+                            { text: 'Venda Casada (Upsell Automatizado)', icon: Sparkles, highlight: true },
+                            { text: 'Cartão Fidelidade Digital & Cupons', icon: Star, highlight: true },
+                            { text: 'Até 100 serviços e 30 links ativos', icon: Check },
+                            { text: 'Economia de R$ 100/ano (~R$ 21,66/mês)', icon: Check }
+                          ].map((feat, i) => {
+                            const IconComp = feat.icon;
+                            return (
+                              <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                                <IconComp className={`w-4 h-4 shrink-0 ${feat.highlight ? 'text-orange-500' : 'text-emerald-500'}`} />
+                                <span className={feat.highlight ? 'text-slate-900 dark:text-white font-extrabold' : ''}>{feat.text}</span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
 
@@ -4938,16 +5105,31 @@ export default function Dashboard() {
                           )}
                         </div>
                         <div className="flex items-baseline gap-1">
-                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 69,90</span>
+                          <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 79,90</span>
                           <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
                         </div>
-                        <ul className="space-y-2.5 pt-2">
-                          {['Tudo dos planos básico e anual', 'Gestão de RH e Equipe completa', 'Subdomínio Wildcard grátis profissional', 'Domínio próprio (ex: agendar.salao.com)', 'Página 100% livre da marca BoraMarka', 'Suporte técnico prioritário dedicado VIP'].map((feat, i) => (
-                            <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-                              <Check className="w-4 h-4 text-emerald-500 shrink-0" />
-                              <span>{feat}</span>
-                            </li>
-                          ))}
+                        <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-600 dark:text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1.5 rounded-xl">
+                          <Building2 className="w-3.5 h-3.5 shrink-0 text-violet-500" />
+                          <span>Para empresas e clínicas com equipe & RH</span>
+                        </div>
+
+                        <ul className="space-y-2.5 pt-1">
+                          {[
+                            { text: 'Módulo Exclusivo de RH & Gestão de Equipe', icon: ShieldCheck, highlight: true },
+                            { text: 'Domínio Próprio (agendar.suaempresa.com.br)', icon: Globe, highlight: true },
+                            { text: 'Página 100% Whitelabel sem marca BoraMarka', icon: Crown, highlight: true },
+                            { text: 'Recursos TOTALMENTE ILIMITADOS (∞)', icon: Zap, highlight: true },
+                            { text: 'Notificações Push e Google Calendar', icon: Check },
+                            { text: 'Suporte VIP Prioritário 24/7', icon: Check }
+                          ].map((feat, i) => {
+                            const IconComp = feat.icon;
+                            return (
+                              <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                                <IconComp className={`w-4 h-4 shrink-0 ${feat.highlight ? 'text-violet-500' : 'text-emerald-500'}`} />
+                                <span className={feat.highlight ? 'text-slate-900 dark:text-white font-extrabold' : ''}>{feat.text}</span>
+                              </li>
+                            );
+                          })}
                         </ul>
                       </div>
 
@@ -5391,7 +5573,7 @@ export default function Dashboard() {
                 </div>
                 <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gestão de RH Bloqueada</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold leading-relaxed">
-                  A Gestão de RH e Colaboradores é uma funcionalidade exclusiva do <strong>Plano Premium</strong> (R$ 69,90/mês). 
+                  A Gestão de RH e Colaboradores é uma funcionalidade exclusiva do <strong>Plano Premium</strong> (R$ 79,90/mês). 
                   Organize sua equipe, controle arquivos, gerencie demissões e controle pendências!
                 </p>
                 <button
@@ -5565,8 +5747,8 @@ export default function Dashboard() {
                         className="bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 px-3 py-1.5 rounded-xl font-bold"
                       >
                         <option value="ALL">Todas (Abertas e Resolvidas)</option>
-                        <option value="PENDING">⚠️ Apenas Pendentes (Abertas)</option>
-                        <option value="RESOLVED">✅ Apenas Resolvidas</option>
+                        <option value="PENDING">Apenas Pendentes (Abertas)</option>
+                        <option value="RESOLVED">Apenas Resolvidas</option>
                       </select>
                     </div>
 
@@ -5680,7 +5862,7 @@ export default function Dashboard() {
                                       ? 'bg-emerald-500 text-white'
                                       : 'bg-red-500 text-white animate-pulse'
                                   }`}>
-                                    {emp.pendingResolved ? '✅ Pendência Resolvida' : '⚠️ Pendência Aberta'}
+                                    {emp.pendingResolved ? 'Pendência Resolvida' : 'Pendência Aberta'}
                                   </span>
                                 </div>
                                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Motivo: {emp.dismissalReason}</p>
@@ -5695,7 +5877,7 @@ export default function Dashboard() {
                             {/* Archived Status Box */}
                             {rhSubTab === 'ARCHIVED' && (
                               <div className="p-2.5 bg-slate-800/40 border border-slate-700/50 rounded-2xl text-left">
-                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">📁 Registro no Arquivo Morto</span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">Registro no Arquivo Morto</span>
                               </div>
                             )}
 
@@ -5963,7 +6145,7 @@ export default function Dashboard() {
                                 ? 'bg-violet-500/20 text-violet-600 dark:text-violet-400 border border-violet-500/30'
                                 : 'bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30'
                             }`}>
-                              {isCritical ? '🚨 CRÍTICO' : isHigh ? '⚠️ ALTO' : isMedium ? '🔮 MÉDIO' : 'ℹ️ INFO'}
+                              {isCritical ? 'CRÍTICO' : isHigh ? 'ALTO' : isMedium ? 'MÉDIO' : 'INFO'}
                             </span>
 
                             {/* Action Tag */}
@@ -5998,7 +6180,7 @@ export default function Dashboard() {
                                 ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20'
                                 : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20'
                             }`}>
-                              🌐 IP: {log.ipAddress || '127.0.0.1'}
+                              IP: {log.ipAddress || '127.0.0.1'}
                             </span>
                           </div>
                         </div>
@@ -6111,66 +6293,70 @@ export default function Dashboard() {
                   {securityPermissions.map(perm => (
                     <div
                       key={perm.id}
-                      className="p-4 bg-slate-50/80 dark:bg-[#0f131f]/60 border border-slate-200/90 dark:border-slate-800 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all hover:border-violet-500/40 shadow-xs"
+                      className="p-5 bg-slate-50/80 dark:bg-[#0f131f]/60 border border-slate-200/90 dark:border-slate-800 rounded-2xl space-y-3.5 transition-all hover:border-violet-500/40 shadow-xs"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-gradient-to-tr dark:from-violet-600/20 dark:to-pink-500/20 text-violet-700 dark:text-violet-400 flex items-center justify-center font-black text-base border border-violet-300 dark:border-violet-500/20 shadow-xs">
-                          {perm.userName[0]?.toUpperCase()}
-                        </div>
-                        <div className="text-left">
-                          <div className="flex items-center gap-2">
-                            <h4 className="text-sm font-black text-slate-900 dark:text-white">{perm.userName}</h4>
-                            <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30">
-                              {perm.roleTitle}
-                            </span>
-                            <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full ${perm.active ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30'}`}>
-                              {perm.active ? 'Ativo' : 'Bloqueado'}
-                            </span>
+                      {/* Top Row: User Info & Actions */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-200/60 dark:border-slate-800/80">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-2xl bg-violet-100 dark:bg-gradient-to-tr dark:from-violet-600/20 dark:to-pink-500/20 text-violet-700 dark:text-violet-400 flex items-center justify-center font-black text-base border border-violet-300 dark:border-violet-500/20 shadow-xs">
+                            {perm.userName[0]?.toUpperCase()}
                           </div>
-                          {perm.email && (
-                            <p className="text-xs text-slate-600 dark:text-slate-400 font-bold mt-0.5">{perm.email}</p>
-                          )}
+                          <div className="text-left">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h4 className="text-sm font-black text-slate-900 dark:text-white">{perm.userName}</h4>
+                              <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-violet-100 text-violet-800 border border-violet-300 dark:bg-violet-500/20 dark:text-violet-300 dark:border-violet-500/30">
+                                {perm.roleTitle}
+                              </span>
+                              <span className={`text-[9px] font-black uppercase px-2.5 py-0.5 rounded-full ${perm.active ? 'bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30' : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30'}`}>
+                                {perm.active ? 'Ativo' : 'Bloqueado'}
+                              </span>
+                            </div>
+                            {perm.email && (
+                              <p className="text-xs text-slate-600 dark:text-slate-400 font-bold mt-0.5">{perm.email}</p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Action buttons */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            onClick={() => handleToggleSecurityActive(perm)}
+                            className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
+                              perm.active
+                                ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-600 hover:text-white dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30'
+                                : 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-600 hover:text-white dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
+                            }`}
+                          >
+                            {perm.active ? 'Suspender' : 'Ativar'}
+                          </button>
+                          <button
+                            onClick={() => openEditSecurityModal(perm)}
+                            className="p-2 bg-slate-200 text-slate-800 border border-slate-300 hover:bg-violet-600 hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 rounded-xl transition-all cursor-pointer"
+                            title="Editar Permissões"
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSecurityPermission(perm.id)}
+                            className="p-2 bg-red-100 text-red-700 border border-red-300 hover:bg-red-600 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 rounded-xl transition-all cursor-pointer"
+                            title="Remover Perfil"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
                         </div>
                       </div>
 
-                      {/* Permissions Badges */}
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        {perm.canViewBookings && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30">📅 Agenda</span>}
-                        {perm.canViewFinance && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">💰 Financeiro</span>}
-                        {perm.canManageServices && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30">✂️ Serviços</span>}
-                        {perm.canViewClients && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-purple-100 text-purple-900 border border-purple-300 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30">👥 Clientes</span>}
-                        {perm.canManageLoyalty && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-pink-100 text-pink-900 border border-pink-300 dark:bg-pink-500/20 dark:text-pink-300 dark:border-pink-500/30">🎁 Fidelidade</span>}
-                        {perm.canManageStaff && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30">👔 RH</span>}
-                        {perm.canManageSettings && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-orange-100 text-orange-900 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/30">⚙️ Configurações</span>}
-                        {perm.canViewAuditLogs && <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-lg bg-red-100 text-red-900 border border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30">🛡️ Audit Logs</span>}
-                      </div>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          onClick={() => handleToggleSecurityActive(perm)}
-                          className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer border ${
-                            perm.active
-                              ? 'bg-amber-100 text-amber-900 border-amber-300 hover:bg-amber-600 hover:text-white dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30'
-                              : 'bg-emerald-100 text-emerald-900 border-emerald-300 hover:bg-emerald-600 hover:text-white dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30'
-                          }`}
-                        >
-                          {perm.active ? 'Suspender' : 'Ativar'}
-                        </button>
-                        <button
-                          onClick={() => openEditSecurityModal(perm)}
-                          className="p-2 bg-slate-200 text-slate-800 border border-slate-300 hover:bg-violet-600 hover:text-white dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700 rounded-xl transition-all cursor-pointer"
-                          title="Editar Permissões"
-                        >
-                          <Pencil className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSecurityPermission(perm.id)}
-                          className="p-2 bg-red-100 text-red-700 border border-red-300 hover:bg-red-600 hover:text-white dark:bg-red-500/20 dark:text-red-400 dark:border-red-500/30 rounded-xl transition-all cursor-pointer"
-                          title="Remover Perfil"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      {/* Bottom Row: Permissions Badges */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[10px] font-black uppercase text-slate-400 mr-1 tracking-wider">Módulos:</span>
+                        {perm.canViewBookings && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-blue-100 text-blue-900 border border-blue-300 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30"><Calendar className="w-3 h-3 text-blue-500 dark:text-blue-400" /> Agenda</span>}
+                        {perm.canViewFinance && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30"><DollarSign className="w-3 h-3 text-emerald-500 dark:text-emerald-400" /> Financeiro</span>}
+                        {perm.canManageServices && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-amber-100 text-amber-900 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30"><Scissors className="w-3 h-3 text-amber-500 dark:text-amber-400" /> Serviços</span>}
+                        {perm.canViewClients && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-purple-100 text-purple-900 border border-purple-300 dark:bg-purple-500/20 dark:text-purple-300 dark:border-purple-500/30"><Users className="w-3 h-3 text-purple-500 dark:text-purple-400" /> Clientes</span>}
+                        {perm.canManageLoyalty && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-pink-100 text-pink-900 border border-pink-300 dark:bg-pink-500/20 dark:text-pink-300 dark:border-pink-500/30"><Gift className="w-3 h-3 text-pink-500 dark:text-pink-400" /> Fidelidade</span>}
+                        {perm.canManageStaff && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-indigo-100 text-indigo-900 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30"><Briefcase className="w-3 h-3 text-indigo-500 dark:text-indigo-400" /> RH</span>}
+                        {perm.canManageSettings && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-orange-100 text-orange-900 border border-orange-300 dark:bg-orange-500/20 dark:text-orange-300 dark:border-orange-500/30"><Pencil className="w-3 h-3 text-orange-500 dark:text-orange-400" /> Configurações</span>}
+                        {perm.canViewAuditLogs && <span className="inline-flex items-center gap-1.5 text-[10px] font-extrabold px-2.5 py-1 rounded-lg bg-red-100 text-red-900 border border-red-300 dark:bg-red-500/20 dark:text-red-300 dark:border-red-500/30"><Shield className="w-3 h-3 text-red-500 dark:text-red-400" /> Audit Logs</span>}
                       </div>
                     </div>
                   ))}

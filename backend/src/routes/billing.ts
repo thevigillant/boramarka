@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
-import { checkAndUpdateSubscription } from '../services/subscription';
+import { checkAndUpdateSubscription, getUsageStats } from '../services/subscription';
 import { authenticate } from '../plugins/auth';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
@@ -10,6 +10,13 @@ export default async function billingRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const subscription = await checkAndUpdateSubscription(user.id);
     return subscription;
+  });
+
+  // Rota para pegar consumo de cotas e limites da assinatura
+  app.get('/usage', { preHandler: [authenticate] }, async (request, reply) => {
+    const user = request.user as { id: number };
+    const stats = await getUsageStats(user.id);
+    return stats;
   });
 
   // Rota para gerar um link de pagamento
@@ -29,7 +36,7 @@ export default async function billingRoutes(app: FastifyInstance) {
       price = 260.00;
       title = 'BoraMarka - Plano Anual';
     } else if (plan === 'premium') {
-      price = 69.90;
+      price = 79.90;
       title = 'BoraMarka - Plano Premium';
     }
 

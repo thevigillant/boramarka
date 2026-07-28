@@ -1018,7 +1018,70 @@ export const api = {
 
   deleteSecurityPermission: (id: number) =>
     request<{ success: boolean; message: string }>(`/security/permissions/${id}`, { method: 'DELETE' }),
+
+  // 💬 CRM Chat & Customer Service Module
+  getCrmContacts: (params?: { q?: string; status?: string }) => {
+    const search = new URLSearchParams();
+    if (params?.q) search.append('q', params.q);
+    if (params?.status) search.append('status', params.status);
+    const queryStr = search.toString() ? `?${search.toString()}` : '';
+    return request<CustomerContactItem[]>(`/admin/crm-chat/contacts${queryStr}`);
+  },
+
+  createCrmContact: (data: { name: string; phone: string; email?: string; status?: string; notes?: string; tags?: string[]; avatarUrl?: string }) =>
+    request<CustomerContactItem>('/admin/crm-chat/contacts', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateCrmContact: (id: number, data: Omit<Partial<CustomerContactItem>, 'tags'> & { tags?: string[] | string }) =>
+    request<CustomerContactItem>(`/admin/crm-chat/contacts/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteCrmContact: (id: number) =>
+    request<{ success: boolean; message: string }>(`/admin/crm-chat/contacts/${id}`, { method: 'DELETE' }),
+
+  getCrmMessages: (contactId: number) =>
+    request<ClientChatMessageItem[]>(`/admin/crm-chat/contacts/${contactId}/messages`),
+
+  sendCrmMessage: (contactId: number, data: { content?: string; messageType?: string; mediaUrl?: string; mediaName?: string; mediaDuration?: number }) =>
+    request<ClientChatMessageItem>(`/admin/crm-chat/contacts/${contactId}/messages`, { method: 'POST', body: JSON.stringify(data) }),
+
+  simulateClientReply: (contactId: number, data: { content?: string; messageType?: string; mediaUrl?: string; mediaName?: string; mediaDuration?: number }) =>
+    request<ClientChatMessageItem>(`/admin/crm-chat/contacts/${contactId}/simulate-client-reply`, { method: 'POST', body: JSON.stringify(data) }),
+
+  getCrmTemplates: () =>
+    request<QuickReplyTemplateItem[]>('/admin/crm-chat/templates'),
+
+  createCrmTemplate: (data: { shortcut: string; title: string; content: string; category?: string }) =>
+    request<QuickReplyTemplateItem>('/admin/crm-chat/templates', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateCrmTemplate: (id: number, data: Partial<QuickReplyTemplateItem>) =>
+    request<QuickReplyTemplateItem>(`/admin/crm-chat/templates/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteCrmTemplate: (id: number) =>
+    request<{ success: boolean; message: string }>(`/admin/crm-chat/templates/${id}`, { method: 'DELETE' }),
+
+  getSubscriptionUsage: () =>
+    request<SubscriptionUsageData>('/billing/usage'),
 };
+
+export interface SubscriptionUsageData {
+  plan: string;
+  status: string;
+  trialEndsAt?: string;
+  expiresAt?: string;
+  limits: {
+    maxBookingsPerMonth: number | null;
+    maxCustomers: number | null;
+    maxEmployees: number | null;
+    maxServices: number | null;
+    maxLinks: number | null;
+  };
+  usage: {
+    bookingsThisMonth: number;
+    customers: number;
+    employees: number;
+    services: number;
+    links: number;
+  };
+}
 
 export interface UserPermissionItem {
   id: number;
@@ -1068,3 +1131,45 @@ export interface UserPermissionItem {
   createdAt: string;
   updatedAt: string;
 }
+
+export interface CustomerContactItem {
+  id: number;
+  name: string;
+  phone: string;
+  email: string;
+  avatarUrl: string;
+  status: string;
+  notes: string;
+  tags: string; // JSON string
+  lastInteraction: string;
+  unreadCount: number;
+  createdAt: string;
+  updatedAt: string;
+  messages?: ClientChatMessageItem[];
+}
+
+export interface ClientChatMessageItem {
+  id: number;
+  contactId: number;
+  senderType: 'STAFF' | 'CLIENT';
+  senderName: string;
+  messageType: 'TEXT' | 'AUDIO' | 'IMAGE' | 'DOCUMENT' | 'TEMPLATE';
+  content: string;
+  mediaUrl: string;
+  mediaName: string;
+  mediaDuration: number;
+  status: 'SENT' | 'DELIVERED' | 'READ';
+  createdAt: string;
+  whatsappLink?: string;
+  whatsappMethod?: 'api' | 'link';
+}
+
+export interface QuickReplyTemplateItem {
+  id: number;
+  shortcut: string;
+  title: string;
+  content: string;
+  category: string;
+  createdAt: string;
+}
+

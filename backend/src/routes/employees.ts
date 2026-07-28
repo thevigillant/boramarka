@@ -1,7 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
-import { checkAndUpdateSubscription } from '../services/subscription';
+import { checkAndUpdateSubscription, checkQuota } from '../services/subscription';
 import { createAuditLog } from '../utils/auditLogger';
 
 export default async function employeeRoutes(app: FastifyInstance) {
@@ -46,6 +46,11 @@ export default async function employeeRoutes(app: FastifyInstance) {
   // POST /api/admin/employees — Create employee
   app.post('/', async (request, reply) => {
     const user = request.user as { id: number };
+
+    const quota = await checkQuota(user.id, 'employees');
+    if (!quota.allowed) {
+      return reply.status(403).send({ error: quota.message });
+    }
     const {
       name, role, phone, email, cpf, rg, birthDate,
       admissionDate, salary, commission, workingHours

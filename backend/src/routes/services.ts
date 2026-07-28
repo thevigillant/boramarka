@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { createAuditLog } from '../utils/auditLogger';
+import { checkQuota } from '../services/subscription';
 
 export default async function serviceRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -46,6 +47,11 @@ export default async function serviceRoutes(app: FastifyInstance) {
 
     if (!name || price === undefined || !duration) {
       return reply.status(400).send({ error: 'Nome, preço e duração são obrigatórios' });
+    }
+
+    const quota = await checkQuota(user.id, 'services');
+    if (!quota.allowed) {
+      return reply.status(403).send({ error: quota.message });
     }
 
     const service = await prisma.$transaction(async (tx) => {
