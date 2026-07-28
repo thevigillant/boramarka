@@ -18,6 +18,7 @@ import employeeRoutes from './routes/employees';
 import auditRoutes from './routes/audit';
 import loyaltyRoutes from './routes/loyalty';
 import securityRoutes from './routes/security';
+import crmChatRoutes from './routes/crmChat';
 import { startReminderService } from './services/reminder';
 
 // ═══════════════════════════════════════════════════════════
@@ -138,6 +139,7 @@ app.register(employeeRoutes, { prefix: '/api/admin/employees' });
 app.register(auditRoutes, { prefix: '/api/admin/audit-logs' });
 app.register(loyaltyRoutes, { prefix: '/api/loyalty' });
 app.register(securityRoutes, { prefix: '/api/security' });
+app.register(crmChatRoutes, { prefix: '/api/admin/crm-chat' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));

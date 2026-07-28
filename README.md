@@ -22,9 +22,9 @@
 
 ## 💡 Sobre o BoraMarka
 
-O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos e estabelecimentos comerciais que atendem com hora marcada. 
+O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos, estúdios, clínicas e estabelecimentos comerciais que atendem com hora marcada. 
 
-A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Login de Colaborador por Empresa**, **Matriz de Segurança & Permissões Granulares (RBAC)**, **Cartão Fidelidade Digital**, **Onboarding Inteligente por Nicho**, **Venda Casada (Upsell)**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Gestão de Equipe & RH**.
+A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cobrança de Sinal Antecipado via Mercado Pago (Zero No-Show)**, **Login de Colaboradores por Empresa**, **Matriz de Segurança & Permissões Granulares (RBAC)**, **Módulo de Gestão de RH & Equipe**, **Cartão Fidelidade Digital & Cupons**, **Onboarding Inteligente por Nicho**, **Venda Casada (Upsell no Checkout)**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Monitoramento de Consumo de Armazenamento/Banco de Dados**.
 
 ### 🎯 Para quem foi feito:
 - 💈 **Barbearias** & Barbeiros
@@ -47,10 +47,15 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cob
 ### 🛡️ Matriz de Segurança & Controle de Acessos Granular (RBAC)
 - **Perfis Rápidos Pré-configurados (1-Clique):** Seleção ágil entre *Gestor Principal*, *Gerente de Operação*, *Recepcionista*, *Financeiro* e *Profissional*.
 - **Controle Defensivo Módulo a Módulo:** Atribuição individual de permissões para os módulos de *Agenda*, *Estornos*, *Clientes*, *Horários*, *Serviços*, *Links*, *Cupons*, *Assinaturas*, *Financeiro*, *RH*, *Segurança*, *Personalização*, *Social*, *Audit Logs* e *Lixeira*.
+- **Design Estritamente Corporativo:** Interface 100% limpa com ícones vetoriais em SVG (Lucide React) para máxima clareza e alinhamento visual.
 
-### 🎨 Design System & Tema Claro como Padrão
-- **Tema Claro (Modo Branco) Padrão:** Apresentação visual limpa baseada em paleta slate neutra (`#F8FAFC`), bordas suaves e contraste executivo de alta definição, eliminando brilhos estourados.
-- **Modo Escuro (`.dark`) com Alternância:** Suporte completo a tema escuro futurista com persistência imediata no `localStorage`.
+### 📊 Gestão de Consumo & Armazenamento de Banco de Dados
+- **Monitoramento de Quotas por Plano:** Acompanhamento em tempo real do uso do banco de dados (tamanho em MB, registros de agendamentos, clientes salvos e uploads de mídia).
+- **Notificação Automática de Capacidade:** Avisos visuais ao atingir 80% do limite do plano, com fluxo de upgrade em 1-clique.
+
+### 🎨 Design System & Estética Executive Premium
+- **Interface Limpa & Moderna:** Utilização de vidro fosco (*glassmorphism*), micro-animações fluidas e paletas curadas sem emojis unicode informais.
+- **Modo Escuro (`.dark`) & Claro (`.light`):** Suporte completo a temas com persistência imediata no `localStorage`.
 
 ### 🚀 Onboarding Personalizado por Nicho (Auto-Seeding)
 - Ao se cadastrar, o profissional escolhe o seu nicho de atuação (Barbearia, Salão, Tatuagem, Estética, Personal, Pet Shop, Clínicas).
@@ -59,30 +64,32 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cob
 ### 📱 PWA Nativo (App Instalável no Celular)
 - Suporte completo a Progressive Web App via `manifest.json`.
 - Permite a instalação nativa do BoraMarka na tela inicial em dispositivos Android, iOS (Safari) e Desktops.
-- Banner flutuante inteligente (`PWAInstallBanner.tsx`) com instruções guiadas para iPhone/iPad.
 
 ### 🎁 Cartão Fidelidade Digital & Cupons Automáticos
 - Contabilização automática de selos (`LoyaltyCard`) a cada atendimento concluído pelo profissional.
 - Meta de selos customizável (ex: 10 atendimentos) com geração automática de cupons promocionais únicos (`FIDELIDADE-XXXXXX`).
-- Widget público interativo (`LoyaltyWidget.tsx`) para o cliente consultar sua cartela e resgatar recompensas informando seu WhatsApp.
 
 ### 💳 Cobrança de Sinal Antecipado & Checkout Mercado Pago
 - **Redução de No-Shows a Zero**: Clientes pagam taxa de sinal ou o valor integral via PIX / Cartão no agendamento. O valor é creditado direto no Mercado Pago do profissional.
-- **Central de Estornos Automatizados**: Permite ao profissional realizar reembolso direto no Mercado Pago via 1-click no painel administrativo, registrando o estorno no fluxo de caixa e notificando o cliente pelo WhatsApp.
+- **Central de Estornos Automatizados**: Permite ao profissional realizar reembolso direto no Mercado Pago via 1-click no painel administrativo.
 
-### 🏷️ Estrutura de Planos 3-Tier (Good-Better-Best)
-1. **⚡ BoraTestar**: 7 dias de acesso grátis completo sem necessidade de cartão de crédito.
-2. **📘 BoraMensal (R$ 29,90/mês)**: Ideal para começar (agenda 24h, sinal Mercado Pago, WhatsApp, até 5 serviços ativos).
-3. **🔥 BoraAnual (R$ 260,00/ano ~ R$ 21,66/mês)**: **O Mais Vendido**. Serviços e links ilimitados, Venda Casada (Upsell), Cartão Fidelidade e exportação em Excel/PDF.
-4. **👑 BoraPremium (R$ 69,90/mês)**: Gestão de Equipe/RH, Notificações Web Push, Sincronização Google Calendar, Domínio Próprio e Remoção Total da marca BoraMarka (Whitelabel).
+---
 
-### 📄 Exportação de Dados Financeiros e de Agendamentos
-- **Relatórios em PDF**: Relatórios estruturados de fluxo de caixa e agendamentos com logomarca e período customizável.
-- **Planilhas CSV (UTF-8 BOM)**: Exportação compatível com Microsoft Excel sem problemas de acentuação.
+## 🏷️ Matriz Oficial de Planos & Cotas
 
-### 🔒 Segurança Defensiva & Audit Logs
-- Proteção contra vulnerabilidades com **Fastify Helmet** (HTTP Headers de segurança) e **Rate Limiting** (120 req/min por IP).
-- Auditoria de acessos (`AuditLog`) rastreando IP de origem, Navegador, Sistema Operacional e Nível de Risco.
+| Recurso / Cota | ⚡ **BoraTestar** | 📘 **BoraMensal** | 🔥 **BoraAnual** | 👑 **BoraPremium** |
+| :--- | :---: | :---: | :---: | :---: |
+| **Preço** | **Grátis (7 dias)** | **R$ 29,90/mês** | **R$ 260,00/ano** *(~R$ 21,66/mês)* | **R$ 79,90/mês** |
+| **Agendamentos / mês** | 50 (teste) | 500 /mês | 2.500 /mês | **Ilimitado (∞)** |
+| **Clientes na Base** | 100 clientes | 1.500 clientes | 8.000 clientes | **Ilimitado (∞)** |
+| **Colaboradores / Equipe** | 2 pessoas | 5 pessoas | 20 pessoas | **Ilimitado (∞)** |
+| **Serviços & Links** | 10 serv. / 2 links | 30 serv. / 10 links | 100 serv. / 30 links | **Ilimitado (∞)** |
+| **Sinal Mercado Pago** | Sim | Sim | Sim | Sim |
+| **Venda Casada (Upsell)** | — | — | Sim | Sim |
+| **Cartão Fidelidade Digital** | — | — | Sim | Sim |
+| **Módulo de RH & Equipe** | — | — | — | **Exclusivo Premium** |
+| **Domínio Próprio** | — | — | — | **Exclusivo Premium** |
+| **Whitelabel (Sem Marca)** | — | — | — | **Exclusivo Premium** |
 
 ---
 

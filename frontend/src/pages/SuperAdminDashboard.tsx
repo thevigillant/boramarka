@@ -548,8 +548,8 @@ export default function SuperAdminDashboard() {
                   className="input-simple w-full"
                 >
                   <option value="mensal">Mensal (R$ 29,90/mês)</option>
-                  <option value="anual">Anual (R$ 299,00/ano)</option>
-                  <option value="premium">Premium (R$ 69,90/mês - Domínio Próprio)</option>
+                  <option value="anual">Anual (R$ 260,00/ano)</option>
+                  <option value="premium">Premium (R$ 79,90/mês - Whitelabel & Domínio Próprio)</option>
                 </select>
               </div>
 

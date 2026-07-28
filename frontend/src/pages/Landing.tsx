@@ -7,7 +7,8 @@ import {
   ChevronRight, Scissors, Droplet, Star, User, Phone, AlertCircle, Shield,
   ChevronDown, Menu, X, MessageSquare, BellOff, Timer, TrendingUp,
   Heart, Award, Palette, Dumbbell, Stethoscope, PenTool,
-  Quote, HelpCircle, ArrowUpRight, Smartphone, ArrowUp
+  Quote, HelpCircle, ArrowUpRight, Smartphone, ArrowUp,
+  Target, Building2, Crown, ShieldCheck, Globe, CreditCard
 } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
@@ -70,16 +71,42 @@ function useCountUp(end: number, duration = 2000, suffix = '') {
 function FAQItem({ question, answer }: { question: string; answer: string }) {
   const [open, setOpen] = useState(false)
   return (
-    <div className="border-b border-white/[0.04] last:border-0">
+    <div className={`transition-all duration-300 rounded-2xl border mb-3 overflow-hidden ${
+      open 
+        ? 'bg-violet-500/[0.04] border-violet-500/30 shadow-lg shadow-violet-500/5' 
+        : 'bg-white/[0.02] border-white/[0.06] hover:border-white/10 hover:bg-white/[0.03]'
+    }`}>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between py-6 text-left group"
+        className="w-full flex items-center justify-between p-5 sm:p-6 text-left group"
       >
-        <span className="text-[15px] font-semibold text-white/80 group-hover:text-white transition-colors duration-300 pr-4">{question}</span>
-        <ChevronDown className={`w-4 h-4 text-white/30 flex-shrink-0 faq-chevron ${open ? 'open' : ''}`} />
+        <div className="flex items-center gap-3 pr-4">
+          <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
+            open ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'bg-white/[0.05] text-white/40 group-hover:text-white/70'
+          }`}>
+            <HelpCircle className="w-4 h-4" />
+          </div>
+          <span className={`text-[15px] font-bold transition-colors duration-300 ${
+            open ? 'text-white' : 'text-white/80 group-hover:text-white'
+          }`}>
+            {question}
+          </span>
+        </div>
+        <div className={`w-7 h-7 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300 ${
+          open ? 'bg-violet-500/20 text-violet-300 rotate-180' : 'bg-white/[0.03] text-white/30 group-hover:text-white/60'
+        }`}>
+          <ChevronDown className="w-4 h-4" />
+        </div>
       </button>
-      <div className={`faq-answer ${open ? 'open' : ''}`}>
-        <p className="text-[14px] text-white/35 font-medium leading-[1.7] pb-4">{answer}</p>
+
+      <div className={`transition-all duration-400 ease-in-out px-5 sm:px-6 overflow-hidden ${
+        open ? 'max-h-[300px] opacity-100 pb-6' : 'max-h-0 opacity-0 pb-0'
+      }`}>
+        <div className="pt-2 border-t border-white/[0.04]">
+          <p className="text-[14px] text-white/60 font-medium leading-relaxed pt-3">
+            {answer}
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -177,41 +204,43 @@ export default function Landing() {
   const timeSavedHours = Math.round((weeklyAppts * 6 * 4) / 60)
   const recoveredRevenue = Math.round(weeklyAppts * 4 * 0.22 * avgTicket)
 
+  const testPersona = 'Para quem quer testar a plataforma na prática'
   const testFeatures = [
-    '7 Dias de acesso completo sem cartão',
-    'Agenda Inteligente com horários 24h',
-    'Cobrança de sinal via Mercado Pago',
-    'Notificações de confirmação via WhatsApp',
-    'Até 3 Serviços e 3 Links ativos'
+    { text: '7 Dias de teste grátis sem cartão de crédito' },
+    { text: 'Até 50 agendamentos no período de teste' },
+    { text: 'Até 100 clientes salvos no sistema' },
+    { text: 'Cobrança de Sinal antecipado via Mercado Pago' },
+    { text: 'Notificações automáticas via WhatsApp' }
   ]
 
+  const mensalPersona = 'Para autônomos e estúdios (1 a 5 pessoas)'
   const mensalFeatures = [
-    'Agenda Inteligente com horários 24h',
-    'Cobrança de sinal via Mercado Pago',
-    'Notificações de confirmação via WhatsApp',
-    'Até 5 Serviços e 5 Links ativos',
-    'Fluxo de Caixa e Relatórios básicos',
-    'Suporte padrão por WhatsApp'
+    { text: 'Até 500 agendamentos por mês' },
+    { text: 'Até 1.500 clientes salvos na base' },
+    { text: 'Até 30 serviços e 10 links ativos' },
+    { text: 'Até 5 colaboradores na equipe' },
+    { text: 'Cobrança de Sinal Mercado Pago (Zero No-Show)' },
+    { text: 'Fluxo de Caixa, Extratos e Exportação PDF/Excel' }
   ]
 
+  const anualPersona = 'Para negócios em expansão (até 20 profissionais)'
   const anualFeatures = [
-    'Tudo do Plano Mensal',
-    'Serviços e Links Ilimitados',
-    'Venda Casada (Upsell & Adicionais)',
-    'Cartão Fidelidade Digital com Cupons',
-    'Exportação em Excel (CSV) e PDF',
-    'Economia de R$ 100/ano no plano'
+    { text: 'Até 2.500 agendamentos/mês & 8.000 clientes salvos' },
+    { text: 'Até 20 colaboradores / profissionais na equipe' },
+    { text: 'Venda Casada (Upsell automatizado no checkout)', isSpecial: true, icon: Sparkles },
+    { text: 'Cartão Fidelidade Digital & Cupons Promocionais', isSpecial: true, icon: Star },
+    { text: 'Até 100 serviços e 30 links ativos' },
+    { text: 'Economia Real de R$ 100/ano (~R$ 21,66/mês)' }
   ]
 
+  const premiumPersona = 'Para empresas, franquias e clínicas com equipe & RH'
   const premiumFeatures = [
-    'Tudo do Plano Anual',
-    'Gestão de Equipe & RH Completo',
-    'Notificações Web Push no Celular',
-    'Sincronização com Google Calendar',
-    'Domínio Próprio e Subdomínio grátis',
-    'Remoção total da marca BoraMarka',
-    'Audit Logs de Segurança por IP',
-    'Suporte VIP Prioritário 24/7'
+    { text: 'Módulo Exclusivo de RH & Equipe (Comissões & Salários)', isSpecial: true, icon: ShieldCheck },
+    { text: 'Domínio Próprio (agendar.suaempresa.com.br)', isSpecial: true, icon: Globe },
+    { text: '100% Whitelabel (Remoção total da marca BoraMarka)', isSpecial: true, icon: Crown },
+    { text: 'Agendamentos, Clientes e Equipe ILIMITADOS (∞)', isSpecial: true, icon: Zap },
+    { text: 'Notificações Web Push no Celular + Google Calendar' },
+    { text: 'Audit Logs de Segurança por IP + Atendimento VIP 24/7' }
   ]
 
   // CountUp stats
@@ -249,7 +278,7 @@ export default function Landing() {
       {/* ═══════════════════════════════════════════════════
           NAVBAR — Fluid Floating Glass Island
           ═══════════════════════════════════════════════════ */}
-      <header className="fixed top-5 left-1/2 -translate-x-1/2 z-40 w-[92%] max-w-4xl">
+      <header className="fixed top-5 left-1/2 -translate-x-1/2 z-40 w-[94%] sm:w-[90%] max-w-5xl">
         <nav className="glass-nav rounded-full px-5 py-3 flex items-center justify-between">
           <Link to="/" className="flex items-center">
             <BoraMarkaLogo size="sm" />
@@ -316,10 +345,10 @@ export default function Landing() {
       <main className="relative z-10">
         <section className="min-h-[100dvh] flex items-center px-4 sm:px-6">
           <div className="max-w-[1200px] mx-auto w-full pt-24 pb-16 sm:pt-36 sm:pb-24 md:pt-40 md:pb-32">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-center">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
 
               {/* Left — Copy */}
-              <div className="lg:col-span-5 flex flex-col items-start text-left">
+              <div className="lg:col-span-6 flex flex-col items-start text-left">
                 <Reveal>
                   <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3.5 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold tracking-[0.12em] sm:tracking-[0.15em] uppercase text-violet-400 mb-5 sm:mb-8">
                     <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
@@ -385,11 +414,11 @@ export default function Landing() {
               </div>
 
               {/* Right — Phone Simulator (Ultra-Premium 3D Hardware) */}
-              <div className="lg:col-span-7 flex justify-center relative">
+              <div className="lg:col-span-6 flex justify-center relative">
                 <Reveal className="flex justify-center w-full relative">
                   
                   {/* Floating WhatsApp Live Toast Notification */}
-                  <div className="hidden sm:flex absolute -right-4 md:-right-8 top-12 z-30 animate-bounce pointer-events-none" style={{ animationDuration: '5s' }}>
+                  <div className="hidden sm:flex absolute -top-8 right-0 md:-right-16 md:top-4 lg:-right-24 lg:top-8 z-30 animate-bounce pointer-events-none" style={{ animationDuration: '5s' }}>
                     <div className="bg-[#10162a]/95 border border-emerald-500/40 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl p-3 rounded-2xl flex items-center gap-2.5 max-w-[215px]">
                       <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-500/30">
                         <MessageSquare className="w-4 h-4" />
@@ -400,7 +429,7 @@ export default function Landing() {
                           <span className="text-[8px] font-bold text-emerald-400">Agora</span>
                         </div>
                         <p className="text-[9px] text-slate-300 font-medium leading-tight mt-0.5">
-                          "✅ Horário confirmado para hoje às 14:00!"
+                          "Horário confirmado para hoje às 14:00!"
                         </p>
                       </div>
                     </div>
@@ -606,7 +635,7 @@ export default function Landing() {
                             </div>
 
                             <div className="text-center py-2.5 bg-[#151c33]/90 border border-white/10 rounded-xl shadow-md">
-                              <span className="text-2xl">💳</span>
+                              <CreditCard className="w-6 h-6 text-violet-400 mx-auto mb-1" />
                               <h4 className="text-[12px] font-black text-white mt-1">Sinal de Reserva</h4>
                               <p className="text-[9.5px] text-slate-300 font-medium mt-0.5 max-w-[210px] mx-auto leading-relaxed">
                                 Pague R$ 10,00 para garantir seu horário. O restante (R$ {(simService?.price || 0) - 10}) é pago no atendimento.
@@ -1220,12 +1249,18 @@ export default function Landing() {
                         <span className="text-[11px] text-white/25 font-medium">R$</span>
                         <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">0</span>
                       </div>
-                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Todos os recursos. Sem cartão.</p>
+                      <p className="text-[12px] text-white/25 font-medium mb-4 leading-relaxed">Todos os recursos. Sem cartão.</p>
+
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-emerald-400/90 bg-emerald-500/[0.08] border border-emerald-500/20 px-3 py-2 rounded-xl mb-5">
+                        <Target className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        <span>{testPersona}</span>
+                      </div>
+
                       <ul className="space-y-3 mb-8">
                         {testFeatures.map((f, i) => (
-                          <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
+                          <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/60">
                             <div className="w-4 h-4 rounded-full bg-emerald-500/[0.08] border border-emerald-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-emerald-400" /></div>
-                            {f}
+                            <span>{f.text}</span>
                           </li>
                         ))}
                       </ul>
@@ -1249,12 +1284,18 @@ export default function Landing() {
                         <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">29<span className="text-[22px]">,90</span></span>
                         <span className="text-[11px] text-white/25 font-medium">/mês</span>
                       </div>
-                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Ideal para começar e crescer.</p>
+                      <p className="text-[12px] text-white/25 font-medium mb-4 leading-relaxed">Ideal para começar e crescer.</p>
+
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-blue-400/90 bg-blue-500/[0.08] border border-blue-500/20 px-3 py-2 rounded-xl mb-5">
+                        <Users className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                        <span>{mensalPersona}</span>
+                      </div>
+
                       <ul className="space-y-3 mb-8">
                         {mensalFeatures.map((f, i) => (
-                          <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
+                          <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/60">
                             <div className="w-4 h-4 rounded-full bg-blue-500/[0.08] border border-blue-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-blue-400" /></div>
-                            {f}
+                            <span>{f.text}</span>
                           </li>
                         ))}
                       </ul>
@@ -1270,8 +1311,8 @@ export default function Landing() {
               <Reveal>
                 <div className="glow-ring rounded-[2rem] h-full">
                   <div className="bg-[#080a16] rounded-[calc(2rem-2px)] p-7 h-full flex flex-col justify-between text-left relative">
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-amber-500 text-[7px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full text-white shadow-md shadow-orange-500/20">
-                      Mais Vendido 🔥
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-orange-500 to-amber-500 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-white shadow-md shadow-orange-500/20 flex items-center gap-1">
+                      <Sparkles className="w-2.5 h-2.5 shrink-0 text-amber-200" /> Mais Vendido
                     </div>
                     <div>
                       <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-orange-400 mb-5 mt-1">Anual</p>
@@ -1281,15 +1322,29 @@ export default function Landing() {
                         <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">260</span>
                         <span className="text-[11px] text-white/25 font-medium">/ano</span>
                       </div>
-                      <p className="text-emerald-400 text-[9px] font-bold bg-emerald-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-3 tracking-wider uppercase">Economize R$ 100/ano</p>
-                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Melhor custo-benefício para profissionais.</p>
+                      <p className="text-emerald-400 text-[9px] font-bold bg-emerald-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-4 tracking-wider uppercase">Economize R$ 100/ano</p>
+
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-orange-400/90 bg-orange-500/[0.08] border border-orange-500/20 px-3 py-2 rounded-xl mb-5">
+                        <TrendingUp className="w-3.5 h-3.5 text-orange-400 shrink-0" />
+                        <span>{anualPersona}</span>
+                      </div>
+
                       <ul className="space-y-3 mb-8">
-                        {anualFeatures.map((f, i) => (
-                          <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
-                            <div className="w-4 h-4 rounded-full bg-orange-500/[0.08] border border-orange-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-orange-400" /></div>
-                            {f}
-                          </li>
-                        ))}
+                        {anualFeatures.map((f, i) => {
+                          const IconComp = f.icon || Check;
+                          return (
+                            <li key={i} className="flex items-start gap-2.5 text-[12px] font-medium text-white/60">
+                              <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                f.isSpecial
+                                  ? 'bg-orange-500/20 text-orange-400 border border-orange-500/40'
+                                  : 'bg-orange-500/[0.08] border border-orange-500/15 text-orange-400'
+                              }`}>
+                                <IconComp className="w-2.5 h-2.5" />
+                              </div>
+                              <span className={f.isSpecial ? 'font-semibold text-white/90' : ''}>{f.text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                     <button onClick={() => navigate('/register')} className="mag-btn w-full py-3.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-600 text-[12px] font-bold text-white shadow-lg shadow-orange-500/20 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
@@ -1303,26 +1358,40 @@ export default function Landing() {
               <Reveal>
                 <div className="doppelrand h-full">
                   <div className="doppelrand-inner p-7 h-full flex flex-col justify-between text-left relative">
-                    <div className="absolute top-4 right-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-[7px] font-extrabold uppercase tracking-[0.15em] px-2.5 py-1 rounded-full text-white">
-                      Equipes & RH
+                    <div className="absolute top-4 right-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full text-white flex items-center gap-1 shadow-md shadow-violet-500/20">
+                      <ShieldCheck className="w-2.5 h-2.5 shrink-0 text-violet-200" /> Equipes & RH
                     </div>
                     <div>
                       <p className="text-[10px] font-bold tracking-[0.15em] uppercase text-violet-400 mb-5 mt-1">Premium</p>
                       <h3 className="text-[17px] font-bold text-white/90 mb-1 tracking-tight">BoraPremium</h3>
                       <div className="flex items-baseline gap-1 mb-1">
                         <span className="text-[11px] text-white/25 font-medium">R$</span>
-                        <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">69<span className="text-[22px]">,90</span></span>
+                        <span className="text-[36px] font-extrabold text-white/90 tracking-tight leading-none">79<span className="text-[22px]">,90</span></span>
                         <span className="text-[11px] text-white/25 font-medium">/mês</span>
                       </div>
-                      <p className="text-violet-400 text-[9px] font-bold bg-violet-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-3 tracking-wider uppercase">Domínio Próprio & RH</p>
-                      <p className="text-[12px] text-white/25 font-medium mb-6 leading-relaxed">Para barbearias, clínicas e salões com equipe.</p>
+                      <p className="text-violet-400 text-[9px] font-bold bg-violet-500/[0.06] px-2.5 py-1 rounded-full inline-block mb-4 tracking-wider uppercase">Domínio Próprio & RH</p>
+
+                      <div className="flex items-center gap-2 text-[11px] font-semibold text-violet-300 bg-violet-500/[0.1] border border-violet-500/25 px-3 py-2 rounded-xl mb-5">
+                        <Building2 className="w-3.5 h-3.5 text-violet-400 shrink-0" />
+                        <span>{premiumPersona}</span>
+                      </div>
+
                       <ul className="space-y-3 mb-8">
-                        {premiumFeatures.map((f, i) => (
-                          <li key={i} className="flex items-center gap-2.5 text-[12px] font-medium text-white/50">
-                            <div className="w-4 h-4 rounded-full bg-violet-500/[0.08] border border-violet-500/15 flex items-center justify-center flex-shrink-0"><Check className="w-2.5 h-2.5 text-violet-400" /></div>
-                            {f}
-                          </li>
-                        ))}
+                        {premiumFeatures.map((f, i) => {
+                          const IconComp = f.icon || Check;
+                          return (
+                            <li key={i} className="flex items-start gap-2.5 text-[12px] font-medium text-white/60">
+                              <div className={`w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                                f.isSpecial
+                                  ? 'bg-violet-500/25 text-violet-300 border border-violet-500/50 shadow-sm shadow-violet-500/20'
+                                  : 'bg-violet-500/[0.08] border border-violet-500/15 text-violet-400'
+                              }`}>
+                                <IconComp className="w-2.5 h-2.5" />
+                              </div>
+                              <span className={f.isSpecial ? 'font-semibold text-white/90' : ''}>{f.text}</span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                     <button onClick={() => navigate('/register')} className="mag-btn w-full py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-indigo-600 text-[12px] font-bold text-white shadow-lg shadow-indigo-600/20 transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
@@ -1357,37 +1426,57 @@ export default function Landing() {
             </Reveal>
 
             <Reveal>
-              <div className="doppelrand">
-                <div className="doppelrand-inner px-7 py-2">
-                  <FAQItem 
-                    question="Preciso de cartão de crédito para testar?" 
-                    answer="Não! O período de teste de 7 dias é completamente gratuito e não requer nenhum cartão de crédito. Ao final do período, você escolhe o plano que mais se adapta ao seu negócio."
-                  />
-                  <FAQItem 
-                    question="Como funciona o lembrete automático no WhatsApp?" 
-                    answer="Assim que um cliente agenda, ele recebe uma confirmação automática via WhatsApp. Antes do horário, enviamos um lembrete para ele não esquecer. Tudo sem você digitar nada."
-                  />
-                  <FAQItem 
-                    question="Posso cobrar sinal/antecipação dos clientes?" 
-                    answer="Sim! Você pode configurar um valor de sinal (booking fee) que o cliente paga via Mercado Pago no momento do agendamento. O valor vai direto para sua conta do Mercado Pago."
-                  />
-                  <FAQItem 
-                    question="Funciona para qualquer tipo de profissional?" 
-                    answer="Sim. Qualquer profissional que trabalhe com hora marcada: barbeiros, manicures, tatuadores, personal trainers, terapeutas, consultores, clínicas, salões de beleza e muito mais."
-                  />
-                  <FAQItem 
-                    question="Posso cancelar a qualquer momento?" 
-                    answer="Sim, sem multa e sem burocracia. Você pode cancelar sua assinatura quando quiser, diretamente pelo painel. Sem fidelidade, sem perguntas."
-                  />
-                  <FAQItem 
-                    question="Meus dados e dos meus clientes estão seguros?" 
-                    answer="Absolutamente. Utilizamos criptografia, autenticação JWT e boas práticas de segurança. Seus dados e os de seus clientes são tratados com total privacidade."
-                  />
-                  <FAQItem 
-                    question="Preciso instalar algum aplicativo?" 
-                    answer="Não! O BoraMarka funciona 100% no navegador, em qualquer dispositivo — celular, tablet ou computador. Seus clientes também agendam pelo navegador, sem instalar nada."
-                  />
+              <div className="space-y-3">
+                <FAQItem 
+                  question="Preciso de cartão de crédito para testar?" 
+                  answer="Não! O período de teste de 7 dias é completamente gratuito e não requer nenhum cartão de crédito. Ao final do período, você escolhe o plano que mais se adapta ao seu negócio."
+                />
+                <FAQItem 
+                  question="Como funciona o lembrete automático no WhatsApp?" 
+                  answer="Assim que um cliente agenda, ele recebe uma confirmação automática via WhatsApp. Antes do horário, enviamos um lembrete para ele não esquecer. Tudo sem você digitar nada."
+                />
+                <FAQItem 
+                  question="Posso cobrar sinal/antecipação dos clientes?" 
+                  answer="Sim! Você pode configurar um valor de sinal (booking fee) que o cliente paga via Mercado Pago no momento do agendamento. O valor vai direto para sua conta do Mercado Pago."
+                />
+                <FAQItem 
+                  question="Funciona para qualquer tipo de profissional?" 
+                  answer="Sim. Qualquer profissional que trabalhe com hora marcada: barbeiros, manicures, tatuadores, personal trainers, terapeutas, consultores, clínicas, salões de beleza e muito mais."
+                />
+                <FAQItem 
+                  question="Posso cancelar a qualquer momento?" 
+                  answer="Sim, sem multa e sem burocracia. Você pode cancelar sua assinatura quando quiser, diretamente pelo painel. Sem fidelidade, sem perguntas."
+                />
+                <FAQItem 
+                  question="Meus dados e dos meus clientes estão seguros?" 
+                  answer="Absolutamente. Utilizamos criptografia, autenticação JWT e boas práticas de segurança. Seus dados e os de seus clientes são tratados com total privacidade."
+                />
+                <FAQItem 
+                  question="Preciso instalar algum aplicativo?" 
+                  answer="Não! O BoraMarka funciona 100% no navegador, em qualquer dispositivo — celular, tablet ou computador. Seus clientes também agendam pelo navegador, sem instalar nada."
+                />
+              </div>
+
+              {/* WhatsApp Support CTA */}
+              <div className="mt-10 p-6 rounded-3xl bg-gradient-to-r from-violet-900/20 via-indigo-900/15 to-purple-900/20 border border-violet-500/20 flex flex-col sm:flex-row items-center justify-between gap-4 text-center sm:text-left backdrop-blur-xl">
+                <div className="flex items-center gap-3.5">
+                  <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                    <MessageSquare className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Ainda tem dúvidas sobre os planos?</h4>
+                    <p className="text-xs text-white/50 font-medium mt-0.5">Fale diretamente com nosso especialista pelo WhatsApp</p>
+                  </div>
                 </div>
+                <a
+                  href="https://wa.me/5571999999999?text=Ol%C3%A1%2C%20tenho%20d%C3%BAvidas%20sobre%20os%20planos%20do%20BoraMarka"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mag-btn shrink-0 px-5 py-2.5 rounded-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs flex items-center gap-2 shadow-lg shadow-emerald-500/20 transition-all duration-300"
+                >
+                  <Phone className="w-3.5 h-3.5" />
+                  Falar no WhatsApp
+                </a>
               </div>
             </Reveal>
           </div>

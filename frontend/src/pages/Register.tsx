@@ -4,7 +4,8 @@ import { api } from '../services/api'
 import {
   Store, User, Lock, Phone, FileText, MapPin, Clock,
   ChevronRight, ChevronLeft, Loader2, AlertCircle,
-  Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft, Mail, RefreshCw, KeyRound, Edit2, ShieldCheck
+  Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft, Mail, RefreshCw, KeyRound, Edit2, ShieldCheck,
+  Scissors, PenTool, Droplet, Dumbbell, Heart, Stethoscope, Lightbulb
 } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
@@ -140,13 +141,13 @@ export default function Register() {
   const [address, setAddress] = useState('')
 
   const categories = [
-    { id: 'barber', icon: '💈', name: 'Barbearia', desc: 'Cortes, Barba & Combos' },
-    { id: 'beauty', icon: '💅', name: 'Salão & Esmalteria', desc: 'Pé & Mão, Cabelo, Gel' },
-    { id: 'tattoo', icon: '✒️', name: 'Tatuagem & Piercing', desc: 'Sessões & Perfurações' },
-    { id: 'aesthetics', icon: '🧴', name: 'Estética & Cílios/Sobrancelhas', desc: 'Design, Henna, Cílios' },
-    { id: 'health', icon: '🏋️', name: 'Personal & Saúde/Fisio', desc: 'Treinos & Fisioterapia' },
-    { id: 'pet', icon: '🐾', name: 'Pet Shop & Banho e Tosa', desc: 'Banho, Tosa & Pet Care' },
-    { id: 'clinic', icon: '🩺', name: 'Consultório & Clínica', desc: 'Consultas & Retornos' },
+    { id: 'barber', icon: Scissors, name: 'Barbearia', desc: 'Cortes, Barba & Combos' },
+    { id: 'beauty', icon: Sparkles, name: 'Salão & Esmalteria', desc: 'Pé & Mão, Cabelo, Gel' },
+    { id: 'tattoo', icon: PenTool, name: 'Tatuagem & Piercing', desc: 'Sessões & Perfurações' },
+    { id: 'aesthetics', icon: Droplet, name: 'Estética & Cílios/Sobrancelhas', desc: 'Design, Henna, Cílios' },
+    { id: 'health', icon: Dumbbell, name: 'Personal & Saúde/Fisio', desc: 'Treinos & Fisioterapia' },
+    { id: 'pet', icon: Heart, name: 'Pet Shop & Banho e Tosa', desc: 'Banho, Tosa & Pet Care' },
+    { id: 'clinic', icon: Stethoscope, name: 'Consultório & Clínica', desc: 'Consultas & Retornos' },
   ]
 
   // Step 3 — Perfil
@@ -556,7 +557,7 @@ export default function Register() {
                               : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
                           }`}
                         >
-                          <span className="text-xl shrink-0">{cat.icon}</span>
+                          <cat.icon className="w-5 h-5 shrink-0 text-violet-400" />
                           <div className="min-w-0 flex-1">
                             <p className="text-[12px] font-bold tracking-tight text-white/90 leading-tight">{cat.name}</p>
                             <p className="text-[10px] text-white/30 truncate mt-0.5">{cat.desc}</p>
@@ -680,7 +681,7 @@ export default function Register() {
 
                 {/* Summary */}
                 <div className="bg-violet-500/[0.04] border border-violet-500/10 rounded-2xl p-4">
-                  <h4 className="text-[11px] font-bold text-violet-400 mb-2 uppercase tracking-[0.1em]">📋 Resumo</h4>
+                  <h4 className="text-[11px] font-bold text-violet-400 mb-2 uppercase tracking-[0.1em] flex items-center gap-1.5"><FileText className="w-3.5 h-3.5" /> Resumo</h4>
                   <div className="grid grid-cols-2 gap-y-2 text-[12px]">
                     <span className="text-white/25 font-semibold">Usuário:</span>
                     <span className="text-white/70 font-bold">{username}</span>
@@ -797,7 +798,7 @@ export default function Register() {
                         }}
                         className="mt-3 w-full bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 p-3 rounded-xl text-center text-xs text-violet-300 font-semibold animate-fadeIn transition-colors cursor-pointer"
                       >
-                        💡 Modo de Testes / Fallback: Clique para preencher <strong className="text-pink-400 text-sm font-mono tracking-widest bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">{devCode}</strong>
+                        Modo de Testes / Fallback: Clique para preencher <strong className="text-pink-400 text-sm font-mono tracking-widest bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">{devCode}</strong>
                       </button>
                     )}
                   </div>

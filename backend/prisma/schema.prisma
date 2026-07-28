@@ -62,6 +62,9 @@ model Admin {
   reminderLogs      ReminderLog[]
   loyaltyCards      LoyaltyCard[]
   userPermissions   UserPermission[]
+  customerContacts  CustomerContact[]
+  clientChatMessages ClientChatMessage[]
+  quickReplyTemplates QuickReplyTemplate[]
 
   @@map("admin")
 }
@@ -440,4 +443,63 @@ model UserPermission {
 
   @@map("user_permissions")
 }
+
+model CustomerContact {
+  id              Int                 @id @default(autoincrement())
+  name            String
+  phone           String
+  email           String              @default("")
+  avatarUrl       String              @default("") @map("avatar_url")
+  status          String              @default("NOVO") // "NOVO", "EM_ATENDIMENTO", "AGUARDANDO_CLIENTE", "CONCLUIDO", "VIP"
+  notes           String              @default("")
+  tags            String              @default("[]") // JSON string of tags e.g. ["VIP", "Fidelidade"]
+  lastInteraction DateTime            @default(now()) @map("last_interaction")
+  unreadCount     Int                 @default(0) @map("unread_count")
+  createdAt       DateTime            @default(now()) @map("created_at")
+  updatedAt       DateTime            @updatedAt @default(now()) @map("updated_at")
+
+  adminId         Int                 @map("admin_id")
+  admin           Admin               @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  messages        ClientChatMessage[]
+
+  @@unique([adminId, phone])
+  @@map("customer_contacts")
+}
+
+model ClientChatMessage {
+  id            Int             @id @default(autoincrement())
+  senderType    String          // "STAFF" | "CLIENT"
+  senderName    String          @default("") @map("sender_name")
+  messageType   String          @default("TEXT") // "TEXT" | "AUDIO" | "IMAGE" | "DOCUMENT" | "LOCATION" | "TEMPLATE"
+  content       String          @default("")
+  mediaUrl      String          @default("") @map("media_url")
+  mediaName     String          @default("") @map("media_name")
+  mediaDuration Int             @default(0) @map("media_duration")
+  status        String          @default("SENT") // "SENT" | "DELIVERED" | "READ"
+  createdAt     DateTime        @default(now()) @map("created_at")
+
+  contactId     Int             @map("contact_id")
+  contact       CustomerContact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+
+  adminId       Int             @map("admin_id")
+  admin         Admin           @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("client_chat_messages")
+}
+
+model QuickReplyTemplate {
+  id        Int      @id @default(autoincrement())
+  shortcut  String   // e.g. "/boas-vindas"
+  title     String   // e.g. "Boas-vindas"
+  content   String   // e.g. "Olá {nome}, como podemos te ajudar hoje?"
+  category  String   @default("GERAL") // "GERAL", "AGENDAMENTO", "FINANCEIRO", "PROMOCAO"
+  createdAt DateTime @default(now()) @map("created_at")
+
+  adminId   Int      @map("admin_id")
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("quick_reply_templates")
+}
+
 
