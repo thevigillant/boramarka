@@ -257,6 +257,11 @@ export default function Landing() {
     { label: 'FAQ', href: '#faq' },
   ]
 
+  // A Landing Page utiliza estética Dark Glass por padrão
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+  }, [])
+
   // Close mobile menu on scroll
   useEffect(() => {
     const handler = () => setMobileMenuOpen(false)
