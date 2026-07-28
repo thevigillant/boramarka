@@ -170,6 +170,11 @@ export default function Register() {
     qui: 'Quinta', sex: 'Sexta', sab: 'Sábado', dom: 'Domingo'
   }
 
+  // Páginas de autenticação (Cadastro) utilizam estética Dark Glass por padrão
+  useEffect(() => {
+    document.documentElement.classList.add('dark')
+  }, [])
+
   const updateHours = (day: string, field: string, value: string | boolean) => {
     const updated = { ...hours, [day]: { ...hours[day], [field]: value } }
     setOperatingHours(JSON.stringify(updated))
@@ -408,9 +413,9 @@ export default function Register() {
 
         <StepIndicator currentStep={step} totalSteps={3} />
 
-        {/* Card — Doppelrand */}
-        <div className="doppelrand">
-          <div className="doppelrand-inner p-6 sm:p-7">
+        {/* Form Card — Ultra-Premium Dark Glass */}
+        <div className="rounded-[2rem] p-[6px] bg-white/[0.04] border border-white/[0.08] shadow-2xl shadow-violet-950/40 backdrop-blur-2xl">
+          <div className="rounded-[calc(2rem-6px)] p-6 sm:p-7 bg-[#0a0d1a]/95 border border-white/[0.04]">
 
             {error && (
               <div className="flex items-center gap-2.5 bg-red-500/[0.06] border border-red-500/15 p-3 rounded-xl text-red-400 text-[12px] font-medium mb-5 animate-slide-up">
