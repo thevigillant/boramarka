@@ -7,7 +7,7 @@
   <img src="https://img.shields.io/badge/Backend-Fastify_v4_%2B_TypeScript-000000?style=for-the-badge&logo=fastify" alt="Fastify">
   <img src="https://img.shields.io/badge/Database-Prisma_5_%2B_PostgreSQL-2D3748?style=for-the-badge&logo=prisma" alt="Prisma">
   <img src="https://img.shields.io/badge/Gateway-Mercado_Pago_API_v1-009EE3?style=for-the-badge&logo=mercadopago" alt="Mercado Pago">
-  <img src="https://img.shields.io/badge/Segurança-RBAC_%2B_Permissões_Granulares-violet?style=for-the-badge&logo=shield" alt="Security">
+  <img src="https://img.shields.io/badge/Segurança-RBAC_Avançado-violet?style=for-the-badge&logo=shield" alt="Security">
 </p>
 
 ---
@@ -15,7 +15,6 @@
 ## 🌐 Endereços Oficiais em Produção
 
 * 🌐 **Plataforma Web (Domínio Próprio):** [https://boramarka.com.br](https://boramarka.com.br) | [https://www.boramarka.com.br](https://www.boramarka.com.br)
-* 👑 **Painel SuperAdmin:** [https://boramarka.com.br/superadmin](https://boramarka.com.br/superadmin)
 * ⚡ **API Backend:** [https://api.boramarka.com.br](https://api.boramarka.com.br)
 * 📦 **Repositório GitHub:** [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka)
 
@@ -25,25 +24,7 @@
 
 O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos, estúdios, clínicas e estabelecimentos comerciais que atendem com hora marcada.
 
-A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Painel SuperAdmin com Permissões Granulares**, **Central de Suporte & Chat de Ajuda em Tempo Real**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Login de Colaboradores por Empresa**, **Módulo de RH & Equipe**, **Cartão Fidelidade Digital & Cupons**, **Onboarding Inteligente por Nicho**, **Gerador de Bio do Instagram**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Monitoramento de Consumo do Banco de Dados**.
-
----
-
-## 👑 Painel SuperAdmin Geral & Permissões Granulares
-
-O BoraMarka conta com um ecossistema completo de gestão da plataforma para os administradores gerais em `/superadmin`:
-
-- 👑 **Acesso Gestor Protegido**: Inicialização segura com controle de acesso exclusivo para os administradores da plataforma.
-- 🔐 **Sistema de Permissões Granulares por Gestor**:
-  - `canManageUsers`: Cadastrar, editar e excluir profissionais/clientes.
-  - `canManageSubscriptions`: Alterar planos e conceder +30 dias de teste grátis com 1 clique.
-  - `canManageSuperAdmins`: Criar e gerenciar outras contas com perfil SuperAdmin.
-  - `canAccessSupport`: Atender chamados dos clientes na Central de Suporte.
-  - `canViewFinancials`: Visualizar faturamento e receitas estimadas da plataforma.
-- 🎧 **Central de Atendimento Helpdesk**: Chat interativo de suporte em tempo real integrado aos chamados abertos pelos assinantes.
-- ⚡ **Ações Rápidas de 1-Clique**:
-  - `+30d Teste`: Concede 30 dias grátis de teste para qualquer estabelecimento em 1 clique.
-  - `Usar como Profissional`: Impersonação segura para testar a plataforma como cliente.
+A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Central de Suporte & Chat de Ajuda em Tempo Real**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Login de Colaboradores por Empresa**, **Módulo de RH & Equipe**, **Cartão Fidelidade Digital & Cupons**, **Onboarding Inteligente por Nicho**, **Gerador de Bio do Instagram**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Monitoramento de Consumo do Banco de Dados**.
 
 ---
 
