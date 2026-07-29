@@ -5,20 +5,57 @@
 @tailwind utilities;
 
 @layer base {
-  html { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  :root {
+    color-scheme: light;
+  }
+  html { 
+    -webkit-font-smoothing: antialiased; 
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body { 
     font-family: 'Plus Jakarta Sans', system-ui, sans-serif; 
     background-color: #F8FAFC;
     color: #0F172A;
     transition: background-color 0.3s ease, color 0.3s ease;
+    color-scheme: light;
   }
-  .dark body {
+  .dark body,
+  html.dark body {
     background-color: #050507;
     color: #ffffff;
+    color-scheme: dark;
   }
   ::selection { background: rgba(139, 92, 246, 0.25); color: #fff; }
   * { scrollbar-width: thin; scrollbar-color: rgba(148, 163, 184, 0.3) transparent; }
   .dark * { scrollbar-color: rgba(255,255,255,0.12) transparent; }
+
+  /* Universal Select & Option Theme Normalization for Chromium/Windows */
+  select {
+    color-scheme: light !important;
+  }
+
+  .dark select,
+  html.dark select {
+    color-scheme: dark !important;
+  }
+
+  option,
+  select option {
+    background-color: #FFFFFF !important;
+    color: #0F172A !important;
+  }
+
+  .dark option,
+  html.dark option,
+  .dark select option,
+  html.dark select option {
+    background-color: #0D111E !important;
+    color: #FFFFFF !important;
+  }
 }
 
 @layer components {

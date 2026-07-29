@@ -19,7 +19,11 @@ import auditRoutes from './routes/audit';
 import loyaltyRoutes from './routes/loyalty';
 import securityRoutes from './routes/security';
 import crmChatRoutes from './routes/crmChat';
+import analyticsRoutes from './routes/analytics';
+import supportRoutes from './routes/support';
 import { startReminderService } from './services/reminder';
+import bcrypt from 'bcryptjs';
+import { prisma } from './db';
 
 // ═══════════════════════════════════════════════════════════
 // Global error handlers — prevent silent crashes (502 fix)
@@ -140,9 +144,54 @@ app.register(auditRoutes, { prefix: '/api/admin/audit-logs' });
 app.register(loyaltyRoutes, { prefix: '/api/loyalty' });
 app.register(securityRoutes, { prefix: '/api/security' });
 app.register(crmChatRoutes, { prefix: '/api/admin/crm-chat' });
+app.register(analyticsRoutes, { prefix: '/api/admin/analytics' });
+app.register(supportRoutes, { prefix: '/api/support' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+
+async function ensureSuperAdminExists() {
+  try {
+    const superadminUsername = 'odonodoboramarka';
+    const fullPermissions = JSON.stringify({
+      canManageUsers: true,
+      canManageSubscriptions: true,
+      canManageSuperAdmins: true,
+      canAccessSupport: true,
+      canViewFinancials: true,
+    });
+
+    const existing = await prisma.admin.findUnique({
+      where: { username: superadminUsername },
+    });
+
+    if (!existing) {
+      const passwordHash = await bcrypt.hash('300923', 10);
+      await prisma.admin.create({
+        data: {
+          username: superadminUsername,
+          passwordHash,
+          role: 'superadmin',
+          businessName: 'BoraMarka Central SuperAdmin',
+          category: 'admin',
+          permissions: fullPermissions,
+        },
+      });
+      console.log(`👑 [SUPERADMIN] Conta "${superadminUsername}" criada/inicializada com permissões totais.`);
+    } else {
+      await prisma.admin.update({
+        where: { username: superadminUsername },
+        data: {
+          role: 'superadmin',
+          permissions: fullPermissions,
+        },
+      });
+      console.log(`👑 [SUPERADMIN] Permissão 'superadmin' atualizada para "${superadminUsername}".`);
+    }
+  } catch (err: any) {
+    console.error('⚠️ [SUPERADMIN] Falha ao verificar conta SuperAdmin:', err.message);
+  }
+}
 
 // Start server
 const start = async () => {
@@ -152,6 +201,9 @@ const start = async () => {
     console.log(`\n🚀 Servidor rodando em http://localhost:${port}`);
     console.log(`📋 API Health: http://localhost:${port}/api/health\n`);
     
+    // Auto-garante existência do usuário superadmin odonodoboramarka
+    await ensureSuperAdminExists();
+
     // Inicia o serviço de lembretes automáticos por WhatsApp (com proteção)
     try {
       startReminderService();

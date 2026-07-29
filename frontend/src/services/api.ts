@@ -604,6 +604,165 @@ export const api = {
       method: 'DELETE',
     }),
 
+  getSuperAdminMe: () =>
+    request<{
+      id: number;
+      username: string;
+      businessName: string;
+      role: string;
+      permissions: {
+        canManageUsers: boolean;
+        canManageSubscriptions: boolean;
+        canManageSuperAdmins: boolean;
+        canAccessSupport: boolean;
+        canViewFinancials: boolean;
+      };
+    }>('/superadmin/me'),
+
+  getSuperAdminAdmins: () =>
+    request<Array<{
+      id: number;
+      username: string;
+      businessName: string;
+      phone: string;
+      email: string;
+      role: string;
+      createdAt: string;
+      parsedPermissions?: {
+        canManageUsers: boolean;
+        canManageSubscriptions: boolean;
+        canManageSuperAdmins: boolean;
+        canAccessSupport: boolean;
+        canViewFinancials: boolean;
+      };
+    }>>('/superadmin/admins'),
+
+  createSuperAdminAccount: (data: {
+    username: string;
+    password: string;
+    businessName?: string;
+    phone?: string;
+    email?: string;
+    permissions?: {
+      canManageUsers?: boolean;
+      canManageSubscriptions?: boolean;
+      canManageSuperAdmins?: boolean;
+      canAccessSupport?: boolean;
+      canViewFinancials?: boolean;
+    };
+  }) =>
+    request<{ id: number; username: string; businessName: string; role: string }>('/superadmin/admins', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateSuperAdminPermissions: (id: number, permissions: Record<string, boolean>) =>
+    request<{ id: number; username: string }>(`/superadmin/admins/${id}/permissions`, {
+      method: 'PUT',
+      body: JSON.stringify({ permissions }),
+    }),
+
+  createProfessionalUser: (data: { username: string; password: string; businessName: string; phone?: string; email?: string; plan?: string }) =>
+    request<{ id: number; username: string; businessName: string }>('/superadmin/create-user', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  grantTrialToUser: (id: number) =>
+    request<{ status: string; expiresAt: string }>(`/superadmin/users/${id}/grant-trial`, {
+      method: 'POST',
+    }),
+
+  // ═══ Support Chat & Helpdesk ═══
+  createSupportTicket: (data: { subject: string; category?: string; message: string }) =>
+    request<{
+      id: number;
+      subject: string;
+      category: string;
+      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+      createdAt: string;
+      updatedAt: string;
+    }>('/support/tickets', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getSupportTickets: () =>
+    request<Array<{
+      id: number;
+      adminId: number;
+      subject: string;
+      category: string;
+      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+      priority: string;
+      createdAt: string;
+      updatedAt: string;
+      admin?: {
+        id: number;
+        username: string;
+        businessName: string;
+        phone: string;
+        email: string;
+      };
+      messages?: Array<{
+        id: number;
+        ticketId: number;
+        senderRole: 'USER' | 'SUPERADMIN';
+        senderName: string;
+        message: string;
+        createdAt: string;
+      }>;
+    }>>('/support/tickets'),
+
+  getTicketDetails: (id: number) =>
+    request<{
+      id: number;
+      adminId: number;
+      subject: string;
+      category: string;
+      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+      priority: string;
+      createdAt: string;
+      updatedAt: string;
+      admin?: {
+        id: number;
+        username: string;
+        businessName: string;
+        phone: string;
+        email: string;
+      };
+      messages: Array<{
+        id: number;
+        ticketId: number;
+        senderRole: 'USER' | 'SUPERADMIN';
+        senderName: string;
+        message: string;
+        createdAt: string;
+      }>;
+    }>(`/support/tickets/${id}`),
+
+  sendTicketMessage: (id: number, message: string) =>
+    request<{
+      id: number;
+      ticketId: number;
+      senderRole: 'USER' | 'SUPERADMIN';
+      senderName: string;
+      message: string;
+      createdAt: string;
+    }>(`/support/tickets/${id}/messages`, {
+      method: 'POST',
+      body: JSON.stringify({ message }),
+    }),
+
+  updateTicketStatus: (id: number, status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED') =>
+    request<{
+      id: number;
+      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+    }>(`/support/tickets/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
   // ═══ Coupons ═══
   getCoupons: () =>
     request<Array<{
@@ -1060,7 +1219,23 @@ export const api = {
 
   getSubscriptionUsage: () =>
     request<SubscriptionUsageData>('/billing/usage'),
+
+  // ═══ Analytics ═══
+  getAnalytics: () =>
+    request<AnalyticsData>('/admin/analytics'),
 };
+
+export interface AnalyticsData {
+  revenueByMonth: { month: string; total: number }[];
+  bookingsByWeekday: { day: number; count: number }[];
+  topServices: { name: string; count: number; revenue: number }[];
+  statusDistribution: Record<string, number>;
+  trends: {
+    revenueThisMonth: number;
+    revenueLastMonth: number;
+    revenueChangePercent: number;
+  };
+}
 
 export interface SubscriptionUsageData {
   plan: string;
