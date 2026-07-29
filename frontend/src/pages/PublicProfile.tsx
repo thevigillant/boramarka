@@ -82,6 +82,8 @@ export default function PublicProfile() {
   const secondary = profile.secondaryColor || '#ec4899'
   const theme = profile.publicTheme || 'light'
 
+  const isFromInstagram = new URLSearchParams(window.location.search).get('utm_source') === 'instagram'
+
   return (
     <div className={`min-h-screen ${theme === 'dark' ? 'dark bg-[#0B0F19]' : 'bg-slate-50'} text-slate-900 dark:text-slate-100 font-sans selection:bg-pink-500/30`}>
       <style>{`
@@ -106,6 +108,13 @@ export default function PublicProfile() {
 
       <div className="max-w-4xl mx-auto px-6 pb-20 -mt-20 relative z-10">
         
+        {isFromInstagram && (
+          <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-orange-500 text-white px-6 py-3 rounded-3xl mb-6 flex items-center justify-center gap-2.5 shadow-xl font-extrabold text-xs sm:text-sm animate-slide-up">
+            <Instagram className="w-5 h-5 shrink-0" />
+            <span>Você veio pelo Instagram! Escolha seu serviço abaixo e agende em segundos.</span>
+          </div>
+        )}
+
         {profile.isInactive && (
           <div className="bg-gradient-to-r from-red-600 to-pink-600 text-white px-6 py-4 rounded-3xl mb-8 flex items-center justify-center gap-3 shadow-lg font-bold">
             <AlertCircle className="w-6 h-6 flex-shrink-0 animate-pulse" />

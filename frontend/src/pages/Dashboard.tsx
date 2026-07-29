@@ -1,6 +1,10 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { api, UserPermissionItem, SubscriptionUsageData } from '../services/api'
+import { api, UserPermissionItem, SubscriptionUsageData, AnalyticsData } from '../services/api'
+import MiniBarChart from '../components/charts/MiniBarChart'
+import MiniDonutChart from '../components/charts/MiniDonutChart'
+import WeekdayChart from '../components/charts/WeekdayChart'
+import StatusPieChart from '../components/charts/StatusPieChart'
 import {
   Calendar, Plus, Trash2, Copy, RefreshCw, RotateCcw, Link2,
   Clock, Users, LogOut, X, Check, ExternalLink,
@@ -9,12 +13,13 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors, Instagram, BarChart3
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 import { BookingCard } from '../components/BookingCard'
+import SupportChatWidget from '../components/SupportChatWidget'
 
 
 // ════════════════════════════════════════════
@@ -511,6 +516,7 @@ export default function Dashboard() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
   const [usageData, setUsageData] = useState<SubscriptionUsageData | null>(null)
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [expandedMobileCategory, setExpandedMobileCategory] = useState<string | null>('operacional')
@@ -1585,7 +1591,7 @@ export default function Dashboard() {
   const fetchData = useCallback(async (isManual = false) => {
     if (isManual) setRefreshing(true)
     try {
-      const [s, f, l, b, t, p, sv, dl, subStatus, cpList, googleStatus, plans, subs, usage] = await Promise.all([
+      const [s, f, l, b, t, p, sv, dl, subStatus, cpList, googleStatus, plans, subs, usage, analyticsRes] = await Promise.all([
         api.getStats(),
         api.getFinanceStats(),
         api.getLinks(),
@@ -1599,7 +1605,8 @@ export default function Dashboard() {
         api.getGoogleCalendarStatus().catch(() => ({ connected: false, email: '' })), // Não quebrar se falhar
         api.getMembershipPlans().catch(() => []),
         api.getClientSubscriptions().catch(() => []),
-        api.getSubscriptionUsage().catch(() => null)
+        api.getSubscriptionUsage().catch(() => null),
+        api.getAnalytics().catch(() => null)
       ])
       setStats(s)
       setFinanceStats(f)
@@ -1621,6 +1628,7 @@ export default function Dashboard() {
       setClientSubscriptions(subs || [])
       if (subStatus) setSubscription(subStatus)
       if (usage) setUsageData(usage)
+      if (analyticsRes) setAnalyticsData(analyticsRes)
       if (isManual) showToast('Dados atualizados!')
     } catch (err: any) {
       showToast(err.message, 'error')
@@ -1633,9 +1641,11 @@ export default function Dashboard() {
   useEffect(() => {
     if (isDark) {
       document.documentElement.classList.add('dark')
+      document.documentElement.style.colorScheme = 'dark'
       localStorage.setItem('theme', 'dark')
     } else {
       document.documentElement.classList.remove('dark')
+      document.documentElement.style.colorScheme = 'light'
       localStorage.setItem('theme', 'light')
     }
   }, [isDark])
@@ -3116,6 +3126,70 @@ export default function Dashboard() {
               <StatCard title="A Pagar" value={formatCurrency(financeStats.pendingPayable)} icon={TrendingDown} color="#ef4444" />
             </div>
 
+            {/* 📊 Analytics Charts Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Chart 1: Faturamento Mensal */}
+              <div className="card-simple">
+                <div className="card-simple-inner p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Evolução do Faturamento</h3>
+                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Receita bruta dos últimos 6 meses</p>
+                    </div>
+                    {analyticsData?.trends?.revenueChangePercent !== undefined && (
+                      <span className={`text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${
+                        analyticsData.trends.revenueChangePercent >= 0
+                          ? 'bg-emerald-500/10 text-emerald-500'
+                          : 'bg-red-500/10 text-red-500'
+                      }`}>
+                        {analyticsData.trends.revenueChangePercent >= 0 ? '↑' : '↓'} {Math.abs(analyticsData.trends.revenueChangePercent)}% vs mês anterior
+                      </span>
+                    )}
+                  </div>
+                  <MiniBarChart data={analyticsData?.revenueByMonth || []} height={190} />
+                </div>
+              </div>
+
+              {/* Chart 2: Movimentação por Dia da Semana */}
+              <div className="card-simple">
+                <div className="card-simple-inner p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Movimento por Dia</h3>
+                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Distribuição semanal de agendamentos</p>
+                    </div>
+                  </div>
+                  <WeekdayChart data={analyticsData?.bookingsByWeekday || []} height={180} />
+                </div>
+              </div>
+
+              {/* Chart 3: Top Serviços */}
+              <div className="card-simple">
+                <div className="card-simple-inner p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Serviços Mais Vendidos</h3>
+                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Ranking por volume de atendimentos</p>
+                    </div>
+                  </div>
+                  <MiniDonutChart data={analyticsData?.topServices || []} size={150} />
+                </div>
+              </div>
+
+              {/* Chart 4: Status dos Agendamentos */}
+              <div className="card-simple">
+                <div className="card-simple-inner p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Status dos Agendamentos</h3>
+                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Proporção por estado de agendamento</p>
+                    </div>
+                  </div>
+                  <StatusPieChart data={analyticsData?.statusDistribution || {}} size={140} />
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Recent Bookings */}
               <div className="card-simple">
@@ -3187,7 +3261,7 @@ export default function Dashboard() {
                 <div>
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center font-black">
-                      📊
+                      <BarChart3 className="w-4 h-4" />
                     </div>
                     <h3 className="text-xl font-black text-slate-900 dark:text-white">Faturamento por Serviço & Período</h3>
                   </div>
@@ -3353,11 +3427,11 @@ export default function Dashboard() {
                 <button
                   onClick={() => openPdfExportModal('finance')}
                   disabled={transactions.length === 0}
-                  className="flex items-center gap-2 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-black py-2.5 px-4 rounded-xl transition-all border border-slate-700 shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                  className="flex items-center gap-2 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-black py-2.5 px-4 rounded-xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm text-sm disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap cursor-pointer"
                   title="Exportar dados financeiros para PDF"
                 >
-                  <FileText className="w-4 h-4 text-emerald-400" />
-                  Exportar PDF
+                  <FileText className="w-4 h-4 text-emerald-500" />
+                  <span>Exportar PDF</span>
                 </button>
 
                 <button
@@ -3376,11 +3450,11 @@ export default function Dashboard() {
                  <p className="text-3xl font-black">{formatCurrency(filteredFinanceStats.balance)}</p>
                  <Wallet className="w-12 h-12 absolute -right-2 -bottom-2 opacity-10" />
                </div>
-               <div className="card-simple p-6 bg-slate-900 dark:bg-slate-800 text-white border-none shadow-lg shadow-slate-900/20">
-                 <p className="text-[10px] font-bold uppercase opacity-80 mb-1">Pendentes de Entrada</p>
-                 <p className="text-3xl font-black">{formatCurrency(filteredFinanceStats.pendingReceivable)}</p>
+               <div className="card-simple p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm">
+                 <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Pendentes de Entrada</p>
+                 <p className="text-3xl font-black text-cyan-600 dark:text-cyan-400">{formatCurrency(filteredFinanceStats.pendingReceivable)}</p>
                </div>
-               <div className="card-simple p-6 bg-white dark:bg-[#131826] border-slate-200 dark:border-slate-800">
+               <div className="card-simple p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm">
                  <p className="text-[10px] font-bold uppercase text-slate-400 mb-1">Contas Pendentes</p>
                  <p className="text-3xl font-black text-red-600 dark:text-red-500">{formatCurrency(filteredFinanceStats.pendingPayable)}</p>
                </div>
@@ -3418,11 +3492,11 @@ export default function Dashboard() {
                   <select
                     value={financePaidFilter}
                     onChange={e => setFinancePaidFilter(e.target.value as any)}
-                    className="input-simple py-2 text-xs w-full cursor-pointer"
+                    className="input-simple py-2 text-xs w-full cursor-pointer bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                   >
-                    <option value="all">Todos os Status</option>
-                    <option value="paid">Pagas / Recebidas</option>
-                    <option value="unpaid">Pendentes</option>
+                    <option value="all" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Todos os Status</option>
+                    <option value="paid" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Pagas / Recebidas</option>
+                    <option value="unpaid" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Pendentes</option>
                   </select>
                 </div>
 
@@ -3434,11 +3508,11 @@ export default function Dashboard() {
                   <select
                     value={financeCategoryFilter}
                     onChange={e => setFinanceCategoryFilter(e.target.value)}
-                    className="input-simple py-2 text-xs w-full cursor-pointer"
+                    className="input-simple py-2 text-xs w-full cursor-pointer bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                   >
-                    <option value="all">Todas as Categorias</option>
+                    <option value="all" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Todas as Categorias</option>
                     {uniqueCategories.map((cat: string) => (
-                      <option key={cat} value={cat}>
+                      <option key={cat} value={cat} className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">
                         {cat}
                       </option>
                     ))}
@@ -3453,15 +3527,15 @@ export default function Dashboard() {
                   <select
                     value={financeDateRange}
                     onChange={e => setFinanceDateRange(e.target.value as any)}
-                    className="input-simple py-2 text-xs w-full cursor-pointer"
+                    className="input-simple py-2 text-xs w-full cursor-pointer bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                   >
-                    <option value="all">Qualquer Período</option>
-                    <option value="today">Hoje</option>
-                    <option value="thisMonth">Este Mês</option>
-                    <option value="lastMonth">Mês Passado</option>
-                    <option value="last30">Últimos 30 Dias</option>
-                    <option value="last90">Últimos 90 Dias</option>
-                    <option value="custom">Personalizado...</option>
+                    <option value="all" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Qualquer Período</option>
+                    <option value="today" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Hoje</option>
+                    <option value="thisMonth" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Este Mês</option>
+                    <option value="lastMonth" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Mês Passado</option>
+                    <option value="last30" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Últimos 30 Dias</option>
+                    <option value="last90" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Últimos 90 Dias</option>
+                    <option value="custom" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Personalizado...</option>
                   </select>
                 </div>
               </div>
@@ -3724,10 +3798,10 @@ export default function Dashboard() {
                     <button
                       onClick={() => openPdfExportModal('bookings')}
                       disabled={bookings.length === 0}
-                      className="px-3.5 py-2.5 bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white font-black text-xs rounded-xl transition-all border border-slate-700 shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+                      className="px-3.5 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-800 dark:text-white font-black text-xs rounded-xl transition-all border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
                       title="Exportar Relatório PDF de Agendamentos"
                     >
-                      <FileText className="w-4 h-4 text-pink-400" />
+                      <FileText className="w-4 h-4 text-pink-500" />
                       <span>Exportar PDF</span>
                     </button>
                     <button
@@ -4630,6 +4704,32 @@ export default function Dashboard() {
                         </div>
                       )}
                     </div>
+
+                    {/* 📸 Instagram Bio Link Helper */}
+                    <div className="bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-orange-500/10 p-4 rounded-2xl border border-pink-500/20 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-black uppercase tracking-wider text-pink-600 dark:text-pink-400 flex items-center gap-1.5">
+                          <Instagram className="w-4 h-4" /> Link Otimizado para Bio do Instagram
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const link = `https://boramarka.com.br/p/${adminInfo?.username}?utm_source=instagram`
+                            navigator.clipboard.writeText(link)
+                            showToast('Link do Instagram copiado para a área de transferência!', 'success')
+                          }}
+                          className="px-3 py-1.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-95 text-white font-extrabold text-[10px] rounded-xl transition-all shadow-md flex items-center gap-1 uppercase tracking-wider cursor-pointer"
+                        >
+                          <Copy className="w-3 h-3" /> Copiar Link Bio
+                        </button>
+                      </div>
+                      <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 leading-relaxed">
+                        Copie este link com rastreamento UTM ativado para colocar na biografia do seu perfil do Instagram:
+                      </p>
+                      <code className="block text-[11px] font-mono font-bold text-pink-600 dark:text-pink-300 bg-white/60 dark:bg-black/30 p-2 rounded-xl border border-pink-500/20 truncate select-all">
+                        {`https://boramarka.com.br/p/${adminInfo?.username || 'empresa'}?utm_source=instagram`}
+                      </code>
+                    </div>
                   </div>
 
                   <button type="submit" className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all shadow-xl shadow-pink-500/20 mt-4">
@@ -5190,10 +5290,10 @@ export default function Dashboard() {
                       <select 
                         value={couponForm.discountType}
                         onChange={e => setCouponForm({ ...couponForm, discountType: e.target.value as 'percentage' | 'fixed' })}
-                        className="input-simple font-bold w-full bg-slate-50 dark:bg-[#131826]"
+                        className="input-simple font-bold w-full bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                       >
-                        <option value="percentage">Porcentagem (%)</option>
-                        <option value="fixed">Valor Fixo (R$)</option>
+                        <option value="percentage" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Porcentagem (%)</option>
+                        <option value="fixed" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Valor Fixo (R$)</option>
                       </select>
                     </div>
 
@@ -5335,10 +5435,10 @@ export default function Dashboard() {
                       <select
                         value={planForm.interval}
                         onChange={e => setPlanForm({ ...planForm, interval: e.target.value as 'monthly' | 'yearly' })}
-                        className="input-simple text-xs font-bold w-full bg-slate-50 dark:bg-[#131826]"
+                        className="input-simple text-xs font-bold w-full bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                       >
-                        <option value="monthly">Mensal</option>
-                        <option value="yearly">Anual</option>
+                        <option value="monthly" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Mensal</option>
+                        <option value="yearly" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Anual</option>
                       </select>
                     </div>
 
@@ -5410,12 +5510,12 @@ export default function Dashboard() {
                       <select
                         value={subForm.planId}
                         onChange={e => setSubForm({ ...subForm, planId: e.target.value })}
-                        className="input-simple text-xs font-bold w-full bg-slate-50 dark:bg-[#131826]"
+                        className="input-simple text-xs font-bold w-full bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                         required
                       >
-                        <option value="">Selecione o Plano...</option>
+                        <option value="" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Selecione o Plano...</option>
                         {membershipPlans.map(plan => (
-                          <option key={plan.id} value={plan.id}>{plan.name} ({plan.interval === 'yearly' ? 'Anual' : 'Mensal'} - R$ {plan.price.toFixed(2)})</option>
+                          <option key={plan.id} value={plan.id} className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">{plan.name} ({plan.interval === 'yearly' ? 'Anual' : 'Mensal'} - R$ {plan.price.toFixed(2)})</option>
                         ))}
                       </select>
                     </div>
@@ -6062,10 +6162,10 @@ export default function Dashboard() {
                     className="bg-white dark:bg-[#0f131f] border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 px-3 py-2 rounded-xl text-xs font-bold"
                   >
                     <option value="ALL">Todas Severidades</option>
-                    <option value="CRITICAL">🚨 Crítico</option>
-                    <option value="HIGH">⚠️ Alto</option>
-                    <option value="MEDIUM">🔮 Médio</option>
-                    <option value="INFO">ℹ️ Informativo</option>
+                    <option value="CRITICAL">Crítico</option>
+                    <option value="HIGH">Alto</option>
+                    <option value="MEDIUM">Médio</option>
+                    <option value="INFO">Informativo</option>
                   </select>
                 </div>
 
@@ -7800,44 +7900,44 @@ export default function Dashboard() {
 
               {/* Quick Role Presets */}
               <div className="p-4 bg-violet-50 dark:bg-violet-500/10 border border-violet-200 dark:border-violet-500/20 rounded-2xl space-y-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-violet-800 dark:text-violet-300 block">
-                  ⚡ Perfis Rápidos Pré-configurados (1-Clique)
+                <span className="text-[10px] font-black uppercase tracking-wider text-violet-800 dark:text-violet-300 block flex items-center gap-1">
+                  <Zap className="w-3.5 h-3.5" /> Perfis Rápidos Pré-configurados (1-Clique)
                 </span>
                 <div className="flex flex-wrap gap-2">
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('admin')}
-                    className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl text-xs font-black shadow-md cursor-pointer hover:opacity-95 transition-all"
+                    className="px-3 py-1.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl text-xs font-black shadow-md cursor-pointer hover:opacity-95 transition-all flex items-center gap-1.5"
                   >
-                    👑 Gestor Principal
+                    <Crown className="w-3.5 h-3.5" /> Gestor Principal
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('gerente')}
-                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    📊 Gerente de Operação
+                    <Briefcase className="w-3.5 h-3.5" /> Gerente de Operação
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('recepcionista')}
-                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    🛎️ Recepcionista
+                    <User className="w-3.5 h-3.5" /> Recepcionista
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('financeiro')}
-                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    💵 Financeiro
+                    <DollarSign className="w-3.5 h-3.5" /> Financeiro
                   </button>
                   <button
                     type="button"
                     onClick={() => handleApplyRolePreset('profissional')}
-                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer"
+                    className="px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold hover:bg-violet-600 hover:text-white dark:hover:bg-violet-600 transition-all cursor-pointer flex items-center gap-1.5"
                   >
-                    ✂️ Profissional
+                    <Scissors className="w-3.5 h-3.5" /> Profissional
                   </button>
                 </div>
               </div>
@@ -7848,15 +7948,15 @@ export default function Dashboard() {
                   Matriz de Permissões Granulares (Módulos & Submenus)
                 </h4>
 
-                {/* 📅 Módulo Operacional */}
+                {/* Módulo Operacional */}
                 <div className="space-y-2">
                   <span className="text-xs font-black text-violet-700 dark:text-violet-400 flex items-center gap-1.5 uppercase tracking-wider">
-                    📅 Módulo: Operacional
+                    <Calendar className="w-3.5 h-3.5" /> Módulo: Operacional
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">📅 Agendamentos</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Agendamentos</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Lista e confirmação de horários agendados</span>
                       </div>
                       <input
@@ -7869,7 +7969,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🔄 Solicitações de Estorno</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Solicitações de Estorno</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gerenciar cancelamentos com reembolso</span>
                       </div>
                       <input
@@ -7882,7 +7982,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">👥 Clientes</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Clientes</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Base completa e histórico de clientes</span>
                       </div>
                       <input
@@ -7895,7 +7995,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-violet-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🕒 Gerenciar Agenda</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Gerenciar Agenda</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Configuração da grade de horários</span>
                       </div>
                       <input
@@ -7908,15 +8008,15 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* 💼 Módulo Comercial */}
+                {/* Módulo Comercial */}
                 <div className="space-y-2">
                   <span className="text-xs font-black text-pink-700 dark:text-pink-400 flex items-center gap-1.5 uppercase tracking-wider">
-                    💼 Módulo: Comercial
+                    <Briefcase className="w-3.5 h-3.5" /> Módulo: Comercial
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">💼 Serviços</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Serviços</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Catálogo de serviços, preços e durações</span>
                       </div>
                       <input
@@ -7929,7 +8029,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🔗 Links de Venda</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Links de Venda</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Links para clientes agendarem online</span>
                       </div>
                       <input
@@ -7942,7 +8042,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🏷️ Cupons de Desconto</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Cupons de Desconto</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Crie códigos promocionais</span>
                       </div>
                       <input
@@ -7955,7 +8055,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-pink-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🎁 Clube de Assinaturas</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Clube de Assinaturas</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Planos e assinaturas recorrentes</span>
                       </div>
                       <input
@@ -7968,15 +8068,15 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* 💰 Módulo Gestão & Finanças */}
+                {/* Módulo Gestão & Finanças */}
                 <div className="space-y-2">
                   <span className="text-xs font-black text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5 uppercase tracking-wider">
-                    💰 Módulo: Gestão & Finanças
+                    <DollarSign className="w-3.5 h-3.5" /> Módulo: Gestão & Finanças
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">💰 Financeiro</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Financeiro</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Fluxo de caixa, recebíveis e despesas</span>
                       </div>
                       <input
@@ -7989,7 +8089,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">👔 RH / Equipe</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">RH / Equipe</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gestão de funcionários, funções e comissões</span>
                       </div>
                       <input
@@ -8002,7 +8102,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">💳 Plano & Assinatura</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Plano & Assinatura</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gerenciar seu plano no BoraMarka</span>
                       </div>
                       <input
@@ -8015,15 +8115,15 @@ export default function Dashboard() {
                   </div>
                 </div>
 
-                {/* 🎨 Módulo Sistema & Ajustes */}
+                {/* Módulo Sistema & Ajustes */}
                 <div className="space-y-2">
                   <span className="text-xs font-black text-amber-800 dark:text-amber-400 flex items-center gap-1.5 uppercase tracking-wider">
-                    🎨 Módulo: Sistema & Ajustes
+                    <Palette className="w-3.5 h-3.5" /> Módulo: Sistema & Ajustes
                   </span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🛡️ Segurança & Permissões</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Segurança & Permissões</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Controle granular de acesso por perfil</span>
                       </div>
                       <input
@@ -8036,7 +8136,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🎨 Personalizar Página</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Personalizar Página</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Identidade visual, tema e banner</span>
                       </div>
                       <input
@@ -8049,7 +8149,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🌐 Explorar Rede</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Explorar Rede</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Rede de contatos e chat</span>
                       </div>
                       <input
@@ -8062,7 +8162,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">📜 Logs & Auditoria</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Logs & Auditoria</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Registro de ações, logins e IP</span>
                       </div>
                       <input
@@ -8075,7 +8175,7 @@ export default function Dashboard() {
 
                     <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-amber-400 transition-colors">
                       <div>
-                        <span className="text-xs font-black text-slate-900 dark:text-white block">🗑️ Lixeira</span>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Lixeira</span>
                         <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Recuperar itens excluídos recentemente</span>
                       </div>
                       <input
@@ -8109,6 +8209,9 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Floating Support Chat Widget */}
+      <SupportChatWidget />
 
     </div>
   )
