@@ -33,7 +33,7 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Pai
 
 O BoraMarka conta com um ecossistema completo de gestão da plataforma para os administradores gerais em `/superadmin`:
 
-- 👑 **Credenciais do Proprietário (`odonodoboramarka` / `300923`)**: Auto-inicialização com permissões totais no boot do servidor.
+- 👑 **Acesso Gestor Protegido**: Inicialização segura com controle de acesso exclusivo para os administradores da plataforma.
 - 🔐 **Sistema de Permissões Granulares por Gestor**:
   - `canManageUsers`: Cadastrar, editar e excluir profissionais/clientes.
   - `canManageSubscriptions`: Alterar planos e conceder +30 dias de teste grátis com 1 clique.
