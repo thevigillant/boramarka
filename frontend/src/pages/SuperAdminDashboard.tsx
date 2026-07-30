@@ -155,6 +155,7 @@ export default function SuperAdminDashboard() {
   const [proPhone, setProPhone] = useState('')
   const [proEmail, setProEmail] = useState('')
   const [proPlan, setProPlan] = useState('mensal')
+  const [proIsFullAccess, setProIsFullAccess] = useState(false)
 
   // Toast notification
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
@@ -262,6 +263,10 @@ export default function SuperAdminDashboard() {
 
   const handleImpersonateUser = async (userId: number) => {
     try {
+      const superadminToken = localStorage.getItem('token') || sessionStorage.getItem('token')
+      if (superadminToken) {
+        localStorage.setItem('superadminToken', superadminToken)
+      }
       const res = await api.impersonateUser(userId)
       localStorage.setItem('token', res.token)
       localStorage.setItem('role', 'admin')
@@ -277,6 +282,10 @@ export default function SuperAdminDashboard() {
 
   const handleImpersonateSelf = async () => {
     try {
+      const superadminToken = localStorage.getItem('token') || sessionStorage.getItem('token')
+      if (superadminToken) {
+        localStorage.setItem('superadminToken', superadminToken)
+      }
       const res = await api.impersonateSelf()
       localStorage.setItem('token', res.token)
       localStorage.setItem('role', 'admin')
@@ -301,6 +310,22 @@ export default function SuperAdminDashboard() {
       showToast(`+30 Dias de Teste concedidos com sucesso para "${user.businessName}"!`, 'success')
     } catch (err: any) {
       showToast(err.message || 'Erro ao conceder teste grátis', 'error')
+    }
+  }
+
+  const handleGrantFullAccess = async (user: UserData) => {
+    if (!myPermissions.canManageSubscriptions) {
+      showToast('Você não possui permissão para alterar assinaturas.', 'error')
+      return
+    }
+    if (!window.confirm(`Liberar ACESSO TOTAL GRATUITO (Plano Premium sem expiração e sem cobrança) para "${user.businessName}"?`)) return
+
+    try {
+      await api.grantFullAccessToUser(user.id)
+      await fetchUsersOnly()
+      showToast(`👑 Acesso Total Grátis (Plano Premium Vitalício) concedido para "${user.businessName}"!`, 'success')
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao liberar acesso total', 'error')
     }
   }
 
@@ -421,6 +446,7 @@ export default function SuperAdminDashboard() {
         phone: proPhone,
         email: proEmail,
         plan: proPlan,
+        isFullAccess: proIsFullAccess,
       })
       showToast(`Profissional "${proBusinessName}" cadastrado com sucesso!`, 'success')
       setShowNewProModal(false)
@@ -429,6 +455,7 @@ export default function SuperAdminDashboard() {
       setProPassword('')
       setProPhone('')
       setProEmail('')
+      setProIsFullAccess(false)
       fetchUsersOnly()
     } catch (err: any) {
       showToast(err.message || 'Erro ao criar profissional', 'error')
@@ -549,110 +576,110 @@ export default function SuperAdminDashboard() {
 
       {/* Top Navbar */}
       <header className="sticky top-0 bg-white/95 dark:bg-[#0B0F19]/95 backdrop-blur-md border-b border-slate-200/90 dark:border-slate-800/80 z-30 transition-colors shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-gradient-to-r from-violet-600 to-pink-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/20">
-              <Crown className="w-6 h-6 text-white" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 min-h-[64px] sm:h-20 flex justify-between items-center py-2.5 sm:py-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-9 h-9 sm:w-11 sm:h-11 bg-gradient-to-r from-violet-600 to-pink-600 rounded-xl sm:rounded-2xl flex items-center justify-center text-white shadow-lg shadow-pink-500/20 flex-shrink-0">
+              <Crown className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black tracking-tight leading-none text-slate-900 dark:text-white">BoraMarka</h1>
-                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                <h1 className="text-base sm:text-xl font-black tracking-tight leading-none text-slate-900 dark:text-white">BoraMarka</h1>
+                <span className="text-[9px] sm:text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping inline-block" /> Online
                 </span>
               </div>
-              <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest">Painel do Administrador Geral</span>
+              <span className="text-[9px] sm:text-[10px] font-black text-pink-500 uppercase tracking-widest block mt-0.5">Painel SuperAdmin</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {/* Theme Toggle */}
             <button
               onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131826] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 cursor-pointer shadow-sm"
+              className="p-2 sm:p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#131826] hover:bg-slate-100 dark:hover:bg-slate-800 transition-all text-slate-700 dark:text-slate-300 cursor-pointer shadow-sm"
               title={isDarkMode ? 'Modo Claro' : 'Modo Escuro'}
             >
-              {isDarkMode ? <Sun className="w-5 h-5 text-amber-400" /> : <Moon className="w-5 h-5 text-slate-700" />}
+              {isDarkMode ? <Sun className="w-4 h-4 sm:w-5 sm:h-5 text-amber-400" /> : <Moon className="w-4 h-4 sm:w-5 sm:h-5 text-slate-700" />}
             </button>
 
             {/* Usar como Profissional */}
             <button
               onClick={handleImpersonateSelf}
-              className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 hover:opacity-90 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 hover:opacity-90 text-white rounded-xl font-black text-[11px] sm:text-xs uppercase tracking-wider shadow-md transition-all cursor-pointer"
             >
               <UserCheck className="w-4 h-4" />
-              <span>Usar como Profissional</span>
+              <span className="hidden sm:inline">Usar como Profissional</span>
             </button>
 
             {/* Logout */}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-black text-[11px] sm:text-xs uppercase tracking-wider shadow-md transition-all cursor-pointer"
             >
               <LogOut className="w-4 h-4" />
-              <span>Sair</span>
+              <span className="hidden sm:inline">Sair</span>
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-6 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-          <div className="card-simple p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
-            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Total de Clientes</span>
-            <div className="flex items-end justify-between mt-3">
-              <span className="text-3xl font-black text-slate-900 dark:text-white leading-none">{stats?.totalUsers || 0}</span>
-              <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500">
-                <Users className="w-5 h-5" />
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-5 mb-6 sm:mb-8">
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+            <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Total Clientes</span>
+            <div className="flex items-end justify-between mt-2 sm:mt-3">
+              <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-none">{stats?.totalUsers || 0}</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
             </div>
           </div>
 
-          <div className="card-simple p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
-            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agendamentos Totais</span>
-            <div className="flex items-end justify-between mt-3">
-              <span className="text-3xl font-black text-slate-900 dark:text-white leading-none">{stats?.totalBookings || 0}</span>
-              <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500">
-                <Calendar className="w-5 h-5" />
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+            <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agendamentos</span>
+            <div className="flex items-end justify-between mt-2 sm:mt-3">
+              <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-none">{stats?.totalBookings || 0}</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 flex items-center justify-center text-pink-500">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
             </div>
           </div>
 
-          <div className="card-simple p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
-            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Assinaturas Ativas</span>
-            <div className="flex items-end justify-between mt-3">
-              <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-none">{stats?.activeSubscriptions || 0}</span>
-              <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
-                <CreditCard className="w-5 h-5" />
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+            <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Assinaturas Ativas</span>
+            <div className="flex items-end justify-between mt-2 sm:mt-3">
+              <span className="text-xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-none">{stats?.activeSubscriptions || 0}</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-500">
+                <CreditCard className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
             </div>
           </div>
 
-          <div className="card-simple p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
-            <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Contas em Trial</span>
-            <div className="flex items-end justify-between mt-3">
-              <span className="text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">{stats?.trialingSubscriptions || 0}</span>
-              <div className="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
-                <ShieldCheck className="w-5 h-5" />
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+            <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Contas em Trial</span>
+            <div className="flex items-end justify-between mt-2 sm:mt-3">
+              <span className="text-xl sm:text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">{stats?.trialingSubscriptions || 0}</span>
+              <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-500">
+                <ShieldCheck className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
             </div>
           </div>
 
-          {/* Revenue Card: Vibrant Gradient in Light & Dark Mode */}
+          {/* Revenue Card: Vibrant Gradient */}
           {myPermissions.canViewFinancials ? (
-            <div className="card-simple p-5 flex flex-col justify-between bg-gradient-to-br from-violet-600 via-pink-600 to-orange-500 text-white border-none shadow-lg rounded-2xl">
-              <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Receita Mensal Est.</span>
-              <div className="flex items-end justify-between mt-3">
-                <span className="text-2xl font-black text-white leading-none">{formatCurrency(stats?.estimatedMonthlyRevenue || 0)}</span>
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
-                  <DollarSign className="w-5 h-5" />
+            <div className="col-span-2 sm:col-span-1 card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-gradient-to-br from-violet-600 via-pink-600 to-orange-500 text-white border-none shadow-lg rounded-2xl">
+              <span className="text-[9px] sm:text-[10px] font-black text-white/80 uppercase tracking-widest">Receita Mensal Est.</span>
+              <div className="flex items-end justify-between mt-2 sm:mt-3">
+                <span className="text-lg sm:text-2xl font-black text-white leading-none">{formatCurrency(stats?.estimatedMonthlyRevenue || 0)}</span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
+                  <DollarSign className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
               </div>
             </div>
           ) : (
-            <div className="card-simple p-5 flex flex-col justify-between bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl opacity-60">
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+            <div className="col-span-2 sm:col-span-1 card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl opacity-60">
+              <span className="text-[9px] sm:text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                 <Lock className="w-3 h-3" /> Receita Privada
               </span>
               <div className="text-xs font-bold text-slate-500 mt-2">Sem permissão financeira</div>
@@ -661,11 +688,11 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Navigation Tabs Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4 w-full">
+          <div className="flex items-center gap-2 overflow-x-auto w-full max-w-full pb-2 sm:pb-0 scrollbar-none touch-pan-x">
             <button
               onClick={() => setActiveTab('users')}
-              className={`px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+              className={`flex-shrink-0 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                 activeTab === 'users'
                   ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md'
                   : 'bg-white dark:bg-[#131826] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm'
@@ -678,7 +705,7 @@ export default function SuperAdminDashboard() {
             {myPermissions.canManageSuperAdmins && (
               <button
                 onClick={() => setActiveTab('superadmins')}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 ${
+                className={`flex-shrink-0 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap ${
                   activeTab === 'superadmins'
                     ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md'
                     : 'bg-white dark:bg-[#131826] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm'
@@ -692,7 +719,7 @@ export default function SuperAdminDashboard() {
             {myPermissions.canAccessSupport && (
               <button
                 onClick={() => setActiveTab('support')}
-                className={`px-5 py-2.5 rounded-2xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 relative ${
+                className={`flex-shrink-0 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-2 whitespace-nowrap relative ${
                   activeTab === 'support'
                     ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md'
                     : 'bg-white dark:bg-[#131826] text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 shadow-sm'
@@ -708,11 +735,11 @@ export default function SuperAdminDashboard() {
           </div>
 
           {/* Quick Action Add Buttons */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 self-end sm:self-auto">
             {activeTab === 'users' && myPermissions.canManageUsers && (
               <button
                 onClick={() => setShowNewProModal(true)}
-                className="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md hover:opacity-95 transition-all flex items-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <Plus className="w-4 h-4" /> Novo Profissional
               </button>
@@ -720,7 +747,7 @@ export default function SuperAdminDashboard() {
             {activeTab === 'superadmins' && myPermissions.canManageSuperAdmins && (
               <button
                 onClick={() => setShowNewSuperAdminModal(true)}
-                className="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-md hover:opacity-95 transition-all flex items-center gap-2 cursor-pointer"
+                className="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-md hover:opacity-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <UserPlus className="w-4 h-4" /> Novo SuperAdmin
               </button>
@@ -730,22 +757,22 @@ export default function SuperAdminDashboard() {
 
         {/* TAB 1: USERS MANAGEMENT */}
         {activeTab === 'users' && (
-          <div className="card-simple p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl">
+          <div className="card-simple p-4 sm:p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl sm:rounded-3xl">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
               <div>
-                <h2 className="text-xl font-black text-slate-900 dark:text-white">Gerenciamento de Profissionais</h2>
+                <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">Gerenciamento de Profissionais</h2>
                 <p className="text-xs font-bold text-slate-500 dark:text-slate-400 mt-1">
-                  Visualize os cadastros do BoraMarka, conceda dias de teste com 1-clique, altere assinaturas e gerencie acessos.
+                  Visualize cadastros do BoraMarka, conceda testes de 1-clique e gerencie assinaturas.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3">
                 {/* Search input */}
                 <div className="relative">
                   <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 dark:text-slate-500" />
                   <input
                     type="text"
-                    placeholder="Buscar por nome, usuário, telefone..."
+                    placeholder="Buscar por nome, usuário..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="input-simple pl-10 pr-4 py-2.5 w-full sm:w-72 text-xs font-bold bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white border-slate-200 dark:border-slate-800"
@@ -758,7 +785,7 @@ export default function SuperAdminDashboard() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="input-simple pl-10 pr-8 py-2.5 text-xs font-bold appearance-none bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white border-slate-200 dark:border-slate-800 cursor-pointer"
+                    className="input-simple pl-10 pr-8 py-2.5 text-xs font-bold appearance-none bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white border-slate-200 dark:border-slate-800 cursor-pointer w-full"
                   >
                     <option value="all" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Todos os Status</option>
                     <option value="active" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Ativos</option>
@@ -770,9 +797,103 @@ export default function SuperAdminDashboard() {
               </div>
             </div>
 
-            {/* Table Container */}
-            <div className="overflow-x-auto -mx-6">
-              <table className="w-full min-w-[900px] text-left border-collapse">
+            {/* Mobile Cards View (Smalls Screens < 768px) */}
+            <div className="block md:hidden space-y-3.5">
+              {filteredUsers.length === 0 ? (
+                <div className="py-12 text-center text-sm font-bold text-slate-500">
+                  Nenhum profissional encontrado.
+                </div>
+              ) : (
+                filteredUsers.map((user) => (
+                  <div key={user.id} className="p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#0D111E]/60 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black flex items-center justify-center text-xs shadow-md flex-shrink-0">
+                          {user.businessName.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <div className="font-black text-slate-900 dark:text-white text-sm">{user.businessName}</div>
+                          <div className="text-xs font-bold text-pink-600 dark:text-pink-400">@{user.username}</div>
+                        </div>
+                      </div>
+                      <div>
+                        {user.subscription?.status === 'active' && user.subscription?.plan === 'premium' && !user.subscription?.expiresAt ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 uppercase tracking-wider inline-flex items-center gap-1">
+                            <Crown className="w-3 h-3 text-amber-500" /> VIP
+                          </span>
+                        ) : (
+                          getStatusBadge(user.subscription?.status)
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Stats summary row */}
+                    <div className="grid grid-cols-3 gap-2 text-center py-2 px-3 bg-white dark:bg-[#131826] rounded-xl border border-slate-200/60 dark:border-slate-800/60 text-xs font-bold">
+                      <div>
+                        <span className="text-[9px] text-slate-400 block uppercase font-black">Serviços</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold">{user._count.services}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 block uppercase font-black">Links</span>
+                        <span className="text-slate-900 dark:text-white font-extrabold">{user._count.links}</span>
+                      </div>
+                      <div>
+                        <span className="text-[9px] text-slate-400 block uppercase font-black">Marcações</span>
+                        <span className="text-pink-600 dark:text-pink-400 font-extrabold">{user.bookingsCount}</span>
+                      </div>
+                    </div>
+
+                    {/* Details */}
+                    <div className="text-xs space-y-1 text-slate-600 dark:text-slate-400 font-medium">
+                      {user.phone && <div><strong>WhatsApp:</strong> {user.phone}</div>}
+                      {user.subscription && (
+                        <div>
+                          <strong>Plano:</strong> {user.subscription.plan} • {user.subscription.expiresAt ? `Expira ${new Date(user.subscription.expiresAt).toLocaleDateString('pt-BR')}` : 'Vitalício'}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Mobile Action Buttons */}
+                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200/60 dark:border-slate-800/60">
+                      {myPermissions.canManageSubscriptions && (
+                        <button
+                          onClick={() => handleGrantFullAccess(user)}
+                          className="py-2 px-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1 shadow-sm cursor-pointer"
+                        >
+                          <Crown className="w-3.5 h-3.5" /> Acesso Total
+                        </button>
+                      )}
+                      {myPermissions.canManageSubscriptions && (
+                        <button
+                          onClick={() => handleGrant30DaysTrial(user)}
+                          className="py-2 px-2 bg-blue-500/10 text-blue-700 dark:text-blue-300 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1 border border-blue-500/30 cursor-pointer"
+                        >
+                          <Zap className="w-3.5 h-3.5" /> +30d Teste
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleImpersonateUser(user.id)}
+                        className="py-2 px-2 bg-slate-200 dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1 cursor-pointer"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" /> Acessar Painel
+                      </button>
+                      {myPermissions.canManageSubscriptions && (
+                        <button
+                          onClick={() => openEditModal(user)}
+                          className="py-2 px-2 bg-pink-500/10 text-pink-600 dark:text-pink-400 rounded-xl font-black text-[10px] uppercase flex items-center justify-center gap-1 border border-pink-500/30 cursor-pointer"
+                        >
+                          <Edit className="w-3.5 h-3.5" /> Editar
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Desktop Table Container (Screens >= 768px) */}
+            <div className="hidden md:block overflow-x-auto -mx-6">
+              <table className="w-full min-w-[850px] text-left border-collapse">
                 <thead>
                   <tr className="border-b border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 text-[10px] font-black uppercase tracking-wider bg-slate-100/70 dark:bg-slate-900/40">
                     <th className="px-6 py-4">Nome do Negócio / Usuário</th>
@@ -829,13 +950,19 @@ export default function SuperAdminDashboard() {
                         <td className="px-6 py-4">
                           {user.subscription ? (
                             <div>
-                              <div className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wide">
-                                {user.subscription.plan}
+                              <div className="font-black text-slate-900 dark:text-white text-xs uppercase tracking-wide flex items-center gap-1">
+                                {user.subscription.plan === 'premium' && !user.subscription.expiresAt ? (
+                                  <span className="text-amber-600 dark:text-amber-400 font-black flex items-center gap-1">
+                                    <Crown className="w-3.5 h-3.5 text-amber-500" /> Acesso Total (VIP)
+                                  </span>
+                                ) : (
+                                  user.subscription.plan
+                                )}
                               </div>
                               <div className="text-[11px] text-slate-600 dark:text-slate-400 font-bold">
                                 {user.subscription.expiresAt
-                                  ? `Expira: ${new Date(user.subscription.expiresAt).toLocaleDateString()}`
-                                  : 'Sem expiração'}
+                                  ? `Expira: ${new Date(user.subscription.expiresAt).toLocaleDateString('pt-BR')}`
+                                  : 'Sem expiração (Ilimitado)'}
                               </div>
                             </div>
                           ) : (
@@ -843,10 +970,27 @@ export default function SuperAdminDashboard() {
                           )}
                         </td>
                         <td className="px-6 py-4">
-                          {getStatusBadge(user.subscription?.status)}
+                          {user.subscription?.status === 'active' && user.subscription?.plan === 'premium' && !user.subscription?.expiresAt ? (
+                            <span className="px-3 py-1 rounded-xl text-[10px] font-black bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/40 uppercase tracking-wider flex items-center gap-1 w-fit">
+                              <Crown className="w-3 h-3 text-amber-500" /> VIP Vitalício
+                            </span>
+                          ) : (
+                            getStatusBadge(user.subscription?.status)
+                          )}
                         </td>
                         <td className="px-6 py-4 text-right">
                           <div className="flex justify-end items-center gap-1.5">
+                            {/* Quick Grant Full Access */}
+                            {myPermissions.canManageSubscriptions && (
+                              <button
+                                onClick={() => handleGrantFullAccess(user)}
+                                className="px-2.5 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 hover:from-amber-600 hover:to-yellow-600 rounded-xl transition-all cursor-pointer font-black text-[10px] uppercase flex items-center gap-1 shadow-sm"
+                                title="Liberar Acesso Total ao sistema sem teste grátis e sem cobrança"
+                              >
+                                <Crown className="w-3.5 h-3.5 text-slate-950" /> Acesso Total Grátis
+                              </button>
+                            )}
+
                             {/* Quick 30 days trial */}
                             {myPermissions.canManageSubscriptions && (
                               <button
@@ -993,18 +1137,18 @@ export default function SuperAdminDashboard() {
         {activeTab === 'support' && myPermissions.canAccessSupport && (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             {/* Left Column: Tickets List */}
-            <div className="lg:col-span-5 card-simple p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <h3 className="text-base font-black text-slate-900 dark:text-white">Chamados de Suporte</h3>
+            <div className="lg:col-span-5 card-simple p-4 sm:p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl sm:rounded-3xl space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <div className="w-full sm:w-auto">
+                  <h3 className="text-base font-black text-slate-900 dark:text-white whitespace-nowrap">Chamados de Suporte</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">Atendimento dos assinantes BoraMarka</p>
                 </div>
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto scrollbar-none justify-between sm:justify-start flex-shrink-0">
                   {['all', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map(st => (
                     <button
                       key={st}
                       onClick={() => setTicketStatusFilter(st)}
-                      className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer ${
+                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer whitespace-nowrap flex-1 sm:flex-initial text-center ${
                         ticketStatusFilter === st
                           ? 'bg-white dark:bg-[#131826] text-pink-500 shadow-sm'
                           : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -1155,8 +1299,8 @@ export default function SuperAdminDashboard() {
 
       {/* MODAL 1: EDIT SUBSCRIPTION */}
       {editingUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md card-simple p-6 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md card-simple p-4 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:rounded-3xl animate-scale-in max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white">Gerenciar Assinatura</h3>
@@ -1171,6 +1315,18 @@ export default function SuperAdminDashboard() {
             </div>
 
             <form onSubmit={handleUpdateSubscription} className="space-y-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setSubPlan('premium')
+                  setSubStatus('active')
+                  setSubExpiresAt('')
+                }}
+                className="w-full py-2.5 bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 border border-amber-500/30 rounded-xl font-black text-xs uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+              >
+                <Crown className="w-4 h-4 text-amber-500" /> Preencher Acesso Total Grátis (VIP)
+              </button>
+
               <div>
                 <label className="block text-xs font-black text-slate-400 uppercase mb-1">Plano de Assinatura</label>
                 <select
@@ -1231,8 +1387,8 @@ export default function SuperAdminDashboard() {
 
       {/* MODAL 2: NEW SUPERADMIN WITH PERMISSIONS */}
       {showNewSuperAdminModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg card-simple p-6 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl animate-scale-in max-h-[90vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg card-simple p-4 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:rounded-3xl animate-scale-in max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1404,8 +1560,8 @@ export default function SuperAdminDashboard() {
 
       {/* MODAL EDIT SUPERADMIN PERMISSIONS */}
       {editingSuperAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-lg card-simple p-6 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-lg card-simple p-4 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:rounded-3xl animate-scale-in max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1516,8 +1672,8 @@ export default function SuperAdminDashboard() {
 
       {/* MODAL 3: NEW PROFESSIONAL */}
       {showNewProModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
-          <div className="w-full max-w-md card-simple p-6 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-3xl animate-scale-in">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm">
+          <div className="w-full max-w-md card-simple p-4 sm:p-8 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-2xl rounded-2xl sm:rounded-3xl animate-scale-in max-h-[92vh] overflow-y-auto custom-scrollbar">
             <div className="flex justify-between items-center mb-6">
               <div>
                 <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2">
@@ -1594,6 +1750,21 @@ export default function SuperAdminDashboard() {
                   </select>
                 </div>
               </div>
+
+              <label className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/30 rounded-2xl cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={proIsFullAccess}
+                  onChange={e => setProIsFullAccess(e.target.checked)}
+                  className="w-4 h-4 accent-amber-500 rounded cursor-pointer"
+                />
+                <div>
+                  <div className="text-xs font-black text-amber-700 dark:text-amber-300 flex items-center gap-1">
+                    <Crown className="w-3.5 h-3.5 text-amber-500" /> Liberar Acesso Total Grátis (VIP)
+                  </div>
+                  <div className="text-[10px] font-bold text-slate-500">Concede acesso ilimitado a todos os recursos sem cobrança e sem período de testes.</div>
+                </div>
+              </label>
 
               <div className="flex gap-3 pt-4">
                 <button

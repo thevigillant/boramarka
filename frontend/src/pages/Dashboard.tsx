@@ -6,7 +6,7 @@ import MiniDonutChart from '../components/charts/MiniDonutChart'
 import WeekdayChart from '../components/charts/WeekdayChart'
 import StatusPieChart from '../components/charts/StatusPieChart'
 import {
-  Calendar, Plus, Trash2, Copy, RefreshCw, RotateCcw, Link2,
+  Calendar, Plus, Trash2, Copy, RefreshCw, RotateCcw, Link2, Link, Bell,
   Clock, Users, LogOut, X, Check, ExternalLink,
   AlertCircle, Loader2, ChevronDown, DollarSign,
   TrendingUp, TrendingDown, Wallet, CreditCard, Gift, Tag,
@@ -926,10 +926,26 @@ export default function Dashboard() {
   // ═══ Employee / RH States ═══
   const [employees, setEmployees] = useState<EmployeeData[]>([])
   const [loadingEmployees, setLoadingEmployees] = useState(false)
-  const [rhSubTab, setRhSubTab] = useState<'ACTIVE' | 'DISMISSED' | 'ARCHIVED'>('ACTIVE')
+  const [rhSubTab, setRhSubTab] = useState<'ACTIVE' | 'HOLERITES' | 'VACATIONS' | 'ANNOUNCEMENTS' | 'PROFILE_REQ' | 'DISMISSED' | 'ARCHIVED'>('ACTIVE')
   const [rhSearch, setRhSearch] = useState('')
   const [rhPendingTypeFilter, setRhPendingTypeFilter] = useState('ALL')
   const [rhPendingStatusFilter, setRhPendingStatusFilter] = useState('ALL')
+
+  // Additional RH Modules State
+  const [rhPaystubs, setRhPaystubs] = useState<any[]>([])
+  const [rhVacations, setRhVacations] = useState<any[]>([])
+  const [rhAnnouncements, setRhAnnouncements] = useState<any[]>([])
+  const [rhProfileRequests, setRhProfileRequests] = useState<any[]>([])
+
+  // RH Modals
+  const [rhPaystubModalOpen, setRhPaystubModalOpen] = useState(false)
+  const [paystubForm, setPaystubForm] = useState({ employeeId: '', referenceMonth: '', grossSalary: '', netSalary: '', discounts: '', fileUrl: '', notes: '' })
+
+  const [rhAnnouncementModalOpen, setRhAnnouncementModalOpen] = useState(false)
+  const [announcementForm, setAnnouncementForm] = useState({ title: '', content: '', targetGroup: 'ALL', priority: 'NORMAL' })
+
+  const [portalLinkModal, setPortalLinkModal] = useState<{ open: boolean; link: string; name: string } | null>(null)
+  const [resetPassModal, setResetPassModal] = useState<{ open: boolean; empId: number | null; empName: string; pass: string } | null>(null)
   
   // Registration Modal State
   const [employeeModalOpen, setEmployeeModalOpen] = useState(false)
@@ -1582,8 +1598,31 @@ export default function Dashboard() {
 
   // ═══ Data Fetching ═══
   const [subscription, setSubscription] = useState<{ plan: string; status: string; expiresAt: string | null; trialEndsAt: string | null } | null>(null)
+
+  const isMaster = useMemo(() => {
+    const role = localStorage.getItem('role') || sessionStorage.getItem('role') || (adminInfo as any)?.role
+    const username = localStorage.getItem('username') || sessionStorage.getItem('username') || adminInfo?.username
+    const superToken = sessionStorage.getItem('superadmin_token')
+
+    if (
+      role === 'superadmin' || 
+      username === 'odonodoboramarka' || 
+      adminInfo?.username === 'odonodoboramarka' || 
+      (adminInfo as any)?.role === 'superadmin' || 
+      !!superToken
+    ) {
+      return true
+    }
+
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || sessionStorage.getItem('user') || '{}')
+      if (u.role === 'superadmin' || u.username === 'odonodoboramarka') return true
+    } catch (e) {}
+
+    return false
+  }, [adminInfo])
   
-  const hasBanner = !!(subscription && (
+  const hasBanner = !isMaster && !!(subscription && (
     subscription.status === 'inactive' || 
     (subscription.status === 'trialing' && subscription.trialEndsAt && new Date(subscription.trialEndsAt).getTime() > new Date().getTime())
   ))
@@ -1626,7 +1665,17 @@ export default function Dashboard() {
       setGoogleEmail(googleStatus?.email || '')
       setMembershipPlans(plans || [])
       setClientSubscriptions(subs || [])
-      if (subStatus) setSubscription(subStatus)
+      
+      const checkMaster = (p && ((p as any).role === 'superadmin' || p.username === 'odonodoboramarka')) ||
+        localStorage.getItem('role') === 'superadmin' ||
+        localStorage.getItem('username') === 'odonodoboramarka' ||
+        !!sessionStorage.getItem('superadmin_token');
+
+      if (checkMaster) {
+        setSubscription({ plan: 'premium', status: 'active', expiresAt: null, trialEndsAt: null })
+      } else if (subStatus) {
+        setSubscription(subStatus)
+      }
       if (usage) setUsageData(usage)
       if (analyticsRes) setAnalyticsData(analyticsRes)
       if (isManual) showToast('Dados atualizados!')
@@ -1764,12 +1813,59 @@ export default function Dashboard() {
   }
 
   const handleRestoreSuperAdmin = () => {
-    const superadminToken = sessionStorage.getItem('superadmin_token')
+    const superadminToken = localStorage.getItem('superadminToken') || sessionStorage.getItem('superadmin_token') || localStorage.getItem('superadmin_token')
     if (superadminToken) {
       localStorage.setItem('token', superadminToken)
       localStorage.setItem('role', 'superadmin')
+      localStorage.removeItem('superadminToken')
+      localStorage.removeItem('superadmin_token')
       sessionStorage.removeItem('superadmin_token')
-      navigate('/superadmin')
+      window.location.href = '/superadmin'
+    }
+  }
+
+  const [pushEnabled, setPushEnabled] = useState<boolean>(() => {
+    return 'Notification' in window && Notification.permission === 'granted'
+  })
+
+  const handleTogglePushNotifications = async () => {
+    if (!('Notification' in window)) {
+      showToast('Seu navegador não suporta Notificações Push.', 'error')
+      return
+    }
+
+    try {
+      const permission = await Notification.requestPermission()
+      if (permission === 'granted') {
+        const sw = await navigator.serviceWorker.register('/sw.js')
+        await navigator.serviceWorker.ready
+        const { vapidPublicKey, configured } = await api.getVapidKey()
+        if (configured && vapidPublicKey) {
+          const urlBase64ToUint8Array = (base64String: string) => {
+            const padding = '='.repeat((4 - base64String.length % 4) % 4)
+            const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/')
+            const rawData = window.atob(base64)
+            const outputArray = new Uint8Array(rawData.length)
+            for (let i = 0; i < rawData.length; ++i) {
+              outputArray[i] = rawData.charCodeAt(i)
+            }
+            return outputArray
+          }
+          const sub = await sw.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+          })
+          await api.subscribeAdminPush(sub.toJSON())
+        }
+        setPushEnabled(true)
+        showToast('Notificações no Navegador ativadas! Você receberá alertas de novos agendamentos.', 'success')
+      } else {
+        setPushEnabled(false)
+        showToast('Permissão de notificação negada no navegador.', 'error')
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Notificações ativadas no navegador.', 'success')
+      setPushEnabled(true)
     }
   }
 
@@ -1789,6 +1885,14 @@ export default function Dashboard() {
     } catch (err: any) {
       showToast(err.message, 'error')
     }
+  }
+
+  const handleGoToPlans = () => {
+    setActiveTab('faturamento')
+    setTimeout(() => {
+      const el = document.getElementById('plans-section')
+      if (el) el.scrollIntoView({ behavior: 'smooth' })
+    }, 100)
   }
 
   const handleCreateCoupon = async (e: React.FormEvent) => {
@@ -1956,7 +2060,19 @@ export default function Dashboard() {
   }
 
   const fetchEmployees = useCallback(async () => {
-    if (subscription?.plan !== 'premium' || subscription?.status !== 'active') return
+    const isTrial = subscription?.status === 'trialing'
+    const isPremiumActive = subscription?.plan === 'premium' && subscription?.status === 'active'
+    const storedUserStr = localStorage.getItem('user')
+    let isMaster = false
+    try {
+      if (storedUserStr) {
+        const parsed = JSON.parse(storedUserStr)
+        if (parsed.role === 'superadmin' || parsed.username === 'odonodoboramarka') isMaster = true
+      }
+    } catch (e) {}
+
+    if (!isTrial && !isPremiumActive && !isMaster) return
+
     setLoadingEmployees(true)
     try {
       const data = await api.getEmployees()
@@ -1968,11 +2084,27 @@ export default function Dashboard() {
     }
   }, [subscription, showToast])
 
+  const fetchRhData = useCallback(async () => {
+    try {
+      const [stubs, vacs, anns, reqs] = await Promise.all([
+        api.getEmployeePaystubs().catch(() => []),
+        api.getEmployeeVacationRequests().catch(() => []),
+        api.getEmployeeAnnouncements().catch(() => []),
+        api.getEmployeeProfileRequests().catch(() => []),
+      ])
+      setRhPaystubs(stubs || [])
+      setRhVacations(vacs || [])
+      setRhAnnouncements(anns || [])
+      setRhProfileRequests(reqs || [])
+    } catch (e) {}
+  }, [])
+
   useEffect(() => {
     if (activeTab === 'rh') {
       fetchEmployees()
+      fetchRhData()
     }
-  }, [activeTab, fetchEmployees])
+  }, [activeTab, fetchEmployees, fetchRhData])
 
   const handleCreateOrUpdateEmployee = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -2541,19 +2673,19 @@ export default function Dashboard() {
       <div className="orb w-[400px] h-[400px] bg-pink-600/[0.04] top-[40%] right-[-100px] blur-[140px]" style={{ animationDelay: '-7s' }} />
       <div className="orb w-[500px] h-[500px] bg-orange-600/[0.03] bottom-[5%] left-[30%] blur-[160px]" style={{ animationDelay: '-14s' }} />
       {/* Trial Countdown Banner (during trial) */}
-      {subscription && subscription.status === 'trialing' && subscription.trialEndsAt && (
+      {!isMaster && subscription && subscription.status === 'trialing' && subscription.trialEndsAt && (
         <TrialBanner 
           trialEndsAt={subscription.trialEndsAt} 
-          onCheckout={handleCheckout} 
+          onCheckout={handleGoToPlans} 
           onLogout={handleLogout}
           onRestoreSuperAdmin={sessionStorage.getItem('superadmin_token') ? handleRestoreSuperAdmin : null}
         />
       )}
 
       {/* Inactive Account Banner (when expired/inactive) */}
-      {subscription && subscription.status === 'inactive' && (
+      {!isMaster && subscription && subscription.status === 'inactive' && (
         <InactiveBanner 
-          onSubscribe={() => setShowPaywall(true)} 
+          onSubscribe={handleGoToPlans} 
           onLogout={handleLogout}
           onRestoreSuperAdmin={sessionStorage.getItem('superadmin_token') ? handleRestoreSuperAdmin : null}
         />
@@ -2701,7 +2833,22 @@ export default function Dashboard() {
         </div>
       )}
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* SuperAdmin Impersonation Banner */}
+      {(localStorage.getItem('superadminToken') || sessionStorage.getItem('superadmin_token') || localStorage.getItem('superadmin_token')) && (
+        <div className="bg-gradient-to-r from-amber-500 via-pink-600 to-violet-600 text-white px-4 py-2 flex items-center justify-between text-xs font-bold shadow-md relative z-50">
+          <div className="flex items-center gap-2">
+            <Crown className="w-4 h-4 text-amber-200" />
+            <span>Modo de Teste (SuperAdmin Impersonando)</span>
+          </div>
+          <button
+            onClick={handleRestoreSuperAdmin}
+            className="bg-white text-slate-900 hover:bg-slate-100 px-3 py-1 rounded-lg font-black text-[11px] uppercase tracking-wider shadow transition-all cursor-pointer flex items-center gap-1.5"
+          >
+            <Crown className="w-3.5 h-3.5 text-amber-600" />
+            <span>Voltar ao SuperAdmin</span>
+          </button>
+        </div>
+      )}
 
       {/* Navbar Premium — Glass Island */}
       <header 
@@ -2809,15 +2956,29 @@ export default function Dashboard() {
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3">
-             {sessionStorage.getItem('superadmin_token') && (
+             {(localStorage.getItem('superadminToken') || sessionStorage.getItem('superadmin_token') || localStorage.getItem('superadmin_token')) && (
                <button 
                  onClick={handleRestoreSuperAdmin}
-                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold text-[10px] rounded-full uppercase tracking-wider transition-all hover:opacity-90 shadow-md shadow-emerald-500/25 cursor-pointer shrink-0"
+                 className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 via-pink-600 to-violet-600 text-white font-black text-[10px] sm:text-xs rounded-xl uppercase tracking-wider transition-all hover:opacity-90 shadow-md cursor-pointer shrink-0 animate-pulse"
                  title="Voltar ao Painel SuperAdmin"
                >
-                 <ShieldAlert className="w-3.5 h-3.5" /> <span className="hidden sm:inline">Voltar SuperAdmin</span>
+                 <Crown className="w-3.5 h-3.5 text-amber-200" />
+                 <span>Voltar SuperAdmin</span>
                </button>
              )}
+              {/* Web Push Notification Toggle */}
+              <button
+                onClick={handleTogglePushNotifications}
+                className={`p-2 rounded-xl transition-all shrink-0 cursor-pointer ${
+                  pushEnabled
+                    ? 'text-emerald-500 bg-emerald-500/10 hover:bg-emerald-500/20'
+                    : 'text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04]'
+                }`}
+                title={pushEnabled ? 'Notificações Push no Navegador Ativas' : 'Ativar Notificações no Navegador'}
+              >
+                <Bell className={`w-4.5 h-4.5 ${pushEnabled ? 'text-emerald-500' : ''}`} />
+              </button>
+
               <button 
                 onClick={() => setIsDark(!isDark)} 
                 className="p-2 text-slate-400 dark:text-white/30 hover:text-slate-650 dark:hover:text-white/60 hover:bg-slate-100 dark:hover:bg-white/[0.04] rounded-xl transition-all shrink-0"
@@ -3125,6 +3286,80 @@ export default function Dashboard() {
               <StatCard title="A Receber" value={formatCurrency(financeStats.pendingReceivable)} icon={TrendingUp} color="#06b6d4" />
               <StatCard title="A Pagar" value={formatCurrency(financeStats.pendingPayable)} icon={TrendingDown} color="#ef4444" />
             </div>
+
+            {/* Onboarding Checklist (Primeiros Passos) */}
+            {(!services.length || !links.length) && (
+              <div className="card-simple p-5 sm:p-6 bg-gradient-to-r from-violet-600/10 via-pink-600/10 to-transparent border border-violet-500/20 rounded-3xl animate-slide-up">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-600/20 flex-shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Primeiros Passos para sua Agenda Cheia</h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Complete as configurações para divulgar seu perfil e receber marcações 24/7</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
+                    <span className="text-xs font-bold text-violet-500 dark:text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/20">
+                      {[services.length > 0, links.length > 0].filter(Boolean).length} de 2 concluídos
+                    </span>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-slate-200 dark:bg-white/10 h-2 rounded-full mb-4 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-violet-600 to-pink-600 transition-all duration-500 rounded-full"
+                    style={{ width: `${([services.length > 0, links.length > 0].filter(Boolean).length / 2) * 100}%` }}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {/* Step 1: Serviços */}
+                  <div 
+                    onClick={() => setActiveTab('servicos')} 
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
+                      services.length > 0 
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                        : 'bg-white/40 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-800 dark:text-white'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      services.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
+                    }`}>
+                      {services.length > 0 ? '✓' : '1'}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xs font-bold">Cadastrar seus Serviços</h4>
+                      <p className="text-[11px] opacity-70">{services.length > 0 ? `${services.length} serviços cadastrados` : 'Configure preços e durações'}</p>
+                    </div>
+                    <span className="text-xs font-bold opacity-60">→</span>
+                  </div>
+
+                  {/* Step 2: Link de Agendamento */}
+                  <div 
+                    onClick={() => setActiveTab('links')} 
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
+                      links.length > 0 
+                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
+                        : 'bg-white/40 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-800 dark:text-white'
+                    }`}
+                  >
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
+                      links.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
+                    }`}>
+                      {links.length > 0 ? '✓' : '2'}
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="text-xs font-bold">Gerar Link de Agendamento</h4>
+                      <p className="text-[11px] opacity-70">{links.length > 0 ? `${links.length} links de horários ativos` : 'Crie horários para seus clientes'}</p>
+                    </div>
+                    <span className="text-xs font-bold opacity-60">→</span>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* 📊 Analytics Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -5062,7 +5297,7 @@ export default function Dashboard() {
 
                  {/* Plan Options */}
                 <div>
-                  <h3 className="text-md font-black text-slate-900 dark:text-white mb-6">Planos Disponíveis</h3>
+                  <h3 id="plans-section" className="text-md font-black text-slate-900 dark:text-white mb-6">Planos Disponíveis</h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     
                     {/* Monthly Card */}
@@ -5666,12 +5901,12 @@ export default function Dashboard() {
 
         {activeTab === 'rh' && (
           <div className="animate-slide-up space-y-6">
-            {subscription?.plan !== 'premium' || subscription?.status !== 'active' ? (
+            {subscription && subscription.status === 'inactive' && !isMaster ? (
               <div className="max-w-md mx-auto text-center py-16 px-6 bg-white/80 dark:bg-[#131826]/40 border border-slate-200 dark:border-white/[0.06] rounded-3xl backdrop-blur-xl shadow-2xl space-y-6 text-slate-900 dark:text-slate-100">
                 <div className="w-16 h-16 bg-violet-500/20 text-violet-500 rounded-full flex items-center justify-center mx-auto mb-4 border border-violet-500/30">
                   <UserCheck className="w-8 h-8 text-violet-500 animate-pulse" />
                 </div>
-                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gestão de RH Bloqueada</h2>
+                <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gestão de RH Inativa</h2>
                 <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold leading-relaxed">
                   A Gestão de RH e Colaboradores é uma funcionalidade exclusiva do <strong>Plano Premium</strong> (R$ 79,90/mês). 
                   Organize sua equipe, controle arquivos, gerencie demissões e controle pendências!
@@ -5780,6 +6015,67 @@ export default function Dashboard() {
                       <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-white/20 text-white font-bold">
                         {employees.filter(e => e.status === 'ACTIVE' || !e.status).length}
                       </span>
+                    </button>
+
+                    <button
+                      onClick={() => setRhSubTab('HOLERITES')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                        rhSubTab === 'HOLERITES'
+                          ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      Holerites & Assinaturas
+                      <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-white/20 text-white font-bold">
+                        {rhPaystubs.length}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => setRhSubTab('VACATIONS')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                        rhSubTab === 'VACATIONS'
+                          ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Férias & Licenças
+                      {rhVacations.filter((v: any) => v.status === 'PENDING').length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-red-600 text-white font-bold animate-pulse">
+                          {rhVacations.filter((v: any) => v.status === 'PENDING').length}
+                        </span>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setRhSubTab('ANNOUNCEMENTS')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                        rhSubTab === 'ANNOUNCEMENTS'
+                          ? 'bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Bell className="w-3.5 h-3.5" />
+                      Comunicados
+                    </button>
+
+                    <button
+                      onClick={() => setRhSubTab('PROFILE_REQ')}
+                      className={`px-4 py-2.5 rounded-2xl text-xs font-black transition-all flex items-center gap-2 ${
+                        rhSubTab === 'PROFILE_REQ'
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                          : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <UserCheck className="w-3.5 h-3.5" />
+                      Alterações Cadastrais
+                      {rhProfileRequests.filter((r: any) => r.status === 'PENDING').length > 0 && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded-full text-[9px] bg-red-600 text-white font-bold animate-pulse">
+                          {rhProfileRequests.filter((r: any) => r.status === 'PENDING').length}
+                        </span>
+                      )}
                     </button>
 
                     <button
@@ -6026,18 +6322,35 @@ export default function Dashboard() {
                               {rhSubTab === 'ACTIVE' && (
                                 <>
                                   <button
-                                    onClick={() => openEditEmployee(emp)}
-                                    className="flex-1 flex items-center justify-center gap-1 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-slate-600 dark:text-slate-300 font-black py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-all text-xs"
+                                    onClick={async () => {
+                                      try {
+                                        const res = await api.generateEmployeePortalLink(emp.id);
+                                        const fullLink = `${window.location.origin}/portal?token=${res.token}`;
+                                        setPortalLinkModal({ open: true, link: fullLink, name: emp.name });
+                                      } catch (err: any) {
+                                        showToast(err.message || 'Erro ao gerar link', 'error');
+                                      }
+                                    }}
+                                    className="w-full flex items-center justify-center gap-1.5 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black py-2 rounded-xl text-xs hover:opacity-95 shadow-sm mb-2"
                                   >
-                                    <Pencil className="w-3.5 h-3.5" /> Editar
+                                    <Link className="w-3.5 h-3.5" /> Portal & Senha
                                   </button>
-                                  <button
-                                    onClick={() => openDismissModal(emp)}
-                                    className="flex-1 flex items-center justify-center gap-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500 hover:text-white font-black py-2 rounded-xl transition-all text-xs"
-                                    title="Demitir Colaborador"
-                                  >
-                                    <UserX className="w-3.5 h-3.5" /> Demitir
-                                  </button>
+
+                                  <div className="flex gap-2 w-full">
+                                    <button
+                                      onClick={() => openEditEmployee(emp)}
+                                      className="flex-1 flex items-center justify-center gap-1 bg-slate-50 dark:bg-white/[0.02] border border-slate-200 dark:border-white/[0.06] text-slate-600 dark:text-slate-300 font-black py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-all text-xs"
+                                    >
+                                      <Pencil className="w-3.5 h-3.5" /> Editar
+                                    </button>
+                                    <button
+                                      onClick={() => openDismissModal(emp)}
+                                      className="flex-1 flex items-center justify-center gap-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 hover:bg-amber-500 hover:text-white font-black py-2 rounded-xl transition-all text-xs"
+                                      title="Demitir Colaborador"
+                                    >
+                                      <UserX className="w-3.5 h-3.5" /> Demitir
+                                    </button>
+                                  </div>
                                 </>
                               )}
 
@@ -6108,6 +6421,288 @@ export default function Dashboard() {
                           {rhSubTab === 'DISMISSED' && 'Nenhum funcionário demitido ou com pendências registradas.'}
                           {rhSubTab === 'ARCHIVED' && 'Nenhum colaborador arquivado no histórico.'}
                         </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SUBTAB: HOLERITES & ASSINATURAS */}
+                {rhSubTab === 'HOLERITES' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center bg-white/40 dark:bg-[#131826]/30 p-4 rounded-3xl border border-slate-200 dark:border-white/[0.06]">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-amber-500" /> Gestão de Holerites Mensais
+                        </h3>
+                        <p className="text-xs text-slate-400 font-semibold">Publique holerites para os colaboradores e acompanhe a assinatura eletrônica em tempo real</p>
+                      </div>
+                      <button
+                        onClick={() => setRhPaystubModalOpen(true)}
+                        className="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black text-xs rounded-2xl flex items-center gap-2 shadow-md"
+                      >
+                        <Plus className="w-4 h-4" /> Lançar Holerite
+                      </button>
+                    </div>
+
+                    {rhPaystubs.length === 0 ? (
+                      <div className="p-12 text-center bg-white/40 dark:bg-[#131826]/20 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-500 text-xs font-semibold">
+                        Nenhum holerite lançado no sistema até o momento.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {rhPaystubs.map((stub: any) => (
+                          <div key={stub.id} className="card-simple p-5 space-y-3 border-2 border-slate-200 dark:border-slate-800">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-black uppercase text-amber-500 tracking-wider">
+                                  {stub.employee?.name || 'Funcionário'}
+                                </span>
+                                <h4 className="text-sm font-black text-slate-900 dark:text-white">Mês Ref: {stub.referenceMonth}</h4>
+                              </div>
+                              {stub.signed ? (
+                                <span className="px-2 py-1 bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-black rounded-lg flex items-center gap-1">
+                                  <CheckCircle2 className="w-3 h-3" /> Assinado
+                                </span>
+                              ) : (
+                                <span className="px-2 py-1 bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-black rounded-lg flex items-center gap-1">
+                                  <Clock className="w-3 h-3" /> Pendente
+                                </span>
+                              )}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-xl text-xs">
+                              <div>
+                                <span className="text-[9px] text-slate-400 font-bold block uppercase">Salário Líquido</span>
+                                <span className="text-xs font-black text-emerald-500">R$ {stub.netSalary?.toFixed(2)}</span>
+                              </div>
+                              <div>
+                                <span className="text-[9px] text-slate-400 font-bold block uppercase">Descontos</span>
+                                <span className="text-xs font-black text-red-500">R$ {stub.discounts?.toFixed(2)}</span>
+                              </div>
+                            </div>
+
+                            {stub.signed && (
+                              <div className="text-[10px] text-slate-400 font-medium">
+                                Assinado em: {new Date(stub.signedAt).toLocaleString('pt-BR')} (IP: {stub.signatureIp})
+                              </div>
+                            )}
+
+                            <div className="flex justify-end pt-1">
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('Excluir este holerite?')) {
+                                    await api.deleteEmployeePaystub(stub.id);
+                                    showToast('Holerite excluído com sucesso!');
+                                    fetchRhData();
+                                  }
+                                }}
+                                className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SUBTAB: FÉRIAS & LICENÇAS */}
+                {rhSubTab === 'VACATIONS' && (
+                  <div className="space-y-6">
+                    <div className="bg-white/40 dark:bg-[#131826]/30 p-4 rounded-3xl border border-slate-200 dark:border-white/[0.06]">
+                      <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-emerald-500" /> Solicitações de Férias & Licenças
+                      </h3>
+                      <p className="text-xs text-slate-400 font-semibold">Análise e aprove solicitações enviadas pelos colaboradores no Portal do Funcionário</p>
+                    </div>
+
+                    {rhVacations.length === 0 ? (
+                      <div className="p-12 text-center bg-white/40 dark:bg-[#131826]/20 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-500 text-xs font-semibold">
+                        Nenhuma solicitação de férias ou licença registrada.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {rhVacations.map((v: any) => (
+                          <div key={v.id} className="card-simple p-5 space-y-3 border-2 border-slate-200 dark:border-slate-800">
+                            <div className="flex justify-between items-start">
+                              <div>
+                                <span className="text-[10px] font-black uppercase text-emerald-500 tracking-wider">
+                                  {v.employee?.name || 'Funcionário'}
+                                </span>
+                                <h4 className="text-sm font-black text-slate-900 dark:text-white">
+                                  {v.type === 'VACATION' ? 'Férias Regulamentares' : 'Afastamento'} ({v.daysCount} dias)
+                                </h4>
+                              </div>
+                              <span
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black border ${
+                                  v.status === 'APPROVED'
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : v.status === 'REJECTED'
+                                    ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                }`}
+                              >
+                                {v.status === 'APPROVED' ? 'Aprovado' : v.status === 'REJECTED' ? 'Rejeitado' : 'Pendente'}
+                              </span>
+                            </div>
+
+                            <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                              Período: {v.startDate} até {v.endDate}
+                            </p>
+                            {v.reason && <p className="text-xs text-slate-400">Motivo: {v.reason}</p>}
+
+                            {v.status === 'PENDING' && (
+                              <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                  onClick={async () => {
+                                    await api.updateEmployeeVacationStatus(v.id, 'APPROVED');
+                                    showToast('Solicitação de férias aprovada!');
+                                    fetchRhData();
+                                  }}
+                                  className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1 shadow-md"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" /> Aprovar
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    const reason = window.prompt('Motivo da recusa (opcional):');
+                                    await api.updateEmployeeVacationStatus(v.id, 'REJECTED', reason || undefined);
+                                    showToast('Solicitação rejeitada.');
+                                    fetchRhData();
+                                  }}
+                                  className="flex-1 py-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white font-black text-xs rounded-xl flex items-center justify-center gap-1 border border-red-500/20"
+                                >
+                                  <UserX className="w-4 h-4" /> Rejeitar
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SUBTAB: COMUNICADOS */}
+                {rhSubTab === 'ANNOUNCEMENTS' && (
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-center bg-white/40 dark:bg-[#131826]/30 p-4 rounded-3xl border border-slate-200 dark:border-white/[0.06]">
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                          <Bell className="w-5 h-5 text-indigo-500" /> Mural de Comunicados
+                        </h3>
+                        <p className="text-xs text-slate-400 font-semibold">Publique avisos e comunicados no Portal do Funcionário</p>
+                      </div>
+                      <button
+                        onClick={() => setRhAnnouncementModalOpen(true)}
+                        className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-black text-xs rounded-2xl flex items-center gap-2 shadow-md"
+                      >
+                        <Plus className="w-4 h-4" /> Novo Comunicado
+                      </button>
+                    </div>
+
+                    {rhAnnouncements.length === 0 ? (
+                      <div className="p-12 text-center bg-white/40 dark:bg-[#131826]/20 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-500 text-xs font-semibold">
+                        Nenhum comunicado publicado no mural.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {rhAnnouncements.map((item: any) => (
+                          <div key={item.id} className="card-simple p-5 space-y-3 border-2 border-slate-200 dark:border-slate-800">
+                            <div className="flex justify-between items-start">
+                              <span className="px-2 py-0.5 bg-violet-500/10 text-violet-500 text-[10px] font-black rounded-lg">
+                                {item.priority || 'GERAL'}
+                              </span>
+                              <button
+                                onClick={async () => {
+                                  if (window.confirm('Excluir comunicado?')) {
+                                    await api.deleteEmployeeAnnouncement(item.id);
+                                    showToast('Comunicado removido.');
+                                    fetchRhData();
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-red-500"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                            <h4 className="text-sm font-black text-slate-900 dark:text-white">{item.title}</h4>
+                            <p className="text-xs text-slate-400 whitespace-pre-line">{item.content}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* SUBTAB: ALTERAÇÕES CADASTRAIS */}
+                {rhSubTab === 'PROFILE_REQ' && (
+                  <div className="space-y-6">
+                    <div className="bg-white/40 dark:bg-[#131826]/30 p-4 rounded-3xl border border-slate-200 dark:border-white/[0.06]">
+                      <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                        <UserCheck className="w-5 h-5 text-purple-500" /> Atualizações Cadastrais Solicitadas
+                      </h3>
+                      <p className="text-xs text-slate-400 font-semibold">Aprove ou rejeite alterações de telefone, e-mail e endereço solicitadas pelos funcionários</p>
+                    </div>
+
+                    {rhProfileRequests.length === 0 ? (
+                      <div className="p-12 text-center bg-white/40 dark:bg-[#131826]/20 border border-slate-200 dark:border-slate-800 rounded-3xl text-slate-500 text-xs font-semibold">
+                        Nenhuma solicitação de alteração cadastral pendente.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {rhProfileRequests.map((req: any) => (
+                          <div key={req.id} className="card-simple p-5 space-y-3 border-2 border-slate-200 dark:border-slate-800">
+                            <div className="flex justify-between items-start">
+                              <h4 className="text-sm font-black text-slate-900 dark:text-white">{req.employee?.name || 'Funcionário'}</h4>
+                              <span
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-black border ${
+                                  req.status === 'APPROVED'
+                                    ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                                    : req.status === 'REJECTED'
+                                    ? 'bg-red-500/10 text-red-500 border-red-500/20'
+                                    : 'bg-amber-500/10 text-amber-500 border-amber-500/20'
+                                }`}
+                              >
+                                {req.status === 'APPROVED' ? 'Aprovado' : req.status === 'REJECTED' ? 'Rejeitado' : 'Pendente'}
+                              </span>
+                            </div>
+
+                            <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                              {req.phone && <p><strong>Novo Telefone:</strong> {req.phone}</p>}
+                              {req.email && <p><strong>Novo E-mail:</strong> {req.email}</p>}
+                              {req.address && <p><strong>Novo Endereço:</strong> {req.address}</p>}
+                            </div>
+
+                            {req.status === 'PENDING' && (
+                              <div className="flex gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                  onClick={async () => {
+                                    await api.updateEmployeeProfileRequest(req.id, 'APPROVED');
+                                    showToast('Dados atualizados com sucesso no cadastro!');
+                                    fetchEmployees();
+                                    fetchRhData();
+                                  }}
+                                  className="flex-1 py-2 bg-purple-600 hover:bg-purple-500 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1 shadow-md"
+                                >
+                                  <CheckCircle2 className="w-4 h-4" /> Aprovar & Atualizar
+                                </button>
+                                <button
+                                  onClick={async () => {
+                                    await api.updateEmployeeProfileRequest(req.id, 'REJECTED');
+                                    showToast('Solicitação rejeitada.');
+                                    fetchRhData();
+                                  }}
+                                  className="flex-1 py-2 bg-red-600/10 text-red-500 hover:bg-red-600 hover:text-white font-black text-xs rounded-xl flex items-center justify-center gap-1 border border-red-500/20"
+                                >
+                                  <UserX className="w-4 h-4" /> Rejeitar
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -8203,6 +8798,231 @@ export default function Dashboard() {
                   className="px-5 py-4 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-black rounded-2xl transition-all text-xs uppercase tracking-wider cursor-pointer"
                 >
                   Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RH Modal: Link do Portal do Funcionário */}
+      {portalLinkModal?.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 text-left">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Link className="w-5 h-5 text-violet-400" /> Acesso ao Portal: {portalLinkModal.name}
+              </h3>
+              <button onClick={() => setPortalLinkModal(null)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <label className="block text-[10px] font-black uppercase text-slate-400">Link de Acesso Direto do Funcionário</label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={portalLinkModal.link}
+                  className="flex-1 bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs font-mono text-violet-300 select-all"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(portalLinkModal.link);
+                    showToast('Link do portal copiado!');
+                  }}
+                  className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white font-black text-xs rounded-xl shrink-0"
+                >
+                  Copiar Link
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 space-y-2">
+                <label className="block text-[10px] font-black uppercase text-slate-400">Redefinir Senha de Acesso</label>
+                <button
+                  onClick={async () => {
+                    const newPass = window.prompt('Digite a nova senha para este funcionário:');
+                    if (newPass) {
+                      const emp = employees.find(e => e.name === portalLinkModal.name);
+                      if (emp) {
+                        await api.resetEmployeePassword(emp.id, newPass);
+                        showToast('Senha redefinida com sucesso!');
+                      }
+                    }
+                  }}
+                  className="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2"
+                >
+                  <Lock className="w-4 h-4" /> Definir Nova Senha
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* RH Modal: Lançar Holerite */}
+      {rhPaystubModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 text-left">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <FileText className="w-5 h-5 text-amber-400" /> Lançar Novo Holerite
+              </h3>
+              <button onClick={() => setRhPaystubModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!paystubForm.employeeId || !paystubForm.referenceMonth) {
+                  showToast('Selecione o colaborador e mês de referência.', 'error');
+                  return;
+                }
+                try {
+                  await api.createEmployeePaystub({
+                    employeeId: parseInt(paystubForm.employeeId),
+                    referenceMonth: paystubForm.referenceMonth,
+                    grossSalary: parseFloat(paystubForm.grossSalary || '0'),
+                    netSalary: parseFloat(paystubForm.netSalary || '0'),
+                    discounts: parseFloat(paystubForm.discounts || '0'),
+                    fileUrl: paystubForm.fileUrl || undefined,
+                    notes: paystubForm.notes || undefined,
+                  });
+                  showToast('Holerite lançado com sucesso!');
+                  setRhPaystubModalOpen(false);
+                  setPaystubForm({ employeeId: '', referenceMonth: '', grossSalary: '', netSalary: '', discounts: '', fileUrl: '', notes: '' });
+                  fetchRhData();
+                } catch (err: any) {
+                  showToast(err.message || 'Erro ao criar holerite.', 'error');
+                }
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Colaborador</label>
+                <select
+                  value={paystubForm.employeeId}
+                  onChange={(e) => setPaystubForm({ ...paystubForm, employeeId: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs font-bold text-white"
+                  required
+                >
+                  <option value="">Selecione um funcionário</option>
+                  {employees.filter(e => e.status === 'ACTIVE' || !e.status).map(e => (
+                    <option key={e.id} value={e.id}>{e.name} ({e.role})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Mês Ref. (Ex: 07/2026)</label>
+                  <input
+                    type="text"
+                    value={paystubForm.referenceMonth}
+                    onChange={(e) => setPaystubForm({ ...paystubForm, referenceMonth: e.target.value })}
+                    placeholder="MM/AAAA"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs font-bold text-white"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Salário Líquido (R$)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={paystubForm.netSalary}
+                    onChange={(e) => setPaystubForm({ ...paystubForm, netSalary: e.target.value })}
+                    placeholder="0.00"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs font-bold text-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Link / PDF do Holerite (Opcional)</label>
+                <input
+                  type="text"
+                  value={paystubForm.fileUrl}
+                  onChange={(e) => setPaystubForm({ ...paystubForm, fileUrl: e.target.value })}
+                  placeholder="URL do arquivo PDF ou imagem"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs font-bold text-white"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setRhPaystubModalOpen(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl text-xs font-black">
+                  Lançar Holerite
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* RH Modal: Novo Comunicado */}
+      {rhAnnouncementModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-3xl p-6 shadow-2xl space-y-4 text-left">
+            <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+              <h3 className="text-base font-black text-white flex items-center gap-2">
+                <Bell className="w-5 h-5 text-indigo-400" /> Publicar Comunicado
+              </h3>
+              <button onClick={() => setRhAnnouncementModalOpen(false)} className="text-slate-400 hover:text-white">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  await api.createEmployeeAnnouncement(announcementForm);
+                  showToast('Comunicado publicado no mural!');
+                  setRhAnnouncementModalOpen(false);
+                  setAnnouncementForm({ title: '', content: '', targetGroup: 'ALL', priority: 'NORMAL' });
+                  fetchRhData();
+                } catch (err: any) {
+                  showToast(err.message || 'Erro ao publicar comunicado.', 'error');
+                }
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Título do Comunicado</label>
+                <input
+                  type="text"
+                  value={announcementForm.title}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                  placeholder="Ex: Reunião Geral de Alinhamento"
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 px-3 text-xs font-bold text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1">Conteúdo da Mensagem</label>
+                <textarea
+                  rows={4}
+                  value={announcementForm.content}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, content: e.target.value })}
+                  placeholder="Escreva os detalhes do aviso..."
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-semibold text-white"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button type="button" onClick={() => setRhAnnouncementModalOpen(false)} className="px-4 py-2 bg-slate-800 text-slate-300 rounded-xl text-xs font-bold">
+                  Cancelar
+                </button>
+                <button type="submit" className="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black">
+                  Publicar
                 </button>
               </div>
             </form>

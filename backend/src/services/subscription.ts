@@ -40,6 +40,42 @@ export const PLAN_LIMITS: Record<string, PlanLimitConfig> = {
 };
 
 export async function checkAndUpdateSubscription(adminId: number) {
+  // Garantia de acesso Master vitalício e ilimitado para odonodoboramarka / superadmin
+  const admin = await prisma.admin.findUnique({
+    where: { id: adminId },
+    select: { username: true, role: true }
+  });
+
+  if (admin && (admin.role === 'superadmin' || admin.username === 'odonodoboramarka')) {
+    let subscription = await prisma.subscription.findUnique({
+      where: { adminId }
+    });
+
+    if (!subscription) {
+      subscription = await prisma.subscription.create({
+        data: {
+          adminId,
+          status: 'active',
+          plan: 'premium',
+          trialEndsAt: null,
+          expiresAt: null,
+        }
+      });
+    } else if (subscription.status !== 'active' || subscription.plan !== 'premium' || subscription.trialEndsAt !== null || subscription.expiresAt !== null) {
+      subscription = await prisma.subscription.update({
+        where: { id: subscription.id },
+        data: {
+          status: 'active',
+          plan: 'premium',
+          trialEndsAt: null,
+          expiresAt: null,
+        }
+      });
+    }
+
+    return subscription;
+  }
+
   let subscription = await prisma.subscription.findUnique({
     where: { adminId }
   });
@@ -147,6 +183,15 @@ export async function checkQuota(
   adminId: number,
   resource: 'bookings' | 'customers' | 'employees' | 'services' | 'links'
 ): Promise<{ allowed: boolean; message?: string; limit?: number | null; current?: number }> {
+  const admin = await prisma.admin.findUnique({
+    where: { id: adminId },
+    select: { username: true, role: true }
+  });
+
+  if (admin && (admin.role === 'superadmin' || admin.username === 'odonodoboramarka')) {
+    return { allowed: true };
+  }
+
   const stats = await getUsageStats(adminId);
 
   if (stats.status === 'inactive') {

@@ -112,3 +112,33 @@ export async function sendPushToClient(
 
   return { sent, failed };
 }
+
+/**
+ * Send push notifications to all subscriptions belonging to an admin (Gestor)
+ */
+export async function sendPushToAdmin(
+  adminId: number,
+  payload: { title: string; body: string; icon?: string; url?: string }
+): Promise<{ sent: number; failed: number }> {
+  if (!isPushConfigured()) {
+    return { sent: 0, failed: 0 };
+  }
+
+  const subscriptions = await prisma.pushSubscription.findMany({
+    where: { adminId },
+  });
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const sub of subscriptions) {
+    const result = await sendPushNotification(
+      { endpoint: sub.endpoint, p256dh: sub.p256dh, auth: sub.auth },
+      payload
+    );
+    if (result.success) sent++;
+    else failed++;
+  }
+
+  return { sent, failed };
+}

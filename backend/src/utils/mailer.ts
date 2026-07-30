@@ -301,7 +301,7 @@ export async function sendPasswordResetEmail(toEmail: string, username: string, 
     await transporter.sendMail({
       from,
       to: toEmail,
-      subject: `🔑 Código de Recuperação: ${code} — BoraMarka`,
+      subject: `Código de Recuperação: ${code} — BoraMarka`,
       html: htmlContent,
     });
 
@@ -330,7 +330,7 @@ export async function sendEmailVerificationCode(toEmail: string, username: strin
     const htmlContent = buildEmailTemplate({
       badgeText: 'VERIFICAÇÃO',
       badgeColor: '#db2777',
-      iconEmoji: '👋',
+      iconEmoji: '',
       title: 'Confirme seu E-mail',
       subtitle: `Olá, <strong style="color:#e4e4e7;">${username}</strong>! Insira o código abaixo na tela de cadastro para verificar seu endereço de e-mail com segurança.`,
       codeLabel: 'SEU CÓDIGO DE ACESSO',
@@ -342,13 +342,204 @@ export async function sendEmailVerificationCode(toEmail: string, username: strin
     await transporter.sendMail({
       from,
       to: toEmail,
-      subject: `✨ Seu Código de Verificação BoraMarka: ${code}`,
+      subject: `Seu Código de Verificação BoraMarka: ${code}`,
       html: htmlContent,
     });
 
     return true;
   } catch (error) {
     console.error('❌ Erro ao enviar e-mail de verificação via Nodemailer:', error);
+    return false;
+  }
+}
+
+export async function sendWelcomeEmail(toEmail: string, username: string, businessName?: string): Promise<boolean> {
+  const from = process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>';
+  const transporter = createTransporter();
+  const name = businessName || username || 'Profissional';
+
+  if (!transporter) {
+    console.log('\n======================================================');
+    console.log('[BOAS-VINDAS - BORAMARKA]');
+    console.log(`Para: ${toEmail} (${name})`);
+    console.log('E-mail de boas-vindas enviado com sucesso (modo log).');
+    console.log('======================================================\n');
+    return true;
+  }
+
+  try {
+    const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bem-vindo ao BoraMarka</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #090d16; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; -webkit-font-smoothing: antialiased;">
+  <!-- Preheader -->
+  <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all;">
+    Sua conta BoraMarka foi ativada. Veja como começar em 3 passos simples.
+  </div>
+
+  <table width="100%" border="0" cellspacing="0" cellpadding="0" style="background-color: #090d16; padding: 40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" border="0" cellspacing="0" cellpadding="0" style="max-width: 560px; background-color: #0f172a; border: 1px solid #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+          
+          <!-- Top Accent Bar -->
+          <tr>
+            <td style="height: 4px; background: linear-gradient(90deg, #8b5cf6 0%, #ec4899 100%);"></td>
+          </tr>
+
+          <!-- Content Padding Area -->
+          <tr>
+            <td style="padding: 36px 32px 32px 32px;">
+
+              <!-- Header: Logo & Badge -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="left">
+                    <span style="font-size: 22px; font-weight: 900; letter-spacing: -0.5px; color: #ffffff;">
+                      Bora<span style="color: #ec4899;">Marka</span>
+                    </span>
+                  </td>
+                  <td align="right">
+                    <span style="background-color: rgba(139, 92, 246, 0.12); color: #a78bfa; border: 1px solid rgba(139, 92, 246, 0.25); padding: 4px 10px; border-radius: 99px; font-size: 10px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;">
+                      CONTA ATIVA
+                    </span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Main Title & Intro -->
+              <h1 style="margin: 0 0 12px 0; font-size: 22px; font-weight: 800; line-height: 1.3; color: #ffffff; letter-spacing: -0.3px;">
+                Sua agenda inteligente está pronta, ${name}
+              </h1>
+              <p style="margin: 0 0 28px 0; font-size: 14px; line-height: 1.6; color: #94a3b8;">
+                Seu cadastro foi concluído com sucesso. Você recebeu <strong style="color: #cbd5e1;">7 dias de teste gratuito</strong> com acesso ilimitado a todas as ferramentas de agendamento e gestão.
+              </p>
+
+              <!-- Section Title -->
+              <div style="font-size: 11px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; color: #64748b; margin-bottom: 16px;">
+                GUIA DE INÍCIO RÁPIDO
+              </div>
+
+              <!-- Step 1 -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 12px; background-color: rgba(255, 255, 255, 0.02); border: 1px solid #1e293b; border-radius: 14px;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                      <tr>
+                        <td width="36" valign="top">
+                          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: #ffffff; font-size: 13px; font-weight: 800; text-align: center; line-height: 28px;">
+                            1
+                          </div>
+                        </td>
+                        <td style="padding-left: 12px;">
+                          <div style="font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">
+                            Ajuste seus Serviços
+                          </div>
+                          <div style="font-size: 12px; line-height: 1.5; color: #94a3b8;">
+                            Configuramos sugestões para o seu setor. Personalize preços, durações e descrições no painel.
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Step 2 -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 12px; background-color: rgba(255, 255, 255, 0.02); border: 1px solid #1e293b; border-radius: 14px;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                      <tr>
+                        <td width="36" valign="top">
+                          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: #ffffff; font-size: 13px; font-weight: 800; text-align: center; line-height: 28px;">
+                            2
+                          </div>
+                        </td>
+                        <td style="padding-left: 12px;">
+                          <div style="font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">
+                            Defina seus Horários
+                          </div>
+                          <div style="font-size: 12px; line-height: 1.5; color: #94a3b8;">
+                            Defina os dias de atendimento e intervalos para que os clientes realizem agendamentos automaticamente.
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Step 3 -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px; background-color: rgba(255, 255, 255, 0.02); border: 1px solid #1e293b; border-radius: 14px;">
+                <tr>
+                  <td style="padding: 16px;">
+                    <table border="0" cellspacing="0" cellpadding="0" width="100%">
+                      <tr>
+                        <td width="36" valign="top">
+                          <div style="width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); color: #ffffff; font-size: 13px; font-weight: 800; text-align: center; line-height: 28px;">
+                            3
+                          </div>
+                        </td>
+                        <td style="padding-left: 12px;">
+                          <div style="font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 4px;">
+                            Divulgue seu Link Público
+                          </div>
+                          <div style="font-size: 12px; line-height: 1.5; color: #94a3b8;">
+                            Adicione o link da sua agenda na bio do Instagram ou envie diretamente pelo WhatsApp aos seus clientes.
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table width="100%" border="0" cellspacing="0" cellpadding="0" style="margin-bottom: 28px;">
+                <tr>
+                  <td align="center">
+                    <a href="https://boramarka.com.br/login" target="_blank" style="display: inline-block; width: 80%; max-width: 320px; padding: 14px 24px; background: linear-gradient(135deg, #7c3aed 0%, #db2777 100%); color: #ffffff; font-size: 14px; font-weight: 700; text-decoration: none; text-align: center; border-radius: 99px; box-shadow: 0 8px 20px rgba(124, 58, 237, 0.35);">
+                      Acessar Painel de Controle
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Divider -->
+              <div style="height: 1px; background-color: #1e293b; margin-bottom: 20px;"></div>
+
+              <!-- Footer info -->
+              <div style="font-size: 11px; line-height: 1.6; color: #64748b; text-align: center;">
+                Dúvidas ou suporte? Responda a este e-mail ou entre em contato via <a href="https://boramarka.com.br" style="color: #a78bfa; text-decoration: none;">boramarka.com.br</a>
+                <br>
+                © ${new Date().getFullYear()} BoraMarka. Todos os direitos reservados.
+              </div>
+
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+
+    await transporter.sendMail({
+      from,
+      to: toEmail,
+      subject: `Bem-vindo ao BoraMarka, ${name}!`,
+      html: htmlContent,
+    });
+
+    console.log(`✅ E-mail de boas-vindas enviado para ${toEmail}`);
+    return true;
+  } catch (error: any) {
+    console.error('❌ Erro ao enviar e-mail de boas-vindas:', error.message);
     return false;
   }
 }

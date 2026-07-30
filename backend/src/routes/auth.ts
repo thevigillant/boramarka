@@ -2,7 +2,7 @@ import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { createAuditLog } from '../utils/auditLogger';
-import { sendPasswordResetEmail, sendEmailVerificationCode } from '../utils/mailer';
+import { sendPasswordResetEmail, sendEmailVerificationCode, sendWelcomeEmail } from '../utils/mailer';
 
 // In-memory verification code store with expiration (10 min)
 const verificationStore = new Map<string, { code: string; expiresAt: number }>();
@@ -249,10 +249,12 @@ export default async function authRoutes(app: FastifyInstance) {
       }
     });
 
-    const token = app.jwt.sign(
-      { id: admin.id, username: admin.username, role: admin.role },
-      { expiresIn: '24h' }
-    );
+    // Envia e-mail de boas-vindas assincronamente (não trava resposta)
+    if (admin.email) {
+      sendWelcomeEmail(admin.email, admin.username, admin.businessName).catch(err => {
+        console.error('Erro ao enviar e-mail de boas-vindas:', err.message);
+      });
+    }
 
     return reply.status(201).send({
       token,

@@ -8,6 +8,9 @@ import BookingCancel from './pages/BookingCancel'
 import PublicProfile from './pages/PublicProfile'
 import Landing from './pages/Landing'
 import SuperAdminDashboard from './pages/SuperAdminDashboard'
+import EmployeePortal from './pages/EmployeePortal'
+import TermosDeUso from './pages/TermosDeUso'
+import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade'
 
 import PWAInstallBanner from './components/PWAInstallBanner'
 
@@ -75,6 +78,9 @@ export default function App() {
         <Route path="/agendar/:token" element={<BookingPage />} />
         <Route path="/agendar/:token/sucesso" element={<BookingSuccess />} />
         <Route path="/agendar/:token/cancelar/:bookingId" element={<BookingCancel />} />
+        <Route path="/portal" element={<EmployeePortal />} />
+        <Route path="/termos" element={<TermosDeUso />} />
+        <Route path="/privacidade" element={<PoliticaDePrivacidade />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </BrowserRouter>

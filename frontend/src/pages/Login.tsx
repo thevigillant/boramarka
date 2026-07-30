@@ -87,6 +87,8 @@ export default function Login() {
       const storage = rememberMe ? localStorage : sessionStorage
       storage.setItem('token', res.token)
       storage.setItem('role', res.role || 'user')
+      storage.setItem('username', username)
+      storage.setItem('user', JSON.stringify({ role: res.role || 'user', username }))
 
       if (res.role === 'superadmin') {
         navigate('/superadmin')
