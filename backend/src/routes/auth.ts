@@ -180,6 +180,12 @@ export default async function authRoutes(app: FastifyInstance) {
       throw error;
     }
 
+    const token = app.jwt.sign({
+      id: admin.id,
+      username: admin.username,
+      role: admin.role,
+    });
+
     // Auto-seed default services based on category
     const defaultServices: Record<string, Array<{ name: string; price: number; durationMinutes: number; description: string }>> = {
       barber: [
