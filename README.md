@@ -24,30 +24,33 @@
 
 O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos, estúdios, clínicas e estabelecimentos comerciais que atendem com hora marcada.
 
-A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Central de Suporte & Chat de Ajuda em Tempo Real**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Login de Colaboradores por Empresa**, **Módulo de RH & Equipe**, **Cartão Fidelidade Digital & Cupons**, **Onboarding Inteligente por Nicho**, **Gerador de Bio do Instagram**, **Notificações Automáticas via WhatsApp & Web Push**, **Fluxo de Caixa com Exportação em PDF/Excel** e **Monitoramento de Consumo do Banco de Dados**.
+A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Central de Suporte & Chat de Ajuda em Tempo Real**, **Notificações Web Push em Tempo Real para o Gestor**, **Conformidade Total LGPD (Termos de Uso & Política de Privacidade)**, **Recorrência Automática Mercado Pago (Subscriptions/Preapproval)**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Login de Colaboradores por Empresa**, **Módulo de RH & Equipe**, **Cartão Fidelidade Digital & Cupons**, **Onboarding Inteligente por Nicho**, **Gerador de Bio do Instagram**, **Notificações Automáticas via WhatsApp**, **Fluxo de Caixa com Exportação em PDF/Excel** e **SEO & Open Graph Otimizado**.
 
 ---
 
-## 💎 Destaques & Funcionalidades Principais
+## 💎 Destaques & Novas Funcionalidades de Produção
 
-### 👔 Login de Colaborador & Identificação por Empresa
-- **Acesso em 2 Modalidades:** Alternância entre **Gestor / Empresa** (usuário principal da empresa) e **Colaborador / Equipe** (Identificador da Empresa + Nome do Operador + Senha).
-- **Validação de Credenciais em 3 Vias:** O backend valida o identificador da empresa (`companyUsername`) atrelado ao nome do operador (`operatorUsername`), impedindo acessos indevidos.
+### 🔔 Web Push Notifications para o Gestor
+- Envio de notificações push nativas no navegador e celular (Android, iOS, Chrome, Safari) para o profissional no momento em que um cliente realiza um novo agendamento.
+- Chaves VAPID oficiais configuradas e alternador no cabeçalho do painel.
 
-### 💬 Chat de Ajuda Flutuante
-- Widget flutuante em glassmorphism no canto inferior direito para os clientes enviarem dúvidas e mensagens direto para a equipe de suporte.
+### 🛡️ Conformidade LGPD (Lei Geral de Proteção de Dados)
+- Rotas públicas oficiais de **Termos de Uso** (`/termos`) e **Política de Privacidade** (`/privacidade`).
+- Checkboxes obrigatórios e consentimento transparente no fluxo de cadastro.
 
-### 📊 Gestão de Consumo & Armazenamento de Banco de Dados
-- Acompanhamento em tempo real do uso do banco de dados (tamanho em MB, registros de agendamentos, clientes salvos e uploads de mídia).
+### 🔄 Assinaturas Recorrentes Automáticas (Mercado Pago Preapproval)
+- Renovação automática mensal e anual dos planos da plataforma diretamente via Mercado Pago Subscriptions.
+- Webhook de renovação em tempo real e reativação automática de contas.
 
-### 🎨 Design System Executive Premium (Light & Dark Mode)
-- Interface limpa com suporte completo a Modo Escuro (`.dark`) e Modo Claro (`.light`) com contraste alto e ícones vetoriais em SVG (Lucide React).
+### 👑 Painel SuperAdmin Responsivo & Retorno Rápido (Impersonate)
+- Visual em dois formatos: Tabela completa em desktop e Cards otimizados em dispositivos móveis.
+- Banner e botão fixo **"Voltar ao SuperAdmin"** ao acessar contas de profissionais em modo de teste.
 
-### 🎁 Cartão Fidelidade Digital & Cupons Automáticos
-- Contabilização automática de selos (`LoyaltyCard`) a cada atendimento concluído pelo profissional.
+### ✉️ E-mails Transacionais Executivos sem Emojis
+- Modelos HTML elegantes no estilo Stripe/Apple em tons dark slate para boas-vindas, verificação de e-mail e redefinição de senha.
 
-### 💳 Cobrança de Sinal Antecipado & Checkout Mercado Pago
-- Clientes pagam taxa de sinal ou valor integral via PIX / Cartão no agendamento, creditado direto no Mercado Pago do profissional.
+### 🌐 SEO & Open Graph
+- Imagem de capa oficial para redes sociais (`/assets/og-cover.png`), metatags Open Graph/Twitter Card, `robots.txt` e `sitemap.xml` integrados.
 
 ---
 
@@ -74,8 +77,8 @@ A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Cen
 | **Backend** | Fastify v4 + TypeScript | Servidor RESTful otimizado de alta velocidade |
 | **ORM** | Prisma ORM 5.x | Modelagem e migrations com suporte a SQLite (Dev) e PostgreSQL (Prod) |
 | **Banco de Dados** | SQLite / PostgreSQL | Banco de dados relacional com relatórios otimizados |
-| **Gateway de Pagamento** | Mercado Pago API v1 | Processamento de cobranças PIX, Cartão e Refunds |
-| **E-mail Transacional** | Nodemailer (Gmail SSL 465) | Envio de códigos de verificação |
+| **Gateway de Pagamento** | Mercado Pago API v1 & Subscriptions | Processamento de cobranças PIX, Cartão e Assinaturas Recorrentes |
+| **E-mail Transacional** | Nodemailer (Gmail SSL 465) | Envio de e-mails de boas-vindas, verificação e redefinição |
 
 ---
 
@@ -110,3 +113,4 @@ npm run dev
 ## 📄 Licença
 
 Este projeto é um software proprietário mantido por **BoraMarka** (Bruno Santana Reis). Todos os direitos reservados.
+

@@ -1550,8 +1550,18 @@ export default function Landing() {
               ))}
             </div>
 
+            <div className="flex items-center gap-4">
+              <Link to="/termos" className="text-[11px] font-medium text-white/20 hover:text-white/50 transition-colors duration-300">
+                Termos de Uso
+              </Link>
+              <span className="text-white/10">·</span>
+              <Link to="/privacidade" className="text-[11px] font-medium text-white/20 hover:text-white/50 transition-colors duration-300">
+                Política de Privacidade
+              </Link>
+            </div>
+
             <p className="text-[11px] font-medium text-white/15">
-              © 2026 BoraMarka. Todos os direitos reservados.
+              © {new Date().getFullYear()} BoraMarka. Todos os direitos reservados.
             </p>
           </div>
         </div>

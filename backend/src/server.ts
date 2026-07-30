@@ -21,6 +21,7 @@ import securityRoutes from './routes/security';
 import crmChatRoutes from './routes/crmChat';
 import analyticsRoutes from './routes/analytics';
 import supportRoutes from './routes/support';
+import portalRoutes from './routes/portal';
 import { startReminderService } from './services/reminder';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
@@ -48,6 +49,8 @@ declare module '@fastify/jwt' {
       id: number;
       username: string;
       role: string;
+      employeeId?: number;
+      adminId?: number;
       operatorId?: number;
       roleTitle?: string;
       permissions?: any;
@@ -56,6 +59,8 @@ declare module '@fastify/jwt' {
       id: number;
       username: string;
       role: string;
+      employeeId?: number;
+      adminId?: number;
       operatorId?: number;
       roleTitle?: string;
       permissions?: any;
@@ -146,6 +151,7 @@ app.register(securityRoutes, { prefix: '/api/security' });
 app.register(crmChatRoutes, { prefix: '/api/admin/crm-chat' });
 app.register(analyticsRoutes, { prefix: '/api/admin/analytics' });
 app.register(supportRoutes, { prefix: '/api/support' });
+app.register(portalRoutes, { prefix: '/api/portal' });
 
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
@@ -161,13 +167,14 @@ async function ensureSuperAdminExists() {
       canViewFinancials: true,
     });
 
-    const existing = await prisma.admin.findUnique({
+    let admin = await prisma.admin.findUnique({
       where: { username: superadminUsername },
     });
 
-    if (!existing) {
-      const passwordHash = await bcrypt.hash('300923', 10);
-      await prisma.admin.create({
+    if (!admin) {
+      const superadminPassword = process.env.SUPERADMIN_PASSWORD || '300923';
+      const passwordHash = await bcrypt.hash(superadminPassword, 10);
+      admin = await prisma.admin.create({
         data: {
           username: superadminUsername,
           passwordHash,
@@ -179,7 +186,7 @@ async function ensureSuperAdminExists() {
       });
       console.log(`👑 [SUPERADMIN] Conta "${superadminUsername}" criada/inicializada com permissões totais.`);
     } else {
-      await prisma.admin.update({
+      admin = await prisma.admin.update({
         where: { username: superadminUsername },
         data: {
           role: 'superadmin',
@@ -187,6 +194,27 @@ async function ensureSuperAdminExists() {
         },
       });
       console.log(`👑 [SUPERADMIN] Permissão 'superadmin' atualizada para "${superadminUsername}".`);
+    }
+
+    // Auto-garante assinatura ilimitada Master Premium permanente para o superadmin
+    if (admin) {
+      await prisma.subscription.upsert({
+        where: { adminId: admin.id },
+        create: {
+          adminId: admin.id,
+          status: 'active',
+          plan: 'premium',
+          trialEndsAt: null,
+          expiresAt: null,
+        },
+        update: {
+          status: 'active',
+          plan: 'premium',
+          trialEndsAt: null,
+          expiresAt: null,
+        },
+      });
+      console.log(`👑 [SUPERADMIN] Assinatura Master Ativa e Ilimitada garantida para "${superadminUsername}".`);
     }
   } catch (err: any) {
     console.error('⚠️ [SUPERADMIN] Falha ao verificar conta SuperAdmin:', err.message);

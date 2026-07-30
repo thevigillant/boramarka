@@ -4,7 +4,7 @@ import { sendWhatsAppMessage, generateBookingMessage } from '../services/whatsap
 import { checkAndUpdateSubscription, checkQuota } from '../services/subscription';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getGoogleCalendarEvents } from '../services/googleCalendar';
-import { getVapidPublicKey, isPushConfigured } from '../services/pushNotification';
+import { getVapidPublicKey, isPushConfigured, sendPushToAdmin } from '../services/pushNotification';
 
 async function cleanupExpiredBookings(token: string) {
   const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
@@ -663,24 +663,31 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     );
     const whatsappResult = await sendWhatsAppMessage(cleanPhone, message);
 
+    // Notify the professional via Web Push Notification
+    const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
+    sendPushToAdmin(link.adminId, {
+      title: 'Novo Agendamento Recebido!',
+      body: `Cliente ${clientName.trim()} agendou ${link.service?.name || 'Serviço'} para ${formattedDate} às ${booking.timeSlot.time}.`,
+      url: '/dashboard'
+    }).catch(err => console.error('Erro ao enviar Push ao Gestor:', err.message));
+
     // Notify the professional via WhatsApp
     const adminForNotify = await prisma.admin.findUnique({
       where: { id: link.adminId },
       select: { phone: true, businessName: true }
     });
     if (adminForNotify?.phone) {
-      const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
       const adminMsg = [
-        `🔔 *Novo Agendamento!*`,
+        `Novo Agendamento!`,
         '',
-        `👤 Cliente: *${clientName.trim()}*`,
-        `📞 Tel: ${cleanPhone}`,
-        `📅 Data: *${formattedDate}*`,
-        `🕐 Hora: *${booking.timeSlot.time}*`,
-        `💼 Serviço: *${link.service?.name || 'Serviço'}*`,
-        `🔑 Cód. Cancelamento: *${booking.cancellationCode}*`,
+        `Cliente: ${clientName.trim()}`,
+        `Tel: ${cleanPhone}`,
+        `Data: ${formattedDate}`,
+        `Hora: ${booking.timeSlot.time}`,
+        `Serviço: ${link.service?.name || 'Serviço'}`,
+        `Cód. Cancelamento: ${booking.cancellationCode}`,
         '',
-        `Confira no seu painel BoraMarka! 🚀`,
+        `Confira no seu painel BoraMarka!`,
       ].join('\n');
       await sendWhatsAppMessage(adminForNotify.phone, adminMsg);
     }
@@ -1332,5 +1339,52 @@ export default async function scheduleRoutes(app: FastifyInstance) {
 
     console.log(`🔔 Push subscription registada para ${cleanPhone} (admin ${link.adminId})`);
     return { success: true };
+  });
+
+  // POST /api/schedule/push-subscribe-admin — Register push subscription for gestor (admin)
+  app.post('/push-subscribe-admin', async (request, reply) => {
+    try {
+      const authHeader = request.headers.authorization;
+      if (!authHeader) return reply.status(401).send({ error: 'Não autorizado' });
+      const jwtToken = authHeader.replace('Bearer ', '');
+      const decoded = app.jwt.verify<{ id: number }>(jwtToken);
+      const adminId = decoded.id;
+
+      const { subscription } = request.body as {
+        subscription: { endpoint: string; keys: { p256dh: string; auth: string } };
+      };
+
+      if (!subscription?.endpoint || !subscription?.keys?.p256dh || !subscription?.keys?.auth) {
+        return reply.status(400).send({ error: 'Dados de assinatura incompletos.' });
+      }
+
+      const existing = await prisma.pushSubscription.findFirst({
+        where: { endpoint: subscription.endpoint, adminId },
+      });
+
+      if (existing) {
+        await prisma.pushSubscription.update({
+          where: { id: existing.id },
+          data: {
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth,
+          },
+        });
+      } else {
+        await prisma.pushSubscription.create({
+          data: {
+            endpoint: subscription.endpoint,
+            p256dh: subscription.keys.p256dh,
+            auth: subscription.keys.auth,
+            clientPhone: 'GESTOR',
+            adminId,
+          },
+        });
+      }
+
+      return { success: true };
+    } catch (err: any) {
+      return reply.status(401).send({ error: 'Autenticação inválida.' });
+    }
   });
 }

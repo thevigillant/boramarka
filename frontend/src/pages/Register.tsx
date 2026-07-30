@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { api } from '../services/api'
 import {
   Store, User, Lock, Phone, FileText, MapPin, Clock,
@@ -78,6 +78,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [checking, setChecking] = useState(true)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   useEffect(() => {
     setChecking(false)
@@ -709,12 +710,32 @@ export default function Register() {
                   </div>
                 </div>
 
+                {/* Checkbox LGPD */}
+                <label className="flex items-start gap-3 cursor-pointer group mt-2 mb-1">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={e => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border border-white/20 bg-white/[0.03] accent-violet-500 cursor-pointer flex-shrink-0"
+                  />
+                  <span className="text-[11px] text-white/40 leading-relaxed group-hover:text-white/50 transition-colors">
+                    Li e aceito os{' '}
+                    <Link to="/termos" target="_blank" className="text-violet-400 hover:text-violet-300 underline underline-offset-2 font-semibold">
+                      Termos de Uso
+                    </Link>{' '}e a{' '}
+                    <Link to="/privacidade" target="_blank" className="text-violet-400 hover:text-violet-300 underline underline-offset-2 font-semibold">
+                      Política de Privacidade
+                    </Link>
+                  </span>
+                </label>
+
                 <div className="flex gap-3 mt-1">
                   <button onClick={handleBack}
                     className="flex-1 flex items-center justify-center gap-2 py-3.5 border border-white/[0.06] rounded-full hover:bg-white/[0.03] transition-all font-bold text-white/40 text-[12px] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
                     <ChevronLeft className="w-4 h-4" /> Voltar
                   </button>
-                  <button onClick={handleSubmit} disabled={loading}
+                  <button onClick={handleSubmit} disabled={loading || !acceptedTerms}
+                    title={!acceptedTerms ? 'Aceite os Termos de Uso e Política de Privacidade para continuar' : ''}
                     className="mag-btn flex-[2] py-3.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-[13px] font-bold text-white shadow-lg shadow-violet-600/15 flex items-center justify-center gap-2 disabled:opacity-50">
                     {loading ? (
                       <Loader2 className="w-4 h-4 animate-spin" />

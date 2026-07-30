@@ -382,6 +382,8 @@ export default async function superadminRoutes(app: FastifyInstance) {
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
+    const isFullAccess = (request.body as any)?.isFullAccess || (request.body as any)?.grantFullAccess;
+
     const newUser = await prisma.admin.create({
       data: {
         username: cleanUsername,
@@ -391,12 +393,19 @@ export default async function superadminRoutes(app: FastifyInstance) {
         email: email?.trim() || '',
         role: 'user',
         subscription: {
-          create: {
-            plan: plan || 'mensal',
-            status: 'trialing',
-            trialEndsAt,
-            expiresAt: trialEndsAt,
-          },
+          create: isFullAccess
+            ? {
+                plan: 'premium',
+                status: 'active',
+                trialEndsAt: null,
+                expiresAt: null,
+              }
+            : {
+                plan: plan || 'mensal',
+                status: 'trialing',
+                trialEndsAt,
+                expiresAt: trialEndsAt,
+              },
         },
       },
       select: {
@@ -446,6 +455,45 @@ export default async function superadminRoutes(app: FastifyInstance) {
         status: 'trialing',
         trialEndsAt: newExpiresAt,
         expiresAt: newExpiresAt,
+      },
+    });
+
+    return updatedSub;
+  });
+
+  // ═══════════════════════════════════════════
+  //  GRANT FULL ACCESS (PREMIUM GRATUITO / VITALÍCIO - SEM TESTE E SEM COBRANÇA)
+  // ═══════════════════════════════════════════
+  app.post('/users/:id/grant-full-access', async (request: FastifyRequest, reply: FastifyReply) => {
+    const { id } = request.params as { id: string };
+    const adminId = parseInt(id);
+
+    if (isNaN(adminId)) {
+      return reply.status(400).send({ error: 'ID inválido' });
+    }
+
+    const sub = await prisma.subscription.findUnique({ where: { adminId } });
+
+    if (!sub) {
+      const createdSub = await prisma.subscription.create({
+        data: {
+          adminId,
+          plan: 'premium',
+          status: 'active',
+          trialEndsAt: null,
+          expiresAt: null,
+        },
+      });
+      return createdSub;
+    }
+
+    const updatedSub = await prisma.subscription.update({
+      where: { adminId },
+      data: {
+        plan: 'premium',
+        status: 'active',
+        trialEndsAt: null,
+        expiresAt: null,
       },
     });
 

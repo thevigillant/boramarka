@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://boramarka.com.br/sitemap.xml
+
+# Bloquear áreas privadas
+Disallow: /dashboard
+Disallow: /superadmin
+Disallow: /portal
+Disallow: /api/

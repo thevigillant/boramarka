@@ -556,10 +556,15 @@ export const api = {
       trialEndsAt: string | null;
     }>('/billing/status'),
 
-  createCheckout: (plan: 'mensal' | 'anual' | 'premium') =>
+  createCheckout: (plan: 'mensal' | 'anual' | 'premium', recurring = true) =>
     request<{ init_point: string }>('/billing/checkout', {
       method: 'POST',
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, recurring }),
+    }),
+
+  cancelSubscription: () =>
+    request<{ success: boolean; message: string }>('/billing/cancel-subscription', {
+      method: 'POST',
     }),
 
   // ═══ Super Admin ═══
@@ -662,7 +667,7 @@ export const api = {
       body: JSON.stringify({ permissions }),
     }),
 
-  createProfessionalUser: (data: { username: string; password: string; businessName: string; phone?: string; email?: string; plan?: string }) =>
+  createProfessionalUser: (data: { username: string; password: string; businessName: string; phone?: string; email?: string; plan?: string; isFullAccess?: boolean }) =>
     request<{ id: number; username: string; businessName: string }>('/superadmin/create-user', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -1058,6 +1063,207 @@ export const api = {
       method: 'DELETE',
     }),
 
+  // ═══ Employee Portal & RH Management ═══
+  resetEmployeePassword: (id: number, password: string) =>
+    request<{ success: boolean; message: string }>(`/admin/employees/${id}/reset-password`, {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    }),
+
+  toggleEmployeePortal: (id: number, portalActive: boolean) =>
+    request(`/admin/employees/${id}/toggle-portal`, {
+      method: 'PUT',
+      body: JSON.stringify({ portalActive }),
+    }),
+
+  generateEmployeePortalLink: (id: number) =>
+    request<{ token: string; employeeId: number; employeeName: string }>(`/admin/employees/${id}/generate-portal-link`, {
+      method: 'POST',
+    }),
+
+  getEmployeeAccessLogs: (id: number) =>
+    request<Array<{ id: number; ipAddress: string; userAgent: string; action: string; createdAt: string }>>(`/admin/employees/${id}/access-logs`),
+
+  getEmployeePaystubs: () =>
+    request<Array<{
+      id: number;
+      referenceMonth: string;
+      grossSalary: number;
+      netSalary: number;
+      discounts: number;
+      fileUrl: string;
+      fileName: string;
+      notes: string;
+      signed: boolean;
+      signedAt?: string;
+      signatureIp?: string;
+      createdAt: string;
+      employee?: { id: number; name: string; role: string; cpf: string };
+    }>>('/admin/employees/paystubs'),
+
+  createEmployeePaystub: (data: {
+    employeeId: number;
+    referenceMonth: string;
+    grossSalary?: number;
+    netSalary?: number;
+    discounts?: number;
+    fileUrl?: string;
+    fileName?: string;
+    notes?: string;
+  }) =>
+    request('/admin/employees/paystubs', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteEmployeePaystub: (id: number) =>
+    request(`/admin/employees/paystubs/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getEmployeeAnnouncements: () =>
+    request<Array<{
+      id: number;
+      title: string;
+      content: string;
+      targetGroup: string;
+      priority: string;
+      createdAt: string;
+      _count?: { reads: number };
+    }>>('/admin/employees/announcements'),
+
+  createEmployeeAnnouncement: (data: {
+    title: string;
+    content: string;
+    targetGroup?: string;
+    priority?: string;
+  }) =>
+    request('/admin/employees/announcements', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  deleteEmployeeAnnouncement: (id: number) =>
+    request(`/admin/employees/announcements/${id}`, {
+      method: 'DELETE',
+    }),
+
+  getEmployeeVacationRequests: () =>
+    request<Array<{
+      id: number;
+      type: string;
+      startDate: string;
+      endDate: string;
+      daysCount: number;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      reason: string;
+      adminNotes: string;
+      createdAt: string;
+      employee?: { id: number; name: string; role: string };
+    }>>('/admin/employees/vacation-requests'),
+
+  updateEmployeeVacationStatus: (id: number, status: 'APPROVED' | 'REJECTED', adminNotes?: string) =>
+    request(`/admin/employees/vacation-requests/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, adminNotes }),
+    }),
+
+  getEmployeeProfileRequests: () =>
+    request<Array<{
+      id: number;
+      phone: string;
+      email: string;
+      address: string;
+      status: 'PENDING' | 'APPROVED' | 'REJECTED';
+      createdAt: string;
+      employee?: { id: number; name: string; phone: string; email: string; address: string };
+    }>>('/admin/employees/profile-requests'),
+
+  updateEmployeeProfileRequest: (id: number, status: 'APPROVED' | 'REJECTED', adminNotes?: string) =>
+    request(`/admin/employees/profile-requests/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, adminNotes }),
+    }),
+
+  getEmployeeTimeRegisters: (employeeId: number) =>
+    request<Array<{
+      id: number;
+      date: string;
+      entry1: string;
+      exit1: string;
+      entry2: string;
+      exit2: string;
+      totalHours: number;
+      extraHours: number;
+      delayMinutes: number;
+      absence: boolean;
+      absenceReason: string;
+      status: string;
+      notes: string;
+    }>>(`/admin/employees/${employeeId}/time-registers`),
+
+  saveEmployeeTimeRegister: (employeeId: number, data: any) =>
+    request(`/admin/employees/${employeeId}/time-registers`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // ═══ Employee Portal Endpoints ═══
+  portalLogin: (data: { token?: string; login?: string; password?: string }) =>
+    request<{ token: string; employee: any }>('/portal/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getPortalMe: () =>
+    request<any>('/portal/me'),
+
+  getPortalTimeRegisters: () =>
+    request<{
+      timeRegisters: Array<any>;
+      summary: { totalWorkedHours: number; totalExtraHours: number; totalDelayMinutes: number; totalAbsences: number };
+    }>('/portal/time-registers'),
+
+  punchPortalTimeRegister: () =>
+    request<{ message: string; register: any }>('/portal/time-registers/punch', {
+      method: 'POST',
+    }),
+
+  getPortalPaystubs: () =>
+    request<Array<any>>('/portal/paystubs'),
+
+  signPortalPaystub: (id: number) =>
+    request<{ success: boolean; message: string; paystub: any }>(`/portal/paystubs/${id}/sign`, {
+      method: 'POST',
+    }),
+
+  getPortalDocuments: () =>
+    request<Array<any>>('/portal/documents'),
+
+  signPortalDocument: (id: number, action: 'SIGN' | 'REJECT', rejectionReason?: string) =>
+    request<{ success: boolean; message: string; document: any }>(`/portal/documents/${id}/sign`, {
+      method: 'POST',
+      body: JSON.stringify({ action, rejectionReason }),
+    }),
+
+  getPortalVacations: () =>
+    request<Array<any>>('/portal/vacations'),
+
+  requestPortalVacation: (data: { type?: string; startDate: string; endDate: string; daysCount?: number; reason?: string }) =>
+    request<{ message: string; vacationRequest: any }>('/portal/vacations', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getPortalAnnouncements: () =>
+    request<Array<any>>('/portal/announcements'),
+
+  requestPortalProfileUpdate: (data: { phone?: string; email?: string; address?: string }) =>
+    request<{ message: string; request: any }>('/portal/profile-request', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
   impersonateUser: (id: number) =>
     request<{ token: string; username: string }>(`/superadmin/users/${id}/impersonate`, {
       method: 'POST',
@@ -1067,6 +1273,9 @@ export const api = {
     request<{ token: string; username: string }>('/superadmin/impersonate-self', {
       method: 'POST',
     }),
+
+  grantFullAccessToUser: (userId: number) =>
+    request(`/superadmin/users/${userId}/grant-full-access`, { method: 'POST' }),
 
   getAuditLogs: (params?: { search?: string; entity?: string; action?: string; severity?: string }) => {
     const query = new URLSearchParams();
@@ -1115,6 +1324,12 @@ export const api = {
     request<{ success: boolean }>('/schedule/push-subscribe', {
       method: 'POST',
       body: JSON.stringify({ token, subscription, clientPhone }),
+    }),
+
+  subscribeAdminPush: (subscription: PushSubscriptionJSON) =>
+    request<{ success: boolean }>('/schedule/push-subscribe-admin', {
+      method: 'POST',
+      body: JSON.stringify({ subscription }),
     }),
 
   // ═══ Cartões de Fidelidade ═══

@@ -67,6 +67,7 @@ model Admin {
   clientChatMessages ClientChatMessage[]
   quickReplyTemplates QuickReplyTemplate[]
   supportTickets    SupportTicket[]
+  employeeAnnouncements EmployeeAnnouncement[]
 
   @@map("admin")
 }
@@ -283,6 +284,13 @@ model Employee {
   commission       Float    @default(0.0)
   workingHours     String   @default("") @map("working_hours")
   
+  // Portal do Funcionário credentials & settings
+  passwordHash     String   @default("") @map("password_hash")
+  portalToken      String   @default("") @map("portal_token")
+  portalActive     Boolean  @default(true) @map("portal_active")
+  address          String   @default("")
+  bankAccount      String   @default("") @map("bank_account")
+  
   // Status: "ACTIVE" | "DISMISSED" | "ARCHIVED"
   status           String   @default("ACTIVE")
   
@@ -303,25 +311,153 @@ model Employee {
   admin            Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
   documents        EmployeeDocument[]
+  timeRegisters    EmployeeTimeRegister[]
+  paystubs         EmployeePaystub[]
+  vacationRequests EmployeeVacationRequest[]
+  accessLogs       EmployeeAccessLog[]
+  profileRequests  EmployeeProfileRequest[]
+  announcementReads EmployeeAnnouncementRead[]
 
   @@map("employees")
 }
 
 model EmployeeDocument {
-  id          Int      @id @default(autoincrement())
-  title       String
-  category    String   @default("GERAL")
-  fileUrl     String   @map("file_url")
-  fileName    String   @default("") @map("file_name")
-  fileSize    String   @default("") @map("file_size")
-  expiryDate  String   @default("") @map("expiry_date")
-  notes       String   @default("")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id                Int       @id @default(autoincrement())
+  title             String
+  category          String    @default("GERAL")
+  fileUrl           String    @map("file_url")
+  fileName          String    @default("") @map("file_name")
+  fileSize          String    @default("") @map("file_size")
+  expiryDate        String    @default("") @map("expiry_date")
+  notes             String    @default("")
+  requiresSignature Boolean   @default(false) @map("requires_signature")
+  signed            Boolean   @default(false)
+  signedAt          DateTime? @map("signed_at")
+  signatureIp       String    @default("") @map("signature_ip")
+  signatureStatus   String    @default("PENDING") @map("signature_status") // "PENDING", "SIGNED", "REJECTED"
+  rejectionReason   String    @default("") @map("rejection_reason")
+  createdAt         DateTime  @default(now()) @map("created_at")
 
   employeeId  Int      @map("employee_id")
   employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@map("employee_documents")
+}
+
+model EmployeeTimeRegister {
+  id              Int      @id @default(autoincrement())
+  date            String   // YYYY-MM-DD
+  entry1          String   @default("") // HH:mm
+  exit1           String   @default("") // HH:mm
+  entry2          String   @default("") // HH:mm
+  exit2           String   @default("") // HH:mm
+  totalHours      Float    @default(0.0) @map("total_hours")
+  extraHours      Float    @default(0.0) @map("extra_hours")
+  delayMinutes    Int      @default(0) @map("delay_minutes")
+  absence         Boolean  @default(false)
+  absenceReason   String   @default("") @map("absence_reason")
+  status          String   @default("APPROVED") // "PENDING", "APPROVED", "DISPUTED"
+  notes           String   @default("")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @default(now()) @map("updated_at")
+
+  employeeId      Int      @map("employee_id")
+  employee        Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_time_registers")
+}
+
+model EmployeePaystub {
+  id             Int       @id @default(autoincrement())
+  referenceMonth String    @map("reference_month") // MM/YYYY
+  grossSalary    Float     @default(0.0) @map("gross_salary")
+  netSalary      Float     @default(0.0) @map("net_salary")
+  discounts      Float     @default(0.0)
+  fileUrl        String    @default("") @map("file_url")
+  fileName       String    @default("") @map("file_name")
+  notes          String    @default("")
+  signed         Boolean   @default(false)
+  signedAt       DateTime? @map("signed_at")
+  signatureIp    String    @default("") @map("signature_ip")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  employeeId     Int       @map("employee_id")
+  employee       Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_paystubs")
+}
+
+model EmployeeVacationRequest {
+  id          Int      @id @default(autoincrement())
+  type        String   @default("VACATION") // "VACATION", "MEDICAL_LEAVE", "MATERNITY", "OTHER"
+  startDate   String   @map("start_date") // YYYY-MM-DD
+  endDate     String   @map("end_date") // YYYY-MM-DD
+  daysCount   Int      @default(0) @map("days_count")
+  status      String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  reason      String   @default("")
+  adminNotes  String   @default("") @map("admin_notes")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @default(now()) @map("updated_at")
+
+  employeeId  Int      @map("employee_id")
+  employee    Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_vacation_requests")
+}
+
+model EmployeeAnnouncement {
+  id          Int                       @id @default(autoincrement())
+  title       String
+  content     String
+  targetGroup String                    @default("ALL") @map("target_group") // "ALL" ou role específico
+  priority    String                    @default("NORMAL") // "NORMAL", "HIGH", "URGENT"
+  createdAt   DateTime                  @default(now()) @map("created_at")
+
+  adminId     Int                       @map("admin_id")
+  admin       Admin                     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  reads       EmployeeAnnouncementRead[]
+
+  @@map("employee_announcements")
+}
+
+model EmployeeAnnouncementRead {
+  id             Int                  @id @default(autoincrement())
+  announcementId Int                  @map("announcement_id")
+  announcement   EmployeeAnnouncement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  employeeId     Int                  @map("employee_id")
+  employee       Employee             @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  readAt         DateTime             @default(now()) @map("read_at")
+
+  @@unique([announcementId, employeeId])
+  @@map("employee_announcement_reads")
+}
+
+model EmployeeAccessLog {
+  id         Int      @id @default(autoincrement())
+  ipAddress  String   @default("") @map("ip_address")
+  userAgent  String   @default("") @map("user_agent")
+  action     String   @default("LOGIN")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  employeeId Int      @map("employee_id")
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_access_logs")
+}
+
+model EmployeeProfileRequest {
+  id            Int      @id @default(autoincrement())
+  phone         String   @default("")
+  email         String   @default("")
+  address       String   @default("")
+  status        String   @default("PENDING") // "PENDING", "APPROVED", "REJECTED"
+  adminNotes    String   @default("") @map("admin_notes")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  employeeId    Int      @map("employee_id")
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_profile_requests")
 }
 
 model AuditLog {
