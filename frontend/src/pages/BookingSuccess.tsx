@@ -20,8 +20,8 @@ export default function BookingSuccess() {
   const navigate = useNavigate()
   const location = useLocation()
   const state = location.state as {
-    booking?: { id: number; clientName: string; clientPhone: string; date: string; time: string }
-    whatsapp?: { success: boolean; method: 'api' | 'link'; link?: string }
+    booking?: { id: number; clientName: string; clientPhone: string; date: string; time: string; cancellationCode?: string }
+    whatsapp?: { success: boolean; method: 'api' | 'meta' | 'gateway' | 'link'; link?: string }
     payFullPrice?: boolean
   } | null
 
@@ -33,7 +33,7 @@ export default function BookingSuccess() {
   const [fetchedBooking, setFetchedBooking] = useState<{
     id: number; clientName: string; clientPhone: string; date: string; time: string;
     businessName: string; businessPhone: string; businessUsername: string; serviceName: string; price: number;
-    selectedAddons?: string; totalAmount?: number;
+    selectedAddons?: string; totalAmount?: number; cancellationCode?: string;
   } | null>(null)
   const [fetchLoading, setFetchLoading] = useState(false)
   const [showConfirmModal, setShowConfirmModal] = useState(true)
@@ -121,6 +121,7 @@ export default function BookingSuccess() {
     clientPhone: state.booking.clientPhone,
     date: state.booking.date,
     time: state.booking.time,
+    cancellationCode: state.booking.cancellationCode,
     businessName: '',
     businessPhone: '',
     businessUsername: '',
@@ -130,6 +131,43 @@ export default function BookingSuccess() {
 
   const whatsapp = state?.whatsapp || null
   const isPaidViaMP = paymentStatus === 'success'
+
+  // Construct complete cancellation URL & pre-filled WhatsApp message
+  const cancelPath = token && booking?.id
+    ? `${window.location.origin}/agendar/cancelar/${token}/${booking.id}${booking.cancellationCode ? `?code=${booking.cancellationCode}` : ''}`
+    : '';
+
+  const generateFullWaMessage = () => {
+    if (!booking) return '';
+    const dateFormatted = formatDate(booking.date);
+    const lines = [
+      `Olá, ${booking.clientName.split(' ')[0]}! ✅`,
+      '',
+      `Seu agendamento foi confirmado com sucesso no BoraMarka:`,
+      `💼 Serviço: *${booking.serviceName}*`,
+      `📅 Data: *${dateFormatted}*`,
+      `🕐 Horário: *${booking.time}*`,
+    ];
+
+    if (booking.cancellationCode) {
+      lines.push('');
+      lines.push(`🔑 Código de Gerenciamento: *${booking.cancellationCode}*`);
+    }
+
+    if (cancelPath) {
+      lines.push(`🔗 Cancelar ou Remarcar: ${cancelPath}`);
+    }
+
+    lines.push('');
+    lines.push(`Obrigado pela preferência! 😊`);
+    return lines.join('\n');
+  };
+
+  const rawPhone = (fetchedBooking?.businessPhone || booking?.clientPhone || '').replace(/\D/g, '');
+  const fullTargetPhone = rawPhone.startsWith('55') ? rawPhone : (rawPhone ? `55${rawPhone}` : '');
+  const customWaLink = fullTargetPhone
+    ? `https://wa.me/${fullTargetPhone}?text=${encodeURIComponent(generateFullWaMessage())}`
+    : (whatsapp?.link || `https://wa.me/?text=${encodeURIComponent(generateFullWaMessage())}`);
 
   // Loading state (including waiting for state / backend load)
   if (fetchLoading || (bookingId && !booking)) {
@@ -237,35 +275,48 @@ export default function BookingSuccess() {
                 <span className="text-sm font-black text-pink-500">{formatCurrency(booking.totalAmount || booking.price)}</span>
               </div>
             )}
+
+            {/* Cancellation & Management Code Block */}
+            {booking.cancellationCode && (
+              <div className="pt-3 border-t border-slate-800/80 space-y-1.5">
+                <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider block">Código de Gerenciamento / Cancelamento:</span>
+                <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 rounded-2xl">
+                  <span className="text-sm font-mono font-black text-amber-300 tracking-wider">🔑 {booking.cancellationCode}</span>
+                  <span className="text-[10px] font-bold text-amber-400/80">Guarde seu código</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
-        {whatsapp?.method === 'api' ? (
+        {whatsapp?.method === 'meta' || whatsapp?.method === 'gateway' ? (
           <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
-             ✅ Comprovante enviado no seu WhatsApp!
+             ✅ Comprovante enviado automaticamente para seu WhatsApp!
           </div>
-        ) : whatsapp?.link ? (
-          <div className="mb-6">
-            <p className="text-xs text-slate-400 font-bold mb-3">Clique no botão abaixo para receber o comprovante no WhatsApp:</p>
+        ) : (
+          <div className="mb-6 space-y-2">
+            <p className="text-xs text-slate-400 font-bold">Clique no botão abaixo para abrir o WhatsApp com seu comprovante e código:</p>
             <a
-              href={whatsapp.link}
+              href={customWaLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-3.5 rounded-2xl transition-all shadow-lg shadow-[#25d366]/10 text-base"
+              className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-[#25d366]/20 text-base cursor-pointer"
             >
-              💬 Abrir WhatsApp
+              💬 Abrir WhatsApp & Receber Comprovante
             </a>
           </div>
-        ) : null}
+        )}
 
-        <div className="mb-6">
-          <Link
-            to={`/agendar/${token}/cancelar/${booking.id}`}
-            className="text-xs text-slate-500 hover:text-red-400 font-bold transition-colors"
-          >
-            Precisa alterar ou cancelar? Clique aqui
-          </Link>
-        </div>
+        {cancelPath && (
+          <div className="mb-6">
+            <Link
+              to={`/agendar/cancelar/${token}/${booking.id}${booking.cancellationCode ? `?code=${booking.cancellationCode}` : ''}`}
+              className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-pink-400 font-bold transition-colors underline decoration-slate-600 underline-offset-4"
+            >
+              Precisa alterar ou cancelar este agendamento? Clique aqui
+            </Link>
+          </div>
+        )}
 
         <Link
           to={profileLink}

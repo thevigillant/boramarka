@@ -3,7 +3,7 @@ import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { createAuditLog } from '../utils/auditLogger';
-import { sendWhatsAppMessage } from '../services/whatsapp';
+import { sendWhatsAppMessage, getWhatsAppStatus } from '../services/whatsapp';
 import { addLoyaltyStampOnCompletion } from './loyalty';
 
 export default async function adminRoutes(app: FastifyInstance) {
@@ -22,6 +22,25 @@ export default async function adminRoutes(app: FastifyInstance) {
       prisma.timeSlot.count({ where: { isAvailable: true, link: { adminId: user.id } } }),
     ]);
     return { totalLinks, totalSlots, totalBookings, availableSlots };
+  });
+
+  // ═══════════════════════════════════════════
+  //  WHATSAPP INTEGRATION STATUS & TEST
+  // ═══════════════════════════════════════════
+  app.get('/whatsapp/status', async () => {
+    return getWhatsAppStatus();
+  });
+
+  app.post('/whatsapp/test', async (request, reply) => {
+    const { phone, message } = request.body as { phone: string; message?: string };
+    if (!phone) {
+      return reply.status(400).send({ error: 'Número de telefone é obrigatório' });
+    }
+
+    const msgText = message || '🚀 *BoraMarka Teste de Notificação*\n\nSua integração com o WhatsApp está funcionando perfeitamente!';
+    const result = await sendWhatsAppMessage(phone, msgText);
+
+    return result;
   });
 
   // ═══════════════════════════════════════════
