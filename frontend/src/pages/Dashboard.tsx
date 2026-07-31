@@ -1175,6 +1175,40 @@ export default function Dashboard() {
 
   // Modals / Forms
   const [showEditProfile, setShowEditProfile] = useState(false)
+  const [waStatus, setWaStatus] = useState<{ isConfigured: boolean; provider: 'meta' | 'gateway' | 'none'; details?: string } | null>(null)
+  const [waTestPhone, setWaTestPhone] = useState('')
+  const [waTestLoading, setWaTestLoading] = useState(false)
+  const [waTestResult, setWaTestResult] = useState<{ success: boolean; method?: string; link?: string; error?: string } | null>(null)
+
+  const fetchWaStatus = async () => {
+    try {
+      const res = await api.getWhatsAppStatus()
+      setWaStatus(res)
+    } catch {}
+  }
+
+  const handleTestWhatsAppSend = async () => {
+    if (!waTestPhone.trim()) {
+      showToast('Digite um número de telefone com DDD para testar', 'error')
+      return
+    }
+    setWaTestLoading(true)
+    setWaTestResult(null)
+    try {
+      const res = await api.sendWhatsAppTest(waTestPhone)
+      setWaTestResult(res)
+      if (res.success) {
+        showToast(res.method === 'link' ? 'Link do WhatsApp gerado com sucesso!' : 'Mensagem enviada com sucesso via API!')
+      } else {
+        showToast(res.error || 'Falha no teste de envio', 'error')
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao testar envio de WhatsApp', 'error')
+    } finally {
+      setWaTestLoading(false)
+    }
+  }
+
   const [profileForm, setProfileForm] = useState({
     username: '',
     email: '',
@@ -1197,6 +1231,8 @@ export default function Dashboard() {
 
   const openEditProfile = () => {
     if (adminInfo) {
+      fetchWaStatus()
+      if (adminInfo.phone) setWaTestPhone(adminInfo.phone)
       let hoursStr = adminInfo.operatingHours || ''
       if (!hoursStr || !hoursStr.includes('seg')) {
         hoursStr = JSON.stringify({
@@ -7627,6 +7663,70 @@ export default function Dashboard() {
                 <p className="text-[10px] text-slate-500 mt-1 font-semibold leading-normal">
                   Insira o seu Access Token de Produção ou Sandbox do Mercado Pago. Para testar sem chaves reais, digite <strong>SIMULADOR</strong>.
                 </p>
+              </div>
+
+              {/* WhatsApp API Real Section */}
+              <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                      💬
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase">Integração WhatsApp API Real</h4>
+                      <p className="text-[10px] font-bold text-slate-400">Notificações automáticas de agendamento & lembretes</p>
+                    </div>
+                  </div>
+                  {waStatus && (
+                    <span className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border ${
+                      waStatus.isConfigured
+                        ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
+                        : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
+                    }`}>
+                      {waStatus.isConfigured ? `🟢 ${waStatus.details}` : '🟡 Modo wa.me'}
+                    </span>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 space-y-2">
+                  <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300">
+                    Testar Envio Real de Mensagem WhatsApp
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={waTestPhone}
+                      onChange={e => setWaTestPhone(e.target.value)}
+                      placeholder="DDD + Telefone (ex: 11999999999)"
+                      className="input-simple text-xs py-2 px-3 flex-1 bg-white dark:bg-[#131826]"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleTestWhatsAppSend}
+                      disabled={waTestLoading}
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
+                    >
+                      {waTestLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Testar Envio'}
+                    </button>
+                  </div>
+                  {waTestResult && (
+                    <div className={`p-2.5 rounded-xl text-xs font-bold border ${
+                      waTestResult.success
+                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
+                        : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/20'
+                    }`}>
+                      {waTestResult.success ? (
+                        <span>
+                          {waTestResult.method === 'meta' && '✅ Mensagem enviada via Meta Cloud API Oficial!'}
+                          {waTestResult.method === 'gateway' && '✅ Mensagem enviada via Gateway HTTP!'}
+                          {waTestResult.method === 'link' && '📱 Link wa.me gerado (Modo Fallback sem credenciais API).'}
+                        </span>
+                      ) : (
+                        <span>❌ Erro: {waTestResult.error || 'Falha no disparo'}</span>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Endereço</label>

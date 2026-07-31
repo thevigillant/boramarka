@@ -625,8 +625,8 @@ export default function SuperAdminDashboard() {
 
       <main className="max-w-7xl mx-auto px-3 sm:px-6 py-4 sm:py-8">
         {/* Statistics Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-5 mb-6 sm:mb-8">
-          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2.5 sm:gap-5 mb-6 sm:mb-8" style={{ minHeight: '90px' }}>
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl" style={{ minHeight: '90px' }}>
             <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Total Clientes</span>
             <div className="flex items-end justify-between mt-2 sm:mt-3">
               <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-none">{stats?.totalUsers || 0}</span>
@@ -636,7 +636,7 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
-          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl" style={{ minHeight: '90px' }}>
             <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Agendamentos</span>
             <div className="flex items-end justify-between mt-2 sm:mt-3">
               <span className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-none">{stats?.totalBookings || 0}</span>
@@ -646,7 +646,7 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
-          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl" style={{ minHeight: '90px' }}>
             <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Assinaturas Ativas</span>
             <div className="flex items-end justify-between mt-2 sm:mt-3">
               <span className="text-xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 leading-none">{stats?.activeSubscriptions || 0}</span>
@@ -656,7 +656,7 @@ export default function SuperAdminDashboard() {
             </div>
           </div>
 
-          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl">
+          <div className="card-simple p-3.5 sm:p-5 flex flex-col justify-between bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl" style={{ minHeight: '90px' }}>
             <span className="text-[9px] sm:text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-widest">Contas em Trial</span>
             <div className="flex items-end justify-between mt-2 sm:mt-3">
               <span className="text-xl sm:text-3xl font-black text-blue-600 dark:text-blue-400 leading-none">{stats?.trialingSubscriptions || 0}</span>
@@ -688,7 +688,7 @@ export default function SuperAdminDashboard() {
         </div>
 
         {/* Navigation Tabs Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4 w-full">
+        <div className="sticky top-[64px] sm:top-[80px] z-20 bg-slate-50/95 dark:bg-[#0B0F19]/95 backdrop-blur-md flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-6 border-b border-slate-200 dark:border-slate-800 pb-4 pt-4 w-full -mx-3 sm:-mx-6 px-3 sm:px-6">
           <div className="flex items-center gap-2 overflow-x-auto w-full max-w-full pb-2 sm:pb-0 scrollbar-none touch-pan-x">
             <button
               onClick={() => setActiveTab('users')}
@@ -1135,20 +1135,20 @@ export default function SuperAdminDashboard() {
 
         {/* TAB 3: CENTRAL DE SUPORTE (HELPDESK) */}
         {activeTab === 'support' && myPermissions.canAccessSupport && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
             {/* Left Column: Tickets List */}
-            <div className="lg:col-span-5 card-simple p-4 sm:p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl sm:rounded-3xl space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-                <div className="w-full sm:w-auto">
-                  <h3 className="text-base font-black text-slate-900 dark:text-white whitespace-nowrap">Chamados de Suporte</h3>
+            <div className="lg:col-span-5 card-simple p-4 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl sm:rounded-3xl flex flex-col h-[calc(100vh-390px)] min-h-[380px]">
+              <div className="pb-3 border-b border-slate-100 dark:border-slate-800 shrink-0 space-y-2.5">
+                <div>
+                  <h3 className="text-base font-black text-slate-900 dark:text-white">Chamados de Suporte</h3>
                   <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">Atendimento dos assinantes BoraMarka</p>
                 </div>
-                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full sm:w-auto overflow-x-auto scrollbar-none justify-between sm:justify-start flex-shrink-0">
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl w-full overflow-x-auto scrollbar-none">
                   {['all', 'OPEN', 'IN_PROGRESS', 'RESOLVED'].map(st => (
                     <button
                       key={st}
                       onClick={() => setTicketStatusFilter(st)}
-                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer whitespace-nowrap flex-1 sm:flex-initial text-center ${
+                      className={`px-2.5 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all cursor-pointer whitespace-nowrap flex-1 text-center ${
                         ticketStatusFilter === st
                           ? 'bg-white dark:bg-[#131826] text-pink-500 shadow-sm'
                           : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
@@ -1161,14 +1161,14 @@ export default function SuperAdminDashboard() {
               </div>
 
               {/* Tickets List Items */}
-              <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1 custom-scrollbar">
+              <div className="flex-1 min-h-0 overflow-y-auto space-y-2.5 pt-3 pr-1 custom-scrollbar">
                 {supportTickets
                   .filter(t => ticketStatusFilter === 'all' || t.status === ticketStatusFilter)
                   .map(t => (
                     <div
                       key={t.id}
                       onClick={() => setSelectedTicketId(t.id)}
-                      className={`p-4 rounded-2xl border transition-all cursor-pointer space-y-2 ${
+                      className={`p-3.5 rounded-2xl border transition-all cursor-pointer space-y-1.5 ${
                         selectedTicketId === t.id
                           ? 'bg-pink-500/10 border-pink-500 dark:border-pink-500 shadow-md'
                           : 'bg-white dark:bg-[#131826] border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
@@ -1188,10 +1188,10 @@ export default function SuperAdminDashboard() {
                           {t.status === 'RESOLVED' ? 'Concluído' : t.status === 'IN_PROGRESS' ? 'Respondido' : 'Aberto'}
                         </span>
                       </div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">{t.subject}</h4>
-                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1">
-                        <span className="font-bold text-slate-700 dark:text-slate-300">{t.admin?.businessName || t.admin?.username || 'Cliente'}</span>
-                        <span className="text-[10px]">{new Date(t.updatedAt).toLocaleDateString()}</span>
+                      <h4 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white line-clamp-1">{t.subject}</h4>
+                      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-0.5">
+                        <span className="font-bold text-slate-700 dark:text-slate-300 text-[11px] truncate max-w-[180px]">{t.admin?.businessName || t.admin?.username || 'Cliente'}</span>
+                        <span className="text-[10px] text-slate-400">{new Date(t.updatedAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   ))}
@@ -1204,30 +1204,30 @@ export default function SuperAdminDashboard() {
             </div>
 
             {/* Right Column: Active Conversation */}
-            <div className="lg:col-span-7 card-simple p-6 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl">
+            <div className="lg:col-span-7 card-simple p-4 sm:p-5 bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 shadow-sm rounded-2xl sm:rounded-3xl flex flex-col h-[calc(100vh-390px)] min-h-[380px]">
               {ticketDetails ? (
-                <div className="flex flex-col h-[600px]">
+                <div className="flex flex-col h-full min-h-0">
                   {/* Active Ticket Header */}
-                  <div className="pb-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black uppercase px-2.5 py-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                  <div className="pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0 gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
                           #{ticketDetails.id} • {ticketDetails.category}
                         </span>
-                        <h3 className="text-base font-black text-slate-900 dark:text-white">{ticketDetails.subject}</h3>
+                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white truncate">{ticketDetails.subject}</h3>
                       </div>
-                      <p className="text-xs font-bold text-slate-400 mt-1">
+                      <p className="text-[11px] font-bold text-slate-400 mt-1 truncate">
                         Cliente: <span className="text-slate-900 dark:text-white">{ticketDetails.admin?.businessName} ({ticketDetails.admin?.username})</span> • Telefone: {ticketDetails.admin?.phone || 'Não informado'}
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 shrink-0">
                       {ticketDetails.admin?.phone && (
                         <a
                           href={`https://wa.me/${ticketDetails.admin.phone}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-3 py-1.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 rounded-xl text-xs font-bold transition-all border border-emerald-500/20 flex items-center gap-1"
+                          className="px-2.5 py-1.5 bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 rounded-xl text-xs font-bold transition-all border border-emerald-500/20 flex items-center gap-1"
                         >
                           WhatsApp
                         </a>
@@ -1241,13 +1241,13 @@ export default function SuperAdminDashboard() {
                         }`}
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{ticketDetails.status === 'RESOLVED' ? 'Reabrir Chamado' : 'Concluir Chamado'}</span>
+                        <span className="hidden sm:inline">{ticketDetails.status === 'RESOLVED' ? 'Reabrir Chamado' : 'Concluir Chamado'}</span>
                       </button>
                     </div>
                   </div>
 
                   {/* Messages Feed */}
-                  <div className="flex-1 overflow-y-auto py-4 space-y-3 pr-2 custom-scrollbar">
+                  <div className="flex-1 min-h-0 overflow-y-auto py-3 space-y-3 pr-1 custom-scrollbar">
                     {ticketDetails.messages?.map((msg: any) => {
                       const isSuperAdmin = msg.senderRole === 'SUPERADMIN'
                       return (
@@ -1255,7 +1255,7 @@ export default function SuperAdminDashboard() {
                           <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider px-1 mb-1">
                             {msg.senderName} • {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
-                          <div className={`p-4 rounded-2xl text-xs font-medium max-w-[80%] leading-relaxed shadow-sm ${
+                          <div className={`p-3.5 rounded-2xl text-xs font-medium max-w-[85%] leading-relaxed shadow-sm ${
                             isSuperAdmin
                               ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-tr-none'
                               : 'bg-slate-100 dark:bg-[#1A2235] text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-tl-none'
@@ -1268,7 +1268,7 @@ export default function SuperAdminDashboard() {
                   </div>
 
                   {/* Reply Input Form */}
-                  <form onSubmit={handleSendSuperAdminReply} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-3 shrink-0">
+                  <form onSubmit={handleSendSuperAdminReply} className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center gap-2.5 shrink-0">
                     <input
                       type="text"
                       value={supportReply}
@@ -1279,7 +1279,7 @@ export default function SuperAdminDashboard() {
                     <button
                       type="submit"
                       disabled={sendingReply || !supportReply.trim()}
-                      className="px-5 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black text-xs rounded-xl shadow-lg hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      className="px-4 py-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white font-black text-xs rounded-xl shadow-lg hover:opacity-95 transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0"
                     >
                       {sendingReply ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                       <span>Responder</span>
@@ -1287,8 +1287,8 @@ export default function SuperAdminDashboard() {
                   </form>
                 </div>
               ) : (
-                <div className="py-32 text-center space-y-3 text-slate-400">
-                  <MessageSquare className="w-12 h-12 text-slate-300 dark:text-slate-700 mx-auto" />
+                <div className="flex-1 flex flex-col items-center justify-center text-center p-6 space-y-3 text-slate-400">
+                  <MessageSquare className="w-12 h-12 text-slate-300 dark:text-slate-700" />
                   <p className="text-sm font-bold">Selecione um chamado da lista ao lado para responder.</p>
                 </div>
               )}

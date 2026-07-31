@@ -172,6 +172,16 @@ export const api = {
   getStats: () =>
     request<{ totalLinks: number; totalSlots: number; totalBookings: number; availableSlots: number }>('/admin/stats'),
 
+  // ═══ WhatsApp Integration ═══
+  getWhatsAppStatus: () =>
+    request<{ isConfigured: boolean; provider: 'meta' | 'gateway' | 'none'; details?: string }>('/admin/whatsapp/status'),
+
+  sendWhatsAppTest: (phone: string, message?: string) =>
+    request<{ success: boolean; method: 'meta' | 'gateway' | 'link'; link?: string; error?: string }>('/admin/whatsapp/test', {
+      method: 'POST',
+      body: JSON.stringify({ phone, message }),
+    }),
+
   // ═══ Links ═══
   getLinks: () =>
     request<Array<{
