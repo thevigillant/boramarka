@@ -558,9 +558,9 @@ export function CRMChat({ onShowToast }: CRMChatProps) {
 
                     <p className="text-[11px] text-slate-400 truncate mb-1">
                       {lastMsg ? (
-                        lastMsg.messageType === 'AUDIO' ? '🎤 Áudio de voz' :
-                        lastMsg.messageType === 'IMAGE' ? '📷 Foto recebida' :
-                        lastMsg.messageType === 'DOCUMENT' ? '📄 Documento em anexo' :
+                        lastMsg.messageType === 'AUDIO' ? 'Áudio de voz' :
+                        lastMsg.messageType === 'IMAGE' ? 'Foto recebida' :
+                        lastMsg.messageType === 'DOCUMENT' ? 'Documento em anexo' :
                         lastMsg.content
                       ) : (
                         c.phone
@@ -642,19 +642,19 @@ export function CRMChat({ onShowToast }: CRMChatProps) {
                     onClick={() => handleSimulateReply('TEXT')}
                     className="p-2 hover:bg-slate-700 text-left text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-2"
                   >
-                    💬 Texto do cliente
+                    Texto do cliente
                   </button>
                   <button
                     onClick={() => handleSimulateReply('AUDIO')}
                     className="p-2 hover:bg-slate-700 text-left text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-2"
                   >
-                    🎤 Áudio do cliente
+                    Áudio do cliente
                   </button>
                   <button
                     onClick={() => handleSimulateReply('IMAGE')}
                     className="p-2 hover:bg-slate-700 text-left text-xs font-semibold text-white rounded-lg transition-colors flex items-center gap-2"
                   >
-                    📷 Foto do cliente
+                    Foto do cliente
                   </button>
                 </div>
               </div>
@@ -791,7 +791,7 @@ export function CRMChat({ onShowToast }: CRMChatProps) {
                               className="text-[9px] hover:underline flex items-center gap-0.5 text-emerald-200"
                               title="Abrir esta mensagem diretamente no WhatsApp do cliente"
                             >
-                              📱 WhatsApp
+                              WhatsApp
                             </button>
                           )}
                           <CheckCheck className="w-3 h-3 inline" />

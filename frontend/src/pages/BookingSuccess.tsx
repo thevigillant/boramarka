@@ -141,25 +141,25 @@ export default function BookingSuccess() {
     if (!booking) return '';
     const dateFormatted = formatDate(booking.date);
     const lines = [
-      `Olá, ${booking.clientName.split(' ')[0]}! ✅`,
+      `Olá, ${booking.clientName.split(' ')[0]}! `,
       '',
       `Seu agendamento foi confirmado com sucesso no BoraMarka:`,
-      `💼 Serviço: *${booking.serviceName}*`,
-      `📅 Data: *${dateFormatted}*`,
-      `🕐 Horário: *${booking.time}*`,
+      `Serviço: *${booking.serviceName}*`,
+      `Data: *${dateFormatted}*`,
+      `Horário: *${booking.time}*`,
     ];
 
     if (booking.cancellationCode) {
       lines.push('');
-      lines.push(`🔑 Código de Gerenciamento: *${booking.cancellationCode}*`);
+      lines.push(`Código de Gerenciamento: *${booking.cancellationCode}*`);
     }
 
     if (cancelPath) {
-      lines.push(`🔗 Cancelar ou Remarcar: ${cancelPath}`);
+      lines.push(`Cancelar ou Remarcar: ${cancelPath}`);
     }
 
     lines.push('');
-    lines.push(`Obrigado pela preferência! 😊`);
+    lines.push(`Obrigado pela preferência! `);
     return lines.join('\n');
   };
 
@@ -217,8 +217,8 @@ export default function BookingSuccess() {
         {isPaidViaMP && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
             {isPayFullPrice
-              ? '✅ Valor total do serviço pago via Mercado Pago! Nada a pagar no dia! 🎉'
-              : '✅ Taxa de agendamento paga via Mercado Pago!'}
+              ? 'Valor total do serviço pago via Mercado Pago! Nada a pagar no dia! '
+              : 'Taxa de agendamento paga via Mercado Pago!'}
           </div>
         )}
 
@@ -261,7 +261,7 @@ export default function BookingSuccess() {
                   <span className="text-[10px] text-pink-500 font-black uppercase tracking-wider block">Adicionais Contratados:</span>
                   {addons.map((a, i) => (
                     <div key={i} className="flex justify-between items-center text-xs font-bold text-slate-300">
-                      <span>➕ {a.name}</span>
+                      <span>{a.name}</span>
                       <span className="font-mono text-emerald-400">+{formatCurrency(a.price)}</span>
                     </div>
                   ))}
@@ -281,7 +281,7 @@ export default function BookingSuccess() {
               <div className="pt-3 border-t border-slate-800/80 space-y-1.5">
                 <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider block">Código de Gerenciamento / Cancelamento:</span>
                 <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/20 px-3.5 py-2.5 rounded-2xl">
-                  <span className="text-sm font-mono font-black text-amber-300 tracking-wider">🔑 {booking.cancellationCode}</span>
+                  <span className="text-sm font-mono font-black text-amber-300 tracking-wider">{booking.cancellationCode}</span>
                   <span className="text-[10px] font-bold text-amber-400/80">Guarde seu código</span>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export default function BookingSuccess() {
 
         {whatsapp?.method === 'meta' || whatsapp?.method === 'gateway' ? (
           <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
-             ✅ Comprovante enviado automaticamente para seu WhatsApp!
+             Comprovante enviado automaticamente para seu WhatsApp!
           </div>
         ) : (
           <div className="mb-6 space-y-2">
@@ -302,7 +302,7 @@ export default function BookingSuccess() {
               rel="noopener noreferrer"
               className="w-full flex items-center justify-center gap-3 bg-[#25D366] hover:bg-[#20BD5A] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-[#25d366]/20 text-base cursor-pointer"
             >
-              💬 Abrir WhatsApp & Receber Comprovante
+              Abrir WhatsApp & Receber Comprovante
             </a>
           </div>
         )}
@@ -376,11 +376,11 @@ export default function BookingSuccess() {
                 ) : (
                   <Bell className="w-4 h-4" />
                 )}
-                🔔 Ativar lembretes por notificação
+                Ativar lembretes por notificação
               </button>
             )}
             {pushStatus === 'granted' && (
-              <p className="mt-3 text-xs text-emerald-400 font-bold">✅ Notificações ativadas!</p>
+              <p className="mt-3 text-xs text-emerald-400 font-bold">Notificações ativadas!</p>
             )}
 
             <button

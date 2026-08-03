@@ -267,7 +267,7 @@ export default function BookingPage() {
         <div className="max-w-xl mx-auto px-4 -mt-16 animate-slide-up">
           <div className="bg-white dark:bg-[#131826] rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">
             <div className="text-center space-y-2">
-              <span className="text-4xl">{pendingPaymentBooking.payFullPrice ? '✨' : '💳'}</span>
+              <span className="text-4xl">{pendingPaymentBooking.payFullPrice ? '' : ''}</span>
               <h2 className="text-xl font-black text-slate-900 dark:text-white">{pendingPaymentBooking.payFullPrice ? 'Pagamento Total' : 'Sinal de Reserva'}</h2>
               <p className="text-slate-500 dark:text-slate-400 text-sm font-semibold">
                 {pendingPaymentBooking.payFullPrice
@@ -304,7 +304,7 @@ export default function BookingPage() {
               {pendingPaymentBooking.payFullPrice && (
                 <div className="flex justify-between items-center pt-2 border-t border-slate-200 dark:border-slate-800 mt-2">
                   <span className="text-xs font-bold text-emerald-600 dark:text-emerald-500">Restante a pagar no dia</span>
-                  <span className="text-sm font-black text-emerald-650 dark:text-emerald-400">R$ 0,00 🎉</span>
+                  <span className="text-sm font-black text-emerald-650 dark:text-emerald-400">R$ 0,00 </span>
                 </div>
               )}
             </div>
@@ -336,7 +336,7 @@ export default function BookingPage() {
                     </>
                   ) : (
                     <>
-                      <span>⚡</span>
+                      <span></span>
                       Confirmar Pagamento Simulado
                     </>
                   )}
@@ -347,7 +347,7 @@ export default function BookingPage() {
                 href={pendingPaymentBooking.paymentUrl}
                 className="w-full custom-gradient-bg text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl custom-accent-glow hover:opacity-90 transition-opacity text-center text-lg"
               >
-                <span>💳</span>
+                <span></span>
                 Pagar com Mercado Pago
               </a>
             )}
@@ -482,7 +482,7 @@ export default function BookingPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2.5">
                       <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400 via-pink-500 to-violet-600 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-pink-500/20">
-                        ✨
+                        
                       </div>
                       <div>
                         <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
@@ -524,7 +524,7 @@ export default function BookingPage() {
                             <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
                               isSelected ? 'bg-gradient-to-tr from-pink-500 to-violet-500 border-transparent text-white shadow-md' : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
                             }`}>
-                              {isSelected && <span className="text-xs font-black">✓</span>}
+                              {isSelected && <span className="text-xs font-black"></span>}
                             </div>
                             <div>
                               <p className="text-xs font-black text-slate-900 dark:text-white">{addon.name}</p>
@@ -630,7 +630,7 @@ export default function BookingPage() {
                   {activeCoupons.length > 0 && !appliedCoupon && (
                     <div className="mt-3 animate-fade-in">
                       <p className="text-[11px] font-black text-slate-650 dark:text-slate-350 uppercase tracking-wider mb-2 flex items-center gap-1">
-                        <span>💡</span> Cupons Disponíveis (Clique para aplicar)
+                        <span></span> Cupons Disponíveis (Clique para aplicar)
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {activeCoupons.map((coupon) => (
@@ -703,7 +703,7 @@ export default function BookingPage() {
 
               {bookingFeeEnabled && bookingFeeAmount > 0 && !activeMembership && (
                 <div className="bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-550/30 rounded-2xl p-4 mb-6 text-center space-y-3">
-                  <p className="text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-widest">💳 Forma de Pagamento</p>
+                  <p className="text-amber-600 dark:text-amber-400 text-xs font-black uppercase tracking-widest">Forma de Pagamento</p>
                   <p className="text-slate-600 dark:text-slate-350 text-xs font-semibold">O profissional solicita um sinal para garantir seu horário. Escolha como deseja pagar:</p>
                   
                   <div className="grid grid-cols-2 gap-3 mt-3">
@@ -745,7 +745,7 @@ export default function BookingPage() {
                       <p className={`text-lg font-black ${payFullPrice ? 'text-slate-900 dark:text-white' : 'text-slate-650 dark:text-slate-400'}`}>
                         R$ {servicePrice.toFixed(2)}
                       </p>
-                      <p className={`text-[10px] font-semibold mt-1 ${payFullPrice ? 'text-emerald-800 dark:text-emerald-300/80' : 'text-slate-500 dark:text-slate-450'}`}>Nada a pagar no dia 🎉</p>
+                      <p className={`text-[10px] font-semibold mt-1 ${payFullPrice ? 'text-emerald-800 dark:text-emerald-300/80' : 'text-slate-500 dark:text-slate-450'}`}>Nada a pagar no dia </p>
                     </button>
                   </div>
                 </div>
@@ -753,7 +753,7 @@ export default function BookingPage() {
 
               {activeMembership && (
                 <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 mb-6 text-center space-y-1">
-                  <p className="text-emerald-400 text-xs font-black uppercase tracking-widest">✨ Assinatura Ativa Detectada</p>
+                  <p className="text-emerald-400 text-xs font-black uppercase tracking-widest"> Assinatura Ativa Detectada</p>
                   <p className="text-white font-bold text-sm">Plano: {activeMembership.planName}</p>
                   <p className="text-slate-400 text-[10px] font-semibold">Você faz parte do clube de assinaturas deste profissional. O sinal de reserva foi isentado!</p>
                 </div>
@@ -771,7 +771,7 @@ export default function BookingPage() {
                   </>
                 ) : (
                   <>
-                    <span className="text-2xl">✅</span>
+                    <span className="text-2xl"></span>
                     Confirmar Horário
                   </>
                 )}

@@ -554,7 +554,7 @@ export default function Dashboard() {
     return localStorage.getItem('theme') === 'dark'
   })
 
-  // 🔍 Global Header Search State & Shortcut
+  // Global Header Search State & Shortcut
   const [globalSearchQuery, setGlobalSearchQuery] = useState('')
   const headerSearchInputRef = useRef<HTMLInputElement>(null)
 
@@ -740,7 +740,7 @@ export default function Dashboard() {
     return Array.from(cats)
   }, [transactions])
 
-  // 🔍 Resultados da Busca Global no Cabeçalho
+  // Resultados da Busca Global no Cabeçalho
   const filteredSearchItems = useMemo(() => {
     if (!globalSearchQuery.trim()) return []
     const q = globalSearchQuery.toLowerCase()
@@ -1389,7 +1389,7 @@ export default function Dashboard() {
     showToast('Relatório de faturamento exportado em CSV!', 'success')
   }
 
-  // 🛡️ Security & Access Control Module States (RBAC)
+  //  Security & Access Control Module States (RBAC)
   const [securityPermissions, setSecurityPermissions] = useState<UserPermissionItem[]>([])
   const [loadingSecurity, setLoadingSecurity] = useState(false)
   const [showSecurityModal, setShowSecurityModal] = useState(false)
@@ -1400,21 +1400,21 @@ export default function Dashboard() {
     email: '',
     password: '',
     roleTitle: 'Operador',
-    // 📅 Operacional
+    // Operacional
     canAgendamentos: true,
     canEstornos: false,
     canClientes: true,
     canHorarios: true,
-    // 💼 Comercial
+    // Comercial
     canServicos: false,
     canLinks: false,
     canCupons: false,
     canMemberships: false,
-    // 💰 Gestão & Finanças
+    // Gestão & Finanças
     canFinanceiro: false,
     canRh: false,
     canFaturamento: false,
-    // 🎨 Sistema & Ajustes
+    // Sistema & Ajustes
     canSeguranca: false,
     canPersonalizar: false,
     canSocial: false,
@@ -1746,7 +1746,7 @@ export default function Dashboard() {
     const paymentStatus = params.get('payment')
     if (paymentStatus) {
       if (paymentStatus === 'success') {
-        showToast('Parabéns! Sua assinatura foi ativada com sucesso. 🎉', 'success')
+        showToast('Parabéns! Sua assinatura foi ativada com sucesso. ', 'success')
       } else if (paymentStatus === 'pending') {
         showToast('Seu pagamento está em análise. Assim que aprovado, sua assinatura será ativada! ⌛', 'success')
       } else if (paymentStatus === 'failure') {
@@ -1758,7 +1758,7 @@ export default function Dashboard() {
     const googleStatus = params.get('google')
     if (googleStatus) {
       if (googleStatus === 'success') {
-        showToast('Google Agenda integrado com sucesso! 🎉', 'success')
+        showToast('Google Agenda integrado com sucesso! ', 'success')
       } else if (googleStatus === 'error') {
         const msg = params.get('message') || 'Não foi possível conectar com sua conta Google.'
         showToast(`Erro na integração com Google: ${msg}`, 'error')
@@ -2563,7 +2563,7 @@ export default function Dashboard() {
     const newStatus = booking.status === 'CONCLUIDO' ? 'CONFIRMADO' : 'CONCLUIDO'
     try {
       await api.updateBookingStatus(booking.id, newStatus)
-      showToast(newStatus === 'CONCLUIDO' ? 'Agendamento concluído com sucesso! ✓' : 'Status alterado')
+      showToast(newStatus === 'CONCLUIDO' ? 'Agendamento concluído com sucesso! ' : 'Status alterado')
       fetchData()
     } catch (err: any) {
       showToast(err.message, 'error')
@@ -2812,7 +2812,7 @@ export default function Dashboard() {
                       {pdfLogoUrl ? (
                         <img src={pdfLogoUrl} alt="Logo PDF" className="w-full h-full object-cover" />
                       ) : (
-                        <span className="text-2xl">📸</span>
+                        <span className="text-2xl"></span>
                       )}
                     </div>
 
@@ -2912,7 +2912,7 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* 🔍 Global Header Search Bar */}
+          {/* Global Header Search Bar */}
           <div className="hidden md:flex items-center flex-1 max-w-sm mx-4 lg:mx-8">
             <div className="w-full relative group">
               <div className="flex items-center gap-2 bg-slate-100/80 dark:bg-white/[0.05] border border-slate-200/80 dark:border-white/[0.08] group-hover:border-violet-500/40 focus-within:border-violet-500/80 focus-within:ring-2 focus-within:ring-violet-500/20 rounded-xl px-3 py-1.5 transition-all duration-200 shadow-inner">
@@ -3043,7 +3043,7 @@ export default function Dashboard() {
                        )}
                      </div>
                      <p className="text-[10px] text-violet-400 font-bold mt-0.5">
-                       {operatorSession ? `🛡️ ${operatorSession.userName} (${operatorSession.roleTitle})` : `@${adminInfo.username.toLowerCase()}`}
+                       {operatorSession ? ` ${operatorSession.userName} (${operatorSession.roleTitle})` : `@${adminInfo.username.toLowerCase()}`}
                      </p>
                    </div>
                    <button 
@@ -3082,7 +3082,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 📱 Subcabeçalho Mobile — Título do Módulo Ativo com Espaçamento Limpo */}
+        {/* Subcabeçalho Mobile — Título do Módulo Ativo com Espaçamento Limpo */}
         <div className="md:hidden max-w-6xl mx-auto px-4 pt-3 pb-1 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-7 h-7 rounded-lg bg-violet-500/15 text-violet-400 flex items-center justify-center shrink-0">
@@ -3094,7 +3094,7 @@ export default function Dashboard() {
         </div>
       </header>
 
-      {/* 📱 Mobile Drawer Menu Overlay */}
+      {/* Mobile Drawer Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-md md:hidden flex flex-col justify-end animate-fade-in">
           <div className="bg-white dark:bg-[#0D111E] border-t border-slate-200 dark:border-white/10 rounded-t-[2rem] p-5 max-h-[85dvh] overflow-y-auto custom-scrollbar animate-slide-up relative shadow-2xl">
@@ -3212,7 +3212,7 @@ export default function Dashboard() {
 
       <main className="relative z-10 max-w-6xl mx-auto px-3 sm:px-6 pt-4 pb-16 sm:pb-24 pb-safe">
         
-        {/* 💻 Desktop Categorized Dropdown Navbar */}
+        {/* Desktop Categorized Dropdown Navbar */}
         <div ref={dropdownRef} className="hidden md:flex items-center justify-start gap-2.5 mb-8 relative z-30 flex-wrap">
           {filteredNavCategories.map(cat => {
             if (cat.type === 'single') {
@@ -3364,7 +3364,7 @@ export default function Dashboard() {
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
                       services.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
                     }`}>
-                      {services.length > 0 ? '✓' : '1'}
+                      {services.length > 0 ? '' : '1'}
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xs font-bold">Cadastrar seus Serviços</h4>
@@ -3385,7 +3385,7 @@ export default function Dashboard() {
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
                       links.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
                     }`}>
-                      {links.length > 0 ? '✓' : '2'}
+                      {links.length > 0 ? '' : '2'}
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xs font-bold">Gerar Link de Agendamento</h4>
@@ -3397,7 +3397,7 @@ export default function Dashboard() {
               </div>
             )}
 
-            {/* 📊 Analytics Charts Grid */}
+            {/* Analytics Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               {/* Chart 1: Faturamento Mensal */}
               <div className="card-simple">
@@ -3974,11 +3974,11 @@ export default function Dashboard() {
                         )}
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                        💼 Serviço: <strong className="text-slate-900 dark:text-white">{serviceName}</strong> • 📅 Data: <strong className="text-slate-900 dark:text-white">{formatDate(item.timeSlot?.date || '')} às {item.timeSlot?.time}</strong>
+                        Serviço: <strong className="text-slate-900 dark:text-white">{serviceName}</strong> • Data: <strong className="text-slate-900 dark:text-white">{formatDate(item.timeSlot?.date || '')} às {item.timeSlot?.time}</strong>
                       </p>
                       {item.cancellationCode && (
                         <p className="text-[11px] text-slate-400 font-mono">
-                          🔑 Cód: {item.cancellationCode} {item.mpPaymentId ? `• Ref MP: ${item.mpPaymentId}` : ''}
+                          Cód: {item.cancellationCode} {item.mpPaymentId ? `• Ref MP: ${item.mpPaymentId}` : ''}
                         </p>
                       )}
                     </div>
@@ -4125,7 +4125,7 @@ export default function Dashboard() {
                   {/* Google Calendar Card */}
                   <div className="card-simple p-6 space-y-4">
                     <div className="flex items-center gap-3">
-                      <span className="text-xl">📅</span>
+                      <span className="text-xl"></span>
                       <div>
                         <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider">Google Agenda</h4>
                         <p className="text-[10px] text-slate-400 font-bold mt-0.5">Sincronize seus agendamentos</p>
@@ -4586,7 +4586,7 @@ export default function Dashboard() {
               {/* Table / List */}
               {aggregatedClients.length === 0 ? (
                 <div className="card-simple p-12 text-center border-dashed border-2 border-slate-250 dark:border-slate-800/80">
-                  <span className="text-4xl block mb-3">👥</span>
+                  <span className="text-4xl block mb-3"></span>
                   <h3 className="text-md font-black text-slate-900 dark:text-white">Nenhum cliente encontrado</h3>
                   <p className="text-xs text-slate-400 font-semibold mt-1">Os clientes aparecerão aqui automaticamente quando realizarem agendamentos pelos seus links.</p>
                 </div>
@@ -4976,7 +4976,7 @@ export default function Dashboard() {
                       )}
                     </div>
 
-                    {/* 📸 Instagram Bio Link Helper */}
+                    {/* Instagram Bio Link Helper */}
                     <div className="bg-gradient-to-r from-purple-600/10 via-pink-600/10 to-orange-500/10 p-4 rounded-2xl border border-pink-500/20 space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-black uppercase tracking-wider text-pink-600 dark:text-pink-400 flex items-center gap-1.5">
@@ -5598,7 +5598,7 @@ export default function Dashboard() {
 
                   {coupons.length === 0 ? (
                     <div className="card-simple p-12 text-center border-dashed border-2 border-slate-200 dark:border-slate-850 bg-white dark:bg-[#131826]/40">
-                      <span className="text-4xl block mb-3">🏷️</span>
+                      <span className="text-4xl block mb-3"></span>
                       <h4 className="text-md font-black text-slate-900 dark:text-white">Nenhum cupom ativo</h4>
                       <p className="text-xs text-slate-400 font-semibold mt-1">Crie um cupom no formulário ao lado para compartilhar com seus clientes.</p>
                     </div>
@@ -7670,7 +7670,7 @@ export default function Dashboard() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
-                      💬
+                      
                     </div>
                     <div>
                       <h4 className="text-xs font-black text-slate-900 dark:text-white uppercase">Integração WhatsApp API Real</h4>
@@ -7683,7 +7683,7 @@ export default function Dashboard() {
                         ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/30'
                         : 'bg-amber-500/10 text-amber-600 border-amber-500/30'
                     }`}>
-                      {waStatus.isConfigured ? `🟢 ${waStatus.details}` : '🟡 Modo wa.me'}
+                      {waStatus.isConfigured ? `${waStatus.details}` : 'Modo wa.me'}
                     </span>
                   )}
                 </div>
@@ -7717,12 +7717,12 @@ export default function Dashboard() {
                     }`}>
                       {waTestResult.success ? (
                         <span>
-                          {waTestResult.method === 'meta' && '✅ Mensagem enviada via Meta Cloud API Oficial!'}
-                          {waTestResult.method === 'gateway' && '✅ Mensagem enviada via Gateway HTTP!'}
-                          {waTestResult.method === 'link' && '📱 Link wa.me gerado (Modo Fallback sem credenciais API).'}
+                          {waTestResult.method === 'meta' && 'Mensagem enviada via Meta Cloud API Oficial!'}
+                          {waTestResult.method === 'gateway' && 'Mensagem enviada via Gateway HTTP!'}
+                          {waTestResult.method === 'link' && 'Link wa.me gerado (Modo Fallback sem credenciais API).'}
                         </span>
                       ) : (
-                        <span>❌ Erro: {waTestResult.error || 'Falha no disparo'}</span>
+                        <span>Erro: {waTestResult.error || 'Falha no disparo'}</span>
                       )}
                     </div>
                   )}
@@ -7910,7 +7910,7 @@ export default function Dashboard() {
                             <div key={h.id} className="p-3 bg-slate-50/55 dark:bg-[#0f131f]/30 rounded-2xl border border-slate-150 dark:border-slate-800/80 flex items-center justify-between">
                               <div className="text-left">
                                 <h5 className="font-bold text-xs text-slate-900 dark:text-white">{h.timeSlot.link.service?.name || 'Serviço'}</h5>
-                                <p className="text-[10px] text-slate-400 font-bold mt-1">📅 {dateFormatted} às {h.timeSlot.time}</p>
+                                <p className="text-[10px] text-slate-400 font-bold mt-1">{dateFormatted} às {h.timeSlot.time}</p>
                               </div>
                               
                               <div className="text-right">
@@ -8399,7 +8399,7 @@ export default function Dashboard() {
                   />
                   {docForm.fileName && (
                     <span className="text-[10px] text-emerald-400 font-bold block mt-1">
-                      ✅ {docForm.fileName} ({docForm.fileSize})
+                      {docForm.fileName} ({docForm.fileSize})
                     </span>
                   )}
                 </div>
@@ -8447,7 +8447,7 @@ export default function Dashboard() {
                               </span>
                               {isExpired && (
                                 <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-red-500 text-white animate-pulse">
-                                  ⚠️ Vencido ({formatDate(doc.expiryDate)})
+                                   Vencido ({formatDate(doc.expiryDate)})
                                 </span>
                               )}
                             </div>
@@ -8539,7 +8539,7 @@ export default function Dashboard() {
                     required
                   />
                   <div className="mt-1.5 p-2.5 rounded-xl bg-violet-50 dark:bg-white/[0.04] border border-violet-200 dark:border-white/[0.08] text-[11px] text-slate-800 dark:text-slate-300 font-medium">
-                    💡 <span className="font-bold">Para entrar como colaborador:</span> Empresa: <code className="text-pink-600 dark:text-pink-400 font-bold">@{adminInfo?.username || 'empresa'}</code> + Operador: <code className="text-emerald-700 dark:text-emerald-400 font-bold">{securityForm.userName || 'usuario'}</code>
+                    <span className="font-bold">Para entrar como colaborador:</span> Empresa: <code className="text-pink-600 dark:text-pink-400 font-bold">@{adminInfo?.username || 'empresa'}</code> + Operador: <code className="text-emerald-700 dark:text-emerald-400 font-bold">{securityForm.userName || 'usuario'}</code>
                   </div>
                 </div>
                 <div>

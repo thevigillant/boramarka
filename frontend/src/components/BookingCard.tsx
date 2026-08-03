@@ -95,7 +95,7 @@ export function BookingCard({
               </h4>
               {isDone ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-                  ✓ Concluído
+                   Concluído
                 </span>
               ) : booking.status === 'PENDENTE' ? (
                 <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -108,11 +108,11 @@ export function BookingCard({
               ) : booking.status === 'PAGO' && (booking.paidAmount || 0) > 0 ? (
                 (booking.paidAmount || 0) >= (booking.timeSlot.link?.service?.price || Infinity) ? (
                   <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                    💰 Pago Total
+                    Pago Total
                   </span>
                 ) : (
                   <span className="px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
-                    💳 Sinal Pago
+                    Sinal Pago
                   </span>
                 )
               ) : (
@@ -135,7 +135,7 @@ export function BookingCard({
                 </span>
               )}
               <span className="flex items-center gap-1 font-bold text-slate-700 dark:text-slate-300">
-                📞 {booking.clientPhone}
+                 {booking.clientPhone}
               </span>
             </div>
           </div>
@@ -167,11 +167,11 @@ export function BookingCard({
               const token = booking.timeSlot.link?.token
               if (!token) return
               const cancelLink = `${window.location.origin}/agendar/${token}/cancelar/${booking.id}`
-              const msg = `Olá, ${booking.clientName}! ✨\n\nCaso precise cancelar ou remarcar o seu agendamento de *${
+              const msg = `Olá, ${booking.clientName}! \n\nCaso precise cancelar ou remarcar o seu agendamento de *${
                 booking.timeSlot.link?.service?.name || 'Serviço'
-              }*:\n\n📅 Data: *${formatDate(booking.timeSlot.date)}*\n⏰ Hora: *${
+              }*:\n\nData: *${formatDate(booking.timeSlot.date)}*\n⏰ Hora: *${
                 booking.timeSlot.time
-              }*\n\nAcesse o link do seu portal de atendimento para remarcar ou cancelar:\n🔗 ${cancelLink}\n\nQualquer dúvida, estamos à disposição!`
+              }*\n\nAcesse o link do seu portal de atendimento para remarcar ou cancelar:\n${cancelLink}\n\nQualquer dúvida, estamos à disposição!`
               const cleanPhone = booking.clientPhone.replace(/\D/g, '')
               const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`
               window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank')
