@@ -324,7 +324,7 @@ export default function BookingCancel() {
                   <div className="flex justify-between items-center pb-2.5 border-b border-slate-800/80">
                     <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider">Cód. Cancelamento</span>
                     <span className="text-xs font-black text-amber-300 bg-amber-500/10 px-2.5 py-1 rounded-lg border border-amber-500/20 font-mono tracking-wider">
-                      🔑 {booking.cancellationCode}
+                      {booking.cancellationCode}
                     </span>
                   </div>
                 )}

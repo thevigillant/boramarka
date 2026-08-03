@@ -323,7 +323,7 @@ export default function SuperAdminDashboard() {
     try {
       await api.grantFullAccessToUser(user.id)
       await fetchUsersOnly()
-      showToast(`👑 Acesso Total Grátis (Plano Premium Vitalício) concedido para "${user.businessName}"!`, 'success')
+      showToast(`Acesso Total Grátis (Plano Premium Vitalício) concedido para "${user.businessName}"!`, 'success')
     } catch (err: any) {
       showToast(err.message || 'Erro ao liberar acesso total', 'error')
     }

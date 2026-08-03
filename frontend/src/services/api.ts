@@ -1403,7 +1403,7 @@ export const api = {
   deleteSecurityPermission: (id: number) =>
     request<{ success: boolean; message: string }>(`/security/permissions/${id}`, { method: 'DELETE' }),
 
-  // 💬 CRM Chat & Customer Service Module
+  // CRM Chat & Customer Service Module
   getCrmContacts: (params?: { q?: string; status?: string }) => {
     const search = new URLSearchParams();
     if (params?.q) search.append('q', params.q);
@@ -1490,24 +1490,24 @@ export interface UserPermissionItem {
   password?: string;
   roleTitle: string;
   
-  // 📅 Módulo: Operacional
+  // Módulo: Operacional
   canAgendamentos?: boolean;
   canEstornos?: boolean;
   canClientes?: boolean;
   canHorarios?: boolean;
 
-  // 💼 Módulo: Comercial
+  // Módulo: Comercial
   canServicos?: boolean;
   canLinks?: boolean;
   canCupons?: boolean;
   canMemberships?: boolean;
 
-  // 💰 Módulo: Gestão & Finanças
+  // Módulo: Gestão & Finanças
   canFinanceiro?: boolean;
   canRh?: boolean;
   canFaturamento?: boolean;
 
-  // 🎨 Módulo: Sistema & Ajustes
+  // Módulo: Sistema & Ajustes
   canSeguranca?: boolean;
   canPersonalizar?: boolean;
   canSocial?: boolean;

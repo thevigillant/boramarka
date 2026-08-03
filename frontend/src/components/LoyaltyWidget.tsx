@@ -117,7 +117,7 @@ export default function LoyaltyWidget({ username }: LoyaltyWidgetProps) {
                 <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-pink-500/10 to-purple-500/10 border border-emerald-500/30 space-y-2 text-left animate-slide-up">
                   <div className="flex items-center gap-2 text-emerald-400 font-black text-xs">
                     <Gift className="w-4 h-4 text-pink-400" />
-                    <span>🎉 Recompensa de Fidelidade Disponível!</span>
+                    <span> Recompensa de Fidelidade Disponível!</span>
                   </div>
                   <p className="text-[11px] text-slate-300 leading-snug">
                     Você completou sua cartela! Use o cupom abaixo no seu próximo agendamento para ganhar{' '}

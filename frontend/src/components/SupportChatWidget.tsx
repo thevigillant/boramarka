@@ -366,7 +366,7 @@ export default function SupportChatWidget() {
                 {/* Send Input Form */}
                 {activeTicket.status === 'RESOLVED' ? (
                   <div className="p-3 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 rounded-2xl border border-emerald-500/20">
-                    ✓ Este chamado foi marcado como concluído.
+                     Este chamado foi marcado como concluído.
                   </div>
                 ) : (
                   <form onSubmit={handleSendMessage} className="flex items-center gap-2 shrink-0 pt-2 border-t border-slate-200 dark:border-slate-800">

@@ -26,7 +26,7 @@ export const BoraMarkaLogo: React.FC<LogoProps> = ({
 
   return (
     <div className={`inline-flex items-center gap-2.5 select-none ${className}`}>
-      {/* 🤙 Shaka + Checkmark Icon */}
+      {/*  Shaka + Checkmark Icon */}
       <div className={`relative ${dim.box} flex items-center justify-center shrink-0 group`}>
         <svg
           viewBox="0 0 64 64"
@@ -106,7 +106,7 @@ export const BoraMarkaLogo: React.FC<LogoProps> = ({
         </svg>
       </div>
 
-      {/* ✒️ Typography & Subtitle */}
+      {/*  Typography & Subtitle */}
       {showText && (
         <div className="flex flex-col justify-center text-left">
           <div className={`font-black tracking-tight leading-none text-slate-900 dark:text-white ${dim.text}`}>

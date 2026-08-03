@@ -170,13 +170,13 @@ export default function Landing() {
     if (simStep === 5) {
       const t1 = setTimeout(() => {
         setWaMessages(prev => [...prev, {
-          text: `✅ *BoraMarka Barber:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* está CONFIRMADO para ${selectedDay} às *${simTime}*. 🗓️`,
+          text: `*BoraMarka Barber:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* está CONFIRMADO para ${selectedDay} às *${simTime}*. `,
           isUser: false, time: '09:41'
         }])
       }, 800)
       const t2 = setTimeout(() => {
         setWaMessages(prev => [...prev, {
-          text: `🔔 *Lembrete automático:* Seu horário para *${simService?.name}* é hoje às *${simTime}*. Chegue com 5 min de antecedência.`,
+          text: `*Lembrete automático:* Seu horário para *${simService?.name}* é hoje às *${simTime}*. Chegue com 5 min de antecedência.`,
           isUser: false, time: '13:30'
         }])
       }, 2500)
@@ -185,7 +185,7 @@ export default function Landing() {
     if (simStep === 7) {
       const t = setTimeout(() => {
         setWaMessages(prev => [...prev, {
-          text: `❌ *Cancelamento:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* no dia ${selectedDay} às *${simTime}* foi CANCELADO com sucesso.`,
+          text: `*Cancelamento:* Olá ${simName || 'Cliente'}, seu agendamento para *${simService?.name}* no dia ${selectedDay} às *${simTime}* foi CANCELADO com sucesso.`,
           isUser: false, time: '13:32'
         }])
       }, 800)
@@ -348,72 +348,92 @@ export default function Landing() {
           HERO — Editorial Split
           ═══════════════════════════════════════════════════ */}
       <main className="relative z-10">
-        <section className="min-h-[100dvh] flex items-center px-4 sm:px-6">
+        <section className="min-h-[100dvh] flex items-center px-4 sm:px-6 bg-tech-grid relative overflow-hidden">
           <div className="max-w-[1200px] mx-auto w-full pt-24 pb-16 sm:pt-36 sm:pb-24 md:pt-40 md:pb-32">
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
 
               {/* Left — Copy */}
-              <div className="lg:col-span-6 flex flex-col items-start text-left">
+              <div className="lg:col-span-6 flex flex-col items-start text-left relative z-20">
                 <Reveal>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/[0.06] px-3.5 py-1 sm:px-4 sm:py-1.5 text-[10px] sm:text-[11px] font-semibold tracking-[0.12em] sm:tracking-[0.15em] uppercase text-violet-400 mb-5 sm:mb-8">
-                    <span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />
-                    Usado por +500 profissionais
+                  <div className="inline-flex items-center gap-2.5 rounded-full border border-violet-500/30 bg-gradient-to-r from-violet-500/15 via-pink-500/10 to-transparent px-4 py-1.5 text-[11px] sm:text-[12px] font-bold tracking-[0.12em] uppercase text-violet-300 mb-6 shadow-[0_0_25px_rgba(139,92,246,0.2)]">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span>PLATAFORMA Nº 1 EM AGENDAMENTO AUTOMÁTICO</span>
                   </div>
                 </Reveal>
 
                 <Reveal>
-                  <h1 className="text-[clamp(1.65rem,6vw,4.2rem)] font-extrabold tracking-[-0.035em] leading-[1.08] mb-4 sm:mb-7 text-white/95">
+                  <h1 className="text-[clamp(2.1rem,6.5vw,4.5rem)] font-black tracking-[-0.04em] leading-[1.05] mb-5 sm:mb-8 text-white">
                     Pare de perder clientes
                     <br />
-                    <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+                    <span className="bg-gradient-to-r from-violet-400 via-pink-400 to-amber-300 bg-clip-text text-transparent drop-shadow-[0_10px_30px_rgba(236,72,153,0.3)]">
                       no WhatsApp.
                     </span>
                   </h1>
                 </Reveal>
 
                 <Reveal>
-                  <p className="text-[14px] sm:text-[17px] leading-[1.65] sm:leading-[1.7] text-white/40 font-medium max-w-md mb-5 sm:mb-6">
-                    Cada mensagem manual é um cliente que pode desistir. Automatize seus agendamentos, elimine no-shows com lembretes inteligentes e receba pagamentos antecipados — <span className="text-white/60 font-semibold">enquanto você foca no seu trabalho.</span>
+                  <p className="text-[15px] sm:text-[18px] leading-[1.7] text-slate-300 font-medium max-w-lg mb-7">
+                    Cada mensagem manual é um cliente que pode desistir. Automatize seus agendamentos, <span className="text-emerald-400 font-bold">elimine no-shows</span> com lembretes inteligentes e receba <span className="text-violet-300 font-bold">sinal via PIX</span> no piloto automático.
                   </p>
                 </Reveal>
 
+                {/* Social Proof Inline Trust Pill */}
                 <Reveal>
-                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-6 sm:mb-10">
-                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-white/40">
-                      <Clock className="w-3.5 h-3.5 text-orange-400" />
+                  <div className="inline-flex items-center gap-3 mb-8 px-4 py-2 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md">
+                    <div className="flex -space-x-2 overflow-hidden shrink-0">
+                      <div className="inline-flex h-7 w-7 rounded-full ring-2 ring-[#050507] bg-gradient-to-tr from-violet-600 to-indigo-500 text-[9px] font-black items-center justify-center text-white">BM</div>
+                      <div className="inline-flex h-7 w-7 rounded-full ring-2 ring-[#050507] bg-gradient-to-tr from-pink-600 to-rose-500 text-[9px] font-black items-center justify-center text-white">SB</div>
+                      <div className="inline-flex h-7 w-7 rounded-full ring-2 ring-[#050507] bg-gradient-to-tr from-cyan-600 to-teal-500 text-[9px] font-black items-center justify-center text-white">CP</div>
+                    </div>
+                    <div className="h-3.5 w-px bg-white/15" />
+                    <div className="flex items-center gap-1.5 text-slate-300 text-[12px] font-semibold">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+                      <span className="font-extrabold text-white">4.9/5</span>
+                      <span className="text-slate-400 font-medium">· +500 estabelecimentos</span>
+                    </div>
+                  </div>
+                </Reveal>
+
+                <Reveal>
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-4 mb-8">
+                    <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-[12px] font-semibold text-violet-300">
+                      <Clock className="w-4 h-4 text-amber-400" />
                       <span>12h economizadas/semana</span>
                     </div>
-                    <div className="hidden sm:block w-px h-3 bg-white/10" />
-                    <div className="flex items-center gap-1.5 text-[11px] sm:text-[12px] font-medium text-white/40">
-                      <BellOff className="w-3.5 h-3.5 text-pink-400" />
+                    <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-[12px] font-semibold text-pink-300">
+                      <BellOff className="w-4 h-4 text-pink-400" />
                       <span>-98% no-shows</span>
                     </div>
                   </div>
                 </Reveal>
 
                 <Reveal>
-                  <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                  <div className="flex flex-col sm:flex-row gap-3.5 w-full sm:w-auto">
                     <a
                       href="#pricing"
-                      className="mag-btn group inline-flex items-center justify-center gap-2.5 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 px-6 sm:px-7 py-3 sm:py-3.5 text-[13px] sm:text-[14px] font-bold text-white shadow-lg shadow-violet-600/20"
+                      className="mag-btn group inline-flex items-center justify-center gap-3 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-rose-600 px-8 py-4 text-[15px] font-extrabold text-white shadow-[0_10px_35px_rgba(236,72,153,0.4)] hover:shadow-[0_15px_45px_rgba(236,72,153,0.6)] transition-all duration-300"
                     >
-                      Começar 7 dias grátis
-                      <span className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-white/15 flex items-center justify-center group-hover:translate-x-0.5 group-hover:-translate-y-[1px] group-hover:scale-105 transition-transform duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]">
-                        <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span>Começar 7 dias grátis</span>
+                      <span className="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center group-hover:translate-x-1 transition-transform">
+                        <ArrowRight className="w-4 h-4 text-white" />
                       </span>
                     </a>
                     <a
-                      href="#how-it-works"
-                      className="inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-6 sm:px-7 py-3 sm:py-3.5 text-[13px] sm:text-[14px] font-semibold text-white/60 hover:text-white/90 hover:bg-white/[0.06] transition-all duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]"
+                      href="#simulator"
+                      className="inline-flex items-center justify-center gap-2.5 rounded-full border border-white/15 bg-white/[0.05] px-7 py-4 text-[14px] font-bold text-white hover:bg-white/10 hover:border-white/30 transition-all duration-300 backdrop-blur-md"
                     >
-                      Como funciona
+                      <span>Ver teste ao vivo</span>
                     </a>
                   </div>
                 </Reveal>
 
                 <Reveal>
-                  <p className="mt-4 sm:mt-5 text-[11px] sm:text-[12px] text-white/25 font-medium">
-                    Sem cartão de crédito · Cancele quando quiser
+                  <p className="mt-4 text-[12px] text-slate-400 font-medium flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>Sem cartão de crédito · Cancele a qualquer momento</span>
                   </p>
                 </Reveal>
               </div>
@@ -423,28 +443,53 @@ export default function Landing() {
                 <Reveal className="flex justify-center w-full relative">
                   
                   {/* Floating WhatsApp Live Toast Notification */}
-                  <div className="hidden sm:flex absolute -top-8 right-0 md:-right-16 md:top-4 lg:-right-24 lg:top-8 z-30 animate-bounce pointer-events-none" style={{ animationDuration: '5s' }}>
-                    <div className="bg-[#10162a]/95 border border-emerald-500/40 shadow-[0_20px_40px_rgba(0,0,0,0.6)] backdrop-blur-xl p-3 rounded-2xl flex items-center gap-2.5 max-w-[215px]">
-                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shrink-0 shadow-md shadow-emerald-500/30">
+                  <div className="hidden sm:flex absolute -top-6 right-0 md:-right-12 md:top-2 lg:-right-16 lg:top-4 z-30 animate-bounce pointer-events-none" style={{ animationDuration: '4s' }}>
+                    <div className="bg-[#0b1329]/95 border border-emerald-500/50 shadow-[0_20px_50px_rgba(16,185,129,0.25)] backdrop-blur-2xl p-3.5 rounded-2xl flex items-center gap-3 max-w-[230px]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center text-white shrink-0 shadow-lg shadow-emerald-500/40">
                         <MessageSquare className="w-4 h-4" />
                       </div>
                       <div>
                         <div className="flex items-center justify-between gap-2">
-                          <p className="text-[9.5px] font-extrabold text-white">WhatsApp Auto</p>
-                          <span className="text-[8px] font-bold text-emerald-400">Agora</span>
+                          <p className="text-[10px] font-black text-white">WhatsApp Auto</p>
+                          <span className="text-[8.5px] font-bold text-emerald-400 bg-emerald-500/20 px-1.5 py-0.5 rounded-md">Agora</span>
                         </div>
-                        <p className="text-[9px] text-slate-300 font-medium leading-tight mt-0.5">
+                        <p className="text-[9.5px] text-slate-200 font-semibold leading-tight mt-0.5">
                           "Horário confirmado para hoje às 14:00!"
                         </p>
                       </div>
                     </div>
                   </div>
 
-                  {/* Ambient Multi-Layer Glow behind phone */}
-                  <div className="absolute inset-0 bg-gradient-to-br from-violet-600/30 via-pink-500/25 to-orange-500/20 rounded-[4rem] blur-3xl pointer-events-none scale-110" />
+                  {/* Floating PIX Signal Toast Notification */}
+                  <div className="hidden sm:flex absolute bottom-12 -left-6 md:-left-16 z-30 animate-bounce pointer-events-none" style={{ animationDuration: '6s', animationDelay: '1s' }}>
+                    <div className="bg-[#0b1329]/95 border border-cyan-500/50 shadow-[0_20px_50px_rgba(6,182,212,0.25)] backdrop-blur-2xl p-3.5 rounded-2xl flex items-center gap-3 max-w-[220px]">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-cyan-500 to-emerald-400 flex items-center justify-center text-white shrink-0 shadow-lg shadow-cyan-500/40 font-black text-xs">
+                        PIX
+                      </div>
+                      <div>
+                        <div className="flex items-center justify-between gap-1">
+                          <p className="text-[10px] font-black text-white">Sinal Recebido</p>
+                          <span className="text-[9px] font-black text-emerald-400">+R$ 25,00</span>
+                        </div>
+                        <p className="text-[9px] text-slate-300 font-medium leading-tight mt-0.5">
+                          Mercado Pago Auto Checkout
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Professional Radial Glow Atmosphere behind phone */}
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] sm:w-[500px] h-[420px] sm:h-[500px] rounded-full pointer-events-none z-0">
+                    {/* Primary Soft Radial Spotlight (No boxy edges or muddy brown tones) */}
+                    <div className="absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(139,92,246,0.25)_0%,rgba(236,72,153,0.12)_50%,transparent_75%)] blur-3xl animate-pulse-slow" />
+                    
+                    {/* Subtle Concentric Rings */}
+                    <div className="absolute inset-6 rounded-full border border-violet-500/10" />
+                    <div className="absolute inset-20 rounded-full border border-pink-500/10" />
+                  </div>
 
                   {/* High-End Titanium Smartphone Chassis */}
-                  <div className="relative w-full max-w-[290px] xs:max-w-[315px] sm:max-w-[325px] h-[560px] xs:h-[600px] sm:h-[620px] p-2.5 sm:p-3 rounded-[2.4rem] sm:rounded-[2.8rem] bg-gradient-to-b from-[#3a3b4e] via-[#222332] to-[#0f1019] shadow-[0_30px_80px_-10px_rgba(124,58,237,0.45)] border border-white/20 shrink-0">
+                  <div className="relative z-10 w-full max-w-[290px] xs:max-w-[315px] sm:max-w-[325px] h-[560px] xs:h-[600px] sm:h-[620px] p-2.5 sm:p-3 rounded-[2.4rem] sm:rounded-[2.8rem] bg-gradient-to-b from-[#2a2b3c] via-[#1a1b29] to-[#0b0c16] shadow-[0_25px_60px_rgba(0,0,0,0.85),0_0_35px_rgba(139,92,246,0.18)] border border-white/20 shrink-0">
                     
                     {/* Metallic Hardware Buttons */}
                     <div className="absolute -left-[5px] top-24 w-[5px] h-9 rounded-l-md bg-gradient-to-r from-[#20212f] to-[#45475e] border-l border-white/30 shadow-md" />
@@ -518,12 +563,12 @@ export default function Landing() {
                                   {/* Featured Badge */}
                                   {isCombo && (
                                     <span className="absolute top-0 right-0 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
-                                      ⭐ Mais Pedido
+                                      Mais Pedido
                                     </span>
                                   )}
                                   {isPopular && (
                                     <span className="absolute top-0 right-0 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[7px] font-black px-2 py-0.5 rounded-bl-lg uppercase tracking-wider">
-                                      🔥 Popular
+                                      Popular
                                     </span>
                                   )}
 
@@ -660,7 +705,7 @@ export default function Landing() {
                             </button>
 
                             <p className="text-[8px] text-white/40 font-medium text-center leading-relaxed">
-                              🔒 Pagamento 100% seguro via Mercado Pago.
+                              Pagamento 100% seguro via Mercado Pago.
                             </p>
                           </div>
                         )}
@@ -672,7 +717,7 @@ export default function Landing() {
                               <CheckCircle2 className="w-6 h-6" />
                             </div>
                             <h4 className="text-[13px] font-black text-white mb-0.5">Agendamento Confirmado!</h4>
-                            <p className="text-[10px] text-emerald-400 font-bold mb-3">Sinal recebido com sucesso 🎉</p>
+                            <p className="text-[10px] text-emerald-400 font-bold mb-3">Sinal recebido com sucesso </p>
 
                             <div className="w-full rounded-xl bg-[#151c33]/90 border border-white/10 p-3 text-[10.5px] space-y-1.5 text-left mb-4 shadow-md">
                               <div className="flex justify-between border-b border-white/5 pb-1"><span className="text-white/40">Cliente</span><span className="text-white font-bold">{simName}</span></div>
@@ -992,7 +1037,7 @@ export default function Landing() {
                 { ref: stat1.ref, value: stat1.value, label: 'Agendamentos processados', icon: Calendar, color: 'violet' },
                 { ref: stat2.ref, value: stat2.value, label: 'Redução em no-shows', icon: BellOff, color: 'emerald' },
                 { ref: stat3.ref, value: stat3.value, label: 'Economizadas por semana', icon: Clock, color: 'orange' },
-                { ref: stat4.ref, value: `${stat4.value}.8★`, label: 'Satisfação dos clientes', icon: Star, color: 'pink' },
+                { ref: stat4.ref, value: `${stat4.value}.8`, label: 'Satisfação dos clientes', icon: Star, color: 'pink' },
               ].map((stat, i) => (
                 <Reveal key={i}>
                   <div ref={stat.ref} className="doppelrand h-full">
