@@ -7719,7 +7719,7 @@ export default function Dashboard() {
                 {/* Action Buttons Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <a
-                    href="https://www.mercadopago.com.br/developers/panel/credentials"
+                    href="https://www.mercadopago.com.br/developers/panel/app"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="py-3 px-4 rounded-2xl bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs transition-all shadow-md shadow-[#009EE3]/20 flex items-center justify-center gap-2 cursor-pointer text-center"
@@ -9259,7 +9259,7 @@ export default function Dashboard() {
                 <div>
                   <p className="font-bold text-slate-900 dark:text-white">Clique no link direto para o painel oficial:</p>
                   <a
-                    href="https://www.mercadopago.com.br/developers/panel/credentials"
+                    href="https://www.mercadopago.com.br/developers/panel/app"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-1 text-[#009EE3] font-bold underline mt-1"
