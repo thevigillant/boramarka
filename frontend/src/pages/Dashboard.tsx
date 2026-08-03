@@ -18,6 +18,7 @@ import {
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
+import { BoraIaTab } from '../components/BoraIaTab'
 import { BookingCard } from '../components/BookingCard'
 import SupportChatWidget from '../components/SupportChatWidget'
 
@@ -514,7 +515,7 @@ function maskPhone(value: string): string {
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
   const [usageData, setUsageData] = useState<SubscriptionUsageData | null>(null)
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -597,7 +598,7 @@ export default function Dashboard() {
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
-    type TabIdType = 'overview' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
+    type TabIdType = 'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
     interface NavItem {
       id: TabIdType
       label: string
@@ -615,6 +616,13 @@ export default function Dashboard() {
         icon: LayoutDashboard,
         type: 'single' as const,
         tabId: 'overview' as TabIdType,
+      },
+      {
+        id: 'boraia',
+        label: 'BoraIA',
+        icon: Sparkles,
+        type: 'single' as const,
+        tabId: 'boraia' as TabIdType,
       },
       {
         id: 'operacional',
@@ -3310,6 +3318,13 @@ export default function Dashboard() {
         </div>
 
 
+
+        {/* ═══════════════════════════════════════════ */}
+        {/* TAB: BoraIA */}
+        {/* ═══════════════════════════════════════════ */}
+        {activeTab === 'boraia' && (
+          <BoraIaTab subscription={subscription} adminInfo={adminInfo} showToast={showToast} />
+        )}
 
         {/* ═══════════════════════════════════════════ */}
         {/* TAB: Overview */}
