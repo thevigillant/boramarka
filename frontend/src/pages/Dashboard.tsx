@@ -7716,40 +7716,42 @@ export default function Dashboard() {
                   )}
                 </div>
 
-                {/* Quick 1-Click Action Buttons */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+                {/* Action Buttons Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   <a
                     href="https://www.mercadopago.com.br/developers/panel/credentials"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex-1 py-3 px-4 rounded-2xl bg-[#009EE3] hover:bg-[#008ac7] text-white font-black text-xs transition-all shadow-md shadow-[#009EE3]/20 flex items-center justify-center gap-2 cursor-pointer"
+                    className="py-3 px-4 rounded-2xl bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs transition-all shadow-md shadow-[#009EE3]/20 flex items-center justify-center gap-2 cursor-pointer text-center"
                   >
-                    <ExternalLink className="w-4 h-4" />
-                    <span>Conectar Mercado Pago (Abrir Chaves)</span>
+                    <ExternalLink className="w-4 h-4 shrink-0" />
+                    <span>Conectar Mercado Pago</span>
                   </a>
 
                   <button
                     type="button"
                     onClick={() => setShowMpTutorialModal(true)}
-                    className="py-3 px-4 rounded-2xl bg-white dark:bg-[#131826] border border-slate-200 dark:border-white/10 hover:border-[#009EE3] text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="py-3 px-4 rounded-2xl bg-white dark:bg-[#131826] border border-slate-200 dark:border-white/10 hover:border-[#009EE3] text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
                   >
-                    <Sparkles className="w-3.5 h-3.5 text-[#009EE3]" />
-                    <span>Como Pegar em 30 Segundos</span>
+                    <Sparkles className="w-4 h-4 text-[#009EE3] shrink-0" />
+                    <span>Como Pegar em 30s</span>
                   </button>
+                </div>
 
+                <div className="flex items-center justify-between pt-1">
                   <button
                     type="button"
                     onClick={() => setProfileForm({ ...profileForm, mpAccessToken: 'SIMULADOR' })}
-                    className="py-3 px-3 rounded-2xl bg-slate-100 dark:bg-white/[0.05] hover:bg-slate-200 text-slate-600 dark:text-slate-300 font-bold text-[11px] transition-all cursor-pointer whitespace-nowrap"
+                    className="text-[11px] font-bold text-slate-500 hover:text-[#009EE3] dark:text-slate-400 underline transition-colors cursor-pointer"
                   >
-                    Usar Teste Simulador
+                    Ou clique aqui para ativar o Modo Simulador de Testes
                   </button>
                 </div>
 
                 {/* Input field */}
                 <div className="space-y-1.5 pt-2">
                   <label className="block text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                    Access Token / Chave da Conta (`APP_USR-...`)
+                    Access Token / Chave da Conta (APP_USR-...)
                   </label>
                   <div className="relative">
                     <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#009EE3]" />
