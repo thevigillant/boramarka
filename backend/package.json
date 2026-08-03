@@ -10,7 +10,8 @@
     "test-email": "tsx --env-file=.env src/scripts/testEmail.ts",
     "db:migrate": "npx prisma migrate dev",
     "db:generate": "npx prisma generate",
-    "db:studio": "npx prisma studio"
+    "db:studio": "npx prisma studio",
+    "db:backup": "tsx --env-file=.env src/scripts/backupDb.ts"
   },
   "dependencies": {
     "@fastify/cors": "^8.5.0",
