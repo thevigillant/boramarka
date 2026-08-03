@@ -232,7 +232,7 @@ export default async function financeRoutes(app: FastifyInstance) {
     }
 
     const updated = await prisma.transaction.update({
-      where: { id: parseInt(id) },
+      where: { id: parseInt(id), adminId: user.id },
       data: {
         paid: !transaction.paid,
         paidAt: !transaction.paid ? new Date().toISOString().split('T')[0] : null,
