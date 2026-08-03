@@ -209,6 +209,7 @@ export default function Landing() {
     { text: '7 Dias de teste grátis sem cartão de crédito' },
     { text: 'Até 50 agendamentos no período de teste' },
     { text: 'Até 100 clientes salvos no sistema' },
+    { text: '5 gerações/mês de Inteligência Artificial (BoraIA)' },
     { text: 'Cobrança de Sinal antecipado via Mercado Pago' },
     { text: 'Notificações automáticas via WhatsApp' }
   ]
@@ -217,6 +218,7 @@ export default function Landing() {
   const mensalFeatures = [
     { text: 'Até 500 agendamentos por mês' },
     { text: 'Até 1.500 clientes salvos na base' },
+    { text: '100 gerações/mês com Assistente de IA BoraIA' },
     { text: 'Até 30 serviços e 10 links ativos' },
     { text: 'Até 5 colaboradores na equipe' },
     { text: 'Cobrança de Sinal Mercado Pago (Zero No-Show)' },
@@ -226,6 +228,7 @@ export default function Landing() {
   const anualPersona = 'Para negócios em expansão (até 20 profissionais)'
   const anualFeatures = [
     { text: 'Até 2.500 agendamentos/mês & 8.000 clientes salvos' },
+    { text: '500 gerações/mês de IA (Legendas Instagram, WhatsApp & Preços)', isSpecial: true, icon: Sparkles },
     { text: 'Até 20 colaboradores / profissionais na equipe' },
     { text: 'Venda Casada (Upsell automatizado no checkout)', isSpecial: true, icon: Sparkles },
     { text: 'Cartão Fidelidade Digital & Cupons Promocionais', isSpecial: true, icon: Star },
@@ -235,6 +238,7 @@ export default function Landing() {
 
   const premiumPersona = 'Para empresas, franquias e clínicas com equipe & RH'
   const premiumFeatures = [
+    { text: 'Inteligência Artificial BoraIA ILIMITADA (∞)', isSpecial: true, icon: Sparkles },
     { text: 'Módulo Exclusivo de RH & Equipe (Comissões & Salários)', isSpecial: true, icon: ShieldCheck },
     { text: 'Domínio Próprio (agendar.suaempresa.com.br)', isSpecial: true, icon: Globe },
     { text: '100% Whitelabel (Remoção total da marca BoraMarka)', isSpecial: true, icon: Crown },
