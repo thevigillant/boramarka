@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { api } from '../services/api'
-import { Calendar, Clock, User, Phone, Loader2, AlertCircle } from 'lucide-react'
+import { Calendar, Clock, User, Phone, Loader2, AlertCircle, Wallet, Copy, Check, CheckCircle2 } from 'lucide-react'
 
 // Phone mask for Brazilian numbers: (XX) XXXXX-XXXX
 function maskPhone(value: string): string {
@@ -318,30 +318,86 @@ export default function BookingPage() {
 
             {isSimulated ? (
               <div className="space-y-4">
-                <div className="bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 rounded-2xl p-4 text-center space-y-2">
-                  <p className="text-orange-500 dark:text-orange-400 text-xs font-black uppercase tracking-widest">Modo de Teste / Simulador</p>
-                  <p className="text-slate-700 dark:text-slate-300 text-xs font-semibold">
-                    Este profissional configurou as credenciais como <strong>SIMULADOR</strong>. Você pode simular o pagamento clicando no botão abaixo.
-                  </p>
-                </div>
+                {pendingPaymentBooking.pixKey && pendingPaymentBooking.pixKey !== 'SIMULADOR' ? (
+                  <>
+                    <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-5 text-center space-y-3">
+                      <div className="flex items-center justify-center gap-2 text-emerald-600 dark:text-emerald-400 font-black text-xs uppercase tracking-widest">
+                        <Wallet className="w-4 h-4" />
+                        <span>Chave PIX do Profissional</span>
+                      </div>
+                      <p className="text-slate-700 dark:text-slate-300 text-xs font-semibold">
+                        Faça a transferência do sinal de <strong className="text-emerald-600 dark:text-emerald-400">R$ {(pendingPaymentBooking.paymentAmount || bookingFeeAmount || 0).toFixed(2)}</strong> para a chave Pix abaixo:
+                      </p>
 
-                <button
-                  onClick={handleSimulationPayment}
-                  disabled={isSubmittingSimulation}
-                  className="w-full custom-gradient-bg text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl custom-accent-glow hover:opacity-90 transition-opacity disabled:opacity-50"
-                >
-                  {isSubmittingSimulation ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Processando...
-                    </>
-                  ) : (
-                    <>
-                      <span></span>
-                      Confirmar Pagamento Simulado
-                    </>
-                  )}
-                </button>
+                      <div className="p-3 bg-white dark:bg-[#111625] border border-emerald-500/40 rounded-xl flex items-center justify-between gap-2 shadow-inner">
+                        <span className="font-mono font-black text-sm text-slate-900 dark:text-white truncate px-1">
+                          {pendingPaymentBooking.pixKey}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(pendingPaymentBooking.pixKey);
+                            setCopiedPix(true);
+                            setTimeout(() => setCopiedPix(false), 3000);
+                          }}
+                          className="px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-lg transition-all shrink-0 flex items-center gap-1.5 cursor-pointer shadow-md"
+                        >
+                          {copiedPix ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{copiedPix ? 'Copiado!' : 'Copiar Chave'}</span>
+                        </button>
+                      </div>
+
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                        Após realizar o Pix no app do seu banco, clique no botão abaixo para confirmar seu agendamento.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSimulationPayment}
+                      disabled={isSubmittingSimulation}
+                      className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl shadow-emerald-500/20 hover:opacity-90 transition-opacity disabled:opacity-50 cursor-pointer text-base"
+                    >
+                      {isSubmittingSimulation ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Confirmando Agendamento...
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-5 h-5" />
+                          Já Fiz o Pix! Confirmar Agendamento
+                        </>
+                      )}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <div className="bg-slate-100 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800/60 rounded-2xl p-4 text-center space-y-2">
+                      <p className="text-orange-500 dark:text-orange-400 text-xs font-black uppercase tracking-widest">Modo de Teste / Simulador</p>
+                      <p className="text-slate-700 dark:text-slate-300 text-xs font-semibold">
+                        Este profissional configurou as credenciais como <strong>SIMULADOR</strong>. Você pode simular o pagamento clicando no botão abaixo.
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleSimulationPayment}
+                      disabled={isSubmittingSimulation}
+                      className="w-full custom-gradient-bg text-white font-black py-4 rounded-2xl flex items-center justify-center gap-2 shadow-xl custom-accent-glow hover:opacity-90 transition-opacity disabled:opacity-50"
+                    >
+                      {isSubmittingSimulation ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Processando...
+                        </>
+                      ) : (
+                        <>
+                          <span></span>
+                          Confirmar Pagamento Simulado
+                        </>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             ) : (
               <a
