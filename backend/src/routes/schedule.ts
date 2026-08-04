@@ -55,6 +55,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         phone: true,
         address: true,
         mpAccessToken: true,
+        pixKey: true,
         accentColor: true,
         secondaryColor: true,
         publicTheme: true,
@@ -106,6 +107,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
       mpAccessToken: admin.mpAccessToken,
+      pixKey: admin.pixKey || '',
     };
   });
 
@@ -554,6 +556,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           paymentRequired: true,
           paymentAmount,
           payFullPrice: !!payFullPrice,
+          pixKey: admin.pixKey || admin.phone || '',
+          isPixDirect: !!admin.pixKey && admin.mpAccessToken !== 'SIMULADOR' && !admin.mpAccessToken?.startsWith('APP_USR'),
           paymentUrl: `/agendar/${token}/pagar-simulado?bookingId=${booking.id}`,
         });
       } else {

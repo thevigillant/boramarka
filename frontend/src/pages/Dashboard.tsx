@@ -515,7 +515,7 @@ function maskPhone(value: string): string {
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
   const [usageData, setUsageData] = useState<SubscriptionUsageData | null>(null)
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -604,7 +604,7 @@ export default function Dashboard() {
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
-    type TabIdType = 'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
+    type TabIdType = 'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
     interface NavItem {
       id: TabIdType
       label: string
@@ -662,6 +662,7 @@ export default function Dashboard() {
         type: 'dropdown' as const,
         items: [
           { id: 'financeiro', label: 'Financeiro', icon: DollarSign, desc: 'Fluxo de caixa, recebíveis e despesas' },
+          { id: 'recebimentos', label: 'Dados Bancários / Pix', icon: Wallet, desc: 'Gerenciar chave Pix e recebimentos' },
           { id: 'rh', label: 'RH / Equipe', icon: UserCheck, desc: 'Gestão de funcionários, funções e comissões' },
           { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano e faturas no BoraMarka' },
         ] as NavItem[]
@@ -3189,6 +3190,10 @@ export default function Dashboard() {
                               onClick={() => {
                                 if (subscription?.status === 'inactive' && item.id !== 'faturamento') {
                                   setShowPaywall(true)
+                                } else if (item.id === 'recebimentos') {
+                                  setPixInputKey(adminInfo?.pixKey || '')
+                                  setMpInputToken(adminInfo?.mpAccessToken || '')
+                                  setShowMpConfigModal(true)
                                 } else {
                                   setActiveTab(item.id)
                                 }
@@ -3288,6 +3293,10 @@ export default function Dashboard() {
                             onClick={() => {
                               if (subscription?.status === 'inactive' && item.id !== 'faturamento') {
                                 setShowPaywall(true)
+                              } else if (item.id === 'recebimentos') {
+                                setPixInputKey(adminInfo?.pixKey || '')
+                                setMpInputToken(adminInfo?.mpAccessToken || '')
+                                setShowMpConfigModal(true)
                               } else {
                                 setActiveTab(item.id)
                               }
@@ -8824,6 +8833,19 @@ export default function Dashboard() {
                         type="checkbox"
                         checked={securityForm.canRh}
                         onChange={e => setSecurityForm({ ...securityForm, canRh: e.target.checked })}
+                        className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
+                      />
+                    </label>
+
+                    <label className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-2xl flex items-center justify-between cursor-pointer hover:border-emerald-400 transition-colors">
+                      <div>
+                        <span className="text-xs font-black text-slate-900 dark:text-white block">Dados Bancários / Pix</span>
+                        <span className="text-[10px] text-slate-600 dark:text-slate-400 font-semibold">Gerenciar chave Pix e recebimentos</span>
+                      </div>
+                      <input
+                        type="checkbox"
+                        checked={securityForm.canFinanceiro}
+                        onChange={e => setSecurityForm({ ...securityForm, canFinanceiro: e.target.checked })}
                         className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 cursor-pointer"
                       />
                     </label>
