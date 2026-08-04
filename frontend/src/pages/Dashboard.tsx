@@ -573,6 +573,9 @@ export default function Dashboard() {
   const [refundRequests, setRefundRequests] = useState<any[]>([])
   const [processingRefundId, setProcessingRefundId] = useState<number | null>(null)
   const [showMpTutorialModal, setShowMpTutorialModal] = useState(false)
+  const [showMpConfigModal, setShowMpConfigModal] = useState(false)
+  const [mpInputToken, setMpInputToken] = useState('')
+  const [savingMpToken, setSavingMpToken] = useState(false)
 
   const fetchRefundRequests = useCallback(async () => {
     try {
@@ -3412,7 +3415,7 @@ export default function Dashboard() {
 
                   {/* Step 3: Conectar Mercado Pago */}
                   <div 
-                    onClick={() => openEditProfile()} 
+                    onClick={() => { setMpInputToken(adminInfo?.mpAccessToken || ''); setShowMpConfigModal(true) }} 
                     className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
                       adminInfo?.mpAccessToken 
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
@@ -7686,85 +7689,7 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
-              
-              {/* Mercado Pago Ultra-Simple Setup Card */}
-              <div className="p-5 rounded-3xl bg-gradient-to-br from-[#009EE3]/10 via-[#009EE3]/5 to-transparent border border-[#009EE3]/30 space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#009EE3]/20">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-[#009EE3] text-white flex items-center justify-center font-black shadow-lg shadow-[#009EE3]/20 shrink-0">
-                      <CreditCard className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black text-slate-900 dark:text-white">Recebimento Automático de Sinal via Mercado Pago</h4>
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold">Os pagamentos dos seus clientes caem direto na sua conta do Mercado Pago</p>
-                    </div>
-                  </div>
-
-                  {/* Status Tag */}
-                  {profileForm.mpAccessToken && profileForm.mpAccessToken.startsWith('APP_USR') ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 uppercase tracking-wider self-start sm:self-auto">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Conectado & Ativo
-                    </span>
-                  ) : profileForm.mpAccessToken === 'SIMULADOR' ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase tracking-wider self-start sm:self-auto">
-                      Modo Simulador
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-slate-500/10 text-slate-400 border border-slate-500/20 uppercase tracking-wider self-start sm:self-auto">
-                      Pendente
-                    </span>
-                  )}
-                </div>
-
-                {/* Action Buttons Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <a
-                    href="https://www.mercadopago.com.br/developers/panel/app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="py-3 px-4 rounded-2xl bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs transition-all shadow-md shadow-[#009EE3]/20 flex items-center justify-center gap-2 cursor-pointer text-center"
-                  >
-                    <ExternalLink className="w-4 h-4 shrink-0" />
-                    <span>Conectar Mercado Pago</span>
-                  </a>
-
-                  <button
-                    type="button"
-                    onClick={() => setShowMpTutorialModal(true)}
-                    className="py-3 px-4 rounded-2xl bg-white dark:bg-[#131826] border border-slate-200 dark:border-white/10 hover:border-[#009EE3] text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
-                  >
-                    <Sparkles className="w-4 h-4 text-[#009EE3] shrink-0" />
-                    <span>Como Pegar em 30s</span>
-                  </button>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <button
-                    type="button"
-                    onClick={() => setProfileForm({ ...profileForm, mpAccessToken: 'SIMULADOR' })}
-                    className="text-[11px] font-bold text-slate-500 hover:text-[#009EE3] dark:text-slate-400 underline transition-colors cursor-pointer"
-                  >
-                    Ou clique aqui para ativar o Modo Simulador de Testes
-                  </button>
-                </div>
-
-                {/* Input field */}
-                <div className="space-y-1.5 pt-2">
-                  <label className="block text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                    Access Token / Chave da Conta (APP_USR-...)
-                  </label>
-                  <div className="relative">
-                    <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#009EE3]" />
-                    <input
-                      type="password"
-                      value={profileForm.mpAccessToken || ''}
-                      onChange={e => setProfileForm({ ...profileForm, mpAccessToken: e.target.value })}
-                      placeholder="Cole aqui a sua chave gerada (começa com APP_USR-...)"
-                      className="w-full input-simple font-bold text-xs pl-11 bg-white dark:bg-[#131826] border border-slate-200 dark:border-white/10 focus:border-[#009EE3]"
-                    />
-                  </div>
-                </div>
-              </div>
+"
 
               {/* WhatsApp API Real Section */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 space-y-3">
@@ -9292,6 +9217,143 @@ export default function Dashboard() {
                 className="px-5 py-2.5 bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all"
               >
                 Entendi!
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dedicated Mercado Pago Setup Modal */}
+      {showMpConfigModal && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#111625] border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-scale-in text-left space-y-5">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#009EE3] text-white flex items-center justify-center font-black shadow-lg shadow-[#009EE3]/20 shrink-0">
+                  <CreditCard className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Recebimento de Sinal via Mercado Pago</h3>
+                  <p className="text-xs text-slate-400 font-medium">Configure onde cairão os pagamentos dos seus clientes</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowMpConfigModal(false)}
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Status Indicator */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
+              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Status Atual</span>
+              {adminInfo?.mpAccessToken && adminInfo.mpAccessToken.startsWith('APP_USR') ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 uppercase tracking-wider">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Conectado & Ativo
+                </span>
+              ) : adminInfo?.mpAccessToken === 'SIMULADOR' ? (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
+                  Modo Simulador
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-slate-500/10 text-slate-400 border border-slate-500/20 uppercase tracking-wider">
+                  Pendente
+                </span>
+              )}
+            </div>
+
+            {/* Action Buttons Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <a
+                href="https://www.mercadopago.com.br/developers/panel/app"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-3 px-4 rounded-2xl bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs transition-all shadow-md shadow-[#009EE3]/20 flex items-center justify-center gap-2 cursor-pointer text-center"
+              >
+                <ExternalLink className="w-4 h-4 shrink-0" />
+                <span>Abrir Mercado Pago</span>
+              </a>
+
+              <button
+                type="button"
+                onClick={() => setShowMpTutorialModal(true)}
+                className="py-3 px-4 rounded-2xl bg-white dark:bg-[#131826] border border-slate-200 dark:border-white/10 hover:border-[#009EE3] text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
+              >
+                <Sparkles className="w-4 h-4 text-[#009EE3] shrink-0" />
+                <span>Tutorial em 30s</span>
+              </button>
+            </div>
+
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={async () => {
+                  setMpInputToken('SIMULADOR')
+                  try {
+                    setSavingMpToken(true)
+                    await api.updateProfile({ mpAccessToken: 'SIMULADOR' })
+                    setAdminInfo(prev => prev ? { ...prev, mpAccessToken: 'SIMULADOR' } : prev)
+                    showToast('Modo Simulador ativado com sucesso!')
+                    setShowMpConfigModal(false)
+                  } catch (err: any) {
+                    showToast(err.message || 'Erro ao salvar', 'error')
+                  } finally {
+                    setSavingMpToken(false)
+                  }
+                }}
+                className="text-[11px] font-bold text-slate-500 hover:text-[#009EE3] dark:text-slate-400 underline transition-colors cursor-pointer"
+              >
+                Ou clique aqui para ativar o Modo Simulador de Testes sem chave real
+              </button>
+            </div>
+
+            {/* Input Form */}
+            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <label className="block text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                Access Token / Chave da Conta (APP_USR-...)
+              </label>
+              <div className="relative">
+                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#009EE3]" />
+                <input
+                  type="password"
+                  value={mpInputToken}
+                  onChange={e => setMpInputToken(e.target.value)}
+                  placeholder="Cole aqui sua chave (APP_USR-...)"
+                  className="w-full input-simple font-bold text-xs pl-11 bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-white/10 focus:border-[#009EE3]"
+                />
+              </div>
+            </div>
+
+            {/* Actions Footer */}
+            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setShowMpConfigModal(false)}
+                className="px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                disabled={savingMpToken}
+                onClick={async () => {
+                  try {
+                    setSavingMpToken(true)
+                    await api.updateProfile({ mpAccessToken: mpInputToken })
+                    setAdminInfo(prev => prev ? { ...prev, mpAccessToken: mpInputToken } : prev)
+                    showToast('Configuração do Mercado Pago salva!')
+                    setShowMpConfigModal(false)
+                  } catch (err: any) {
+                    showToast(err.message || 'Erro ao salvar', 'error')
+                  } finally {
+                    setSavingMpToken(false)
+                  }
+                }}
+                className="px-5 py-2.5 bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-2"
+              >
+                {savingMpToken && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                Salvar Configuração
               </button>
             </div>
           </div>
