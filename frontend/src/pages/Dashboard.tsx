@@ -4232,9 +4232,32 @@ export default function Dashboard() {
                   {/* Service Selector Card */}
                   <div className="card-simple p-6">
                     <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-widest">Configurar agenda para:</label>
-                    <select value={selectedLinkId || ''} onChange={e => setSelectedLinkId(e.target.value ? parseInt(e.target.value) : null)} className="input-simple font-bold w-full bg-slate-50 dark:bg-[#131826]">
+                    <select
+                      value={selectedLinkId || ''}
+                      onChange={e => {
+                        const val = e.target.value ? parseInt(e.target.value) : null
+                        setSelectedLinkId(val)
+                        if (val) {
+                          const matchedLink = links.find(l => l.id === val)
+                          const matchedService = services.find(s => s.id === (matchedLink?.service as any)?.id)
+                          const duration = (matchedLink?.service as any)?.duration || matchedService?.duration
+                          if (duration) {
+                            setSlotInterval(duration)
+                          }
+                        }
+                      }}
+                      className="input-simple font-bold w-full bg-slate-50 dark:bg-[#131826]"
+                    >
                       <option value="">Selecione o Serviço...</option>
-                      {links.map(l => <option key={l.id} value={l.id}>{l.title}</option>)}
+                      {links.map(l => {
+                        const matchedService = services.find(s => s.id === (l.service as any)?.id)
+                        const duration = (l.service as any)?.duration || matchedService?.duration
+                        return (
+                          <option key={l.id} value={l.id}>
+                            {l.title} {duration ? `(${duration} min)` : ''}
+                          </option>
+                        )
+                      })}
                     </select>
                   </div>
                 </div>
@@ -4252,7 +4275,27 @@ export default function Dashboard() {
                      </div>
                      <div className={`grid gap-4 mb-6 ${isSingleSlot ? 'grid-cols-2' : 'grid-cols-2 md:grid-cols-4'}`}>
                         <div><label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Dia</label><input type="date" value={slotDate} onChange={e => setSlotDate(e.target.value)} className="input-simple text-sm bg-white dark:bg-[#131826]" /></div>
-                        {!isSingleSlot && <div><label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Intervalo</label><select value={slotInterval} onChange={e => setSlotInterval(parseInt(e.target.value))} className="input-simple text-sm bg-white dark:bg-[#131826]"><option value={15}>15 min</option><option value={30}>30 min</option><option value={60}>1 hora</option></select></div>}
+                        {!isSingleSlot && (
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">
+                              Intervalo
+                            </label>
+                            <select value={slotInterval} onChange={e => setSlotInterval(parseInt(e.target.value))} className="input-simple text-sm bg-white dark:bg-[#131826]">
+                              <option value={15}>15 min</option>
+                              <option value={20}>20 min</option>
+                              <option value={30}>30 min</option>
+                              <option value={40}>40 min</option>
+                              <option value={45}>45 min</option>
+                              <option value={50}>50 min</option>
+                              <option value={60}>1 hora</option>
+                              <option value={90}>1h 30m</option>
+                              <option value={120}>2 horas</option>
+                              {![15, 20, 30, 40, 45, 50, 60, 90, 120].includes(slotInterval) && (
+                                <option value={slotInterval}>{slotInterval} min</option>
+                              )}
+                            </select>
+                          </div>
+                        )}
                         <div><label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">{isSingleSlot ? 'Horário' : 'Início'}</label><input type="time" value={slotStartTime} onChange={e => setSlotStartTime(e.target.value)} className="input-simple text-sm bg-white dark:bg-[#131826]" /></div>
                         {!isSingleSlot && <div><label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 mb-2 uppercase tracking-widest">Fim</label><input type="time" value={slotEndTime} onChange={e => setSlotEndTime(e.target.value)} className="input-simple text-sm bg-white dark:bg-[#131826]" /></div>}
                      </div>

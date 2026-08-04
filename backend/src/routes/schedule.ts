@@ -107,7 +107,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
       mpAccessToken: admin.mpAccessToken,
-      pixKey: admin.pixKey || '',
+      pixKey: (admin.pixKey && admin.pixKey !== 'SIMULADOR') ? admin.pixKey : (admin.phone || ''),
     };
   });
 
@@ -378,6 +378,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       accentColor: link.admin.accentColor,
       secondaryColor: link.admin.secondaryColor,
       publicTheme: link.admin.publicTheme,
+      pixKey: (link.admin.pixKey && link.admin.pixKey !== 'SIMULADOR') ? link.admin.pixKey : (link.admin.phone || ''),
+      phone: link.admin.phone || '',
     };
   });
 
@@ -557,7 +559,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           paymentRequired: true,
           paymentAmount,
           payFullPrice: !!payFullPrice,
-          pixKey: admin.pixKey || admin.phone || '',
+          pixKey: (admin.pixKey && admin.pixKey !== 'SIMULADOR') ? admin.pixKey : (admin.phone || ''),
           isPixDirect: hasRealPixKey,
           paymentUrl: `/agendar/${token}/pagar-simulado?bookingId=${booking.id}`,
         });

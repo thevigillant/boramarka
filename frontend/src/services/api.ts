@@ -497,6 +497,8 @@ export const api = {
       accentColor?: string;
       secondaryColor?: string;
       publicTheme?: string;
+      pixKey?: string;
+      phone?: string;
     }>(`/schedule/${token}`),
 
   bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string; payFullPrice?: boolean; addonIds?: number[] }) =>
