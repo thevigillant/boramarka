@@ -4465,7 +4465,7 @@ export default function Dashboard() {
                           onChange={e => setEditLinkBookingFeeEnabled(e.target.checked)}
                           className="w-4 h-4 rounded border-slate-300 text-pink-500 focus:ring-pink-500"
                         />
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Cobrar Sinal de Reserva (direto na sua conta MP)</span>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Cobrar Sinal de Reserva (direto no seu Pix / banco)</span>
                       </label>
                       
                       {editLinkBookingFeeEnabled && (
@@ -4524,7 +4524,7 @@ export default function Dashboard() {
                           onChange={e => setNewLinkBookingFeeEnabled(e.target.checked)}
                           className="w-4 h-4 rounded border-slate-300 text-pink-500 focus:ring-pink-500"
                         />
-                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Cobrar Sinal de Reserva (direto na sua conta MP)</span>
+                        <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Cobrar Sinal de Reserva (direto no seu Pix / banco)</span>
                       </label>
                       
                       {newLinkBookingFeeEnabled && (
@@ -4559,7 +4559,7 @@ export default function Dashboard() {
                           {link.service && <p className="text-xs font-bold text-pink-500 mt-1">{link.service.name} • {formatCurrency(link.service.price)}</p>}
                           {link.bookingFeeEnabled ? (
                             <p className="text-xs font-bold text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
-                              <DollarSign className="w-3.5 h-3.5" /> Sinal: {formatCurrency(link.bookingFeeAmount)} (direto no seu MP)
+                              <DollarSign className="w-3.5 h-3.5" /> Sinal: {formatCurrency(link.bookingFeeAmount)} (direto no seu Pix / banco)
                             </p>
                           ) : (
                             <p className="text-[10px] font-bold text-slate-400 mt-1">Sem sinal de reserva</p>
