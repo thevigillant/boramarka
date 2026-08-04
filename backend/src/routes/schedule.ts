@@ -543,7 +543,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         : `Taxa de Agendamento - ${admin.businessName || 'Profissional'}`;
 
       // If mpAccessToken is SIMULADOR or if professional uses direct Pix key, return Pix payment URL
-      if (admin.mpAccessToken === 'SIMULADOR' || (!admin.mpAccessToken?.startsWith('APP_USR') && !!admin.pixKey)) {
+      const hasRealPixKey = !!admin.pixKey && admin.pixKey.trim() !== '' && admin.pixKey.trim() !== 'SIMULADOR';
+      if (hasRealPixKey || admin.mpAccessToken === 'SIMULADOR' || (!admin.mpAccessToken?.startsWith('APP_USR') && !!admin.pixKey)) {
         return reply.status(201).send({
           booking: {
             id: booking.id,
@@ -557,7 +558,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           paymentAmount,
           payFullPrice: !!payFullPrice,
           pixKey: admin.pixKey || admin.phone || '',
-          isPixDirect: !!admin.pixKey && admin.mpAccessToken !== 'SIMULADOR' && !admin.mpAccessToken?.startsWith('APP_USR'),
+          isPixDirect: hasRealPixKey,
           paymentUrl: `/agendar/${token}/pagar-simulado?bookingId=${booking.id}`,
         });
       } else {
