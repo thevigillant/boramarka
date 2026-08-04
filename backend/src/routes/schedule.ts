@@ -1032,6 +1032,24 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       }
     });
 
+    const fullPrice = booking.totalAmount > 0 ? booking.totalAmount : servicePrice;
+    const remainingAmount = Math.max(0, fullPrice - paidAmount);
+    if (!isFullPayment && remainingAmount > 0) {
+      await prisma.transaction.create({
+        data: {
+          type: 'receivable',
+          description: `Restante a receber no atendimento - ${booking.clientName}`,
+          amount: remainingAmount,
+          dueDate: booking.timeSlot.date,
+          paid: false,
+          clientName: booking.clientName,
+          category: 'Restante de Agendamento',
+          notes: `Valor restante a ser pago no dia do atendimento (${booking.timeSlot.date})`,
+          adminId: link.adminId
+        }
+      });
+    }
+
     // Send WhatsApp notification to client
     const formattedDate = booking.timeSlot.date.split('-').reverse().join('/');
     const clientMsg = [
