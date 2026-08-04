@@ -574,7 +574,9 @@ export default function Dashboard() {
   const [processingRefundId, setProcessingRefundId] = useState<number | null>(null)
   const [showMpTutorialModal, setShowMpTutorialModal] = useState(false)
   const [showMpConfigModal, setShowMpConfigModal] = useState(false)
+  const [pixInputKey, setPixInputKey] = useState('')
   const [mpInputToken, setMpInputToken] = useState('')
+  const [showAdvancedMp, setShowAdvancedMp] = useState(false)
   const [savingMpToken, setSavingMpToken] = useState(false)
 
   const fetchRefundRequests = useCallback(async () => {
@@ -1030,6 +1032,7 @@ export default function Dashboard() {
     address?: string; 
     operatingHours?: string; 
     mpAccessToken?: string;
+    pixKey?: string;
     accentColor?: string;
     secondaryColor?: string;
     publicTheme?: string;
@@ -3343,7 +3346,7 @@ export default function Dashboard() {
             </div>
 
             {/* Onboarding Checklist (Primeiros Passos) */}
-            {(!services.length || !links.length || !adminInfo?.mpAccessToken) && (
+            {(!services.length || !links.length || (!adminInfo?.pixKey && !adminInfo?.mpAccessToken)) && (
               <div className="card-simple p-5 sm:p-6 bg-gradient-to-r from-violet-600/10 via-pink-600/10 to-transparent border border-violet-500/20 rounded-3xl animate-slide-up">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
                   <div className="flex items-center gap-3">
@@ -3357,7 +3360,7 @@ export default function Dashboard() {
                   </div>
                   <div className="flex items-center gap-2 self-start sm:self-auto">
                     <span className="text-xs font-bold text-violet-500 dark:text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/20">
-                      {[services.length > 0, links.length > 0, !!adminInfo?.mpAccessToken].filter(Boolean).length} de 3 concluídos
+                      {[services.length > 0, links.length > 0, (!!adminInfo?.pixKey || !!adminInfo?.mpAccessToken)].filter(Boolean).length} de 3 concluídos
                     </span>
                   </div>
                 </div>
@@ -3366,7 +3369,7 @@ export default function Dashboard() {
                 <div className="w-full bg-slate-200 dark:bg-white/10 h-2 rounded-full mb-4 overflow-hidden">
                   <div 
                     className="h-full bg-gradient-to-r from-violet-600 to-pink-600 transition-all duration-500 rounded-full"
-                    style={{ width: `${([services.length > 0, links.length > 0, !!adminInfo?.mpAccessToken].filter(Boolean).length / 3) * 100}%` }}
+                    style={{ width: `${([services.length > 0, links.length > 0, (!!adminInfo?.pixKey || !!adminInfo?.mpAccessToken)].filter(Boolean).length / 3) * 100}%` }}
                   />
                 </div>
 
@@ -3383,7 +3386,7 @@ export default function Dashboard() {
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
                       services.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
                     }`}>
-                      {services.length > 0 ? '' : '1'}
+                      {services.length > 0 ? <CheckCircle2 className="w-4 h-4" /> : '1'}
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xs font-bold">Cadastrar seus Serviços</h4>
@@ -3404,7 +3407,7 @@ export default function Dashboard() {
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
                       links.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
                     }`}>
-                      {links.length > 0 ? '' : '2'}
+                      {links.length > 0 ? <CheckCircle2 className="w-4 h-4" /> : '2'}
                     </div>
                     <div className="flex-1">
                       <h4 className="text-xs font-bold">Gerar Link de Agendamento</h4>
@@ -3413,24 +3416,28 @@ export default function Dashboard() {
                     <span className="text-xs font-bold opacity-60">→</span>
                   </div>
 
-                  {/* Step 3: Conectar Mercado Pago */}
+                  {/* Step 3: Cadastrar Chave PIX */}
                   <div 
-                    onClick={() => { setMpInputToken(adminInfo?.mpAccessToken || ''); setShowMpConfigModal(true) }} 
+                    onClick={() => { 
+                      setPixInputKey(adminInfo?.pixKey || '')
+                      setMpInputToken(adminInfo?.mpAccessToken || '')
+                      setShowMpConfigModal(true) 
+                    }} 
                     className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
-                      adminInfo?.mpAccessToken 
+                      (adminInfo?.pixKey || adminInfo?.mpAccessToken) 
                         ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
-                        : 'bg-[#009EE3]/10 border-[#009EE3]/30 hover:border-[#009EE3] text-slate-800 dark:text-white'
+                        : 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500 text-slate-800 dark:text-white'
                     }`}
                   >
                     <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                      adminInfo?.mpAccessToken ? 'bg-emerald-500 text-white' : 'bg-[#009EE3] text-white'
+                      (adminInfo?.pixKey || adminInfo?.mpAccessToken) ? 'bg-emerald-500 text-white' : 'bg-emerald-600 text-white'
                     }`}>
-                      {adminInfo?.mpAccessToken ? '' : '3'}
+                      {(adminInfo?.pixKey || adminInfo?.mpAccessToken) ? <CheckCircle2 className="w-4 h-4" /> : '3'}
                     </div>
                     <div className="flex-1">
-                      <h4 className="text-xs font-bold">Conectar Mercado Pago</h4>
+                      <h4 className="text-xs font-bold">Cadastrar Chave PIX</h4>
                       <p className="text-[11px] opacity-70">
-                        {adminInfo?.mpAccessToken ? 'Conta Mercado Pago conectada' : 'Receba sinal no Pix/Cartão'}
+                        {(adminInfo?.pixKey || adminInfo?.mpAccessToken) ? 'Chave Pix cadastrada' : 'Receba sinal no Pix sem complicações'}
                       </p>
                     </div>
                     <span className="text-xs font-bold opacity-60">→</span>
@@ -9223,18 +9230,18 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Dedicated Mercado Pago Setup Modal */}
+      {/* Dedicated Pix & Payments Receiving Setup Modal */}
       {showMpConfigModal && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
           <div className="bg-white dark:bg-[#111625] border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-scale-in text-left space-y-5">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#009EE3] text-white flex items-center justify-center font-black shadow-lg shadow-[#009EE3]/20 shrink-0">
-                  <CreditCard className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-black shadow-lg shadow-emerald-500/20 shrink-0">
+                  <Wallet className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Recebimento de Sinal via Mercado Pago</h3>
-                  <p className="text-xs text-slate-400 font-medium">Configure onde cairão os pagamentos dos seus clientes</p>
+                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Recebimento por PIX</h3>
+                  <p className="text-xs text-slate-400 font-medium">Informe onde cairão os pagamentos de sinal dos seus clientes</p>
                 </div>
               </div>
               <button
@@ -9248,9 +9255,9 @@ export default function Dashboard() {
             {/* Status Indicator */}
             <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
               <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Status Atual</span>
-              {adminInfo?.mpAccessToken && adminInfo.mpAccessToken.startsWith('APP_USR') ? (
+              {adminInfo?.pixKey || (adminInfo?.mpAccessToken && adminInfo.mpAccessToken !== 'SIMULADOR') ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 uppercase tracking-wider">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Conectado & Ativo
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Pix Configurado & Ativo
                 </span>
               ) : adminInfo?.mpAccessToken === 'SIMULADOR' ? (
                 <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
@@ -9263,66 +9270,83 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Action Buttons Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-              <a
-                href="https://www.mercadopago.com.br/developers/panel/app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="py-3 px-4 rounded-2xl bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs transition-all shadow-md shadow-[#009EE3]/20 flex items-center justify-center gap-2 cursor-pointer text-center"
-              >
-                <ExternalLink className="w-4 h-4 shrink-0" />
-                <span>Abrir Mercado Pago</span>
-              </a>
-
-              <button
-                type="button"
-                onClick={() => setShowMpTutorialModal(true)}
-                className="py-3 px-4 rounded-2xl bg-white dark:bg-[#131826] border border-slate-200 dark:border-white/10 hover:border-[#009EE3] text-slate-700 dark:text-slate-200 font-extrabold text-xs transition-all flex items-center justify-center gap-2 cursor-pointer text-center"
-              >
-                <Sparkles className="w-4 h-4 text-[#009EE3] shrink-0" />
-                <span>Tutorial em 30s</span>
-              </button>
-            </div>
-
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={async () => {
-                  setMpInputToken('SIMULADOR')
-                  try {
-                    setSavingMpToken(true)
-                    await api.updateProfile({ mpAccessToken: 'SIMULADOR' })
-                    setAdminInfo(prev => prev ? { ...prev, mpAccessToken: 'SIMULADOR' } : prev)
-                    showToast('Modo Simulador ativado com sucesso!')
-                    setShowMpConfigModal(false)
-                  } catch (err: any) {
-                    showToast(err.message || 'Erro ao salvar', 'error')
-                  } finally {
-                    setSavingMpToken(false)
-                  }
-                }}
-                className="text-[11px] font-bold text-slate-500 hover:text-[#009EE3] dark:text-slate-400 underline transition-colors cursor-pointer"
-              >
-                Ou clique aqui para ativar o Modo Simulador de Testes sem chave real
-              </button>
-            </div>
-
-            {/* Input Form */}
-            <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <label className="block text-[11px] font-black text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                Access Token / Chave da Conta (APP_USR-...)
-              </label>
-              <div className="relative">
-                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#009EE3]" />
-                <input
-                  type="password"
-                  value={mpInputToken}
-                  onChange={e => setMpInputToken(e.target.value)}
-                  placeholder="Cole aqui sua chave (APP_USR-...)"
-                  className="w-full input-simple font-bold text-xs pl-11 bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-white/10 focus:border-[#009EE3]"
-                />
+            {/* Simple Pix Key Form */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Sua Chave PIX (Telefone, CPF/CNPJ, E-mail ou Chave Aleatória)
+                </label>
+                <div className="relative">
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
+                  <input
+                    type="text"
+                    value={pixInputKey}
+                    onChange={e => setPixInputKey(e.target.value)}
+                    placeholder="Ex: (11) 99999-9999, 123.456.789-00 ou contato@empresa.com"
+                    className="w-full input-simple font-bold text-xs pl-11 bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-white/10 focus:border-emerald-500"
+                  />
+                </div>
+                <p className="text-[11px] text-slate-400 font-medium">
+                  Seus clientes enviarão o sinal de agendamento diretamente para essa chave Pix.
+                </p>
               </div>
+
+              {/* Quick Actions / Advanced Toggle */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setPixInputKey('SIMULADOR')
+                    setMpInputToken('SIMULADOR')
+                    try {
+                      setSavingMpToken(true)
+                      await api.updateProfile({ pixKey: 'SIMULADOR', mpAccessToken: 'SIMULADOR' })
+                      setAdminInfo(prev => prev ? { ...prev, pixKey: 'SIMULADOR', mpAccessToken: 'SIMULADOR' } : prev)
+                      showToast('Modo Simulador de Testes ativado!')
+                      setShowMpConfigModal(false)
+                    } catch (err: any) {
+                      showToast(err.message || 'Erro ao salvar', 'error')
+                    } finally {
+                      setSavingMpToken(false)
+                    }
+                  }}
+                  className="text-[11px] font-bold text-slate-500 hover:text-emerald-500 dark:text-slate-400 underline transition-colors cursor-pointer"
+                >
+                  Ativar Modo de Testes sem chave real
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowAdvancedMp(!showAdvancedMp)}
+                  className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
+                >
+                  <CreditCard className="w-3.5 h-3.5" />
+                  <span>{showAdvancedMp ? 'Ocultar Mercado Pago API' : 'Opção Avançada Mercado Pago'}</span>
+                </button>
+              </div>
+
+              {/* Advanced Mercado Pago API Section */}
+              {showAdvancedMp && (
+                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-white/10 space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Mercado Pago Access Token</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowMpTutorialModal(true)}
+                      className="text-[11px] text-[#009EE3] font-bold underline cursor-pointer"
+                    >
+                      Como pegar chave em 30s
+                    </button>
+                  </div>
+                  <input
+                    type="password"
+                    value={mpInputToken}
+                    onChange={e => setMpInputToken(e.target.value)}
+                    placeholder="Cole aqui seu Access Token (APP_USR-...)"
+                    className="w-full input-simple font-bold text-xs bg-white dark:bg-[#182032] border border-slate-200 dark:border-white/10 focus:border-[#009EE3]"
+                  />
+                </div>
+              )}
             </div>
 
             {/* Actions Footer */}
@@ -9340,9 +9364,15 @@ export default function Dashboard() {
                 onClick={async () => {
                   try {
                     setSavingMpToken(true)
-                    await api.updateProfile({ mpAccessToken: mpInputToken })
-                    setAdminInfo(prev => prev ? { ...prev, mpAccessToken: mpInputToken } : prev)
-                    showToast('Configuração do Mercado Pago salva!')
+                    const payload: any = {
+                      pixKey: pixInputKey.trim(),
+                    }
+                    if (mpInputToken.trim()) {
+                      payload.mpAccessToken = mpInputToken.trim()
+                    }
+                    await api.updateProfile(payload)
+                    setAdminInfo(prev => prev ? { ...prev, ...payload } : prev)
+                    showToast('Configuração de Recebimento por Pix salva!')
                     setShowMpConfigModal(false)
                   } catch (err: any) {
                     showToast(err.message || 'Erro ao salvar', 'error')
@@ -9350,10 +9380,10 @@ export default function Dashboard() {
                     setSavingMpToken(false)
                   }
                 }}
-                className="px-5 py-2.5 bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all flex items-center gap-2"
+                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20 cursor-pointer transition-all flex items-center gap-2"
               >
                 {savingMpToken && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                Salvar Configuração
+                Salvar Chave Pix
               </button>
             </div>
           </div>

@@ -486,12 +486,12 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     if (isFeeRequired) {
       const admin = await prisma.admin.findUnique({
         where: { id: link.adminId },
-        select: { mpAccessToken: true, businessName: true, phone: true }
+        select: { mpAccessToken: true, pixKey: true, businessName: true, phone: true }
       });
 
-      if (!admin?.mpAccessToken) {
+      if (!admin?.mpAccessToken && !admin?.pixKey) {
         return reply.status(400).send({
-          error: 'Este profissional ainda não configurou as credenciais do Mercado Pago para receber a taxa de agendamento.'
+          error: 'Este profissional ainda não configurou uma chave Pix ou conta para receber a taxa de agendamento.'
         });
       }
 
@@ -540,8 +540,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         ? `Pagamento Total - ${admin.businessName || 'Profissional'}`
         : `Taxa de Agendamento - ${admin.businessName || 'Profissional'}`;
 
-      // If mpAccessToken is SIMULADOR, return simulation URL
-      if (admin.mpAccessToken === 'SIMULADOR') {
+      // If mpAccessToken is SIMULADOR or if professional uses direct Pix key, return Pix payment URL
+      if (admin.mpAccessToken === 'SIMULADOR' || (!admin.mpAccessToken?.startsWith('APP_USR') && !!admin.pixKey)) {
         return reply.status(201).send({
           booking: {
             id: booking.id,
