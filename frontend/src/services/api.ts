@@ -131,6 +131,7 @@ export const api = {
       address: string;
       operatingHours: string;
       mpAccessToken?: string;
+      pixKey?: string;
       accentColor?: string;
       secondaryColor?: string;
       publicTheme?: string;
@@ -154,6 +155,7 @@ export const api = {
     address?: string;
     operatingHours?: string;
     mpAccessToken?: string;
+    pixKey?: string;
     accentColor?: string;
     secondaryColor?: string;
     publicTheme?: string;

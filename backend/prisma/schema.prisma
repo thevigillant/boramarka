@@ -21,6 +21,7 @@ model Admin {
   operatingHours String @default("") @map("operating_hours")
   category       String @default("barber")
   mpAccessToken  String @default("") @map("mp_access_token")
+  pixKey         String @default("") @map("pix_key")
   accentColor    String @default("#f97316") @map("accent_color")
   secondaryColor String @default("#ec4899") @map("secondary_color")
   publicTheme    String @default("light") @map("public_theme")

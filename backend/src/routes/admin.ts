@@ -94,6 +94,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       address: admin.address,
       operatingHours: admin.operatingHours,
       mpAccessToken: admin.mpAccessToken,
+      pixKey: admin.pixKey || '',
       accentColor: admin.accentColor,
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
@@ -120,6 +121,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       address,
       operatingHours,
       mpAccessToken,
+      pixKey,
       accentColor,
       secondaryColor,
       publicTheme,
@@ -139,6 +141,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       address?: string;
       operatingHours?: string;
       mpAccessToken?: string;
+      pixKey?: string;
       accentColor?: string;
       secondaryColor?: string;
       publicTheme?: string;
@@ -206,6 +209,7 @@ export default async function adminRoutes(app: FastifyInstance) {
         ...(address !== undefined && { address: address.trim() }),
         ...(operatingHours !== undefined && { operatingHours }),
         ...(mpAccessToken !== undefined && { mpAccessToken: mpAccessToken.trim() }),
+        ...(pixKey !== undefined && { pixKey: pixKey.trim() }),
         ...(accentColor !== undefined && { accentColor: accentColor.trim() }),
         ...(secondaryColor !== undefined && { secondaryColor: secondaryColor.trim() }),
         ...(publicTheme !== undefined && { publicTheme: publicTheme.trim() }),
@@ -227,6 +231,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       address: admin.address,
       operatingHours: admin.operatingHours,
       mpAccessToken: admin.mpAccessToken,
+      pixKey: admin.pixKey,
       accentColor: admin.accentColor,
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
