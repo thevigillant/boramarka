@@ -9389,8 +9389,10 @@ export default function Dashboard() {
                     const payload: any = {
                       pixKey: pixInputKey.trim(),
                     }
-                    if (mpInputToken.trim()) {
+                    if (mpInputToken.trim() && mpInputToken.trim() !== 'SIMULADOR') {
                       payload.mpAccessToken = mpInputToken.trim()
+                    } else if (pixInputKey.trim() && pixInputKey.trim() !== 'SIMULADOR') {
+                      payload.mpAccessToken = ''
                     }
                     await api.updateProfile(payload)
                     setAdminInfo(prev => prev ? { ...prev, ...payload } : prev)
