@@ -10,6 +10,58 @@ export default async function financeRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════
   app.get('/stats', async (request) => {
     const user = request.user as { id: number };
+
+    // Auto-reconcile remaining balance for active bookings where deposit/sinal was paid
+    const activeBookings = await prisma.booking.findMany({
+      where: {
+        timeSlot: { link: { adminId: user.id } },
+        status: { in: ['PAGO', 'CONFIRMADO'] }
+      },
+      include: {
+        timeSlot: {
+          include: {
+            link: { include: { service: true } }
+          }
+        }
+      }
+    });
+
+    const existingTransactions = await prisma.transaction.findMany({
+      where: { adminId: user.id }
+    });
+
+    for (const b of activeBookings) {
+      const servicePrice = b.timeSlot.link.service?.price || 0;
+      const fullPrice = b.totalAmount > 0 ? b.totalAmount : servicePrice;
+      const paid = b.paidAmount || 0;
+      const remaining = Math.max(0, fullPrice - paid);
+
+      if (remaining > 0) {
+        const hasPendingTx = existingTransactions.some(t =>
+          t.clientName === b.clientName &&
+          t.type === 'receivable' &&
+          !t.paid &&
+          t.amount === remaining
+        );
+
+        if (!hasPendingTx) {
+          await prisma.transaction.create({
+            data: {
+              type: 'receivable',
+              description: `Restante a receber no atendimento - ${b.clientName}`,
+              amount: remaining,
+              dueDate: b.timeSlot.date,
+              paid: false,
+              clientName: b.clientName,
+              category: 'Restante de Agendamento',
+              notes: `Valor restante a ser pago no dia do atendimento (${b.timeSlot.date})`,
+              adminId: user.id
+            }
+          });
+        }
+      }
+    }
+
     const transactions = await prisma.transaction.findMany({
       where: { adminId: user.id }
     });
