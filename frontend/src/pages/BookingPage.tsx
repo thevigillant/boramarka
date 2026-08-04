@@ -62,6 +62,7 @@ export default function BookingPage() {
   const [accentColor, setAccentColor] = useState('#f97316')
   const [secondaryColor, setSecondaryColor] = useState('#ec4899')
   const [publicTheme, setPublicTheme] = useState('light')
+  const [copiedPix, setCopiedPix] = useState(false)
   
   // Upsell / Addons state
   const [availableUpsells, setAvailableUpsells] = useState<Array<{ id: number; name: string; price: number; duration: number; description?: string; upsellDiscount?: number }>>([])

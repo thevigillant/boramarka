@@ -54,6 +54,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         photoUrl: true,
         phone: true,
         address: true,
+        mpAccessToken: true,
         accentColor: true,
         secondaryColor: true,
         publicTheme: true,
@@ -104,6 +105,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
+      mpAccessToken: admin.mpAccessToken,
     };
   });
 
