@@ -156,7 +156,7 @@ app.register(portalRoutes, { prefix: '/api/portal' });
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// SMTP Diagnostic endpoint (protegido por senha do superadmin)
+// Email Diagnostic endpoint (protegido por senha do superadmin)
 app.get('/api/smtp-test', async (request, reply) => {
   const { secret, to } = request.query as { secret?: string; to?: string };
   const superPass = process.env.SUPERADMIN_PASSWORD || '300923';
@@ -165,86 +165,57 @@ app.get('/api/smtp-test', async (request, reply) => {
     return reply.status(403).send({ error: 'Acesso negado' });
   }
 
-  const nodemailer = await import('nodemailer');
-  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const user = process.env.SMTP_USER || '';
-  const pass = process.env.SMTP_PASS || '';
-  const isGmail = host.includes('gmail');
-
+  const resendKey = process.env.RESEND_API_KEY;
   const diagnostics: any = {
     timestamp: new Date().toISOString(),
+    provider: resendKey ? 'RESEND' : 'SMTP',
     config: {
-      host,
-      user: user ? `${user.substring(0, 3)}***` : 'NÃO DEFINIDO',
-      pass: pass ? `${pass.substring(0, 4)}***` : 'NÃO DEFINIDO',
-      isGmail,
-      smtpPort: process.env.SMTP_PORT,
+      resendKey: resendKey ? `${resendKey.substring(0, 8)}***` : 'NÃO DEFINIDO',
+      resendFrom: process.env.RESEND_FROM || 'NÃO DEFINIDO',
+      smtpUser: process.env.SMTP_USER ? `${process.env.SMTP_USER.substring(0, 5)}***` : 'NÃO DEFINIDO',
       nodeEnv: process.env.NODE_ENV,
     },
     steps: [],
   };
 
-  try {
-    // Step 1: Criar transporter
-    let transporter;
-    if (isGmail) {
-      transporter = nodemailer.default.createTransport({
-        service: 'gmail',
-        auth: { user, pass },
-        connectionTimeout: 20000,
-        greetingTimeout: 20000,
-        socketTimeout: 20000,
-      });
-    } else {
-      const port = parseInt(process.env.SMTP_PORT || '465', 10);
-      transporter = nodemailer.default.createTransport({
-        host,
-        port,
-        secure: port === 465,
-        auth: { user, pass },
-        tls: { rejectUnauthorized: false },
-        connectionTimeout: 20000,
-        greetingTimeout: 20000,
-        socketTimeout: 20000,
-      });
+  // Teste via Resend (API HTTP)
+  if (resendKey) {
+    try {
+      const { Resend } = await import('resend');
+      const resend = new Resend(resendKey);
+      diagnostics.steps.push({ step: 'RESEND_CLIENT_CRIADO', status: 'OK' });
+
+      if (to) {
+        const from = process.env.RESEND_FROM || 'BoraMarka <onboarding@resend.dev>';
+        const { data, error } = await resend.emails.send({
+          from,
+          to: [to],
+          subject: '✅ Teste Email BoraMarka — Funcionando!',
+          html: '<h2>✅ Email de teste BoraMarka</h2><p>Se você recebeu isso, o envio de email está funcionando corretamente em produção via Resend!</p>',
+        });
+
+        if (error) {
+          diagnostics.steps.push({ step: 'RESEND_ENVIO', status: 'FALHOU', error: JSON.stringify(error) });
+          diagnostics.result = '❌ RESEND COM PROBLEMA';
+          return reply.status(500).send(diagnostics);
+        }
+
+        diagnostics.steps.push({ step: 'RESEND_ENVIO', status: 'OK', emailId: data?.id });
+      }
+
+      diagnostics.result = '✅ RESEND FUNCIONANDO';
+      return diagnostics;
+    } catch (err: any) {
+      diagnostics.steps.push({ step: 'RESEND_ERRO', status: 'FALHOU', message: err.message });
+      diagnostics.result = '❌ RESEND COM PROBLEMA';
+      return reply.status(500).send(diagnostics);
     }
-    diagnostics.steps.push({ step: 'CRIAR_TRANSPORTER', status: 'OK' });
-
-    // Step 2: Verificar conexão
-    await transporter.verify();
-    diagnostics.steps.push({ step: 'VERIFICAR_CONEXÃO', status: 'OK' });
-
-    // Step 3: Enviar email de teste (se 'to' fornecido)
-    if (to) {
-      const info = await transporter.sendMail({
-        from: process.env.SMTP_FROM || `BoraMarka <${user}>`,
-        to,
-        subject: '✅ Teste SMTP BoraMarka — Funcionando!',
-        html: '<h2>✅ Email de teste BoraMarka</h2><p>Se você recebeu isso, o SMTP está funcionando corretamente em produção!</p>',
-      });
-      diagnostics.steps.push({
-        step: 'ENVIAR_EMAIL_TESTE',
-        status: 'OK',
-        messageId: info.messageId,
-        response: info.response,
-      });
-    }
-
-    diagnostics.result = '✅ SMTP FUNCIONANDO';
-    return diagnostics;
-  } catch (err: any) {
-    diagnostics.steps.push({
-      step: 'ERRO',
-      status: 'FALHOU',
-      message: err.message,
-      code: err.code || 'N/A',
-      command: err.command || 'N/A',
-      response: err.response || 'N/A',
-    });
-    diagnostics.result = '❌ SMTP COM PROBLEMA';
-    return reply.status(500).send(diagnostics);
   }
+
+  diagnostics.result = '⚠️ RESEND_API_KEY não configurada. Configure no Railway.';
+  return reply.status(400).send(diagnostics);
 });
+
 
 async function ensureSuperAdminExists() {
   try {
