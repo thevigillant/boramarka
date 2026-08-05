@@ -156,6 +156,96 @@ app.register(portalRoutes, { prefix: '/api/portal' });
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
+// SMTP Diagnostic endpoint (protegido por senha do superadmin)
+app.get('/api/smtp-test', async (request, reply) => {
+  const { secret, to } = request.query as { secret?: string; to?: string };
+  const superPass = process.env.SUPERADMIN_PASSWORD || '300923';
+  
+  if (secret !== superPass) {
+    return reply.status(403).send({ error: 'Acesso negado' });
+  }
+
+  const nodemailer = await import('nodemailer');
+  const host = process.env.SMTP_HOST || 'smtp.gmail.com';
+  const user = process.env.SMTP_USER || '';
+  const pass = process.env.SMTP_PASS || '';
+  const isGmail = host.includes('gmail');
+
+  const diagnostics: any = {
+    timestamp: new Date().toISOString(),
+    config: {
+      host,
+      user: user ? `${user.substring(0, 3)}***` : 'NÃO DEFINIDO',
+      pass: pass ? `${pass.substring(0, 4)}***` : 'NÃO DEFINIDO',
+      isGmail,
+      smtpPort: process.env.SMTP_PORT,
+      nodeEnv: process.env.NODE_ENV,
+    },
+    steps: [],
+  };
+
+  try {
+    // Step 1: Criar transporter
+    let transporter;
+    if (isGmail) {
+      transporter = nodemailer.default.createTransport({
+        service: 'gmail',
+        auth: { user, pass },
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 20000,
+      });
+    } else {
+      const port = parseInt(process.env.SMTP_PORT || '465', 10);
+      transporter = nodemailer.default.createTransport({
+        host,
+        port,
+        secure: port === 465,
+        auth: { user, pass },
+        tls: { rejectUnauthorized: false },
+        connectionTimeout: 20000,
+        greetingTimeout: 20000,
+        socketTimeout: 20000,
+      });
+    }
+    diagnostics.steps.push({ step: 'CRIAR_TRANSPORTER', status: 'OK' });
+
+    // Step 2: Verificar conexão
+    await transporter.verify();
+    diagnostics.steps.push({ step: 'VERIFICAR_CONEXÃO', status: 'OK' });
+
+    // Step 3: Enviar email de teste (se 'to' fornecido)
+    if (to) {
+      const info = await transporter.sendMail({
+        from: process.env.SMTP_FROM || `BoraMarka <${user}>`,
+        to,
+        subject: '✅ Teste SMTP BoraMarka — Funcionando!',
+        html: '<h2>✅ Email de teste BoraMarka</h2><p>Se você recebeu isso, o SMTP está funcionando corretamente em produção!</p>',
+      });
+      diagnostics.steps.push({
+        step: 'ENVIAR_EMAIL_TESTE',
+        status: 'OK',
+        messageId: info.messageId,
+        response: info.response,
+      });
+    }
+
+    diagnostics.result = '✅ SMTP FUNCIONANDO';
+    return diagnostics;
+  } catch (err: any) {
+    diagnostics.steps.push({
+      step: 'ERRO',
+      status: 'FALHOU',
+      message: err.message,
+      code: err.code || 'N/A',
+      command: err.command || 'N/A',
+      response: err.response || 'N/A',
+    });
+    diagnostics.result = '❌ SMTP COM PROBLEMA';
+    return reply.status(500).send(diagnostics);
+  }
+});
+
 async function ensureSuperAdminExists() {
   try {
     const superadminUsername = 'odonodoboramarka';

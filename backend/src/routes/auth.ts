@@ -48,16 +48,35 @@ export default async function authRoutes(app: FastifyInstance) {
 
     let emailSent = false;
     if (isSmtpConfigured) {
-      try {
+      // Tenta enviar com timeout generoso para produção (até 12s)
+      const sendWithTimeout = async (): Promise<boolean> => {
         const timeoutPromise = new Promise<boolean>((resolve) =>
-          setTimeout(() => resolve(false), 4500)
+          setTimeout(() => {
+            console.error('⏱️ [SMTP] Timeout ao enviar email de verificação para:', cleanEmail);
+            resolve(false);
+          }, 12000)
         );
-        emailSent = await Promise.race([
+        return Promise.race([
           sendEmailVerificationCode(cleanEmail, cleanUsername || 'Profissional', code),
           timeoutPromise,
         ]);
+      };
+
+      try {
+        emailSent = await sendWithTimeout();
+        // Se falhou, tenta mais uma vez
+        if (!emailSent) {
+          console.log('🔄 [SMTP] Retentando envio de email para:', cleanEmail);
+          emailSent = await sendWithTimeout();
+        }
       } catch (err: any) {
-        console.error('Erro ao enviar e-mail por SMTP:', err.message);
+        console.error('❌ [SMTP] Erro ao enviar e-mail:', err.message, err.code || '');
+      }
+
+      if (emailSent) {
+        console.log('✅ [SMTP] Email de verificação enviado com sucesso para:', cleanEmail);
+      } else {
+        console.error('❌ [SMTP] Falha definitiva ao enviar email para:', cleanEmail);
       }
     }
 
@@ -79,6 +98,7 @@ export default async function authRoutes(app: FastifyInstance) {
       devCode: (emailSent || isProd) ? undefined : code,
     };
   });
+
 
   // POST /api/auth/verify-code — Valida o código de 4 dígitos digitado pelo usuário
   app.post('/verify-code', async (request, reply) => {

@@ -1,25 +1,78 @@
 import nodemailer from 'nodemailer';
 
-function createTransporter() {
+let cachedTransporter: nodemailer.Transporter | null = null;
+let transporterVerified = false;
+
+function createTransporter(): nodemailer.Transporter | null {
+  // Retorna transporter cacheado se já verificado
+  if (cachedTransporter && transporterVerified) return cachedTransporter;
+
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-  const port = parseInt(process.env.SMTP_PORT || '465', 10);
   const user = process.env.SMTP_USER?.replace(/^["']|["']$/g, '').trim();
   const rawPass = process.env.SMTP_PASS || '';
   const pass = rawPass.replace(/^["']|["']$/g, '').trim();
 
-  if (!host || !user || !pass) return null;
+  if (!user || !pass) {
+    console.warn('⚠️ [MAILER] SMTP não configurado — faltando:', !user ? 'SMTP_USER' : '', !pass ? 'SMTP_PASS' : '');
+    return null;
+  }
 
-  return nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    tls: { rejectUnauthorized: false },
-    connectionTimeout: 8000,
-    greetingTimeout: 8000,
-    socketTimeout: 8000,
-  });
+  const isGmail = host.includes('gmail');
+
+  console.log(`📧 [MAILER] Criando transporter: host=${host}, user=${user}, gmail=${isGmail}`);
+
+  // Para Gmail: usar service:'gmail' que auto-configura porta 465 SSL
+  // Isso é MUITO mais confiável que STARTTLS (porta 587) em cloud
+  if (isGmail) {
+    cachedTransporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: { user, pass },
+      pool: true,
+      maxConnections: 3,
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+    });
+  } else {
+    const port = parseInt(process.env.SMTP_PORT || '465', 10);
+    cachedTransporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
+      tls: { rejectUnauthorized: false },
+      pool: true,
+      maxConnections: 3,
+      connectionTimeout: 20000,
+      greetingTimeout: 20000,
+      socketTimeout: 20000,
+    });
+  }
+
+  return cachedTransporter;
 }
+
+/**
+ * Verifica a conexão SMTP e loga o resultado
+ */
+async function verifyTransporter(transporter: nodemailer.Transporter): Promise<boolean> {
+  if (transporterVerified) return true;
+  try {
+    await transporter.verify();
+    transporterVerified = true;
+    console.log('✅ [MAILER] Conexão SMTP verificada com sucesso!');
+    return true;
+  } catch (err: any) {
+    console.error('❌ [MAILER] Falha na verificação SMTP:', err.message);
+    console.error('❌ [MAILER] Código do erro:', err.code || 'N/A');
+    console.error('❌ [MAILER] Stack:', err.stack);
+    // Reseta o cache para tentar de novo na próxima vez
+    cachedTransporter = null;
+    transporterVerified = false;
+    return false;
+  }
+}
+
 
 /**
  * Generates a premium digit card for each digit of the code
@@ -286,6 +339,13 @@ export async function sendPasswordResetEmail(toEmail: string, username: string, 
   }
 
   try {
+    // Verifica conexão SMTP antes de enviar
+    const isConnected = await verifyTransporter(transporter);
+    if (!isConnected) {
+      console.error('❌ [MAILER] Conexão SMTP não disponível para reset de senha');
+      return false;
+    }
+
     const htmlContent = buildEmailTemplate({
       badgeText: 'SEGURANÇA',
       badgeColor: '#7c3aed',
@@ -298,16 +358,22 @@ export async function sendPasswordResetEmail(toEmail: string, username: string, 
       warningText: 'Se você não fez esta solicitação, pode ignorar este e-mail.',
     });
 
-    await transporter.sendMail({
+    console.log(`📧 [MAILER] Enviando email de reset para: ${toEmail}`);
+    const info = await transporter.sendMail({
       from,
       to: toEmail,
       subject: `Código de Recuperação: ${code} — BoraMarka`,
       html: htmlContent,
     });
+    console.log(`✅ [MAILER] Reset email enviado! messageId=${info.messageId}, response=${info.response}`);
 
     return true;
-  } catch (error) {
-    console.error('❌ Erro ao enviar e-mail via Nodemailer:', error);
+  } catch (error: any) {
+    console.error('❌ [MAILER] Erro ao enviar e-mail de reset:', error.message);
+    console.error('❌ [MAILER] Código:', error.code, '| Comando:', error.command, '| Resposta:', error.response);
+    // Reseta cache para reconectar na próxima tentativa
+    cachedTransporter = null;
+    transporterVerified = false;
     return false;
   }
 }
@@ -327,6 +393,13 @@ export async function sendEmailVerificationCode(toEmail: string, username: strin
   }
 
   try {
+    // Verifica conexão SMTP antes de enviar
+    const isConnected = await verifyTransporter(transporter);
+    if (!isConnected) {
+      console.error('❌ [MAILER] Conexão SMTP não disponível para verificação de email');
+      return false;
+    }
+
     const htmlContent = buildEmailTemplate({
       badgeText: 'VERIFICAÇÃO',
       badgeColor: '#db2777',
@@ -339,16 +412,21 @@ export async function sendEmailVerificationCode(toEmail: string, username: strin
       warningText: 'Se você não iniciou esta ação no BoraMarka, pode ignorar este e-mail.',
     });
 
-    await transporter.sendMail({
+    console.log(`📧 [MAILER] Enviando código de verificação para: ${toEmail}`);
+    const info = await transporter.sendMail({
       from,
       to: toEmail,
       subject: `Seu Código de Verificação BoraMarka: ${code}`,
       html: htmlContent,
     });
+    console.log(`✅ [MAILER] Verificação enviada! messageId=${info.messageId}, response=${info.response}`);
 
     return true;
-  } catch (error) {
-    console.error('❌ Erro ao enviar e-mail de verificação via Nodemailer:', error);
+  } catch (error: any) {
+    console.error('❌ [MAILER] Erro ao enviar e-mail de verificação:', error.message);
+    console.error('❌ [MAILER] Código:', error.code, '| Comando:', error.command, '| Resposta:', error.response);
+    cachedTransporter = null;
+    transporterVerified = false;
     return false;
   }
 }
