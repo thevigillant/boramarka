@@ -156,65 +156,6 @@ app.register(portalRoutes, { prefix: '/api/portal' });
 // Health check
 app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
 
-// Email Diagnostic endpoint (protegido por senha do superadmin)
-app.get('/api/smtp-test', async (request, reply) => {
-  const { secret, to } = request.query as { secret?: string; to?: string };
-  const superPass = process.env.SUPERADMIN_PASSWORD || '300923';
-  
-  if (secret !== superPass) {
-    return reply.status(403).send({ error: 'Acesso negado' });
-  }
-
-  const resendKey = process.env.RESEND_API_KEY;
-  const diagnostics: any = {
-    timestamp: new Date().toISOString(),
-    provider: resendKey ? 'RESEND' : 'SMTP',
-    config: {
-      resendKey: resendKey ? `${resendKey.substring(0, 8)}***` : 'NÃO DEFINIDO',
-      resendFrom: process.env.RESEND_FROM || 'NÃO DEFINIDO',
-      smtpUser: process.env.SMTP_USER ? `${process.env.SMTP_USER.substring(0, 5)}***` : 'NÃO DEFINIDO',
-      nodeEnv: process.env.NODE_ENV,
-    },
-    steps: [],
-  };
-
-  // Teste via Resend (API HTTP)
-  if (resendKey) {
-    try {
-      const { Resend } = await import('resend');
-      const resend = new Resend(resendKey);
-      diagnostics.steps.push({ step: 'RESEND_CLIENT_CRIADO', status: 'OK' });
-
-      if (to) {
-        const from = process.env.RESEND_FROM || 'BoraMarka <onboarding@resend.dev>';
-        const { data, error } = await resend.emails.send({
-          from,
-          to: [to],
-          subject: '✅ Teste Email BoraMarka — Funcionando!',
-          html: '<h2>✅ Email de teste BoraMarka</h2><p>Se você recebeu isso, o envio de email está funcionando corretamente em produção via Resend!</p>',
-        });
-
-        if (error) {
-          diagnostics.steps.push({ step: 'RESEND_ENVIO', status: 'FALHOU', error: JSON.stringify(error) });
-          diagnostics.result = '❌ RESEND COM PROBLEMA';
-          return reply.status(500).send(diagnostics);
-        }
-
-        diagnostics.steps.push({ step: 'RESEND_ENVIO', status: 'OK', emailId: data?.id });
-      }
-
-      diagnostics.result = '✅ RESEND FUNCIONANDO';
-      return diagnostics;
-    } catch (err: any) {
-      diagnostics.steps.push({ step: 'RESEND_ERRO', status: 'FALHOU', message: err.message });
-      diagnostics.result = '❌ RESEND COM PROBLEMA';
-      return reply.status(500).send(diagnostics);
-    }
-  }
-
-  diagnostics.result = '⚠️ RESEND_API_KEY não configurada. Configure no Railway.';
-  return reply.status(400).send(diagnostics);
-});
 
 
 async function ensureSuperAdminExists() {
