@@ -1,77 +1,109 @@
 import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-let cachedTransporter: nodemailer.Transporter | null = null;
-let transporterVerified = false;
+// ═══════════════════════════════════════════════════════════
+// PROVEDOR DE EMAIL: Resend (API HTTP) — funciona no Railway
+// Fallback: SMTP/Nodemailer — funciona local
+// ═══════════════════════════════════════════════════════════
 
-function createTransporter(): nodemailer.Transporter | null {
-  // Retorna transporter cacheado se já verificado
-  if (cachedTransporter && transporterVerified) return cachedTransporter;
+function getResendClient(): Resend | null {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return null;
+  return new Resend(apiKey);
+}
 
+function createSmtpTransporter(): nodemailer.Transporter | null {
   const host = process.env.SMTP_HOST || 'smtp.gmail.com';
   const user = process.env.SMTP_USER?.replace(/^["']|["']$/g, '').trim();
   const rawPass = process.env.SMTP_PASS || '';
   const pass = rawPass.replace(/^["']|["']$/g, '').trim();
 
-  if (!user || !pass) {
-    console.warn('⚠️ [MAILER] SMTP não configurado — faltando:', !user ? 'SMTP_USER' : '', !pass ? 'SMTP_PASS' : '');
-    return null;
-  }
+  if (!user || !pass) return null;
 
   const isGmail = host.includes('gmail');
 
-  console.log(`📧 [MAILER] Criando transporter: host=${host}, user=${user}, gmail=${isGmail}`);
-
-  // Para Gmail: usar service:'gmail' que auto-configura porta 465 SSL
-  // Isso é MUITO mais confiável que STARTTLS (porta 587) em cloud
   if (isGmail) {
-    cachedTransporter = nodemailer.createTransport({
+    return nodemailer.createTransport({
       service: 'gmail',
       auth: { user, pass },
-      pool: true,
-      maxConnections: 3,
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
-    });
-  } else {
-    const port = parseInt(process.env.SMTP_PORT || '465', 10);
-    cachedTransporter = nodemailer.createTransport({
-      host,
-      port,
-      secure: port === 465,
-      auth: { user, pass },
-      tls: { rejectUnauthorized: false },
-      pool: true,
-      maxConnections: 3,
-      connectionTimeout: 20000,
-      greetingTimeout: 20000,
-      socketTimeout: 20000,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 15000,
     });
   }
 
-  return cachedTransporter;
+  const port = parseInt(process.env.SMTP_PORT || '465', 10);
+  return nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass },
+    tls: { rejectUnauthorized: false },
+    connectionTimeout: 15000,
+    greetingTimeout: 15000,
+    socketTimeout: 15000,
+  });
 }
 
 /**
- * Verifica a conexão SMTP e loga o resultado
+ * Envia email usando Resend (API HTTP) com fallback para SMTP
  */
-async function verifyTransporter(transporter: nodemailer.Transporter): Promise<boolean> {
-  if (transporterVerified) return true;
+async function sendEmail(options: {
+  to: string;
+  subject: string;
+  html: string;
+}): Promise<boolean> {
+  const from = process.env.RESEND_FROM || process.env.SMTP_FROM || 'BoraMarka <onboarding@resend.dev>';
+
+  // 1. Tentar via Resend (API HTTP — funciona no Railway)
+  const resend = getResendClient();
+  if (resend) {
+    try {
+      console.log(`📧 [RESEND] Enviando email para: ${options.to}`);
+      const { data, error } = await resend.emails.send({
+        from,
+        to: [options.to],
+        subject: options.subject,
+        html: options.html,
+      });
+
+      if (error) {
+        console.error('❌ [RESEND] Erro:', JSON.stringify(error));
+        // Não faz fallback pra SMTP em produção (vai dar timeout igual)
+        return false;
+      }
+
+      console.log(`✅ [RESEND] Email enviado! id=${data?.id}`);
+      return true;
+    } catch (err: any) {
+      console.error('❌ [RESEND] Exceção:', err.message);
+      return false;
+    }
+  }
+
+  // 2. Fallback: SMTP (funciona apenas local, Railway bloqueia portas SMTP)
+  const transporter = createSmtpTransporter();
+  if (!transporter) {
+    console.warn('⚠️ [MAILER] Nenhum provedor configurado (RESEND_API_KEY ou SMTP_USER/SMTP_PASS)');
+    return false;
+  }
+
   try {
-    await transporter.verify();
-    transporterVerified = true;
-    console.log('✅ [MAILER] Conexão SMTP verificada com sucesso!');
+    console.log(`📧 [SMTP] Enviando email para: ${options.to}`);
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>',
+      to: options.to,
+      subject: options.subject,
+      html: options.html,
+    });
+    console.log(`✅ [SMTP] Enviado! messageId=${info.messageId}`);
     return true;
   } catch (err: any) {
-    console.error('❌ [MAILER] Falha na verificação SMTP:', err.message);
-    console.error('❌ [MAILER] Código do erro:', err.code || 'N/A');
-    console.error('❌ [MAILER] Stack:', err.stack);
-    // Reseta o cache para tentar de novo na próxima vez
-    cachedTransporter = null;
-    transporterVerified = false;
+    console.error('❌ [SMTP] Erro:', err.message, '| Código:', err.code);
     return false;
   }
 }
+
 
 
 /**
@@ -325,128 +357,49 @@ function buildEmailTemplate(options: {
 }
 
 export async function sendPasswordResetEmail(toEmail: string, username: string, code: string): Promise<boolean> {
-  const from = process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>';
+  const htmlContent = buildEmailTemplate({
+    badgeText: 'SEGURANÇA',
+    badgeColor: '#7c3aed',
+    iconEmoji: '🔒',
+    title: 'Redefinição de Senha',
+    subtitle: `Olá, <strong style="color:#e4e4e7;">${username}</strong>. Recebemos uma solicitação para redefinir a senha da sua conta. Use o código abaixo para prosseguir:`,
+    codeLabel: 'CÓDIGO DE AUTORIZAÇÃO',
+    code,
+    expirationMinutes: 15,
+    warningText: 'Se você não fez esta solicitação, pode ignorar este e-mail.',
+  });
 
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.log('\n======================================================');
-    console.log('📧 [MAILER DEV FALLBACK] E-mail de Recuperação de Senha');
-    console.log(`Para: ${toEmail} (Usuário: ${username})`);
-    console.log(`🔑 Código de Verificação: [ ${code} ]`);
-    console.log('Válido por 15 minutos.');
-    console.log('======================================================\n');
-    return true;
-  }
-
-  try {
-    // Verifica conexão SMTP antes de enviar
-    const isConnected = await verifyTransporter(transporter);
-    if (!isConnected) {
-      console.error('❌ [MAILER] Conexão SMTP não disponível para reset de senha');
-      return false;
-    }
-
-    const htmlContent = buildEmailTemplate({
-      badgeText: 'SEGURANÇA',
-      badgeColor: '#7c3aed',
-      iconEmoji: '🔒',
-      title: 'Redefinição de Senha',
-      subtitle: `Olá, <strong style="color:#e4e4e7;">${username}</strong>. Recebemos uma solicitação para redefinir a senha da sua conta. Use o código abaixo para prosseguir:`,
-      codeLabel: 'CÓDIGO DE AUTORIZAÇÃO',
-      code,
-      expirationMinutes: 15,
-      warningText: 'Se você não fez esta solicitação, pode ignorar este e-mail.',
-    });
-
-    console.log(`📧 [MAILER] Enviando email de reset para: ${toEmail}`);
-    const info = await transporter.sendMail({
-      from,
-      to: toEmail,
-      subject: `Código de Recuperação: ${code} — BoraMarka`,
-      html: htmlContent,
-    });
-    console.log(`✅ [MAILER] Reset email enviado! messageId=${info.messageId}, response=${info.response}`);
-
-    return true;
-  } catch (error: any) {
-    console.error('❌ [MAILER] Erro ao enviar e-mail de reset:', error.message);
-    console.error('❌ [MAILER] Código:', error.code, '| Comando:', error.command, '| Resposta:', error.response);
-    // Reseta cache para reconectar na próxima tentativa
-    cachedTransporter = null;
-    transporterVerified = false;
-    return false;
-  }
+  return sendEmail({
+    to: toEmail,
+    subject: `Código de Recuperação: ${code} — BoraMarka`,
+    html: htmlContent,
+  });
 }
 
 export async function sendEmailVerificationCode(toEmail: string, username: string, code: string): Promise<boolean> {
-  const from = process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>';
+  const htmlContent = buildEmailTemplate({
+    badgeText: 'VERIFICAÇÃO',
+    badgeColor: '#db2777',
+    iconEmoji: '',
+    title: 'Confirme seu E-mail',
+    subtitle: `Olá, <strong style="color:#e4e4e7;">${username}</strong>! Insira o código abaixo na tela de cadastro para verificar seu endereço de e-mail com segurança.`,
+    codeLabel: 'SEU CÓDIGO DE ACESSO',
+    code,
+    expirationMinutes: 10,
+    warningText: 'Se você não iniciou esta ação no BoraMarka, pode ignorar este e-mail.',
+  });
 
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.log('\n======================================================');
-    console.log('📧 [VERIFICAÇÃO DE E-MAIL - BORAMARKA]');
-    console.log(`Para: ${toEmail} (Usuário: ${username})`);
-    console.log(`✨ CÓDIGO DE VERIFICAÇÃO (4 DÍGITOS): [ ${code} ]`);
-    console.log('Válido por 10 minutos.');
-    console.log('======================================================\n');
-    return true;
-  }
-
-  try {
-    // Verifica conexão SMTP antes de enviar
-    const isConnected = await verifyTransporter(transporter);
-    if (!isConnected) {
-      console.error('❌ [MAILER] Conexão SMTP não disponível para verificação de email');
-      return false;
-    }
-
-    const htmlContent = buildEmailTemplate({
-      badgeText: 'VERIFICAÇÃO',
-      badgeColor: '#db2777',
-      iconEmoji: '',
-      title: 'Confirme seu E-mail',
-      subtitle: `Olá, <strong style="color:#e4e4e7;">${username}</strong>! Insira o código abaixo na tela de cadastro para verificar seu endereço de e-mail com segurança.`,
-      codeLabel: 'SEU CÓDIGO DE ACESSO',
-      code,
-      expirationMinutes: 10,
-      warningText: 'Se você não iniciou esta ação no BoraMarka, pode ignorar este e-mail.',
-    });
-
-    console.log(`📧 [MAILER] Enviando código de verificação para: ${toEmail}`);
-    const info = await transporter.sendMail({
-      from,
-      to: toEmail,
-      subject: `Seu Código de Verificação BoraMarka: ${code}`,
-      html: htmlContent,
-    });
-    console.log(`✅ [MAILER] Verificação enviada! messageId=${info.messageId}, response=${info.response}`);
-
-    return true;
-  } catch (error: any) {
-    console.error('❌ [MAILER] Erro ao enviar e-mail de verificação:', error.message);
-    console.error('❌ [MAILER] Código:', error.code, '| Comando:', error.command, '| Resposta:', error.response);
-    cachedTransporter = null;
-    transporterVerified = false;
-    return false;
-  }
+  return sendEmail({
+    to: toEmail,
+    subject: `Seu Código de Verificação BoraMarka: ${code}`,
+    html: htmlContent,
+  });
 }
 
 export async function sendWelcomeEmail(toEmail: string, username: string, businessName?: string): Promise<boolean> {
-  const from = process.env.SMTP_FROM || 'BoraMarka <contatoboramarka@gmail.com>';
-  const transporter = createTransporter();
   const name = businessName || username || 'Profissional';
 
-  if (!transporter) {
-    console.log('\n======================================================');
-    console.log('[BOAS-VINDAS - BORAMARKA]');
-    console.log(`Para: ${toEmail} (${name})`);
-    console.log('E-mail de boas-vindas enviado com sucesso (modo log).');
-    console.log('======================================================\n');
-    return true;
-  }
-
-  try {
-    const htmlContent = `<!DOCTYPE html>
+  const htmlContent = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8">
@@ -607,17 +560,9 @@ export async function sendWelcomeEmail(toEmail: string, username: string, busine
 </body>
 </html>`;
 
-    await transporter.sendMail({
-      from,
-      to: toEmail,
-      subject: `Bem-vindo ao BoraMarka, ${name}!`,
-      html: htmlContent,
-    });
-
-    console.log(`✅ E-mail de boas-vindas enviado para ${toEmail}`);
-    return true;
-  } catch (error: any) {
-    console.error('❌ Erro ao enviar e-mail de boas-vindas:', error.message);
-    return false;
-  }
+  return sendEmail({
+    to: toEmail,
+    subject: `Bem-vindo ao BoraMarka, ${name}!`,
+    html: htmlContent,
+  });
 }
