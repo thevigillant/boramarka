@@ -1,126 +1,177 @@
-# 🚀 BoraMarka — Plataforma SaaS de Agendamento Online & Gestão Inteligente
+# 🚀 BoraMarka — Enterprise SaaS Platform for Automated Scheduling & Intelligent Business Management
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Em_Produção-emerald?style=for-the-badge&logo=vercel" alt="Status">
-  <img src="https://img.shields.io/badge/PWA-Instalável_Android%2FiOS-ec4899?style=for-the-badge&logo=pwa" alt="PWA">
+  <img src="https://img.shields.io/badge/Status-Production_Ready-emerald?style=for-the-badge&logo=railway" alt="Status">
+  <img src="https://img.shields.io/badge/Domain-boramarka.com.br-000000?style=for-the-badge&logo=googlechrome" alt="Domain">
   <img src="https://img.shields.io/badge/Frontend-React_18_%2B_Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
   <img src="https://img.shields.io/badge/Backend-Fastify_v4_%2B_TypeScript-000000?style=for-the-badge&logo=fastify" alt="Fastify">
-  <img src="https://img.shields.io/badge/Database-Prisma_5_%2B_PostgreSQL_17-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/WhatsApp-Meta_Cloud_API_%2B_Fallback-25D366?style=for-the-badge&logo=whatsapp" alt="WhatsApp">
-  <img src="https://img.shields.io/badge/Gateway-Mercado_Pago_API_v1-009EE3?style=for-the-badge&logo=mercadopago" alt="Mercado Pago">
-  <img src="https://img.shields.io/badge/Segurança-RBAC_Avançado-violet?style=for-the-badge&logo=shield" alt="Security">
+  <img src="https://img.shields.io/badge/Database-PostgreSQL_17_%2B_Prisma_5-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Email-Resend_API_HTTP-000000?style=for-the-badge&logo=resend" alt="Resend">
+  <img src="https://img.shields.io/badge/WhatsApp-Meta_Cloud_API_%2B_HTTP_Gateway-25D366?style=for-the-badge&logo=whatsapp" alt="WhatsApp">
+  <img src="https://img.shields.io/badge/Payments-Mercado_Pago_API_v1-009EE3?style=for-the-badge&logo=mercadopago" alt="Mercado Pago">
+  <img src="https://img.shields.io/badge/Security-RBAC_%2B_JWT_%2B_Helmet-violet?style=for-the-badge&logo=shield" alt="Security">
 </p>
 
 ---
 
-## 🌐 Endereços Oficiais em Produção
+## 🌐 Official Production Endpoints
 
-* 🌐 **Plataforma Web (Domínio Próprio):** [https://boramarka.com.br](https://boramarka.com.br) | [https://www.boramarka.com.br](https://www.boramarka.com.br)
-* ⚡ **API Backend:** [https://api.boramarka.com.br](https://api.boramarka.com.br)
-* 📦 **Repositório GitHub:** [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka)
-
----
-
-## 💡 Sobre o BoraMarka
-
-O **BoraMarka** é uma plataforma SaaS (*Software as a Service*) de alta performance projetada para revolucionar a rotina de profissionais autônomos, estúdios, clínicas e estabelecimentos comerciais que atendem com hora marcada.
-
-A plataforma reúne em um único ecossistema: **Agendamento Online 24/7**, **Integração WhatsApp Multicanal (Meta Cloud API, Gateway HTTP e Fallback wa.me Custo Zero)**, **Central de Suporte & Chat em Tempo Real com o SuperAdmin**, **Notificações Web Push em Tempo Real para o Gestor**, **Conformidade Total LGPD (Termos de Uso & Política de Privacidade)**, **Recorrência Automática Mercado Pago (Subscriptions/Preapproval)**, **Cobrança de Sinal Antecipado via Mercado Pago**, **Portal de Remarcação & Cancelamento para Clientes com Validação de Política**, **Login de Colaboradores por Empresa**, **Módulo de RH & Equipe**, **Cartão Fidelidade Digital & Cupons**, **Onboarding Inteligente por Nicho**, **Gerador de Bio do Instagram**, **Fluxo de Caixa com Exportação em PDF/Excel** e **SEO & Open Graph Otimizado**.
-
----
-
-## 💎 Destaques & Novas Funcionalidades de Produção
-
-### 📲 Integração WhatsApp Tripla (Meta Cloud API, Gateways & Fallback)
-- **Meta Cloud API Oficial**: Suporte a envio direto de mensagens e comprovantes sem intermediações usando Token oficial e Phone ID.
-- **Gateway HTTP Genérico**: Compatibilidade nativa com APIs como Z-API, Evolution API ou gateways próprios via webhook HTTP.
-- **Fallback wa.me 100% Gratuito**: Botão direto de compartilhamento com texto formatado contendo detalhes do agendamento, código único de gerenciamento `🔑` e link direto para alteração ou cancelamento.
-
-### 🐘 Migração para Banco de Dados PostgreSQL 17
-- Migração completa do ORM Prisma para **PostgreSQL 17**, oferecendo alta disponibilidade, transações ACID rigorosas e suporte robusto para milhares de acessos concorrentes.
-
-### 💬 Central de Suporte & Chat em Tempo Real no SuperAdmin
-- Canal direto de chamados entre o profissional/gestor e a equipe SuperAdmin.
-- Layout de alta densidade responsivo com visualização de tíquetes, atualização em tempo real e cálculo dinâmico de altura sem rolagem indesejada.
-
-### 🗓️ Portal de Gerenciamento de Agendamento do Cliente (Cancelamento / Remarcação)
-- Interface Glassmorphism de alta visibilidade e contraste nítido em tema dark neon.
-- Validação automática da política de prazo mínimo para cancelamentos online (ex: até 2 horas antes) com redirecionamento inteligente ao WhatsApp do profissional em casos de exceção.
-
-### 🔔 Web Push Notifications para o Gestor
-- Envio de notificações push nativas no navegador e celular (Android, iOS, Chrome, Safari) para o profissional no momento em que um cliente realiza um novo agendamento.
-- Chaves VAPID oficiais configuradas e alternador no cabeçalho do painel.
-
-### 🛡️ Conformidade LGPD (Lei Geral de Proteção de Dados)
-- Rotas públicas oficiais de **Termos de Uso** (`/termos`) e **Política de Privacidade** (`/privacidade`).
-- Consentimento transparente no fluxo de cadastro e agendamento.
-
-### 🔄 Assinaturas Recorrentes Automáticas (Mercado Pago Preapproval)
-- Renovação automática mensal e anual dos planos da plataforma diretamente via Mercado Pago Subscriptions com suporte a webhooks.
-
----
-
-## 🏷️ Matriz Oficial de Planos & Cotas
-
-| Recurso / Cota | ⚡ **BoraTestar** | 📘 **BoraMensal** | 🔥 **BoraAnual** | 👑 **BoraPremium** |
-| :--- | :---: | :---: | :---: | :---: |
-| **Preço** | **Grátis (7 dias)** | **R$ 29,90/mês** | **R$ 260,00/ano** *(~R$ 21,66/mês)* | **R$ 79,90/mês** |
-| **Agendamentos / mês** | 50 (teste) | 500 /mês | 2.500 /mês | **Ilimitado (∞)** |
-| **Clientes na Base** | 100 clientes | 1.500 clientes | 8.000 clientes | **Ilimitado (∞)** |
-| **Colaboradores / Equipe** | 2 pessoas | 5 pessoas | 20 pessoas | **Ilimitado (∞)** |
-| **Serviços & Links** | 10 serv. / 2 links | 30 serv. / 10 links | 100 serv. / 30 links | **Ilimitado (∞)** |
-| **Sinal Mercado Pago** | Sim | Sim | Sim | Sim |
-| **Cartão Fidelidade Digital** | — | — | Sim | Sim |
-| **Módulo de RH & Equipe** | — | — | — | **Exclusivo Premium** |
-
----
-
-## 🏗️ Arquitetura e Stack Tecnológica
-
-| Camada | Tecnologia | Descrição |
+| Component | URL | Provider / Infrastructure |
 | :--- | :--- | :--- |
-| **Frontend** | React 18 + Vite | Single Page Application com Tailwind CSS, Lucide Icons e UI fluida |
-| **Backend** | Fastify v4 + TypeScript | Servidor RESTful otimizado de alta velocidade |
-| **ORM** | Prisma ORM 5.x | Modelagem e migrations com suporte a PostgreSQL 17 |
-| **Banco de Dados** | PostgreSQL 17 | Banco relacional corporativo com suporte relacional avançado |
-| **WhatsApp Integration** | Meta Cloud API / HTTP Gateway / wa.me | Envio automatizado e manual de notificações e comprovantes |
-| **Gateway de Pagamento** | Mercado Pago API v1 & Subscriptions | Processamento de cobranças PIX, Cartão e Assinaturas Recorrentes |
-| **E-mail Transacional** | Nodemailer (Gmail SSL 465) | Envio de e-mails executivos de boas-vindas, verificação e redefinição |
+| 🌐 **Web Platform (Production)** | [https://boramarka.com.br](https://boramarka.com.br) | Vercel Edge Network |
+| ⚡ **API Server (REST Backend)** | [https://api.boramarka.com.br](https://api.boramarka.com.br) | Railway Enterprise Cloud |
+| 📧 **Email Delivery Engine** | `noreply@boramarka.com.br` | Resend API HTTP (DKIM / SPF Verified) |
+| 📦 **GitHub Repository** | [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka) | GitHub Private / Main Branch |
 
 ---
 
-## 🛠️ Como Executar o Projeto Localmente
+## 💡 System Architecture Overview
 
-### 1. Clonar o Repositório
+**BoraMarka** is an enterprise-grade multi-tenant SaaS platform built for service professionals, barbershops, beauty salons, health clinics, tattoo studios, and pet centers. It unifies online scheduling, automated multi-channel client engagement, recurrent subscription monetization, and real-time administrative operations.
+
+```mermaid
+graph TD
+    Client["📱 Client / Web App (React 18 + Vite)"] -->|HTTPS / REST API| Edge["🛡️ Vercel Edge / CDN"]
+    Edge -->|DNS / CNAME| Server["⚡ Fastify Backend (TypeScript)"]
+    
+    subgraph Backend Core (Railway Container)
+        Server -->|Auth & RBAC| JWT["🔒 JWT + Fastify Rate Limit"]
+        Server -->|ORM Queries| Prisma["💎 Prisma 5 ORM"]
+        Server -->|Email Dispatch| Resend["📧 Resend API HTTP Engine"]
+        Server -->|WhatsApp Dispatch| WA["💬 Meta Cloud API / HTTP Gateway / wa.me"]
+        Server -->|Webhooks & Billing| MP["💳 Mercado Pago API / Subscriptions"]
+        Server -->|Push Engine| WebPush["🔔 VAPID Web Push Engine"]
+    end
+    
+    Prisma -->|ACID Transactions| DB[("🐘 PostgreSQL 17 Database")]
+    Resend -->|DKIM / SPF Signed| Inbox["📩 Recipient Inbox (@boramarka.com.br)"]
+```
+
+---
+
+## 💎 Key Production Innovations & Capabilities
+
+### 📧 High-Reliability Transactional Email Engine (Resend API HTTP)
+- **Zero-Block HTTP Architecture**: Migrated from legacy SMTP to Resend's REST API, eliminating cloud container SMTP port blocks (ports 465/587).
+- **Custom Domain Authenticated**: Fully verified via DKIM (`resend._domainkey`), SPF (`v=spf1 include:amazonses.com`), and DMARC on `boramarka.com.br`.
+- **Automated Workflows**: Instant delivery of 4-digit security verification OTPs, password reset links, and rich onboarding welcome templates.
+- **Failover Architecture**: Built-in fallback mechanism ensuring local development transport parity.
+
+### 📲 Tri-Layer WhatsApp Automation Engine
+- **Meta Cloud API (Official)**: Native integration using Graph API OAuth tokens and direct Phone Number ID for zero-intermediation automated messaging.
+- **Generic HTTP Gateway**: Webhook compatibility with custom WhatsApp gateways (Z-API, Evolution API).
+- **Zero-Cost wa.me Smart Fallback**: Dynamic deep-link generator formatted with appointment parameters, unique key `🔑`, and one-click portal access.
+
+### 🐘 Enterprise PostgreSQL 17 & Prisma 5 ORM
+- High-concurrency relational data engine enforcing strict ACID transactions, row-level locking, automated migration pipelines, and optimized connection pooling.
+
+### 💬 Real-Time SuperAdmin CRM Support Center
+- Direct bidirectional communication channel between store managers and platform administrators.
+- High-density Dark Neon UI with live ticket tracking, auto-scroll management, and zero layout shift.
+
+### 🗓️ Client Portal (Reschedule & Cancellation Engine)
+- Glassmorphic user interface allowing clients to view, reschedule, or cancel bookings without phone calls.
+- Automated enforcement of shop cancellation windows (e.g., minimum 2-hour notice policy) with graceful fallback to shop WhatsApp.
+
+### 🔔 VAPID Web Push Notifications
+- Web Push Notifications delivered directly to shop owners' desktop and mobile browsers (Android, iOS Safari, Chrome) upon new appointments.
+
+### 🛡️ LGPD Compliance & Advanced Security
+- Official public endpoints for **Terms of Use** (`/termos`) and **Privacy Policy** (`/privacidade`).
+- **Role-Based Access Control (RBAC)**: Fine-grained granular permissions for store operators (`canAgendamentos`, `canFinanceiro`, `canRh`, etc.).
+- **Rate Limiting**: Protection against brute-force and DoS (120 requests/min per IP via Fastify Rate Limit).
+- **Security Headers**: Fastify Helmet enforcement, CORS restriction, and strict input validation via TypeScript schemas.
+
+---
+
+## 🏷️ Subscription Plans & Quotas Matrix
+
+| Resource / Quota | ⚡ **BoraTestar** | 📘 **BoraMensal** | 🔥 **BoraAnual** | 👑 **BoraPremium** |
+| :--- | :---: | :---: | :---: | :---: |
+| **Pricing** | **Free (7-day trial)** | **R$ 29.90 / month** | **R$ 260.00 / year** *(~R$ 21.66/mo)* | **R$ 79.90 / month** |
+| **Monthly Bookings** | 50 (trial) | 500 / month | 2,500 / month | **Unlimited (∞)** |
+| **Client Database** | 100 clients | 1,500 clients | 8,000 clients | **Unlimited (∞)** |
+| **Staff & Operators** | 2 members | 5 members | 20 members | **Unlimited (∞)** |
+| **Services & Public Links** | 10 services / 2 links | 30 services / 10 links | 100 services / 30 links | **Unlimited (∞)** |
+| **Mercado Pago Deposit** | ✅ Enabled | ✅ Enabled | ✅ Enabled | ✅ Enabled |
+| **Digital Loyalty Card** | — | — | ✅ Enabled | ✅ Enabled |
+| **HR & Payroll Module** | — | — | — | 👑 **Exclusive Premium** |
+
+---
+
+## 🏗️ Technology Stack
+
+| Layer | Technology | Details |
+| :--- | :--- | :--- |
+| **Frontend Framework** | React 18 + Vite | SPA architecture with Tailwind CSS, Lucide Icons, and responsive design |
+| **Backend Runtime** | Fastify v4 + TypeScript | Ultra-fast Node.js framework with strict typings and fast JSON serialization |
+| **Database & ORM** | PostgreSQL 17 + Prisma 5 | Enterprise relational database with schema-driven migrations and type safety |
+| **Email Infrastructure** | Resend API HTTP | Transactional email delivery with DKIM/SPF domain verification (`boramarka.com.br`) |
+| **WhatsApp Integration** | Meta Cloud API + Gateway | Direct API messaging with HTTP webhook fallback |
+| **Payment Gateway** | Mercado Pago API v1 | PIX, Credit Card processing, and Preapproval Subscription Webhooks |
+| **Push Notifications** | Web Push / VAPID | Native browser notifications for desktop and mobile PWA |
+| **Cloud Hosting** | Vercel (FE) + Railway (BE) | Global CDN edge deployment for frontend and containerized backend microservice |
+
+---
+
+## 🔌 API Endpoint Hierarchy
+
+```
+/api
+├── /auth
+│   ├── POST /send-verification-code    # 4-digit OTP email dispatch
+│   ├── POST /verify-code               # OTP validation
+│   ├── POST /register                  # Multi-tenant admin registration
+│   ├── POST /login                     # Admin & Operator authentication
+│   ├── POST /forgot-password           # Password reset code dispatch
+│   └── POST /reset-password            # Password update
+├── /schedule                           # Appointments, calendar, slots
+├── /services                           # Catalog management by category
+├── /finance                            # Cash flow, transactions, PDF exports
+├── /billing                            # Mercado Pago checkout & webhooks
+├── /portal                             # Client rescheduling & cancellation
+├── /support                            # Live support tickets & CRM chat
+├── /loyalty                            # Digital loyalty cards & coupons
+└── /superadmin                         # Platform management & metrics
+```
+
+---
+
+## 🛠️ Local Development Setup
+
+### 1. Clone Repository
 ```bash
 git clone https://github.com/thevigillant/boramarka.git
 cd boramarka
 ```
 
-### 2. Configurar o Backend (PostgreSQL 17)
+### 2. Configure & Run Backend
 ```bash
 cd backend
 npm install
-# Certifique-se de configurar o DATABASE_URL no backend/.env (ex: postgresql://postgres:postgres@localhost:5432/boramarka)
+
+# Setup environment variables in backend/.env
+# DATABASE_URL="postgresql://postgres:postgres@localhost:5432/boramarka"
+# RESEND_API_KEY="re_your_api_key"
+# RESEND_FROM="BoraMarka <noreply@boramarka.com.br>"
+
 npx prisma generate
 npx prisma db push
 npx prisma db seed
 npm run dev
 ```
-> O servidor backend iniciará em `http://localhost:3001`
+> Backend API will start at `http://localhost:3001`
 
-### 3. Configurar o Frontend
+### 3. Configure & Run Frontend
 ```bash
 cd ../frontend
 npm install
 npm run dev
 ```
-> A aplicação frontend iniciará em `http://localhost:5173`
+> Frontend client will start at `http://localhost:5173`
 
 ---
 
-## 📄 Licença
+## 📄 License & Intellectual Property
 
-Este projeto é um software proprietário mantido por **BoraMarka** (Bruno Santana Reis). Todos os direitos reservados.
-
-
+This codebase is proprietary software owned and maintained by **BoraMarka** (Bruno Santana Reis). All rights reserved. Unauthorized copying or redistribution is strictly prohibited.
