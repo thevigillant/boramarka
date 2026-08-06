@@ -4,6 +4,7 @@ import { prisma } from '../db';
 import { createAuditLog } from '../utils/auditLogger';
 import { sendPasswordResetEmail, sendEmailVerificationCode, sendWelcomeEmail } from '../utils/mailer';
 import { sendVerificationCodeSchema, verifyCodeSchema, registerSchema, loginSchema } from '../utils/validators';
+import { createRefreshToken, verifyAndRotateRefreshToken, revokeRefreshToken } from '../services/refreshTokenService';
 
 export default async function authRoutes(app: FastifyInstance) {
   // GET /api/auth/check — Check if any admin account exists
@@ -262,8 +263,11 @@ export default async function authRoutes(app: FastifyInstance) {
       });
     }
 
+    const refreshToken = await createRefreshToken(admin.id);
+
     return reply.status(201).send({
       token,
+      refreshToken,
       username: admin.username,
       businessName: admin.businessName,
       role: admin.role,
@@ -424,8 +428,11 @@ export default async function authRoutes(app: FastifyInstance) {
           adminId: admin.id,
         });
 
+        const refreshToken = await createRefreshToken(admin.id);
+
         return {
           token,
+          refreshToken,
           username: admin.username,
           businessName: admin.businessName,
           role: admin.role,
@@ -652,6 +659,49 @@ export default async function authRoutes(app: FastifyInstance) {
     });
 
     return { message: 'Senha redefinida com sucesso! Você já pode acessar sua conta.' };
+  });
+
+  // POST /api/auth/refresh — Renova o JWT token através de um refresh token válido
+  app.post('/refresh', async (request, reply) => {
+    const { refreshToken } = request.body as { refreshToken?: string };
+
+    if (!refreshToken) {
+      return reply.status(400).send({ error: 'Refresh token é obrigatório.' });
+    }
+
+    const rotated = await verifyAndRotateRefreshToken(refreshToken);
+    if (!rotated) {
+      return reply.status(401).send({ error: 'Refresh token inválido ou expirado. Efetue login novamente.' });
+    }
+
+    const admin = await prisma.admin.findUnique({
+      where: { id: rotated.adminId },
+    });
+
+    if (!admin) {
+      return reply.status(401).send({ error: 'Usuário não encontrado.' });
+    }
+
+    const token = app.jwt.sign(
+      { id: admin.id, username: admin.username, role: admin.role },
+      { expiresIn: '24h' }
+    );
+
+    return {
+      token,
+      refreshToken: rotated.newToken,
+    };
+  });
+
+  // POST /api/auth/logout — Revoga o refresh token atual
+  app.post('/logout', async (request, reply) => {
+    const { refreshToken } = request.body as { refreshToken?: string };
+
+    if (refreshToken) {
+      await revokeRefreshToken(refreshToken);
+    }
+
+    return { message: 'Sessão encerrada com sucesso.' };
   });
 }
 

@@ -69,8 +69,22 @@ model Admin {
   quickReplyTemplates QuickReplyTemplate[]
   supportTickets    SupportTicket[]
   employeeAnnouncements EmployeeAnnouncement[]
+  refreshTokens     RefreshToken[]
 
   @@map("admin")
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  expiresAt DateTime @map("expires_at")
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  adminId   Int      @map("admin_id")
+  admin     Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
 }
 
 model Subscription {

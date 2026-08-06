@@ -80,12 +80,17 @@ export default function Login() {
       )
       
       localStorage.removeItem('token')
+      localStorage.removeItem('refreshToken')
       localStorage.removeItem('role')
       sessionStorage.removeItem('token')
+      sessionStorage.removeItem('refreshToken')
       sessionStorage.removeItem('role')
 
       const storage = rememberMe ? localStorage : sessionStorage
       storage.setItem('token', res.token)
+      if (res.refreshToken) {
+        storage.setItem('refreshToken', res.refreshToken)
+      }
       storage.setItem('role', res.role || 'user')
       storage.setItem('username', username)
       storage.setItem('user', JSON.stringify({ role: res.role || 'user', username }))
