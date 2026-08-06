@@ -501,7 +501,7 @@ export const api = {
       phone?: string;
     }>(`/schedule/${token}`),
 
-  bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string; payFullPrice?: boolean; addonIds?: number[] }) =>
+  bookSlot: (token: string, data: { timeSlotId: number; clientName: string; clientPhone: string; clientEmail?: string; payFullPrice?: boolean; addonIds?: number[] }) =>
     request<{
       booking: { id: number; clientName: string; clientPhone: string; date: string; time: string };
       whatsapp: { success: boolean; method: 'api' | 'link'; link?: string };

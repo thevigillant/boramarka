@@ -5,40 +5,7 @@ import { checkAndUpdateSubscription, checkQuota } from '../services/subscription
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getGoogleCalendarEvents } from '../services/googleCalendar';
 import { getVapidPublicKey, isPushConfigured, sendPushToAdmin } from '../services/pushNotification';
-
-async function cleanupExpiredBookings(token: string) {
-  const fifteenMinutesAgo = new Date(Date.now() - 15 * 60 * 1000);
-  const expiredBookings = await prisma.booking.findMany({
-    where: {
-      status: 'AGUARDANDO_PAGAMENTO',
-      createdAt: { lt: fifteenMinutesAgo },
-      timeSlot: { link: { token } }
-    },
-    select: { id: true, timeSlotId: true }
-  });
-
-  if (expiredBookings.length > 0) {
-    const expiredBookingIds = expiredBookings.map(b => b.id);
-    const expiredSlotIds = expiredBookings.map(b => b.timeSlotId);
-    await prisma.$transaction([
-      prisma.booking.deleteMany({ where: { id: { in: expiredBookingIds } } }),
-      prisma.timeSlot.updateMany({
-        where: { id: { in: expiredSlotIds } },
-        data: { isAvailable: true }
-      })
-    ]);
-    console.log(`[JIT CLEANUP] Liberou ${expiredBookings.length} slots expirados para o link ${token}`);
-  }
-}
-
-function generateCancellationCode(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = 'BM-';
-  for (let i = 0; i < 4; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
+import { cleanupExpiredBookings, generateCancellationCode } from '../services/bookingService';
 
 export default async function scheduleRoutes(app: FastifyInstance) {
   // GET /api/schedule/p/:username — Get public profile + services catalog
@@ -386,10 +353,11 @@ export default async function scheduleRoutes(app: FastifyInstance) {
   // POST /api/schedule/:token/book — Book a time slot
   app.post('/:token/book', async (request, reply) => {
     const { token } = request.params as { token: string };
-    const { timeSlotId, clientName, clientPhone, payFullPrice, addonIds } = request.body as {
+    const { timeSlotId, clientName, clientPhone, clientEmail, payFullPrice, addonIds } = request.body as {
       timeSlotId: number;
       clientName: string;
       clientPhone: string;
+      clientEmail?: string;
       payFullPrice?: boolean;
       addonIds?: number[];
     };
@@ -515,6 +483,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
           data: {
             clientName: clientName.trim(),
             clientPhone: cleanPhone,
+            clientEmail: (clientEmail || '').trim().toLowerCase(),
             timeSlotId,
             status: 'AGUARDANDO_PAGAMENTO',
             cancellationCode: generateCancellationCode(),
@@ -638,6 +607,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
         data: {
           clientName: clientName.trim(),
           clientPhone: cleanPhone,
+          clientEmail: (clientEmail || '').trim().toLowerCase(),
           timeSlotId,
           status: 'PENDENTE',
           cancellationCode: generateCancellationCode(),

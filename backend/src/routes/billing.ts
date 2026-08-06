@@ -212,9 +212,63 @@ export default async function billingRoutes(app: FastifyInstance) {
     const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     if (!mpToken || !dataId) return;
 
+    // 🛡️ Sanitizar dataId — aceitar apenas números para prevenir SSRF
+    const sanitizedDataId = String(dataId).replace(/[^0-9]/g, '');
+    if (!sanitizedDataId) {
+      console.warn('⚠️ [WEBHOOK] dataId inválido recebido, ignorando.');
+      return;
+    }
+
+    // 🛡️ Validar assinatura HMAC do Mercado Pago (x-signature header)
+    const webhookSecret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
+    if (webhookSecret) {
+      try {
+        const xSignature = (request.headers['x-signature'] as string) || '';
+        const xRequestId = (request.headers['x-request-id'] as string) || '';
+
+        // Parse ts e hash do header x-signature (formato: "ts=...,v1=...")
+        const signatureParts: Record<string, string> = {};
+        xSignature.split(',').forEach(part => {
+          const [key, ...valueParts] = part.trim().split('=');
+          if (key && valueParts.length > 0) {
+            signatureParts[key.trim()] = valueParts.join('=').trim();
+          }
+        });
+
+        const ts = signatureParts['ts'];
+        const v1 = signatureParts['v1'];
+
+        if (ts && v1) {
+          // Monta o manifest conforme docs do MP
+          const manifest = `id:${sanitizedDataId};request-id:${xRequestId};ts:${ts};`;
+          
+          // Calcula HMAC-SHA256
+          const crypto = await import('crypto');
+          const computedHmac = crypto
+            .createHmac('sha256', webhookSecret)
+            .update(manifest)
+            .digest('hex');
+
+          if (computedHmac !== v1) {
+            console.warn('⚠️ [WEBHOOK] Assinatura HMAC inválida — webhook rejeitado. Possível tentativa de fraude.');
+            return;
+          }
+
+          console.log('🛡️ [WEBHOOK] Assinatura HMAC verificada com sucesso.');
+        } else {
+          console.warn('⚠️ [WEBHOOK] Header x-signature presente mas formato inválido — processando com cautela.');
+        }
+      } catch (signatureError: any) {
+        console.error('❌ [WEBHOOK] Erro ao validar assinatura:', signatureError.message);
+        return;
+      }
+    } else {
+      console.warn('⚠️ [WEBHOOK] MERCADOPAGO_WEBHOOK_SECRET não configurado — webhook processado sem validação de assinatura. Configure para maior segurança.');
+    }
+
     try {
       if (type === 'payment' || type === 'authorized_payment') {
-        const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${dataId}`, {
+        const paymentResponse = await fetch(`https://api.mercadopago.com/v1/payments/${sanitizedDataId}`, {
           headers: { Authorization: `Bearer ${mpToken}` }
         });
 
@@ -252,7 +306,7 @@ export default async function billingRoutes(app: FastifyInstance) {
       }
 
       if (type === 'subscription_preapproval' || type === 'preapproval') {
-        const preapprovalResponse = await fetch(`https://api.mercadopago.com/preapproval/${dataId}`, {
+        const preapprovalResponse = await fetch(`https://api.mercadopago.com/preapproval/${sanitizedDataId}`, {
           headers: { Authorization: `Bearer ${mpToken}` }
         });
 
@@ -274,7 +328,7 @@ export default async function billingRoutes(app: FastifyInstance) {
                 where: { adminId },
                 data: {
                   status: 'active',
-                  externalId: dataId.toString(),
+                  externalId: sanitizedDataId,
                   expiresAt: expiresAt
                 }
               });

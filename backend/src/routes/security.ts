@@ -61,18 +61,6 @@ export default async function securityRoutes(app: FastifyInstance) {
         canAudit: body.canAudit ?? false,
         canTrash: body.canTrash ?? false,
 
-        // Legacy compatibility
-        canViewBookings: body.canAgendamentos ?? body.canViewBookings ?? true,
-        canManageBookings: body.canAgendamentos ?? body.canManageBookings ?? true,
-        canViewFinance: body.canFinanceiro ?? body.canViewFinance ?? false,
-        canManageFinance: body.canFinanceiro ?? body.canManageFinance ?? false,
-        canManageServices: body.canServicos ?? body.canManageServices ?? false,
-        canViewClients: body.canClientes ?? body.canViewClients ?? true,
-        canManageClients: body.canClientes ?? body.canManageClients ?? false,
-        canManageLoyalty: body.canCupons ?? body.canManageLoyalty ?? false,
-        canManageStaff: body.canRh ?? body.canManageStaff ?? false,
-        canManageSettings: body.canPersonalizar ?? body.canManageSettings ?? false,
-        canViewAuditLogs: body.canAudit ?? body.canViewAuditLogs ?? false,
         active: body.active ?? true,
       },
     });
@@ -131,19 +119,6 @@ export default async function securityRoutes(app: FastifyInstance) {
         canSocial: body.canSocial ?? existing.canSocial,
         canAudit: body.canAudit ?? existing.canAudit,
         canTrash: body.canTrash ?? existing.canTrash,
-
-        // Legacy compatibility
-        canViewBookings: body.canAgendamentos ?? existing.canViewBookings,
-        canManageBookings: body.canAgendamentos ?? existing.canManageBookings,
-        canViewFinance: body.canFinanceiro ?? existing.canViewFinance,
-        canManageFinance: body.canFinanceiro ?? existing.canManageFinance,
-        canManageServices: body.canServicos ?? existing.canManageServices,
-        canViewClients: body.canClientes ?? existing.canViewClients,
-        canManageClients: body.canClientes ?? existing.canManageClients,
-        canManageLoyalty: body.canCupons ?? existing.canManageLoyalty,
-        canManageStaff: body.canRh ?? existing.canManageStaff,
-        canManageSettings: body.canPersonalizar ?? existing.canManageSettings,
-        canViewAuditLogs: body.canAudit ?? existing.canViewAuditLogs,
         active: body.active ?? existing.active,
       },
     });
