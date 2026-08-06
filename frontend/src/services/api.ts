@@ -5,6 +5,20 @@ function getToken(): string | null {
   return localStorage.getItem('token') || sessionStorage.getItem('token');
 }
 
+function getRefreshToken(): string | null {
+  return localStorage.getItem('refreshToken') || sessionStorage.getItem('refreshToken');
+}
+
+function setTokens(token: string, refreshToken?: string, remember = true) {
+  const storage = remember ? localStorage : sessionStorage;
+  storage.setItem('token', token);
+  if (refreshToken) {
+    storage.setItem('refreshToken', refreshToken);
+  }
+}
+
+let isRefreshing = false;
+
 async function request<T = any>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
@@ -18,7 +32,6 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 
   let response: Response;
   try {
-    // Timeout de 15 segundos para evitar requests pendurados
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
 
@@ -30,31 +43,63 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 
     clearTimeout(timeoutId);
   } catch (networkError: any) {
-    // Erro de rede — servidor indisponível, sem internet, timeout, etc.
     if (networkError.name === 'AbortError') {
       throw new Error('O servidor demorou muito para responder. Tente novamente em alguns instantes.');
     }
     throw new Error('Não foi possível conectar ao servidor. Verifique sua conexão ou tente novamente em instantes.');
   }
 
-  // Handle 204 No Content
   if (response.status === 204) {
     return undefined as T;
   }
 
-  // Handle 502/503/504 — servidor temporariamente indisponível
   if (response.status >= 502 && response.status <= 504) {
     throw new Error('O servidor está temporariamente indisponível. Tente novamente em alguns minutos.');
+  }
+
+  // Se receber 401 e houver um refreshToken salvo, tenta renovar o token automaticamente
+  if (response.status === 401 && !path.startsWith('/auth/') && !isRefreshing) {
+    const refreshToken = getRefreshToken();
+    if (refreshToken) {
+      isRefreshing = true;
+      try {
+        const refreshRes = await fetch(`${API_URL}/auth/refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        });
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          setTokens(refreshData.token, refreshData.refreshToken);
+          isRefreshing = false;
+          // Refaz a requisição original com o novo JWT token
+          headers['Authorization'] = `Bearer ${refreshData.token}`;
+          const retryResponse = await fetch(`${API_URL}${path}`, {
+            ...options,
+            headers,
+          });
+          const retryData = await retryResponse.json().catch(() => ({}));
+          if (!retryResponse.ok) {
+            throw new Error(retryData.error || retryData.message || 'Erro após renovação do token');
+          }
+          return retryData as T;
+        }
+      } catch (e) {
+        // Falhou a renovação
+      }
+      isRefreshing = false;
+    }
   }
 
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    // If unauthorized, clear token and redirect
     if (response.status === 401 && (window.location.pathname.startsWith('/dashboard') || window.location.pathname.startsWith('/superadmin'))) {
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('role');
       sessionStorage.removeItem('token');
+      sessionStorage.removeItem('refreshToken');
       sessionStorage.removeItem('role');
       window.location.href = '/login';
     }
@@ -94,15 +139,27 @@ export const api = {
     operatingHours?: string;
     category?: string;
   }) =>
-    request<{ token: string; username: string; businessName: string; role?: string }>('/auth/register', {
+    request<{ token: string; refreshToken?: string; username: string; businessName: string; role?: string }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   login: (username: string, password: string, companyUsername?: string) =>
-    request<{ token: string; username: string; role?: string; businessName?: string; roleTitle?: string; permissions?: any }>('/auth/login', {
+    request<{ token: string; refreshToken?: string; username: string; role?: string; businessName?: string; roleTitle?: string; permissions?: any }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ username, password, companyUsername }),
+    }),
+
+  refreshTokenMethod: (refreshToken: string) =>
+    request<{ token: string; refreshToken: string }>('/auth/refresh', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
+    }),
+
+  logout: (refreshToken?: string) =>
+    request<{ message: string }>('/auth/logout', {
+      method: 'POST',
+      body: JSON.stringify({ refreshToken }),
     }),
 
   forgotPassword: (email: string) =>
