@@ -70,20 +70,38 @@ declare module '@fastify/jwt' {
   }
 }
 
+const isDev = process.env.NODE_ENV !== 'production';
+
 const app = Fastify({
   bodyLimit: 50 * 1024 * 1024, // 50MB limit for document uploads
-  logger: {
-    transport: {
-      target: 'pino-pretty',
-      options: { colorize: true },
-    },
-  },
+  logger: isDev
+    ? {
+        level: 'info',
+        transport: {
+          target: 'pino-pretty',
+          options: {
+            colorize: true,
+            translateTime: 'HH:MM:ss Z',
+            ignore: 'pid,hostname',
+          },
+        },
+      }
+    : {
+        level: 'warn',
+        redact: ['headers.authorization', 'body.password', 'body.mpAccessToken'],
+      },
 });
 
-// ═══ Global Fastify error handler ═══
+// ═══ Global Fastify error handler (Pino Structured Logging) ═══
 app.setErrorHandler((error, request, reply) => {
-  console.error(`❌ [ERROR] ${request.method} ${request.url}:`, error.message);
   const statusCode = error.statusCode || 500;
+  
+  if (statusCode >= 500) {
+    request.log.error({ err: error, reqId: request.id }, `💥 Error 500 on ${request.method} ${request.url}`);
+  } else {
+    request.log.warn({ statusCode, err: error.message }, `⚠️ Client Error ${statusCode} on ${request.method} ${request.url}`);
+  }
+
   reply.status(statusCode).send({
     error: statusCode >= 500 ? 'Erro interno do servidor' : error.message,
   });

@@ -5,13 +5,22 @@ import { v4 as uuidv4 } from 'uuid';
 import { createAuditLog } from '../utils/auditLogger';
 import { checkQuota } from '../services/subscription';
 
+import { cache } from '../utils/cache';
+
 export default async function serviceRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
 
   // GET /api/services — List all services for the admin with their upsell recommendations
   app.get('/', async (request) => {
     const user = request.user as { id: number };
-    return prisma.service.findMany({
+    const cacheKey = `services:${user.id}`;
+
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return cachedData;
+    }
+
+    const services = await prisma.service.findMany({
       where: { adminId: user.id },
       include: {
         mainUpsells: {
@@ -30,6 +39,9 @@ export default async function serviceRoutes(app: FastifyInstance) {
       },
       orderBy: { name: 'asc' },
     });
+
+    cache.set(cacheKey, services, 120); // 2 minutos de cache para lista estática
+    return services;
   });
 
   // POST /api/services — Create a new service and automatically create its scheduling link + upsell relations
@@ -98,6 +110,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
       adminId: user.id,
     });
 
+    cache.invalidate(`services:${user.id}`);
     return reply.status(201).send(service);
   });
 
@@ -160,6 +173,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
         adminId: user.id,
       });
 
+      cache.invalidate(`services:${user.id}`);
       return updated;
     } catch {
       return reply.status(404).send({ error: 'Serviço não encontrado' });
@@ -194,6 +208,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
         adminId: user.id,
       });
 
+      cache.invalidate(`services:${user.id}`);
       return reply.status(204).send();
     } catch {
       return reply.status(404).send({ error: 'Serviço não encontrado' });
