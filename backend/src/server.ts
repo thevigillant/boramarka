@@ -156,30 +156,49 @@ app.register(jwt, {
 
 import pushRoutes from './routes/push';
 
-// Routes
+// Routes (v1 API Prefix Support)
 app.register(authRoutes, { prefix: '/api/auth' });
+app.register(authRoutes, { prefix: '/api/v1/auth' });
 app.register(adminRoutes, { prefix: '/api/admin' });
+app.register(adminRoutes, { prefix: '/api/v1/admin' });
 app.register(scheduleRoutes, { prefix: '/api/schedule' });
+app.register(scheduleRoutes, { prefix: '/api/v1/schedule' });
 app.register(pushRoutes, { prefix: '/api/push' });
+app.register(pushRoutes, { prefix: '/api/v1/push' });
 app.register(financeRoutes, { prefix: '/api/finance' });
+app.register(financeRoutes, { prefix: '/api/v1/finance' });
 app.register(serviceRoutes, { prefix: '/api/services' });
+app.register(serviceRoutes, { prefix: '/api/v1/services' });
 app.register(billingRoutes, { prefix: '/api/billing' });
+app.register(billingRoutes, { prefix: '/api/v1/billing' });
 app.register(superadminRoutes, { prefix: '/api/superadmin' });
+app.register(superadminRoutes, { prefix: '/api/v1/superadmin' });
 app.register(googleCalendarRoutes, { prefix: '/api/admin/google-calendar' });
+app.register(googleCalendarRoutes, { prefix: '/api/v1/admin/google-calendar' });
 app.register(membershipRoutes, { prefix: '/api/admin/memberships' });
+app.register(membershipRoutes, { prefix: '/api/v1/admin/memberships' });
 app.register(clientRoutes, { prefix: '/api/admin/clients' });
+app.register(clientRoutes, { prefix: '/api/v1/admin/clients' });
 app.register(socialRoutes, { prefix: '/api/admin/social' });
+app.register(socialRoutes, { prefix: '/api/v1/admin/social' });
 app.register(employeeRoutes, { prefix: '/api/admin/employees' });
+app.register(employeeRoutes, { prefix: '/api/v1/admin/employees' });
 app.register(auditRoutes, { prefix: '/api/admin/audit-logs' });
+app.register(auditRoutes, { prefix: '/api/v1/admin/audit-logs' });
 app.register(loyaltyRoutes, { prefix: '/api/loyalty' });
+app.register(loyaltyRoutes, { prefix: '/api/v1/loyalty' });
 app.register(securityRoutes, { prefix: '/api/security' });
+app.register(securityRoutes, { prefix: '/api/v1/security' });
 app.register(crmChatRoutes, { prefix: '/api/admin/crm-chat' });
+app.register(crmChatRoutes, { prefix: '/api/v1/admin/crm-chat' });
 app.register(analyticsRoutes, { prefix: '/api/admin/analytics' });
+app.register(analyticsRoutes, { prefix: '/api/v1/admin/analytics' });
 app.register(supportRoutes, { prefix: '/api/support' });
+app.register(supportRoutes, { prefix: '/api/v1/support' });
 app.register(portalRoutes, { prefix: '/api/portal' });
+app.register(portalRoutes, { prefix: '/api/v1/portal' });
 
-// Health check avançado com verificação do banco de dados
-app.get('/api/health', async (request, reply) => {
+const healthCheckHandler = async (request: any, reply: any) => {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return {
@@ -197,7 +216,10 @@ app.get('/api/health', async (request, reply) => {
       timestamp: new Date().toISOString(),
     };
   }
-});
+};
+
+app.get('/api/health', healthCheckHandler);
+app.get('/api/v1/health', healthCheckHandler);
 
 
 
