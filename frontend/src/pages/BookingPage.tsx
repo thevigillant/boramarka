@@ -47,6 +47,7 @@ export default function BookingPage() {
   // Form state
   const [clientName, setClientName] = useState('')
   const [clientPhone, setClientPhone] = useState('')
+  const [clientEmail, setClientEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState('')
   const [couponCode, setCouponCode] = useState('')
@@ -170,6 +171,7 @@ export default function BookingPage() {
         timeSlotId: selectedSlotId,
         clientName: clientName.trim(),
         clientPhone: cleanPhone,
+        clientEmail: clientEmail.trim(),
         payFullPrice: bookingFeeEnabled && bookingFeeAmount > 0 && !activeMembership ? payFullPrice : undefined,
         addonIds: selectedAddonIds,
       })
@@ -616,6 +618,16 @@ export default function BookingPage() {
                     onChange={e => setClientPhone(maskPhone(e.target.value))}
                     placeholder="(00) 00000-0000"
                     required
+                    className="w-full px-4 py-3.5 bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-550 font-semibold focus:outline-none focus:border-pink-500 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 dark:text-slate-300 mb-2 px-1">Seu E-mail (opcional)</label>
+                  <input
+                    type="email"
+                    value={clientEmail}
+                    onChange={e => setClientEmail(e.target.value)}
+                    placeholder="seuemail@exemplo.com"
                     className="w-full px-4 py-3.5 bg-slate-50 dark:bg-[#1A2235] border border-slate-200 dark:border-slate-700 rounded-xl text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-550 font-semibold focus:outline-none focus:border-pink-500 transition-colors"
                   />
                 </div>

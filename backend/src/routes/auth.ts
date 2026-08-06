@@ -3,9 +3,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
 import { createAuditLog } from '../utils/auditLogger';
 import { sendPasswordResetEmail, sendEmailVerificationCode, sendWelcomeEmail } from '../utils/mailer';
-
-// In-memory verification code store with expiration (10 min)
-const verificationStore = new Map<string, { code: string; expiresAt: number }>();
+import { sendVerificationCodeSchema, verifyCodeSchema, registerSchema, loginSchema } from '../utils/validators';
 
 export default async function authRoutes(app: FastifyInstance) {
   // GET /api/auth/check — Check if any admin account exists
@@ -16,11 +14,11 @@ export default async function authRoutes(app: FastifyInstance) {
 
   // POST /api/auth/send-verification-code — Envia código de 4 dígitos por e-mail
   app.post('/send-verification-code', async (request, reply) => {
-    const { email, username } = request.body as { email: string; username?: string };
-
-    if (!email?.trim() || !/\S+@\S+\.\S+/.test(email.trim())) {
-      return reply.status(400).send({ error: 'E-mail inválido.' });
+    const parsed = sendVerificationCodeSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
+    const { email, username } = parsed.data;
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanUsername = (username || '').trim().toLowerCase();
@@ -40,9 +38,14 @@ export default async function authRoutes(app: FastifyInstance) {
 
     // Gera código numérico de 4 dígitos
     const code = Math.floor(1000 + Math.random() * 9000).toString();
-    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 minutos
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
 
-    verificationStore.set(cleanEmail, { code, expiresAt });
+    // Armazena no PostgreSQL (persiste entre restarts/deploys)
+    await prisma.verificationCode.upsert({
+      where: { email: cleanEmail },
+      create: { email: cleanEmail, code, expiresAt },
+      update: { code, expiresAt },
+    });
 
     const hasEmailProvider = Boolean(process.env.RESEND_API_KEY || (process.env.SMTP_USER && process.env.SMTP_PASS));
 
@@ -87,14 +90,16 @@ export default async function authRoutes(app: FastifyInstance) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanCode = code.trim();
 
-    const storedData = verificationStore.get(cleanEmail);
+    const storedData = await prisma.verificationCode.findUnique({
+      where: { email: cleanEmail },
+    });
 
     if (!storedData) {
       return reply.status(400).send({ error: 'Nenhum código encontrado para este e-mail. Solicite um novo código.' });
     }
 
-    if (Date.now() > storedData.expiresAt) {
-      verificationStore.delete(cleanEmail);
+    if (new Date() > storedData.expiresAt) {
+      await prisma.verificationCode.delete({ where: { email: cleanEmail } });
       return reply.status(400).send({ error: 'O código de verificação expirou (10 min). Solicite um novo.' });
     }
 
@@ -102,8 +107,8 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Código de verificação incorreto. Verifique os 4 dígitos e tente novamente.' });
     }
 
-    // Código correto -> remove do store
-    verificationStore.delete(cleanEmail);
+    // Código correto -> remove do banco
+    await prisma.verificationCode.delete({ where: { email: cleanEmail } });
 
     return {
       verified: true,
@@ -176,11 +181,10 @@ export default async function authRoutes(app: FastifyInstance) {
       throw error;
     }
 
-    const token = app.jwt.sign({
-      id: admin.id,
-      username: admin.username,
-      role: admin.role,
-    });
+    const token = app.jwt.sign(
+      { id: admin.id, username: admin.username, role: admin.role },
+      { expiresIn: '24h' }
+    );
 
     // Auto-seed default services based on category
     const defaultServices: Record<string, Array<{ name: string; price: number; durationMinutes: number; description: string }>> = {

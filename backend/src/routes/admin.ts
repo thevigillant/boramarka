@@ -247,22 +247,37 @@ export default async function adminRoutes(app: FastifyInstance) {
   //  SCHEDULING LINKS
   // ═══════════════════════════════════════════
 
-  // List all links with stats
+  // List all links with stats (with optional pagination)
   app.get('/links', async (request, reply) => {
     const user = request.user as { id: number };
-    const links = await prisma.schedulingLink.findMany({
-      where: { 
-        adminId: user.id,
-        deletedAt: null // Only non-deleted links
-      },
-      include: {
-        service: true,
-        _count: {
-          select: { timeSlots: true }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
+    const { page, limit } = request.query as { page?: string; limit?: string };
+
+    const pageNum = page ? Math.max(1, parseInt(page, 10)) : undefined;
+    const limitNum = limit ? Math.max(1, Math.min(100, parseInt(limit, 10))) : undefined;
+
+    const skip = pageNum && limitNum ? (pageNum - 1) * limitNum : undefined;
+    const take = limitNum;
+
+    const [links, total] = await Promise.all([
+      prisma.schedulingLink.findMany({
+        where: { 
+          adminId: user.id,
+          deletedAt: null // Only non-deleted links
+        },
+        include: {
+          service: true,
+          _count: {
+            select: { timeSlots: true }
+          }
+        },
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined && { skip }),
+        ...(take !== undefined && { take }),
+      }),
+      prisma.schedulingLink.count({
+        where: { adminId: user.id, deletedAt: null }
+      })
+    ]);
 
     // We need to calculate availability manually since it depends on bookings
     const linksWithStats = await Promise.all(links.map(async (link) => {
@@ -282,6 +297,18 @@ export default async function adminRoutes(app: FastifyInstance) {
         availableSlots
       };
     }));
+
+    if (pageNum && limitNum) {
+      return reply.send({
+        data: linksWithStats,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
+    }
 
     return reply.send(linksWithStats);
   });
@@ -530,29 +557,52 @@ export default async function adminRoutes(app: FastifyInstance) {
   //  BOOKINGS
   // ═══════════════════════════════════════════
 
-  // List bookings (optionally filtered by link)
-  app.get('/bookings', async (request) => {
+  // List bookings (optionally filtered by link, with optional pagination)
+  app.get('/bookings', async (request, reply) => {
     const user = request.user as { id: number };
-    const { linkId } = request.query as { linkId?: string };
+    const { linkId, page, limit } = request.query as { linkId?: string; page?: string; limit?: string };
 
     const where: any = { timeSlot: { link: { adminId: user.id } } };
     if (linkId) where.timeSlot.linkId = parseInt(linkId);
 
-    const bookings = await prisma.booking.findMany({
-      where,
-      include: {
-        timeSlot: {
-          include: {
-            link: {
-              include: {
-                service: true
-              }
+    const pageNum = page ? Math.max(1, parseInt(page, 10)) : undefined;
+    const limitNum = limit ? Math.max(1, Math.min(100, parseInt(limit, 10))) : undefined;
+
+    const skip = pageNum && limitNum ? (pageNum - 1) * limitNum : undefined;
+    const take = limitNum;
+
+    const [bookings, total] = await Promise.all([
+      prisma.booking.findMany({
+        where,
+        include: {
+          timeSlot: {
+            include: {
+              link: {
+                include: {
+                  service: true
+                }
+              },
             },
           },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    });
+        orderBy: { createdAt: 'desc' },
+        ...(skip !== undefined && { skip }),
+        ...(take !== undefined && { take }),
+      }),
+      prisma.booking.count({ where })
+    ]);
+
+    if (pageNum && limitNum) {
+      return reply.send({
+        data: bookings,
+        pagination: {
+          total,
+          page: pageNum,
+          limit: limitNum,
+          totalPages: Math.ceil(total / limitNum)
+        }
+      });
+    }
 
     return bookings;
   });

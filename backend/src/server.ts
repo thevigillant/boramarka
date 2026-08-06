@@ -27,19 +27,21 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './db';
 
 // ═══════════════════════════════════════════════════════════
-// Global error handlers — prevent silent crashes (502 fix)
+// Global error handlers — segurança contra crashes silenciosos
 // ═══════════════════════════════════════════════════════════
-process.on('uncaughtException', (error) => {
-  console.error('💀 [FATAL] Uncaught Exception — o servidor capturou um erro não-tratado:');
+process.on('uncaughtException', async (error) => {
+  console.error('💀 [FATAL] Uncaught Exception — o processo está em estado indefinido:');
   console.error(error);
-  // NÃO mata o processo — loga e continua rodando
+  // Encerra graciosamente — Railway/container restartará o processo
+  try { await prisma.$disconnect(); } catch {}
+  process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('⚠️ [WARN] Unhandled Promise Rejection:');
   console.error('Promise:', promise);
   console.error('Reason:', reason);
-  // NÃO mata o processo — loga e continua rodando
+  // Promises rejeitadas são recuperáveis — loga mas não encerra
 });
 
 // Augment Fastify JWT types
@@ -103,7 +105,7 @@ app.register(rateLimit, {
   }),
 });
 
-// 🛡️ CORS Controlado
+// 🛡️ CORS Controlado — modo seguro por padrão
 const allowedOrigins = [
   'https://boramarka.com.br',
   'https://www.boramarka.com.br',
@@ -111,9 +113,11 @@ const allowedOrigins = [
   'http://localhost:3000',
 ];
 
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 app.register(cors, {
   origin: (origin, cb) => {
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    if (!origin || allowedOrigins.includes(origin) || isDevelopment) {
       cb(null, true);
     } else {
       cb(new Error('Origem não permitida por políticas de segurança CORS'), false);
@@ -132,10 +136,13 @@ app.register(jwt, {
   secret: jwtSecret,
 });
 
+import pushRoutes from './routes/push';
+
 // Routes
 app.register(authRoutes, { prefix: '/api/auth' });
 app.register(adminRoutes, { prefix: '/api/admin' });
 app.register(scheduleRoutes, { prefix: '/api/schedule' });
+app.register(pushRoutes, { prefix: '/api/push' });
 app.register(financeRoutes, { prefix: '/api/finance' });
 app.register(serviceRoutes, { prefix: '/api/services' });
 app.register(billingRoutes, { prefix: '/api/billing' });
@@ -153,8 +160,26 @@ app.register(analyticsRoutes, { prefix: '/api/admin/analytics' });
 app.register(supportRoutes, { prefix: '/api/support' });
 app.register(portalRoutes, { prefix: '/api/portal' });
 
-// Health check
-app.get('/api/health', async () => ({ status: 'ok', timestamp: new Date().toISOString() }));
+// Health check avançado com verificação do banco de dados
+app.get('/api/health', async (request, reply) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return {
+      status: 'ok',
+      database: 'connected',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+    };
+  } catch (err: any) {
+    reply.status(503);
+    return {
+      status: 'error',
+      database: 'disconnected',
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    };
+  }
+});
 
 
 
@@ -174,7 +199,11 @@ async function ensureSuperAdminExists() {
     });
 
     if (!admin) {
-      const superadminPassword = process.env.SUPERADMIN_PASSWORD || '300923';
+      const superadminPassword = process.env.SUPERADMIN_PASSWORD;
+      if (!superadminPassword) {
+        console.warn('⚠️ [SUPERADMIN] SUPERADMIN_PASSWORD não definido no .env — conta SuperAdmin NÃO será criada. Defina a variável para inicializar.');
+        return;
+      }
       const passwordHash = await bcrypt.hash(superadminPassword, 10);
       admin = await prisma.admin.create({
         data: {
@@ -245,5 +274,15 @@ const start = async () => {
     process.exit(1);
   }
 };
+
+// 🛡️ Graceful shutdown — fecha conexões do Prisma
+const gracefulShutdown = async (signal: string) => {
+  console.log(`\n🛑 [${signal}] Encerrando servidor graciosamente...`);
+  await prisma.$disconnect();
+  process.exit(0);
+};
+
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 start();
