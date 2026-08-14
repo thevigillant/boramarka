@@ -750,94 +750,38 @@ export const api = {
     }),
 
   // ═══ Support Chat & Helpdesk ═══
-  createSupportTicket: (data: { subject: string; category?: string; message: string }) =>
-    request<{
-      id: number;
-      subject: string;
-      category: string;
-      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
-      createdAt: string;
-      updatedAt: string;
-    }>('/support/tickets', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
-
   getSupportTickets: () =>
-    request<Array<{
-      id: number;
-      adminId: number;
-      subject: string;
-      category: string;
-      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
-      priority: string;
-      createdAt: string;
-      updatedAt: string;
-      admin?: {
-        id: number;
-        username: string;
-        businessName: string;
-        phone: string;
-        email: string;
-      };
-      messages?: Array<{
-        id: number;
-        ticketId: number;
-        senderRole: 'USER' | 'SUPERADMIN';
-        senderName: string;
-        message: string;
-        createdAt: string;
-      }>;
-    }>>('/support/tickets'),
+    request<SupportTicketItem[]>('/support/tickets'),
+
+  getSupportTicket: (id: number) =>
+    request<SupportTicketItem>(`/support/tickets/${id}`),
 
   getTicketDetails: (id: number) =>
-    request<{
-      id: number;
-      adminId: number;
-      subject: string;
-      category: string;
-      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
-      priority: string;
-      createdAt: string;
-      updatedAt: string;
-      admin?: {
-        id: number;
-        username: string;
-        businessName: string;
-        phone: string;
-        email: string;
-      };
-      messages: Array<{
-        id: number;
-        ticketId: number;
-        senderRole: 'USER' | 'SUPERADMIN';
-        senderName: string;
-        message: string;
-        createdAt: string;
-      }>;
-    }>(`/support/tickets/${id}`),
+    request<SupportTicketItem>(`/support/tickets/${id}`),
+
+  createSupportTicket: (data: { subject: string; category?: string; message: string; attachmentUrl?: string; attachmentName?: string }) =>
+    request<SupportTicketItem>('/support/tickets', { method: 'POST', body: JSON.stringify(data) }),
+
+  sendSupportMessage: (id: number, data: { message: string; attachmentUrl?: string; attachmentName?: string }) =>
+    request<SupportMessageItem>(`/support/tickets/${id}/messages`, { method: 'POST', body: JSON.stringify(data) }),
 
   sendTicketMessage: (id: number, message: string) =>
-    request<{
-      id: number;
-      ticketId: number;
-      senderRole: 'USER' | 'SUPERADMIN';
-      senderName: string;
-      message: string;
-      createdAt: string;
-    }>(`/support/tickets/${id}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({ message }),
-    }),
+    request<SupportMessageItem>(`/support/tickets/${id}/messages`, { method: 'POST', body: JSON.stringify({ message }) }),
+
+  updateSupportStatus: (id: number, status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED') =>
+    request<SupportTicketItem>(`/support/tickets/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
 
   updateTicketStatus: (id: number, status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED') =>
-    request<{
-      id: number;
-      status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
-    }>(`/support/tickets/${id}/status`, {
-      method: 'PATCH',
-      body: JSON.stringify({ status }),
-    }),
+    request<SupportTicketItem>(`/support/tickets/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+
+  submitSupportSatisfaction: (id: number, rating: number, comment?: string) =>
+    request<SupportTicketItem>(`/support/tickets/${id}/satisfaction`, { method: 'POST', body: JSON.stringify({ rating, comment }) }),
+
+  getSupportTemplates: () =>
+    request<SupportReplyTemplateItem[]>('/support/templates'),
+
+  createSupportTemplate: (data: { title: string; category?: string; content: string }) =>
+    request<SupportReplyTemplateItem>('/support/templates', { method: 'POST', body: JSON.stringify(data) }),
 
   // ═══ Coupons ═══
   getCoupons: () =>
@@ -1509,7 +1453,62 @@ export const api = {
   // ═══ Analytics ═══
   getAnalytics: () =>
     request<AnalyticsData>('/admin/analytics'),
+
+  // ═══ Reviews & Prova Social (A3) ═══
+  getPublicReviews: (adminId: number) =>
+    request<PublicReviewsData>(`/reviews/public/${adminId}`),
+
+  submitReview: (data: { bookingId: number; clientPhone: string; rating: number; comment?: string }) =>
+    request<{ message: string; review: PublicReviewItem }>('/reviews/submit', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getAdminReviews: () =>
+    request<AdminReviewsData>('/reviews/admin'),
+
+  moderateReview: (id: number, approved: boolean) =>
+    request<{ id: number; approved: boolean }>(`/reviews/${id}/moderate`, {
+      method: 'PATCH',
+      body: JSON.stringify({ approved }),
+    }),
 };
+
+export interface PublicReviewItem {
+  id: number;
+  rating: number;
+  comment: string;
+  clientName: string;
+  serviceName: string;
+  createdAt: string;
+}
+
+export interface PublicReviewsData {
+  averageRating: number | null;
+  totalReviews: number;
+  distribution: Record<number, number>;
+  reviews: PublicReviewItem[];
+}
+
+export interface AdminReviewItem {
+  id: number;
+  rating: number;
+  comment: string;
+  clientName: string;
+  clientPhone: string;
+  approved: boolean;
+  createdAt: string;
+  service: {
+    id: number;
+    name: string;
+  };
+}
+
+export interface AdminReviewsData {
+  averageRating: number | null;
+  totalReviews: number;
+  reviews: AdminReviewItem[];
+}
 
 export interface AnalyticsData {
   revenueByMonth: { month: string; total: number }[];
@@ -1631,6 +1630,59 @@ export interface QuickReplyTemplateItem {
   title: string;
   content: string;
   category: string;
+  createdAt: string;
+}
+
+export interface SupportTicketItem {
+  id: number;
+  subject: string;
+  category: string;
+  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED';
+  priority: 'NORMAL' | 'HIGH' | 'URGENT';
+  slaDeadline?: string | null;
+  isOverdue?: boolean;
+  satisfactionRating?: number | null;
+  satisfactionComment?: string | null;
+  tags?: string;
+  createdAt: string;
+  updatedAt: string;
+  adminId: number;
+  admin?: {
+    id: number;
+    username: string;
+    businessName: string;
+    phone: string;
+    email: string;
+  };
+  messages?: SupportMessageItem[];
+  statusLogs?: SupportStatusLogItem[];
+}
+
+export interface SupportMessageItem {
+  id: number;
+  ticketId: number;
+  senderRole: 'USER' | 'SUPERADMIN';
+  senderName: string;
+  message: string;
+  attachmentUrl?: string;
+  attachmentName?: string;
+  createdAt: string;
+}
+
+export interface SupportStatusLogItem {
+  id: number;
+  ticketId: number;
+  oldStatus: string;
+  newStatus: string;
+  changedBy: string;
+  createdAt: string;
+}
+
+export interface SupportReplyTemplateItem {
+  id: number;
+  title: string;
+  category: string;
+  content: string;
   createdAt: string;
 }
 

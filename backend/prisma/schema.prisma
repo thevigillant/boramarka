@@ -70,6 +70,7 @@ model Admin {
   supportTickets    SupportTicket[]
   employeeAnnouncements EmployeeAnnouncement[]
   refreshTokens     RefreshToken[]
+  serviceReviews    ServiceReview[]
 
   @@map("admin")
 }
@@ -120,6 +121,7 @@ model Service {
   links       SchedulingLink[]
   mainUpsells  ServiceUpsell[] @relation("MainService")
   addonUpsells ServiceUpsell[] @relation("AddonService")
+  reviews      ServiceReview[]
 
   @@map("services")
 }
@@ -644,32 +646,61 @@ model QuickReplyTemplate {
 }
 
 model SupportTicket {
-  id          Int              @id @default(autoincrement())
-  subject     String
-  category    String           @default("DUVIDA") // DUVIDA, FINANCEIRO, TECNICO, SUGESTAO
-  status      String           @default("OPEN")    // OPEN, IN_PROGRESS, RESOLVED
-  priority    String           @default("NORMAL")  // NORMAL, HIGH, URGENT
-  createdAt   DateTime         @default(now()) @map("created_at")
-  updatedAt   DateTime         @updatedAt @map("updated_at")
+  id                  Int                 @id @default(autoincrement())
+  subject             String
+  category            String              @default("DUVIDA") // DUVIDA, FINANCEIRO, TECNICO, SUGESTAO
+  status              String              @default("OPEN")    // OPEN, IN_PROGRESS, RESOLVED
+  priority            String              @default("NORMAL")  // NORMAL, HIGH, URGENT
+  slaDeadline         DateTime?           @map("sla_deadline")
+  satisfactionRating  Int?                @map("satisfaction_rating")
+  satisfactionComment String?             @default("") @map("satisfaction_comment")
+  tags                String              @default("[]")
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
 
-  adminId     Int              @map("admin_id")
-  admin       Admin            @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  adminId             Int                 @map("admin_id")
+  admin               Admin               @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
-  messages    SupportMessage[]
+  messages            SupportMessage[]
+  statusLogs          SupportStatusLog[]
 
   @@map("support_tickets")
 }
 
 model SupportMessage {
-  id          Int           @id @default(autoincrement())
-  ticketId    Int           @map("ticket_id")
-  ticket      SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-  senderRole  String        @map("sender_role") // "USER" | "SUPERADMIN"
-  senderName  String        @map("sender_name")
-  message     String
-  createdAt   DateTime      @default(now()) @map("created_at")
+  id             Int           @id @default(autoincrement())
+  ticketId       Int           @map("ticket_id")
+  ticket         SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderRole     String        @map("sender_role") // "USER" | "SUPERADMIN"
+  senderName     String        @map("sender_name")
+  message        String
+  attachmentUrl  String        @default("") @map("attachment_url")
+  attachmentName String        @default("") @map("attachment_name")
+  createdAt      DateTime      @default(now()) @map("created_at")
 
   @@map("support_messages")
+}
+
+model SupportStatusLog {
+  id        Int           @id @default(autoincrement())
+  ticketId  Int           @map("ticket_id")
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  oldStatus String        @map("old_status")
+  newStatus String        @map("new_status")
+  changedBy String        @map("changed_by")
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  @@map("support_status_logs")
+}
+
+model SupportReplyTemplate {
+  id        Int      @id @default(autoincrement())
+  title     String
+  category  String   @default("GERAL")
+  content   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("support_reply_templates")
 }
 
 model VerificationCode {
@@ -680,5 +711,26 @@ model VerificationCode {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("verification_codes")
+}
+
+model ServiceReview {
+  id          Int      @id @default(autoincrement())
+  rating      Int
+  comment     String   @default("")
+  clientName  String   @map("client_name")
+  clientPhone String   @map("client_phone")
+  
+  serviceId   Int      @map("service_id")
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  
+  adminId     Int      @map("admin_id")
+  admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  
+  bookingId   Int?     @unique @map("booking_id")
+  
+  approved    Boolean  @default(true)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("service_reviews")
 }
 

@@ -22,6 +22,7 @@ import crmChatRoutes from './routes/crmChat';
 import analyticsRoutes from './routes/analytics';
 import supportRoutes from './routes/support';
 import portalRoutes from './routes/portal';
+import reviewRoutes from './routes/reviews';
 import { startReminderService } from './services/reminder';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
@@ -197,6 +198,8 @@ app.register(supportRoutes, { prefix: '/api/support' });
 app.register(supportRoutes, { prefix: '/api/v1/support' });
 app.register(portalRoutes, { prefix: '/api/portal' });
 app.register(portalRoutes, { prefix: '/api/v1/portal' });
+app.register(reviewRoutes, { prefix: '/api/reviews' });
+app.register(reviewRoutes, { prefix: '/api/v1/reviews' });
 
 const healthCheckHandler = async (request: any, reply: any) => {
   try {

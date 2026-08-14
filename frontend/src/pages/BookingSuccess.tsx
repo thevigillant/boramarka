@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useLocation, useParams, useNavigate, Link } from 'react-router-dom'
-import { Check, Calendar, Clock, ArrowLeft, Loader2, Sparkles, Bell } from 'lucide-react'
+import { Check, Calendar, Clock, ArrowLeft, Loader2, Sparkles, Bell, Star, Send, ThumbsUp } from 'lucide-react'
 import { api } from '../services/api'
 
 function formatDate(dateStr: string): string {
@@ -39,6 +39,14 @@ export default function BookingSuccess() {
   const [showConfirmModal, setShowConfirmModal] = useState(true)
   const [pushStatus, setPushStatus] = useState<'idle' | 'granted' | 'denied' | 'unsupported'>('idle')
   const [pushRequesting, setPushRequesting] = useState(false)
+
+  // Review Form State (A3)
+  const [reviewRating, setReviewRating] = useState<number>(5)
+  const [hoverRating, setHoverRating] = useState<number>(0)
+  const [reviewComment, setReviewComment] = useState<string>('')
+  const [reviewSubmitting, setReviewSubmitting] = useState<boolean>(false)
+  const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
 
   const bookingId = state?.booking?.id || (queryBookingId ? parseInt(queryBookingId) : null)
   const isPayFullPrice = state?.payFullPrice || false
@@ -115,6 +123,26 @@ export default function BookingSuccess() {
     }
   };
 
+  const handleReviewSubmit = async () => {
+    if (!booking?.id || !booking?.clientPhone) return;
+    setReviewSubmitting(true);
+    setReviewError(null);
+
+    try {
+      await api.submitReview({
+        bookingId: booking.id,
+        clientPhone: booking.clientPhone,
+        rating: reviewRating,
+        comment: reviewComment.trim(),
+      });
+      setReviewSubmitted(true);
+    } catch (err: any) {
+      setReviewError(err.message || 'Falha ao enviar avaliação');
+    } finally {
+      setReviewSubmitting(false);
+    }
+  };
+
   const booking = fetchedBooking || (state?.booking ? {
     id: state.booking.id,
     clientName: state.booking.clientName,
@@ -139,102 +167,95 @@ export default function BookingSuccess() {
 
   const generateFullWaMessage = () => {
     if (!booking) return '';
-    const dateFormatted = formatDate(booking.date);
-    const lines = [
-      `Olá, ${booking.clientName.split(' ')[0]}! `,
-      '',
-      `Seu agendamento foi confirmado com sucesso no BoraMarka:`,
-      `Serviço: *${booking.serviceName}*`,
-      `Data: *${dateFormatted}*`,
-      `Horário: *${booking.time}*`,
-    ];
-
+    let msg = `Olá! Meu agendamento no BoraMarka foi confirmado com sucesso!\n\n`
+    msg += `👤 *Cliente:* ${booking.clientName}\n`
+    msg += `💈 *Serviço:* ${booking.serviceName}\n`
+    msg += `📅 *Data:* ${formatDate(booking.date)}\n`
+    msg += `⏰ *Horário:* ${booking.time}\n`
     if (booking.cancellationCode) {
-      lines.push('');
-      lines.push(`Código de Gerenciamento: *${booking.cancellationCode}*`);
+      msg += `🔐 *Código de Cancelamento:* ${booking.cancellationCode}\n`
     }
-
     if (cancelPath) {
-      lines.push(`Cancelar ou Remarcar: ${cancelPath}`);
+      msg += `🔗 *Link para Gerenciar/Cancelar:* ${cancelPath}\n`
     }
+    msg += `\nObrigado!`
+    return msg
+  }
 
-    lines.push('');
-    lines.push(`Obrigado pela preferência! `);
-    return lines.join('\n');
-  };
+  const customWaLink = booking?.clientPhone
+    ? `https://wa.me/55${booking.clientPhone.replace(/\D/g, '')}?text=${encodeURIComponent(generateFullWaMessage())}`
+    : (whatsapp?.link || '#')
 
-  const rawPhone = (fetchedBooking?.businessPhone || booking?.clientPhone || '').replace(/\D/g, '');
-  const fullTargetPhone = rawPhone.startsWith('55') ? rawPhone : (rawPhone ? `55${rawPhone}` : '');
-  const customWaLink = fullTargetPhone
-    ? `https://wa.me/${fullTargetPhone}?text=${encodeURIComponent(generateFullWaMessage())}`
-    : (whatsapp?.link || `https://wa.me/?text=${encodeURIComponent(generateFullWaMessage())}`);
-
-  // Loading state (including waiting for state / backend load)
-  if (fetchLoading || (bookingId && !booking)) {
+  if (fetchLoading) {
     return (
-      <div className="min-h-screen bg-[#050507] flex items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        <Loader2 className="w-10 h-10 text-pink-500 animate-spin z-10" />
+      <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-pink-500 animate-spin" />
       </div>
     )
   }
 
   if (!booking) {
     return (
-      <div className="min-h-screen bg-[#050507] flex items-center justify-center p-6 relative overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '2s' }}></div>
-        
-        <div className="text-center z-10 bg-[#131826]/40 backdrop-blur-md p-8 rounded-3xl border border-slate-800">
-          <p className="text-slate-400 font-bold mb-4">Nenhum agendamento encontrado.</p>
-          <button onClick={() => navigate('/')} className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-pink-500 text-white font-black rounded-xl text-sm transition-all shadow-lg shadow-pink-500/15">
-            Voltar para o início
+      <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex items-center justify-center p-6 text-center">
+        <div className="max-w-md bg-[#131826] p-8 rounded-3xl border border-slate-800 shadow-2xl">
+          <h1 className="text-2xl font-bold text-white mb-4">Agendamento Realizado</h1>
+          <p className="text-slate-400 mb-6">Seu horário foi reservado! Verifique as mensagens no seu WhatsApp para conferir os detalhes.</p>
+          <button
+            onClick={() => navigate('/')}
+            className="w-full bg-gradient-to-r from-pink-500 to-rose-500 text-white font-bold py-3.5 rounded-2xl"
+          >
+            Voltar ao Início
           </button>
         </div>
       </div>
     )
   }
 
-  const profileLink = booking.businessUsername ? `/p/${booking.businessUsername}` : `/agendar/${token}`;
+  const profileLink = booking.businessUsername
+    ? `/${booking.businessUsername}`
+    : (token ? `/agendar/${token}` : '/')
 
   return (
-    <div className="min-h-screen bg-[#050507] flex items-center justify-center p-4 relative overflow-hidden text-slate-100">
-      {/* Background Decorative Orbs */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-violet-600/10 rounded-full blur-3xl"></div>
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-600/10 rounded-full blur-3xl"></div>
-      <div className="absolute inset-0 bg-[radial-gradient(#ffffff03_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
-
-      <div className="w-full max-w-md bg-[#131826]/40 backdrop-blur-md p-8 rounded-3xl border border-slate-800/80 shadow-2xl relative z-10 text-center animate-slide-up">
-        {/* Success Icon */}
-        <div className="w-20 h-20 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
-          <Check className="w-10 h-10 text-white" />
-        </div>
+    <div className="min-h-screen bg-[#0B0F19] text-slate-100 flex flex-col items-center justify-center p-4 sm:p-6 selection:bg-pink-500/30">
+      <div className="w-full max-w-md text-center">
         
-        <h1 className="text-3xl font-black bg-gradient-to-r from-emerald-400 to-teal-300 bg-clip-text text-transparent mb-2">Agendado com Sucesso!</h1>
-        <p className="text-slate-400 mb-6 font-semibold">Tudo certo, {booking.clientName.split(' ')[0]}!</p>
-
-        {isPaidViaMP && (
-          <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl text-emerald-400 font-bold text-sm mb-6">
-            {isPayFullPrice
-              ? 'Valor total do serviço pago via Mercado Pago! Nada a pagar no dia! '
-              : 'Taxa de agendamento paga via Mercado Pago!'}
+        {/* Success Icon */}
+        <div className="relative inline-block mb-6">
+          <div className="w-20 h-20 bg-emerald-500/10 border-2 border-emerald-500/20 rounded-full flex items-center justify-center mx-auto text-emerald-400">
+            <Check className="w-10 h-10" />
           </div>
-        )}
+          <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-[10px] font-black uppercase px-2 py-0.5 rounded-full tracking-wider shadow-lg">
+            Confirmado
+          </div>
+        </div>
 
-        {/* Ticket Container */}
-        <div className="bg-[#0B0F19]/60 border border-slate-800 rounded-3xl p-6 mb-6 text-left relative overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-24 h-24 bg-violet-500/5 rounded-full blur-2xl"></div>
-          
-          <h3 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4">Detalhes do Agendamento</h3>
-          
-          <div className="space-y-4">
+        <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+          Agendamento Confirmado!
+        </h1>
+        <p className="text-sm text-slate-400 mb-8 max-w-sm mx-auto">
+          Prontinho, <strong className="text-slate-200">{booking.clientName}</strong>! Seu horário foi reservado e registrado com sucesso.
+        </p>
+
+        {/* Voucher / Card */}
+        <div className="bg-[#131826] rounded-3xl p-6 border border-slate-800/80 shadow-2xl text-left mb-6 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-pink-500/5 rounded-full blur-2xl pointer-events-none"></div>
+
+          {booking.businessName && (
+            <div className="mb-4 pb-3 border-b border-slate-800/80 flex items-center justify-between">
+              <span className="text-xs font-black text-pink-500 uppercase tracking-widest">{booking.businessName}</span>
+              <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
+                {isPaidViaMP || isPayFullPrice ? 'PAGO' : 'CONFIRMADO'}
+              </span>
+            </div>
+          )}
+
+          <div className="space-y-3">
             <div>
               <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Serviço</span>
-              <span className="text-sm font-bold text-slate-200">{booking.serviceName}</span>
+              <span className="text-base font-black text-white">{booking.serviceName}</span>
             </div>
-            
-            <div className="grid grid-cols-2 gap-4">
+
+            <div className="grid grid-cols-2 gap-4 pt-1">
               <div>
                 <span className="text-[10px] text-slate-500 font-black uppercase tracking-wider block">Data</span>
                 <span className="text-sm font-bold text-slate-200">{formatDate(booking.date)}</span>
@@ -287,6 +308,77 @@ export default function BookingSuccess() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Avaliação do Cliente Card (A3 Prova Social) */}
+        <div className="bg-[#131826] rounded-3xl p-6 border border-slate-800/80 shadow-2xl text-left mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Star className="w-5 h-5 fill-amber-400 text-amber-500" />
+            <h3 className="font-black text-white text-sm">Como foi sua experiência de agendamento?</h3>
+          </div>
+
+          {reviewSubmitted ? (
+            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold flex items-center gap-2.5">
+              <ThumbsUp className="w-4 h-4" />
+              <span>Obrigado pela sua avaliação! Seu feedback é muito importante.</span>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs text-slate-400">Dê uma nota para a praticidade do serviço:</p>
+              
+              {/* Star Picker */}
+              <div className="flex items-center gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setReviewRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    onMouseLeave={() => setHoverRating(0)}
+                    className="p-1 transition-transform hover:scale-125 focus:outline-none"
+                  >
+                    <Star
+                      className={`w-6 h-6 transition-colors ${
+                        (hoverRating || reviewRating) >= star
+                          ? 'fill-amber-400 text-amber-500'
+                          : 'text-slate-700'
+                      }`}
+                    />
+                  </button>
+                ))}
+                <span className="text-xs font-bold text-amber-400 ml-2">
+                  {reviewRating === 5 ? '⭐ Excelente' : reviewRating === 4 ? '👍 Muito Bom' : reviewRating === 3 ? '👌 Bom' : 'Regular'}
+                </span>
+              </div>
+
+              {/* Comment Input */}
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Deixe um comentário ou elogio ao profissional (opcional)..."
+                rows={2}
+                maxLength={500}
+                className="w-full bg-[#0B0F19] border border-slate-800 rounded-xl p-3 text-xs text-slate-200 placeholder-slate-600 focus:outline-none focus:border-pink-500 resize-none"
+              />
+
+              {reviewError && (
+                <p className="text-xs text-rose-400 font-bold">{reviewError}</p>
+              )}
+
+              <button
+                onClick={handleReviewSubmit}
+                disabled={reviewSubmitting}
+                className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              >
+                {reviewSubmitting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Send className="w-3.5 h-3.5 text-pink-400" />
+                )}
+                Enviar Avaliação
+              </button>
+            </div>
+          )}
         </div>
 
         {whatsapp?.method === 'meta' || whatsapp?.method === 'gateway' ? (
