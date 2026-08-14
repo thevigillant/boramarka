@@ -3,9 +3,10 @@ import { Link, useNavigate } from 'react-router-dom'
 import { 
   Check, Sparkles, Clock, Zap, ArrowRight, Calendar, DollarSign, Users, 
   RotateCcw, CheckCircle2, Scissors, Droplet, Star, User, Phone, Shield,
-  Menu, X, MessageSquare, Timer, TrendingUp, Heart, Award,
+  Menu, X, MessageSquare, Timer, TrendingUp, TrendingDown, Heart, Award,
   HelpCircle, ArrowUpRight, Smartphone, ArrowUp, ShieldCheck, Globe, 
-  CreditCard, Bot, Play, ChevronRight, Sliders, BarChart3, Lock
+  CreditCard, Bot, Play, ChevronRight, Sliders, BarChart3, Lock, Search,
+  LayoutGrid, ShoppingBag, Settings, Plus
 } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 import { FAQItem } from '../components/landing/FAQItem'
@@ -244,7 +245,7 @@ export default function Landing() {
           {/* Floating Pill 1: Live Pix Sinal (Top Left) */}
           <div className="absolute -top-6 -left-2 sm:-left-6 z-30 hidden sm:flex items-center gap-2.5 bg-[#0D1222]/95 backdrop-blur-xl border border-emerald-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-emerald-500/10 animate-bounce" style={{ animationDuration: '4s' }}>
             <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
-              💰
+              <DollarSign className="w-3.5 h-3.5" />
             </div>
             <div className="text-left text-[11px]">
               <div className="font-bold text-white">Sinal Pix Recebido • R$ 25,00</div>
@@ -252,7 +253,18 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Floating Pill 2: AI WhatsApp Sent           {/* Main Dashboard Window — EXACT REPLICA OF REAL BORAMARKA DASHBOARD */}
+          {/* Floating Pill 2: AI WhatsApp Sent (Top Right) */}
+          <div className="absolute -top-6 -right-2 sm:-right-6 z-30 hidden sm:flex items-center gap-2.5 bg-[#0D1222]/95 backdrop-blur-xl border border-violet-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-violet-500/10 animate-bounce" style={{ animationDuration: '4.8s' }}>
+            <div className="w-7 h-7 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-xs">
+              <Bot className="w-3.5 h-3.5" />
+            </div>
+            <div className="text-left text-[11px]">
+              <div className="font-bold text-white">WhatsApp Automático</div>
+              <div className="text-violet-300 text-[10px]">Lembrete de 2h disparado</div>
+            </div>
+          </div>
+
+          {/* Main Dashboard Window — EXACT REPLICA OF REAL BORAMARKA DASHBOARD */}
           <div className="bg-[#050711] border border-white/15 rounded-3xl overflow-hidden shadow-2xl text-left">
             
             {/* Topbar: BoraMarka Logo, Slogan, Search & User Profile */}
@@ -266,7 +278,8 @@ export default function Landing() {
 
               {/* Search bar ⌘K */}
               <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050711] border border-white/10 text-xs text-slate-400 w-64">
-                <span>🔍 Buscar cliente, serviço...</span>
+                <Search className="w-3.5 h-3.5 text-slate-500" />
+                <span>Buscar cliente, serviço...</span>
                 <kbd className="ml-auto text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-500 font-mono">⌘K</kbd>
               </div>
 
@@ -274,11 +287,11 @@ export default function Landing() {
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#050711] border border-white/10 text-xs">
                   <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center font-bold text-white text-[10px]">
-                    B
+                    A
                   </div>
                   <div className="text-left hidden sm:block">
-                    <div className="font-bold text-white text-[11px]">BoraMarka Admin</div>
-                    <div className="text-[9px] text-pink-400 font-semibold">@odonodoboramarka</div>
+                    <div className="font-bold text-white text-[11px]">Administrador</div>
+                    <div className="text-[9px] text-pink-400 font-semibold">@studioalfaprime</div>
                   </div>
                 </div>
               </div>
@@ -287,22 +300,32 @@ export default function Landing() {
             {/* Tab Navigation Strip */}
             <div className="bg-[#080B14] px-4 sm:px-6 py-2.5 border-b border-white/5 flex items-center gap-2 overflow-x-auto custom-scrollbar text-xs font-bold">
               <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md shadow-pink-500/20 shrink-0 flex items-center gap-1.5">
-                <span>⊞ Visão Geral</span>
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Visão Geral</span>
               </button>
               <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
-                <span>✨ BoraIA</span>
+                <Sparkles className="w-3.5 h-3.5 text-pink-400" />
+                <span>BoraIA</span>
               </button>
               <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
-                <span>📅 Operacional <span className="bg-white/10 text-white px-1.5 py-0.2 rounded-full text-[10px]">6</span> ▾</span>
+                <Calendar className="w-3.5 h-3.5 text-slate-400" />
+                <span>Operacional <span className="bg-white/10 text-white px-1.5 py-0.2 rounded-full text-[10px]">6</span></span>
+                <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
               <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
-                <span>🛍️ Comercial ▾</span>
+                <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
+                <span>Comercial</span>
+                <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
               <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
-                <span>💲 Gestão & Finanças ▾</span>
+                <DollarSign className="w-3.5 h-3.5 text-slate-400" />
+                <span>Gestão & Finanças</span>
+                <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
               <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
-                <span>⚙️ Sistema & Ajustes ▾</span>
+                <Settings className="w-3.5 h-3.5 text-slate-400" />
+                <span>Sistema & Ajustes</span>
+                <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
             </div>
 
@@ -386,7 +409,7 @@ export default function Landing() {
                     <DollarSign className="w-3.5 h-3.5" /> Lançar Finança
                   </div>
                   <div className="p-2.5 rounded-xl bg-[#050711] border border-pink-500/30 text-pink-400 flex items-center justify-center gap-2 shadow-sm">
-                    <span>+</span> Novo Serviço
+                    <Plus className="w-3.5 h-3.5" /> Novo Serviço
                   </div>
                   <div className="p-2.5 rounded-xl bg-[#050711] border border-amber-500/30 text-amber-400 flex items-center justify-center gap-2 shadow-sm">
                     <Smartphone className="w-3.5 h-3.5" /> Copiar Link Público
@@ -404,8 +427,8 @@ export default function Landing() {
                       <h4 className="text-xs font-bold text-white">Evolução do Faturamento</h4>
                       <span className="text-[10px] text-slate-400">Receita bruta dos últimos 6 meses</span>
                     </div>
-                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                      ↑ 100% vs mês anterior
+                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> 100% vs mês anterior
                     </span>
                   </div>
 
@@ -485,8 +508,12 @@ export default function Landing() {
                   </div>
 
                   <div className="pt-2 flex items-center justify-between text-[10px] font-bold border-t border-white/5">
-                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">📈 Dia mais forte: Ter (5)</span>
-                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">📉 Dia mais fraco: Qua (1)</span>
+                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <TrendingUp className="w-3 h-3" /> Dia mais forte: Ter (5)
+                    </span>
+                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <TrendingDown className="w-3 h-3" /> Dia mais fraco: Qua (1)
+                    </span>
                   </div>
                 </div>
 
@@ -722,7 +749,9 @@ export default function Landing() {
 
                       {/* Upsell mini badge */}
                       <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-[9px] text-violet-300 flex items-center justify-between">
-                        <span>✨ Combo Cabelo + Sobrancelha (+R$ 15)</span>
+                        <span className="flex items-center gap-1">
+                          <Plus className="w-2.5 h-2.5 text-pink-400" /> Combo Cabelo + Sobrancelha (+R$ 15)
+                        </span>
                         <span className="font-bold text-pink-400">Adicionado</span>
                       </div>
                     </div>
@@ -1001,9 +1030,15 @@ export default function Landing() {
                 />
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#050811] border border-white/5 text-xs text-slate-400 space-y-1">
-                <div>⚡ <strong>{hoursSavedPerMonth} horas livres</strong> por mês sem responder WhatsApp manualmente.</div>
-                <div>💰 <strong>+R$ {recoveredNoShowRevenue},00</strong> recuperados em faltas evitadas.</div>
+              <div className="p-4 rounded-2xl bg-[#050811] border border-white/5 text-xs text-slate-400 space-y-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span><strong>{hoursSavedPerMonth} horas livres</strong> por mês sem responder WhatsApp manualmente.</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <DollarSign className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span><strong>+R$ {recoveredNoShowRevenue},00</strong> recuperados em faltas evitadas.</span>
+                </div>
               </div>
             </div>
 
@@ -1033,42 +1068,44 @@ export default function Landing() {
       </section>
 
       {/* ═════════════════════════════════════════════════════════════════
-          6. PRICING SECTION — CLEAN & TRANSPARENT
+          6. PRICING SECTION — BIGTECH-GRADE SAAS TIERS
           ═════════════════════════════════════════════════════════════════ */}
-      <section id="pricing" className="relative z-10 py-20 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+      <section id="pricing" className="relative z-10 py-24 px-4 sm:px-6 max-w-6xl mx-auto">
+        
+        {/* Section Header */}
+        <div className="text-center mb-14">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-400 mb-3">
-            <CreditCard className="w-3.5 h-3.5" /> Planos Transparentes
+            <CreditCard className="w-3.5 h-3.5" /> Planos & Investimento
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            Investimento que se paga nos primeiros 3 dias
+            Escolha o plano ideal para a sua escala
           </h2>
-          <p className="text-sm text-slate-400 max-w-lg mx-auto mt-2">
-            Escolha o plano ideal para a sua escala de negócio. Sem multas e sem pegadinhas.
+          <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto mt-3">
+            Comece com 7 dias de teste gratuito sem precisar cadastrar cartão de crédito. Cancele quando quiser.
           </p>
 
-          {/* Billing Switch Toggle */}
-          <div className="inline-flex items-center bg-[#0B0F19] border border-white/10 p-1.5 rounded-full mt-8">
+          {/* Billing Switch Toggle (Monthly vs Annual) */}
+          <div className="inline-flex items-center bg-[#070A12] border border-white/10 p-1.5 rounded-full mt-8 shadow-xl">
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all ${
+              className={`px-6 py-2 rounded-full text-xs font-bold transition-all ${
                 billingPeriod === 'monthly'
                   ? 'bg-slate-800 text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Mensal
+              Faturamento Mensal
             </button>
             <button
               onClick={() => setBillingPeriod('annual')}
-              className={`px-5 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 ${
+              className={`px-6 py-2 rounded-full text-xs font-bold transition-all flex items-center gap-2 ${
                 billingPeriod === 'annual'
-                  ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md'
+                  ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-lg shadow-pink-500/20'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>Anual</span>
-              <span className="text-[10px] font-black bg-emerald-400 text-slate-950 px-1.5 py-0.5 rounded-full">
+              <span>Faturamento Anual</span>
+              <span className="text-[10px] font-black bg-emerald-400 text-slate-950 px-2 py-0.5 rounded-full">
                 -28% OFF
               </span>
             </button>
@@ -1076,136 +1113,233 @@ export default function Landing() {
         </div>
 
         {/* Pricing Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8 items-stretch">
           
-          {/* Card 1: BoraMensal */}
-          <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-white/20 transition-all">
+          {/* Card 1: Essencial */}
+          <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-white/20 transition-all shadow-xl">
             <div>
-              <span className="text-xs font-black uppercase tracking-wider text-slate-400">BoraMensal</span>
-              <h3 className="text-xl font-black text-white mt-1 mb-3">Autônomos & Estúdios</h3>
-              <div className="mb-6">
-                <span className="text-3xl sm:text-4xl font-black text-white">R$ 29,90</span>
-                <span className="text-xs text-slate-400"> / mês</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-400">Essencial</span>
+                <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">Autônomos</span>
               </div>
+              <h3 className="text-xl font-black text-white mt-1 mb-2">Para Profissional Solo</h3>
+              <p className="text-xs text-slate-400 mb-6">
+                Para quem atende sozinho e quer automatizar agendamentos e acabar com o prejuízo de faltas.
+              </p>
+
+              {/* Price Display */}
+              <div className="mb-6 pb-6 border-b border-white/5">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-white">
+                    R$ {billingPeriod === 'annual' ? '29,90' : '39,90'}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">/ mês</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  {billingPeriod === 'annual' 
+                    ? 'R$ 358,80 faturado anualmente' 
+                    : 'Sem fidelidade, cancele quando quiser'}
+                </div>
+              </div>
+
+              {/* Feature List */}
               <ul className="space-y-3 text-xs text-slate-300 mb-8">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Até 500 agendamentos / mês</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>1 profissional</strong> (agenda individual)</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Até 1.500 clientes salvos</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Até <strong>500 agendamentos</strong> por mês</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Cobrança de Sinal no Pix (Mercado Pago)</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Link de agendamento personalizado para Bio</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Cobrança de Sinal no Pix via Mercado Pago</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                   <span>Lembretes automáticos via WhatsApp</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Fluxo de Caixa & Relatórios Básicos</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Fluxo de Caixa e Relatórios de Receita</span>
                 </li>
               </ul>
             </div>
+
             <Link
               to="/register"
-              className="w-full py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider text-center transition-all"
+              className="w-full py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider text-center transition-all block"
             >
-              Começar 7 Dias Grátis
+              Testar 7 Dias Grátis
             </Link>
           </div>
 
-          {/* Card 2: BoraAnual (FEATURED / BEST VALUE) */}
-          <div className="bg-[#0F1424] border-2 border-pink-500 rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative shadow-2xl shadow-pink-500/15 transform md:-translate-y-2">
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white text-[10px] font-black uppercase tracking-wider shadow-md">
-              Mais Escolhido • Melhor Custo
+          {/* Card 2: Profissional (RECOMMENDED / FEATURED) */}
+          <div className="bg-[#0D1222] border-2 border-pink-500 rounded-3xl p-6 sm:p-8 flex flex-col justify-between relative shadow-2xl shadow-pink-500/20 transform md:-translate-y-3">
+            
+            {/* Recommendation Tag */}
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-[10px] font-black uppercase tracking-wider shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+              <Sparkles className="w-3 h-3 text-amber-300" />
+              <span>Mais Escolhido • Maior Retorno</span>
             </div>
+
             <div>
-              <span className="text-xs font-black uppercase tracking-wider text-pink-400">BoraAnual</span>
-              <h3 className="text-xl font-black text-white mt-1 mb-3">Negócios em Expansão</h3>
-              <div className="mb-6">
-                <span className="text-3xl sm:text-4xl font-black text-white">R$ 21,66</span>
-                <span className="text-xs text-slate-400"> / mês (R$ 260/ano)</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-pink-400">Profissional</span>
+                <span className="text-[10px] font-bold text-pink-300 bg-pink-500/10 border border-pink-500/20 px-2 py-0.5 rounded-full">
+                  Em Crescimento
+                </span>
               </div>
-              <ul className="space-y-3 text-xs text-slate-300 mb-8">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span><strong>Até 2.500 agendamentos / mês</strong></span>
+              <h3 className="text-xl font-black text-white mt-1 mb-2">Para Barbearias & Salões</h3>
+              <p className="text-xs text-slate-300 mb-6">
+                O motor completo de escala com equipe, comissões, vendas adicionais e inteligência artificial.
+              </p>
+
+              {/* Price Display */}
+              <div className="mb-6 pb-6 border-b border-white/10">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-4xl sm:text-5xl font-black text-white">
+                    R$ {billingPeriod === 'annual' ? '49,90' : '69,90'}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">/ mês</span>
+                </div>
+                <div className="text-[11px] text-pink-300 font-semibold mt-1">
+                  {billingPeriod === 'annual' 
+                    ? 'R$ 598,80 faturado anualmente (Economia de R$ 240/ano)' 
+                    : 'Faturamento mensal sem compromisso'}
+                </div>
+              </div>
+
+              {/* Feature List */}
+              <ul className="space-y-3 text-xs text-slate-200 mb-8">
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>Tudo do plano Essencial</strong></span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Até 8.000 clientes na base</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>Até 5 profissionais</strong> na equipe</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Cartão Fidelidade & Cupons Automáticos</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Até <strong>3.000 agendamentos</strong> por mês</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Serviços Adicionais (Upsell no checkout)</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span><strong>Venda Adicional (Upsell)</strong> no checkout</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Até 20 profissionais na equipe</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Cartão Fidelidade digital e cupons</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-emerald-400 shrink-0" />
-                  <span>Economia direta de R$ 100 ao ano</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Cálculo automático de comissões por colaborador</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Assistente inteligente <strong>BoraIA</strong> integrada</span>
                 </li>
               </ul>
             </div>
+
             <Link
               to="/register"
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-xs font-black uppercase tracking-wider text-center shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-xs font-black uppercase tracking-wider text-center shadow-lg shadow-pink-500/30 hover:shadow-pink-500/50 hover:scale-[1.02] transition-all block"
             >
-              Garantir Plano com Desconto
+              Começar Teste Grátis de 7 Dias
             </Link>
           </div>
 
-          {/* Card 3: BoraPremium */}
-          <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-white/20 transition-all">
+          {/* Card 3: Studio & Enterprise */}
+          <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-white/20 transition-all shadow-xl">
             <div>
-              <span className="text-xs font-black uppercase tracking-wider text-amber-400">BoraPremium</span>
-              <h3 className="text-xl font-black text-white mt-1 mb-3">Clínicas, Franquias & RH</h3>
-              <div className="mb-6">
-                <span className="text-3xl sm:text-4xl font-black text-white">R$ 79,90</span>
-                <span className="text-xs text-slate-400"> / mês</span>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-amber-400">Studio VIP</span>
+                <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                  Franquias & Clínicas
+                </span>
               </div>
+              <h3 className="text-xl font-black text-white mt-1 mb-2">Para Grandes Estruturas</h3>
+              <p className="text-xs text-slate-400 mb-6">
+                Para estúdios e clínicas com alta equipe, necessidade de RH completo e marca personalizada.
+              </p>
+
+              {/* Price Display */}
+              <div className="mb-6 pb-6 border-b border-white/5">
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl sm:text-4xl font-black text-white">
+                    R$ {billingPeriod === 'annual' ? '89,90' : '119,90'}
+                  </span>
+                  <span className="text-xs text-slate-400 font-medium">/ mês</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-1">
+                  {billingPeriod === 'annual' 
+                    ? 'R$ 1.078,80 faturado anualmente' 
+                    : 'Sem fidelidade, cancele quando quiser'}
+                </div>
+              </div>
+
+              {/* Feature List */}
               <ul className="space-y-3 text-xs text-slate-300 mb-8">
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span><strong>Agendamentos ILIMITADOS (∞)</strong></span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span><strong>Tudo do plano Profissional</strong></span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Módulo de RH & Folha de Pagamento</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span><strong>Profissionais e agendamentos ilimitados</strong></span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Ponto Digital & Gestão de Comissões</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Módulo de RH: Ponto digital com geolocalização</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>Domínio Próprio (agendar.suaempresa.com.br)</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Portal de autosserviço para o colaborador</span>
                 </li>
-                <li className="flex items-center gap-2">
-                  <Check className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>100% Whitelabel (sem logo BoraMarka)</span>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Domínio próprio e personalização Whitelabel</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Gerente de conta dedicado e suporte prioritário</span>
                 </li>
               </ul>
             </div>
+
             <Link
               to="/register"
-              className="w-full py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider text-center transition-all"
+              className="w-full py-3.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-wider text-center transition-all block"
             >
-              Começar 7 Dias Grátis
+              Testar 7 Dias Grátis
             </Link>
           </div>
 
         </div>
+
+        {/* Reassurance & Guarantee Strip */}
+        <div className="mt-14 p-6 rounded-3xl bg-[#070A12] border border-white/5 grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
+          <div className="flex items-center justify-center gap-2.5 text-xs text-slate-300">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>7 dias de teste grátis sem cartão de crédito</span>
+          </div>
+          <div className="flex items-center justify-center gap-2.5 text-xs text-slate-300">
+            <RotateCcw className="w-4 h-4 text-pink-400 shrink-0" />
+            <span>Cancele a qualquer momento com 1 clique</span>
+          </div>
+          <div className="flex items-center justify-center gap-2.5 text-xs text-slate-300">
+            <Lock className="w-4 h-4 text-cyan-400 shrink-0" />
+            <span>Pagamentos seguros via Mercado Pago</span>
+          </div>
+        </div>
+
       </section>
 
       {/* ═════════════════════════════════════════════════════════════════
@@ -1224,8 +1358,10 @@ export default function Landing() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
             <div>
-              <div className="flex text-amber-400 mb-3">
-                {'★'.repeat(5)}
+              <div className="flex gap-1 text-amber-400 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                ))}
               </div>
               <p className="text-xs sm:text-sm text-slate-300 italic mb-6">
                 "Eu perdia pelo menos uns R$ 800 todo mês com clientes que marcavam no sábado e não apareciam. Depois que ativei a cobrança de sinal no Pix do BoraMarka, o no-show simplesmente acabou."
@@ -1244,8 +1380,10 @@ export default function Landing() {
 
           <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
             <div>
-              <div className="flex text-amber-400 mb-3">
-                {'★'.repeat(5)}
+              <div className="flex gap-1 text-amber-400 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                ))}
               </div>
               <p className="text-xs sm:text-sm text-slate-300 italic mb-6">
                 "O link na bio do Instagram mudou tudo. Minhas clientes marcam no domingo à noite enquanto estou descansando com a família. O sistema confirma e já manda o lembrete certinho."
@@ -1264,8 +1402,10 @@ export default function Landing() {
 
           <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
             <div>
-              <div className="flex text-amber-400 mb-3">
-                {'★'.repeat(5)}
+              <div className="flex gap-1 text-amber-400 mb-3">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                ))}
               </div>
               <p className="text-xs sm:text-sm text-slate-300 italic mb-6">
                 "Gerenciar a comissão de 6 profissionais era um caos no Excel. Com o BoraMarka, cada barbeiro vê o próprio extrato no celular e o fechamento do mês é em 1 clique."
