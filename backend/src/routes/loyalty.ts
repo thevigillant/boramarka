@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import crypto from 'crypto';
+import { updateLoyaltyConfigSchema, loyaltyStampActionSchema } from '../utils/validators';
 
 /**
  * Generate a unique coupon code for loyalty rewards
@@ -127,7 +128,11 @@ export default async function loyaltyRoutes(app: FastifyInstance) {
     try {
       await request.jwtVerify();
       const user = request.user as { id: number };
-      const { loyaltyEnabled, loyaltyTarget, loyaltyRewardType, loyaltyRewardValue } = request.body as any;
+      const parsed = updateLoyaltyConfigSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.issues[0].message });
+      }
+      const { loyaltyEnabled, loyaltyTarget, loyaltyRewardType, loyaltyRewardValue } = parsed.data;
 
       const updated = await prisma.admin.update({
         where: { id: user.id },
@@ -173,11 +178,11 @@ export default async function loyaltyRoutes(app: FastifyInstance) {
     try {
       await request.jwtVerify();
       const user = request.user as { id: number };
-      const { clientPhone, clientName, action } = request.body as { clientPhone: string; clientName?: string; action: 'add' | 'remove' | 'reset' };
-
-      if (!clientPhone) {
-        return reply.status(400).send({ error: 'Telefone do cliente é obrigatório' });
+      const parsed = loyaltyStampActionSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.issues[0].message });
       }
+      const { clientPhone, clientName, action } = parsed.data;
 
       let card = await prisma.loyaltyCard.findUnique({
         where: {

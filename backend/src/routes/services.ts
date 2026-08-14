@@ -6,6 +6,7 @@ import { createAuditLog } from '../utils/auditLogger';
 import { checkQuota } from '../services/subscription';
 
 import { cache } from '../utils/cache';
+import { createServiceSchema } from '../utils/validators';
 
 export default async function serviceRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -47,19 +48,11 @@ export default async function serviceRoutes(app: FastifyInstance) {
   // POST /api/services — Create a new service and automatically create its scheduling link + upsell relations
   app.post('/', async (request, reply) => {
     const user = request.user as { id: number };
-    const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds } = request.body as {
-      name: string;
-      description?: string;
-      price: number;
-      duration: number;
-      isUpsellable?: boolean;
-      upsellDiscount?: number;
-      addonServiceIds?: number[];
-    };
-
-    if (!name || price === undefined || !duration) {
-      return reply.status(400).send({ error: 'Nome, preço e duração são obrigatórios' });
+    const parsed = createServiceSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
+    const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds } = parsed.data;
 
     const quota = await checkQuota(user.id, 'services');
     if (!quota.allowed) {

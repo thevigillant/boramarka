@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
+import { portalLoginSchema, employeeVacationRequestSchema } from '../utils/validators';
 
 export async function authenticateEmployee(request: FastifyRequest, reply: FastifyReply) {
   try {
@@ -21,11 +22,11 @@ export default async function portalRoutes(app: FastifyInstance) {
   
   // POST /api/portal/login — Login via CPF/E-mail + Senha OU via Token direto
   app.post('/login', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { token, login, password } = request.body as {
-      token?: string;
-      login?: string;
-      password?: string;
-    };
+    const parsed = portalLoginSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
+    }
+    const { token, login, password } = parsed.data;
 
     let employee = null;
 
@@ -328,17 +329,11 @@ export default async function portalRoutes(app: FastifyInstance) {
     // POST /api/portal/vacations — Solicitar Férias ou Licença
     protectedApp.post('/vacations', async (request: FastifyRequest, reply: FastifyReply) => {
       const user = request.user as any;
-      const { type, startDate, endDate, daysCount, reason } = request.body as {
-        type?: string;
-        startDate: string;
-        endDate: string;
-        daysCount?: number;
-        reason?: string;
-      };
-
-      if (!startDate || !endDate) {
-        return reply.status(400).send({ error: 'Data inicial e final são obrigatórias.' });
+      const parsed = employeeVacationRequestSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({ error: parsed.error.issues[0].message });
       }
+      const { type, startDate, endDate, daysCount, reason } = parsed.data;
 
       const start = new Date(startDate);
       const end = new Date(endDate);

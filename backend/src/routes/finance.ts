@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
+import { createTransactionSchema } from '../utils/validators';
 
 export default async function financeRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -230,25 +231,11 @@ export default async function financeRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════
   app.post('/transactions', async (request, reply) => {
     const user = request.user as { id: number };
-    const { type, description, amount, dueDate, clientName, category, notes, paid } =
-      request.body as {
-        type: string;
-        description: string;
-        amount: number;
-        dueDate: string;
-        clientName?: string;
-        category?: string;
-        notes?: string;
-        paid?: boolean;
-      };
-
-    if (!type || !description?.trim() || !amount || !dueDate) {
-      return reply.status(400).send({ error: 'Tipo, descrição, valor e data são obrigatórios' });
+    const parsed = createTransactionSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
-
-    if (!['receivable', 'payable'].includes(type)) {
-      return reply.status(400).send({ error: 'Tipo deve ser "receivable" ou "payable"' });
-    }
+    const { type, description, amount, dueDate, clientName, category, notes, paid } = parsed.data;
 
     const transaction = await prisma.transaction.create({
       data: {
