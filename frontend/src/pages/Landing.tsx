@@ -175,159 +175,274 @@ export default function Landing() {
       </header>
 
       {/* ═════════════════════════════════════════════════════════════════
-          2. HERO SECTION — REFINED BIG TECH STANDARD
+          2. HERO SECTION — ENTERPRISE LEVEL BIG TECH SHOWCASE
           ═════════════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 pt-28 sm:pt-36 pb-16 px-4 sm:px-6 max-w-6xl mx-auto text-center">
+      <section className="relative z-10 pt-28 sm:pt-36 pb-20 px-4 sm:px-6 max-w-6xl mx-auto text-center">
         
-        {/* Sleek Minimalist Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl mb-6 shadow-sm">
+        {/* Floating Top Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl mb-6 shadow-sm">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] sm:text-xs font-semibold text-slate-300">
-            Nova Geração: Agendamentos com Pix & Lembretes WhatsApp
+          <span className="text-xs font-semibold text-slate-300">
+            A Plataforma #1 de Agendamento Autônomo & Lucro no Piloto Automático
           </span>
         </div>
 
-        {/* Elegant Headline (Breathing Typography) */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.12] mb-5 max-w-3xl mx-auto">
+        {/* High-Impact Headline */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.12] mb-5 max-w-4xl mx-auto">
           Sua agenda no piloto automático.{' '}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-300 to-amber-200">
-            Seu tempo de volta.
+            Seu tempo e faturamento de volta.
           </span>
         </h1>
 
-        {/* Refined Subtitle */}
-        <p className="text-sm sm:text-base md:text-lg text-slate-400 font-normal leading-relaxed max-w-xl mx-auto mb-8">
-          Elimine o prejuízo do cliente que marca e não aparece. Receba sinais no Pix automaticamente e pare de perder horas respondendo mensagens no WhatsApp.
+        {/* Subtitle */}
+        <p className="text-sm sm:text-base md:text-lg text-slate-400 font-normal leading-relaxed max-w-2xl mx-auto mb-8">
+          Elimine o prejuízo do cliente que marca e não aparece. Receba sinais no Pix automaticamente, preencha seus horários 24h por dia e resgate clientes sumidos sem perder tempo digitando no WhatsApp.
         </p>
 
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-8">
           <Link
             to="/register"
-            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <span>Começar 7 Dias Grátis</span>
-            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+            <span>Experimentar 7 Dias Grátis</span>
+            <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
           </Link>
 
           <a
-            href="#simulator"
-            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-300 font-semibold text-xs transition-all flex items-center justify-center gap-2"
+            href="#features"
+            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-300 font-bold text-xs transition-all flex items-center justify-center gap-2"
           >
-            <Play className="w-3 h-3 fill-slate-300 text-slate-300" />
-            <span>Ver Demonstração</span>
+            <Zap className="w-3.5 h-3.5 text-amber-400" />
+            <span>Conhecer Todos os Recursos</span>
           </a>
         </div>
 
         {/* Micro Trust Indicators */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-slate-400 mb-14">
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs text-slate-400 mb-14">
           <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
+            <Check className="w-4 h-4 text-emerald-400" />
             <span>Sem cartão de crédito</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Configuração em 2 min</span>
+            <Check className="w-4 h-4 text-emerald-400" />
+            <span>Configuração guiada em 2 min</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Check className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Pix direto na sua conta</span>
+            <Check className="w-4 h-4 text-emerald-400" />
+            <span>Pix cai direto na sua conta</span>
           </div>
         </div>
 
-        {/* ── Direct Hero Product Console Preview (Linear / Stripe Grade) ── */}
-        <div className="max-w-4xl mx-auto rounded-2xl p-1 bg-gradient-to-b from-white/15 via-white/5 to-transparent shadow-[0_20px_70px_rgba(0,0,0,0.8)] border border-white/10 relative">
+        {/* ── HIGH-DENSITY ENTERPRISE DASHBOARD SHOWCASE (LINEAR / STRIPE GRADE) ── */}
+        <div className="relative max-w-5xl mx-auto">
           
-          {/* Mac Header */}
-          <div className="bg-[#0D111E] rounded-t-xl px-4 py-3 border-b border-white/5 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+          {/* Ambient Lighting Behind Dashboard */}
+          <div className="absolute -inset-1 bg-gradient-to-r from-violet-600/30 via-pink-600/20 to-indigo-600/30 rounded-3xl blur-2xl opacity-50 -z-10" />
+
+          {/* Floating Pill 1: Live Pix Sinal (Top Left) */}
+          <div className="absolute -top-6 -left-2 sm:-left-6 z-30 hidden sm:flex items-center gap-2.5 bg-[#0D1222]/95 backdrop-blur-xl border border-emerald-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-emerald-500/10 animate-bounce" style={{ animationDuration: '4s' }}>
+            <div className="w-7 h-7 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+              💰
             </div>
-            <div className="px-4 py-1 rounded-full bg-[#070913] border border-white/5 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
-              <Lock className="w-3 h-3 text-emerald-400" />
-              <span>boramarka.com.br/painel</span>
-            </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>Agenda Online</span>
+            <div className="text-left text-[11px]">
+              <div className="font-bold text-white">Sinal Pix Recebido • R$ 25,00</div>
+              <div className="text-emerald-400 text-[10px]">Amanda Souza (Corte & Mechas)</div>
             </div>
           </div>
 
-          {/* Console Body */}
-          <div className="bg-[#0A0D18] rounded-b-xl p-4 sm:p-6 text-left">
-            {/* Top Metrics Row */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
-                <span className="text-[10px] font-semibold text-slate-400 block">Faturamento Hoje</span>
-                <span className="text-base sm:text-lg font-black text-white">R$ 940,00</span>
-                <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">+18% vs ontem</span>
+          {/* Floating Pill 2: AI WhatsApp Sent (Top Right) */}
+          <div className="absolute -top-6 -right-2 sm:-right-6 z-30 hidden sm:flex items-center gap-2.5 bg-[#0D1222]/95 backdrop-blur-xl border border-violet-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-violet-500/10 animate-bounce" style={{ animationDuration: '4.8s' }}>
+            <div className="w-7 h-7 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-xs">
+              🤖
+            </div>
+            <div className="text-left text-[11px]">
+              <div className="font-bold text-white">WhatsApp Automático</div>
+              <div className="text-violet-300 text-[10px]">Lembrete de 2h disparado ✓</div>
+            </div>
+          </div>
+
+          {/* Main Dashboard Window */}
+          <div className="bg-[#0A0D18] border border-white/15 rounded-3xl overflow-hidden shadow-2xl text-left">
+            
+            {/* Window Topbar */}
+            <div className="bg-[#0E1322] px-4 py-3 border-b border-white/5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
+                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
+                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
+                <span className="ml-3 text-xs font-bold text-slate-300 hidden sm:inline">
+                  BoraMarka Enterprise • Studio Alfa & Spa
+                </span>
               </div>
-              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
-                <span className="text-[10px] font-semibold text-slate-400 block">Agendamentos</span>
-                <span className="text-base sm:text-lg font-black text-white">16 clientes</span>
-                <span className="text-[9px] font-bold text-violet-400 block mt-0.5">100% preenchido</span>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
-                <span className="text-[10px] font-semibold text-slate-400 block">Taxa de No-Show</span>
-                <span className="text-base sm:text-lg font-black text-emerald-400">0.0%</span>
-                <span className="text-[9px] font-bold text-slate-400 block mt-0.5">Sinais liquidados</span>
-              </div>
-              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
-                <span className="text-[10px] font-semibold text-slate-400 block">Lembretes WhatsApp</span>
-                <span className="text-base sm:text-lg font-black text-pink-400">16 enviados</span>
-                <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">Automático</span>
+              
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1 rounded-full bg-[#060810] border border-white/10 text-[11px] font-mono text-slate-400 hidden sm:flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-emerald-400" />
+                  <span>boramarka.com.br/painel</span>
+                </div>
+                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Ao Vivo
+                </span>
               </div>
             </div>
 
-            {/* Live Agenda Feed Preview */}
-            <div className="bg-[#111626] rounded-xl p-3.5 border border-white/5">
-              <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-white/5">
-                <span className="text-xs font-bold text-slate-200">Próximos Agendamentos de Hoje</span>
-                <span className="text-[10px] font-semibold text-slate-400">Sexta-feira, 14 de Agosto</span>
-              </div>
+            {/* Window Body: Sidebar + Main App Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[420px]">
               
-              <div className="space-y-2">
-                <div className="p-2.5 rounded-lg bg-[#0D111E] border border-white/5 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold flex items-center justify-center text-xs">
-                      14:00
+              {/* Sidebar (Desktop 3 cols) */}
+              <div className="hidden lg:flex lg:col-span-3 bg-[#080B14] border-r border-white/5 p-4 flex-col justify-between">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 px-2 py-1.5 bg-white/5 rounded-xl border border-white/5">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center font-black text-xs text-white">
+                      A
                     </div>
-                    <div>
-                      <div className="font-bold text-white">Lucas Silva</div>
-                      <div className="text-[10px] text-slate-400">Corte Degradê & Barba • Barbeiro Carlos</div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-white truncate">Studio Alfa Prime</div>
+                      <div className="text-[10px] text-emerald-400 font-semibold">Plano Pro Ativo</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      Pix Sinal Pago
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
-                      WhatsApp Enviado ✓
-                    </span>
+
+                  <div className="space-y-1 text-xs font-semibold">
+                    <div className="px-3 py-2 rounded-xl bg-violet-600/15 text-violet-300 border border-violet-500/30 flex items-center justify-between">
+                      <span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-violet-400" /> Agenda</span>
+                      <span className="text-[10px] font-bold bg-pink-500 text-white px-1.5 py-0.2 rounded-full">18</span>
+                    </div>
+                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
+                      <DollarSign className="w-3.5 h-3.5" /> Financeiro & Pix
+                    </div>
+                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
+                      <Users className="w-3.5 h-3.5" /> Equipe & Comissões
+                    </div>
+                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
+                      <Star className="w-3.5 h-3.5" /> Fidelidade & Cupons
+                    </div>
+                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
+                      <MessageSquare className="w-3.5 h-3.5" /> CRM & WhatsApp
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-lg bg-[#0D111E] border border-white/5 flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400 font-bold flex items-center justify-center text-xs">
-                      15:00
-                    </div>
-                    <div>
-                      <div className="font-bold text-white">Gabriel Santos</div>
-                      <div className="text-[10px] text-slate-400">Barba Terapia + Toalha Quente • Barbeiro Carlos</div>
-                    </div>
+                {/* Storage Quota */}
+                <div className="p-3 rounded-2xl bg-[#0D1222] border border-white/5 text-[11px] space-y-1.5">
+                  <div className="flex justify-between text-slate-300 font-bold">
+                    <span>Agendamentos do Mês</span>
+                    <span className="text-pink-400">482 / 2.500</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      Pix Sinal Pago
-                    </span>
-                    <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
-                      WhatsApp Enviado ✓
-                    </span>
+                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-violet-500 to-pink-500 h-full w-[38%]" />
                   </div>
                 </div>
+              </div>
+
+              {/* Main Content Pane (9 cols) */}
+              <div className="lg:col-span-9 p-4 sm:p-6 space-y-5 bg-[#0A0D18]">
+                
+                {/* Real KPI Strip */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Faturamento Hoje</span>
+                    <span className="text-lg sm:text-xl font-black text-white">R$ 1.280,00</span>
+                    <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">▲ +24% vs ontem</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sinais Pix Pagos</span>
+                    <span className="text-lg sm:text-xl font-black text-emerald-400">100%</span>
+                    <span className="text-[9px] font-bold text-slate-400 block mt-0.5">18 de 18 horários</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Taxa de No-Show</span>
+                    <span className="text-lg sm:text-xl font-black text-pink-400">0.0%</span>
+                    <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">Zero faltas</span>
+                  </div>
+                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Clientes Novos</span>
+                    <span className="text-lg sm:text-xl font-black text-violet-400">+7 hoje</span>
+                    <span className="text-[9px] font-bold text-slate-400 block mt-0.5">Via Bio Instagram</span>
+                  </div>
+                </div>
+
+                {/* Timeline / Live Bookings Grid */}
+                <div className="p-4 rounded-2xl bg-[#0F1424] border border-white/5 space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-white/5 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-white">Grade de Atendimentos de Hoje</span>
+                      <span className="text-[10px] font-bold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-md">
+                        Sexta-feira (Pico)
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">
+                      3 Profissionais em Atividade
+                    </span>
+                  </div>
+
+                  <div className="space-y-2">
+                    {/* Row 1 */}
+                    <div className="p-3 rounded-xl bg-[#080B14] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:border-pink-500/30 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-black text-pink-400 bg-pink-500/10 px-2.5 py-1 rounded-lg">
+                          14:00
+                        </span>
+                        <div>
+                          <div className="font-bold text-white">Lucas Silva Santos</div>
+                          <div className="text-[10px] text-slate-400">Corte Degradê & Barba Terapia • Profissional Carlos</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          Sinal R$ 20 Pix Pago
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
+                          Lembrete 2h Enviado ✓
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Row 2 */}
+                    <div className="p-3 rounded-xl bg-[#080B14] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:border-violet-500/30 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-black text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg">
+                          15:00
+                        </span>
+                        <div>
+                          <div className="font-bold text-white">Gabriel Miranda</div>
+                          <div className="text-[10px] text-slate-400">Combo Cabelo + Sobrancelha (Upsell) • Profissional Carlos</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                          Sinal R$ 15 Pix Pago
+                        </span>
+                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                          Cliente VIP (5º corte)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Row 3 */}
+                    <div className="p-3 rounded-xl bg-[#080B14] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:border-emerald-500/30 transition-all">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                          16:00
+                        </span>
+                        <div>
+                          <div className="font-bold text-white">Rodrigo Barbosa</div>
+                          <div className="text-[10px] text-slate-400">Plano Mensal Recorrente (Clube do Corte) • Profissional André</div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
+                          Assinante Clube VIP
+                        </span>
+                        <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
+                          Confirmado no WhatsApp ✓
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
               </div>
             </div>
 
