@@ -5,9 +5,10 @@
   <img src="https://img.shields.io/badge/Domain-boramarka.com.br-000000?style=for-the-badge&logo=googlechrome" alt="Domain">
   <img src="https://img.shields.io/badge/Frontend-React_18_%2B_Vite-61DAFB?style=for-the-badge&logo=react" alt="React">
   <img src="https://img.shields.io/badge/Backend-Fastify_v4_%2B_TypeScript-000000?style=for-the-badge&logo=fastify" alt="Fastify">
+  <img src="https://img.shields.io/badge/Validation-Zod_v3-3068B7?style=for-the-badge&logo=zod" alt="Zod">
   <img src="https://img.shields.io/badge/Database-PostgreSQL_17_%2B_Prisma_5-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/Email-Resend_API_HTTP-000000?style=for-the-badge&logo=resend" alt="Resend">
-  <img src="https://img.shields.io/badge/WhatsApp-Meta_Cloud_API_%2B_HTTP_Gateway-25D366?style=for-the-badge&logo=whatsapp" alt="WhatsApp">
+  <img src="https://img.shields.io/badge/Testing-Vitest_Suite-6E9F18?style=for-the-badge&logo=vitest" alt="Vitest">
+  <img src="https://img.shields.io/badge/AI_Support-Instant_Auto--Responder-8B5CF6?style=for-the-badge&logo=openai" alt="AI Support">
   <img src="https://img.shields.io/badge/Payments-Mercado_Pago_API_v1-009EE3?style=for-the-badge&logo=mercadopago" alt="Mercado Pago">
   <img src="https://img.shields.io/badge/Security-RBAC_%2B_JWT_%2B_Helmet-violet?style=for-the-badge&logo=shield" alt="Security">
 </p>
@@ -18,121 +19,151 @@
 
 | Component | URL | Provider / Infrastructure |
 | :--- | :--- | :--- |
-| 🌐 **Web Platform (Production)** | [https://boramarka.com.br](https://boramarka.com.br) | Vercel Edge Network |
-| ⚡ **API Server (REST Backend)** | [https://api.boramarka.com.br](https://api.boramarka.com.br) | Railway Enterprise Cloud |
+| 🌐 **Web Platform (Production)** | [https://boramarka.com.br](https://boramarka.com.br) | Vercel Edge Global Network |
+| ⚡ **API Server (REST Backend)** | [https://api.boramarka.com.br](https://api.boramarka.com.br) | Railway Enterprise Container |
 | 📧 **Email Delivery Engine** | `noreply@boramarka.com.br` | Resend API HTTP (DKIM / SPF Verified) |
-| 📦 **GitHub Repository** | [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka) | GitHub Private / Main Branch |
+| 📦 **GitHub Repository** | [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka) | Main Branch |
 
 ---
 
 ## 💡 System Architecture Overview
 
-**BoraMarka** is an enterprise-grade multi-tenant SaaS platform built for service professionals, barbershops, beauty salons, health clinics, tattoo studios, and pet centers. It unifies online scheduling, automated multi-channel client engagement, recurrent subscription monetization, and real-time administrative operations.
+**BoraMarka** is an enterprise-grade multi-tenant SaaS platform built for service professionals, barbershops, beauty salons, health clinics, tattoo studios, and pet centers. It unifies online booking, automated client communications, revenue analytics, AI-assisted customer helpdesk, social proof review aggregation, and workforce operations.
 
 ```mermaid
 graph TD
-    Client["📱 Client / Web App (React 18 + Vite)"] -->|HTTPS / REST API| Edge["🛡️ Vercel Edge / CDN"]
-    Edge -->|DNS / CNAME| Server["⚡ Fastify Backend (TypeScript)"]
+    Client["📱 Client & Admin Web Apps (React 18 + Vite)"] -->|HTTPS / REST API| Edge["🛡️ Vercel Edge / CDN"]
+    Edge -->|DNS / Reverse Proxy| Server["⚡ Fastify Backend (TypeScript)"]
     
-    subgraph Backend Core (Railway Container)
-        Server -->|Auth & RBAC| JWT["🔒 JWT + Fastify Rate Limit"]
-        Server -->|ORM Queries| Prisma["💎 Prisma 5 ORM"]
-        Server -->|Email Dispatch| Resend["📧 Resend API HTTP Engine"]
-        Server -->|WhatsApp Dispatch| WA["💬 Meta Cloud API / HTTP Gateway / wa.me"]
-        Server -->|Webhooks & Billing| MP["💳 Mercado Pago API / Subscriptions"]
-        Server -->|Push Engine| WebPush["🔔 VAPID Web Push Engine"]
+    subgraph Security & Validation Layer
+        Server -->|Input Sanitization| Zod["🛡️ Zod Runtime Schema Validation"]
+        Server -->|Authentication & RBAC| JWT["🔒 JWT + Fastify Rate Limit + Helmet"]
+    end
+
+    subgraph Service & Engine Layer
+        Zod --> Bot["🤖 Helpdesk AI Auto-Responder & SLA Engine"]
+        Zod --> Reviews["⭐ Verified Social Proof Reviews Engine"]
+        Zod --> Analytics["📊 Analytics & Business Intelligence Engine"]
+        Zod --> WA["💬 Multi-Channel WhatsApp Reminder Engine"]
+        Zod --> MP["💳 Mercado Pago Split & Subscriptions"]
+        Zod --> Email["📧 Resend HTTP Transactional Mailer"]
+        Zod --> Push["🔔 VAPID Web Push Notifications"]
     end
     
-    Prisma -->|ACID Transactions| DB[("🐘 PostgreSQL 17 Database")]
-    Resend -->|DKIM / SPF Signed| Inbox["📩 Recipient Inbox (@boramarka.com.br)"]
+    subgraph Data Persistence Layer
+        Bot & Reviews & Analytics & WA & MP & Email & Push --> Prisma["💎 Prisma 5 ORM"]
+        Prisma -->|ACID Transactions & Connection Pooling| DB[("🐘 PostgreSQL 17 Database")]
+    end
 ```
 
 ---
 
-## 💎 Key Production Innovations & Capabilities
+## 💎 Core Capabilities & Engineering Highlights
 
-### 📧 High-Reliability Transactional Email Engine (Resend API HTTP)
-- **Zero-Block HTTP Architecture**: Migrated from legacy SMTP to Resend's REST API, eliminating cloud container SMTP port blocks (ports 465/587).
-- **Custom Domain Authenticated**: Fully verified via DKIM (`resend._domainkey`), SPF (`v=spf1 include:amazonses.com`), and DMARC on `boramarka.com.br`.
-- **Automated Workflows**: Instant delivery of 4-digit security verification OTPs, password reset links, and rich onboarding welcome templates.
-- **Failover Architecture**: Built-in fallback mechanism ensuring local development transport parity.
+### 🤖 Intelligent Helpdesk Auto-Responder & SLA Tracking Engine
+- **Instant AI Assistant (`helpdeskBot.ts`)**: Natural-language intent resolution engine providing instant step-by-step guidance for PIX setup, Mercado Pago tokens, service combos, schedule configuration, WhatsApp automation, staff onboarding, and subscription billing.
+- **Smart SLA Deadlines**: Automatic assignment of SLA timeframes (24h for Technical/Financial issues, 48h default) with real-time overdue alerts for operations managers.
+- **CSAT Satisfaction Rating**: Integrated 5-star post-resolution feedback collection (`satisfactionRating`, `satisfactionComment`) and complete status transition audit logs (`SupportStatusLog`).
+- **Rich Media & File Attachments**: Support for screenshots, PDFs, and diagnostic image attachments within tickets.
 
-### 📲 Tri-Layer WhatsApp Automation Engine
-- **Meta Cloud API (Official)**: Native integration using Graph API OAuth tokens and direct Phone Number ID for zero-intermediation automated messaging.
-- **Generic HTTP Gateway**: Webhook compatibility with custom WhatsApp gateways (Z-API, Evolution API).
-- **Zero-Cost wa.me Smart Fallback**: Dynamic deep-link generator formatted with appointment parameters, unique key `🔑`, and one-click portal access.
+### ⭐ Verified Customer Reviews & Social Proof Engine
+- **Post-Booking Feedback Loop**: Verified one-time rating collection (`1-5 Stars` + comment) linked to completed appointments via unique booking ID and client phone verification.
+- **Public Profile Embedding**: Real-time average score and star breakdown seamlessly rendered on store landing pages (`/p/:username`).
+- **Store-Level Moderation**: Administrator review oversight endpoint (`PATCH /api/reviews/:id/moderate`) allowing fine-grained control over public testimonials.
 
-### 🐘 Enterprise PostgreSQL 17 & Prisma 5 ORM
-- High-concurrency relational data engine enforcing strict ACID transactions, row-level locking, automated migration pipelines, and optimized connection pooling.
+### 📊 Business Intelligence & Revenue Analytics Dashboard
+- **Revenue Trajectory Analysis**: Month-over-month revenue comparisons and percentage growth velocity indicators.
+- **Occupancy & Demand Heatmaps**: Booking distribution breakdown by day of the week to identify peak and idle operational windows.
+- **Service Profitability Ranking**: Automated ranking of top revenue-generating services with transaction volume metrics.
+- **Status Distribution Visualizers**: Visual segmentation of confirmed, paid, pending, and cancelled booking shares.
 
-### 💬 Real-Time SuperAdmin CRM Support Center
-- Direct bidirectional communication channel between store managers and platform administrators.
-- High-density Dark Neon UI with live ticket tracking, auto-scroll management, and zero layout shift.
+### 🛡️ Defense-in-Depth: Zod Runtime Schema Validation
+- **Zero Insecure Casting**: All critical mutation endpoints (`/finance`, `/employees`, `/memberships`, `/loyalty`, `/crm-chat`, `/support`, `/portal`, `/services`, `/reviews`) validated via strict Zod schemas (`validators.ts`).
+- **Descriptive Error Payloads**: User-friendly, localized validation messages with status `400` preventing corrupted records and SQL/NoSQL injection vectors.
+- **Automated Regression Suite**: Comprehensive Vitest test harness validating edge-case inputs (invalid emails, malformed phone numbers, negative amounts, out-of-bounds ratings).
 
-### 🗓️ Client Portal (Reschedule & Cancellation Engine)
-- Glassmorphic user interface allowing clients to view, reschedule, or cancel bookings without phone calls.
-- Automated enforcement of shop cancellation windows (e.g., minimum 2-hour notice policy) with graceful fallback to shop WhatsApp.
-
-### 🔔 VAPID Web Push Notifications
-- Web Push Notifications delivered directly to shop owners' desktop and mobile browsers (Android, iOS Safari, Chrome) upon new appointments.
-
-### 🛡️ LGPD Compliance & Advanced Security
-- Official public endpoints for **Terms of Use** (`/termos`) and **Privacy Policy** (`/privacidade`).
-- **Role-Based Access Control (RBAC)**: Fine-grained granular permissions for store operators (`canAgendamentos`, `canFinanceiro`, `canRh`, etc.).
-- **Rate Limiting**: Protection against brute-force and DoS (120 requests/min per IP via Fastify Rate Limit).
-- **Security Headers**: Fastify Helmet enforcement, CORS restriction, and strict input validation via TypeScript schemas.
+### 🧩 Modular Component & State Architecture
+- **Deconstructed Monolith**: Refactored monolithic frontend dashboard into focused modules (`OverviewTab`, `NewTransactionModal`, `NewServiceModal`, `NewBookingModal`, `DeleteSlotModal`, `MpConfigModal`, `MpTutorialModal`).
+- **Zero Layout Shifts**: Enhanced responsive CSS architecture with dark-mode neon aesthetics and smooth micro-interactions.
 
 ---
 
-## 🏷️ Subscription Plans & Quotas Matrix
+## 🏷️ Subscription Plans & Feature Matrix
 
-| Resource / Quota | ⚡ **BoraTestar** | 📘 **BoraMensal** | 🔥 **BoraAnual** | 👑 **BoraPremium** |
+| Feature / Resource | ⚡ **BoraTestar** | 📘 **BoraMensal** | 🔥 **BoraAnual** | 👑 **BoraPremium** |
 | :--- | :---: | :---: | :---: | :---: |
-| **Pricing** | **Free (7-day trial)** | **R$ 29.90 / month** | **R$ 260.00 / year** *(~R$ 21.66/mo)* | **R$ 79.90 / month** |
+| **Pricing** | **Free (7-day trial)** | **R$ 29.90 / mo** | **R$ 260.00 / yr** *(R$ 21.66/mo)* | **R$ 79.90 / mo** |
 | **Monthly Bookings** | 50 (trial) | 500 / month | 2,500 / month | **Unlimited (∞)** |
 | **Client Database** | 100 clients | 1,500 clients | 8,000 clients | **Unlimited (∞)** |
-| **Staff & Operators** | 2 members | 5 members | 20 members | **Unlimited (∞)** |
+| **Staff Members** | 2 operators | 5 operators | 20 operators | **Unlimited (∞)** |
 | **Services & Public Links** | 10 services / 2 links | 30 services / 10 links | 100 services / 30 links | **Unlimited (∞)** |
 | **Mercado Pago Deposit** | ✅ Enabled | ✅ Enabled | ✅ Enabled | ✅ Enabled |
-| **Digital Loyalty Card** | — | — | ✅ Enabled | ✅ Enabled |
-| **HR & Payroll Module** | — | — | — | 👑 **Exclusive Premium** |
+| **AI Helpdesk Auto-Responder** | ✅ Enabled | ✅ Enabled | ✅ Enabled | ✅ Enabled |
+| **Social Proof Reviews** | ✅ Enabled | ✅ Enabled | ✅ Enabled | ✅ Enabled |
+| **Digital Loyalty Cards** | — | — | ✅ Enabled | ✅ Enabled |
+| **HR & Employee Portal** | — | — | — | 👑 **Exclusive** |
 
 ---
 
 ## 🏗️ Technology Stack
 
-| Layer | Technology | Details |
+| Layer | Technology | Key Specifications |
 | :--- | :--- | :--- |
-| **Frontend Framework** | React 18 + Vite | SPA architecture with Tailwind CSS, Lucide Icons, and responsive design |
-| **Backend Runtime** | Fastify v4 + TypeScript | Ultra-fast Node.js framework with strict typings and fast JSON serialization |
-| **Database & ORM** | PostgreSQL 17 + Prisma 5 | Enterprise relational database with schema-driven migrations and type safety |
-| **Email Infrastructure** | Resend API HTTP | Transactional email delivery with DKIM/SPF domain verification (`boramarka.com.br`) |
-| **WhatsApp Integration** | Meta Cloud API + Gateway | Direct API messaging with HTTP webhook fallback |
-| **Payment Gateway** | Mercado Pago API v1 | PIX, Credit Card processing, and Preapproval Subscription Webhooks |
+| **Frontend UI** | React 18, Vite 5, Tailwind CSS | SPA architecture, Lucide Icons, Glassmorphism, Theme Engine |
+| **Backend API** | Fastify v4, TypeScript 5, Node.js | Low-overhead routing, Schema serialization, JWT, Rate Limiter, Helmet |
+| **Validation** | Zod v3 | Runtime payload validation, Type inference, Sanitization |
+| **Database & ORM** | PostgreSQL 17, Prisma 5 | High-concurrency ACID transactions, Schema migrations, Connection pooling |
+| **Unit Testing** | Vitest | Sub-second test execution, Schema coverage, Mock assertions |
+| **Email Infrastructure** | Resend API HTTP | Transactional DKIM/SPF authenticated email delivery (`boramarka.com.br`) |
+| **WhatsApp Automation** | Meta Cloud API + Webhooks | Official Cloud API messaging with deep-link smart fallback |
+| **Payment Gateway** | Mercado Pago SDK | PIX, Credit Card tokenization, Preapproval Webhooks |
 | **Push Notifications** | Web Push / VAPID | Native browser notifications for desktop and mobile PWA |
-| **Cloud Hosting** | Vercel (FE) + Railway (BE) | Global CDN edge deployment for frontend and containerized backend microservice |
+| **Deployment & CI/CD** | Vercel (FE) + Railway (BE) | Global CDN edge network and containerized microservice deployments |
 
 ---
 
-## 🔌 API Endpoint Hierarchy
+## 🔌 API Endpoint Directory
 
 ```
-/api
+/api (and /api/v1)
 ├── /auth
 │   ├── POST /send-verification-code    # 4-digit OTP email dispatch
 │   ├── POST /verify-code               # OTP validation
 │   ├── POST /register                  # Multi-tenant admin registration
-│   ├── POST /login                     # Admin & Operator authentication
+│   ├── POST /login                     # Admin & Operator JWT authentication
 │   ├── POST /forgot-password           # Password reset code dispatch
 │   └── POST /reset-password            # Password update
-├── /schedule                           # Appointments, calendar, slots
-├── /services                           # Catalog management by category
-├── /finance                            # Cash flow, transactions, PDF exports
-├── /billing                            # Mercado Pago checkout & webhooks
-├── /portal                             # Client rescheduling & cancellation
-├── /support                            # Live support tickets & CRM chat
-├── /loyalty                            # Digital loyalty cards & coupons
-└── /superadmin                         # Platform management & metrics
+├── /schedule
+│   ├── GET  /p/:username               # Public profile with review stats
+│   ├── GET  /by-host                   # Subdomain/Custom domain profile lookup
+│   ├── POST /bookings                  # Public appointment reservation
+│   └── GET  /admin/bookings            # Authenticated store bookings
+├── /reviews
+│   ├── GET   /public/:adminId          # Public approved reviews & rating average
+│   ├── POST  /submit                   # Verified post-booking review submission
+│   ├── GET   /admin                    # Authenticated store review dashboard
+│   └── PATCH /:id/moderate             # Review moderation toggle
+├── /services
+│   ├── GET  /                          # Service catalog with upsell combos
+│   ├── POST /                          # Zod-validated service creation
+│   └── PUT  /:id                       # Service modification
+├── /finance
+│   ├── GET  /stats                     # Real-time cash flow & metrics
+│   ├── GET  /transactions              # Filtered financial ledger
+│   └── POST /transactions              # Zod-validated transaction creation
+├── /support
+│   ├── POST  /tickets                  # Ticket creation with instant AI auto-reply
+│   ├── GET   /tickets                  # Support ticket list with SLA tags
+│   ├── POST  /tickets/:id/messages     # Message reply with context-aware AI bot
+│   ├── PATCH /tickets/:id/status       # Status change & audit logging
+│   └── POST  /tickets/:id/satisfaction # 5-star CSAT satisfaction feedback
+├── /analytics
+│   └── GET  /                          # Monthly revenue, weekday heatmap, top services
+├── /loyalty                            # Loyalty stamp actions & coupon rewards
+├── /admin/crm-chat                     # Customer contacts, WhatsApp chat & templates
+├── /admin/employees                    # Staff management, payroll & portal links
+├── /portal                             # Employee portal auth, clock-in & vacation requests
+└── /billing                            # Mercado Pago subscription checkouts & webhooks
 ```
 
 ---
@@ -145,30 +176,28 @@ git clone https://github.com/thevigillant/boramarka.git
 cd boramarka
 ```
 
-### 2. Configure & Run Backend
+### 2. Backend Setup
 ```bash
 cd backend
 npm install
 
 # Setup environment variables in backend/.env
 # DATABASE_URL="postgresql://postgres:postgres@localhost:5432/boramarka"
-# RESEND_API_KEY="re_your_api_key"
-# RESEND_FROM="BoraMarka <noreply@boramarka.com.br>"
+# JWT_SECRET="your-super-secret-key"
 
 npx prisma generate
 npx prisma db push
-npx prisma db seed
-npm run dev
+npm run test           # Run Vitest test suite
+npm run dev            # Starts Fastify on http://localhost:3001
 ```
-> Backend API will start at `http://localhost:3001`
 
-### 3. Configure & Run Frontend
+### 3. Frontend Setup
 ```bash
 cd ../frontend
 npm install
-npm run dev
+npm run build          # Validate TypeScript compilation
+npm run dev            # Starts Vite dev server on http://localhost:5173
 ```
-> Frontend client will start at `http://localhost:5173`
 
 ---
 
