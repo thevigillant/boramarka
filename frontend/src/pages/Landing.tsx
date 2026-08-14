@@ -66,7 +66,7 @@ export default function Landing() {
   // 3. Reactivated lost clients revenue (average 8% additional monthly bookings)
   const reactivatedRevenue = Math.round(weeklyBookings * 4 * 0.08 * averageTicket)
   const totalExtraMonthlyRevenue = recoveredNoShowRevenue + reactivatedRevenue
-  const monthlySubscriptionCost = billingPeriod === 'annual' ? 21.66 : 29.90
+  const monthlySubscriptionCost = billingPeriod === 'annual' ? 14.90 : 19.90
   const roiMultiplier = Math.max(1, Math.round(totalExtraMonthlyRevenue / monthlySubscriptionCost))
 
   // Stats Counters
@@ -1132,7 +1132,7 @@ export default function Landing() {
                 {billingPeriod === 'monthly' ? (
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 39,90</span>
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 19,90</span>
                       <span className="text-xs text-slate-400 font-medium">/ mês</span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
@@ -1142,11 +1142,11 @@ export default function Landing() {
                 ) : (
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 358,80</span>
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 178,80</span>
                       <span className="text-xs text-slate-400 font-medium">/ ano</span>
                     </div>
                     <div className="text-[11px] text-emerald-400 font-bold mt-1">
-                      Equivale a R$ 29,90/mês (Desconto de R$ 10,00/mês)
+                      Equivale a R$ 14,90/mês (Desconto de R$ 5,00/mês • Economia de R$ 60,00)
                     </div>
                   </div>
                 )}
@@ -1215,7 +1215,7 @@ export default function Landing() {
                 {billingPeriod === 'monthly' ? (
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl sm:text-5xl font-black text-white">R$ 69,90</span>
+                      <span className="text-4xl sm:text-5xl font-black text-white">R$ 39,90</span>
                       <span className="text-xs text-slate-400 font-medium">/ mês</span>
                     </div>
                     <div className="text-[11px] text-slate-400 mt-1">
@@ -1225,11 +1225,11 @@ export default function Landing() {
                 ) : (
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl sm:text-5xl font-black text-white">R$ 598,80</span>
+                      <span className="text-4xl sm:text-5xl font-black text-white">R$ 348,00</span>
                       <span className="text-xs text-slate-400 font-medium">/ ano</span>
                     </div>
                     <div className="text-[11px] text-pink-300 font-bold mt-1">
-                      Equivale a R$ 49,90/mês (Desconto de R$ 20,00/mês • Economia de R$ 240,00)
+                      Equivale a R$ 29,00/mês (Desconto de R$ 10,90/mês • Economia de R$ 130,80)
                     </div>
                   </div>
                 )}
@@ -1295,7 +1295,7 @@ export default function Landing() {
                 {billingPeriod === 'monthly' ? (
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 119,90</span>
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 69,90</span>
                       <span className="text-xs text-slate-400 font-medium">/ mês</span>
                     </div>
                     <div className="text-[11px] text-slate-500 mt-1">
@@ -1305,11 +1305,11 @@ export default function Landing() {
                 ) : (
                   <div>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 1.078,80</span>
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 588,00</span>
                       <span className="text-xs text-slate-400 font-medium">/ ano</span>
                     </div>
                     <div className="text-[11px] text-amber-400 font-bold mt-1">
-                      Equivale a R$ 89,90/mês (Desconto de R$ 30,00/mês • Economia de R$ 360,00)
+                      Equivale a R$ 49,00/mês (Desconto de R$ 20,90/mês • Economia de R$ 250,80)
                     </div>
                   </div>
                 )}
