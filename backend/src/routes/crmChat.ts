@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { sendWhatsAppMessage } from '../services/whatsapp';
 import { checkQuota } from '../services/subscription';
+import { createCustomerContactSchema, updateCustomerContactSchema, sendCrmMessageSchema } from '../utils/validators';
 
 export default async function crmChatRoutes(app: FastifyInstance) {
   // All routes require authentication
@@ -188,19 +189,11 @@ export default async function crmChatRoutes(app: FastifyInstance) {
   // POST /api/admin/crm-chat/contacts — Create new contact
   app.post('/contacts', async (request, reply) => {
     const user = request.user as { id: number };
-    const { name, phone, email, status, notes, tags, avatarUrl } = request.body as {
-      name: string;
-      phone: string;
-      email?: string;
-      status?: string;
-      notes?: string;
-      tags?: string[];
-      avatarUrl?: string;
-    };
-
-    if (!name?.trim() || !phone?.trim()) {
-      return reply.status(400).send({ error: 'Nome e telefone são obrigatórios' });
+    const parsed = createCustomerContactSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
+    const { name, phone, email, status, notes, tags, avatarUrl } = parsed.data;
 
     const quota = await checkQuota(user.id, 'customers');
     if (!quota.allowed) {
@@ -236,15 +229,12 @@ export default async function crmChatRoutes(app: FastifyInstance) {
   app.put('/contacts/:id', async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
-    const { name, phone, email, status, notes, tags, avatarUrl } = request.body as {
-      name?: string;
-      phone?: string;
-      email?: string;
-      status?: string;
-      notes?: string;
-      tags?: string[];
-      avatarUrl?: string;
-    };
+    
+    const parsed = updateCustomerContactSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
+    }
+    const { name, phone, email, status, notes, tags, avatarUrl } = parsed.data;
 
     const contactId = parseInt(id);
     if (isNaN(contactId)) {
@@ -347,13 +337,11 @@ export default async function crmChatRoutes(app: FastifyInstance) {
   app.post('/contacts/:contactId/messages', async (request, reply) => {
     const user = request.user as { id: number };
     const { contactId } = request.params as { contactId: string };
-    const { content, messageType, mediaUrl, mediaName, mediaDuration } = request.body as {
-      content?: string;
-      messageType?: string; // "TEXT" | "AUDIO" | "IMAGE" | "DOCUMENT"
-      mediaUrl?: string;
-      mediaName?: string;
-      mediaDuration?: number;
-    };
+    const parsed = sendCrmMessageSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
+    }
+    const { content, messageType, mediaUrl, mediaName, mediaDuration } = parsed.data;
 
     const parsedContactId = parseInt(contactId);
     if (isNaN(parsedContactId)) {

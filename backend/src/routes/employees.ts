@@ -5,6 +5,7 @@ import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { checkAndUpdateSubscription, checkQuota } from '../services/subscription';
 import { createAuditLog } from '../utils/auditLogger';
+import { createEmployeeSchema } from '../utils/validators';
 
 export default async function employeeRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -74,28 +75,16 @@ export default async function employeeRoutes(app: FastifyInstance) {
     if (!quota.allowed) {
       return reply.status(403).send({ error: quota.message });
     }
+    
+    const parsed = createEmployeeSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
+    }
+
     const {
       name, role, phone, email, cpf, rg, birthDate,
       admissionDate, salary, commission, workingHours, password, address
-    } = request.body as {
-      name: string;
-      role: string;
-      phone?: string;
-      email?: string;
-      cpf?: string;
-      rg?: string;
-      birthDate?: string;
-      admissionDate?: string;
-      salary?: number;
-      commission?: number;
-      workingHours?: string;
-      password?: string;
-      address?: string;
-    };
-
-    if (!name || !role) {
-      return reply.status(400).send({ error: 'Nome e cargo são obrigatórios' });
-    }
+    } = parsed.data;
 
     const portalToken = uuidv4().substring(0, 12);
     const passwordHash = password?.trim() ? await bcrypt.hash(password.trim(), 10) : '';

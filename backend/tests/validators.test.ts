@@ -5,6 +5,22 @@ import {
   bookSlotSchema,
   createServiceSchema,
   createLinkSchema,
+  createTransactionSchema,
+  createEmployeeSchema,
+  createMembershipPlanSchema,
+  createClientSubscriptionSchema,
+  updateLoyaltyConfigSchema,
+  loyaltyStampActionSchema,
+  createCustomerContactSchema,
+  updateCustomerContactSchema,
+  sendCrmMessageSchema,
+  createSupportTicketSchema,
+  sendSupportMessageSchema,
+  supportSatisfactionSchema,
+  submitReviewSchema,
+  moderateReviewSchema,
+  portalLoginSchema,
+  employeeVacationRequestSchema,
 } from '../src/utils/validators'
 
 describe('Validators (Zod Schemas)', () => {
@@ -79,6 +95,135 @@ describe('Validators (Zod Schemas)', () => {
         title: 'Agendamento de Sexta',
       })
       expect(res.success).toBe(true)
+    })
+  })
+
+  describe('createTransactionSchema', () => {
+    it('deve aceitar transação de receita válida', () => {
+      const res = createTransactionSchema.safeParse({
+        type: 'receivable',
+        description: 'Corte de Cabelo',
+        amount: 50,
+        dueDate: '2026-08-14',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('deve rejeitar transação com tipo inválido', () => {
+      const res = createTransactionSchema.safeParse({
+        type: 'other',
+        description: 'Despesa',
+        amount: 50,
+        dueDate: '2026-08-14',
+      })
+      expect(res.success).toBe(false)
+    })
+  })
+
+  describe('createEmployeeSchema', () => {
+    it('deve aceitar funcionário com dados válidos', () => {
+      const res = createEmployeeSchema.safeParse({
+        name: 'Carlos Silva',
+        role: 'Barbeiro',
+        email: 'carlos@empresa.com',
+        phone: '11988887777',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('deve rejeitar funcionário sem cargo', () => {
+      const res = createEmployeeSchema.safeParse({
+        name: 'Carlos Silva',
+        role: '',
+      })
+      expect(res.success).toBe(false)
+    })
+  })
+
+  describe('createMembershipPlanSchema', () => {
+    it('deve aceitar plano mensal válido', () => {
+      const res = createMembershipPlanSchema.safeParse({
+        name: 'VIP Bronze',
+        price: 99.90,
+        interval: 'monthly',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('deve rejeitar plano com intervalo inválido', () => {
+      const res = createMembershipPlanSchema.safeParse({
+        name: 'VIP Bronze',
+        price: 99.90,
+        interval: 'daily',
+      })
+      expect(res.success).toBe(false)
+    })
+  })
+
+  describe('loyaltyStampActionSchema', () => {
+    it('deve aceitar ação de adicionar selo', () => {
+      const res = loyaltyStampActionSchema.safeParse({
+        clientPhone: '11999998888',
+        action: 'add',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('deve rejeitar ação desconhecida', () => {
+      const res = loyaltyStampActionSchema.safeParse({
+        clientPhone: '11999998888',
+        action: 'delete_all',
+      })
+      expect(res.success).toBe(false)
+    })
+  })
+
+  describe('createSupportTicketSchema', () => {
+    it('deve aceitar chamado de suporte válido', () => {
+      const res = createSupportTicketSchema.safeParse({
+        subject: 'Dúvida sobre repasse',
+        category: 'FINANCEIRO',
+        message: 'Gostaria de saber a data de liquidação do Pix.',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('deve rejeitar assunto muito curto', () => {
+      const res = createSupportTicketSchema.safeParse({
+        subject: 'Oi',
+        message: 'Gostaria de ajuda',
+      })
+      expect(res.success).toBe(false)
+    })
+  })
+
+  describe('submitReviewSchema', () => {
+    it('deve aceitar avaliação de 5 estrelas', () => {
+      const res = submitReviewSchema.safeParse({
+        bookingId: 42,
+        clientPhone: '11999999999',
+        rating: 5,
+        comment: 'Atendimento excepcional!',
+      })
+      expect(res.success).toBe(true)
+    })
+
+    it('deve rejeitar nota maior que 5', () => {
+      const res = submitReviewSchema.safeParse({
+        bookingId: 42,
+        clientPhone: '11999999999',
+        rating: 6,
+      })
+      expect(res.success).toBe(false)
+    })
+
+    it('deve rejeitar nota menor que 1', () => {
+      const res = submitReviewSchema.safeParse({
+        bookingId: 42,
+        clientPhone: '11999999999',
+        rating: 0,
+      })
+      expect(res.success).toBe(false)
     })
   })
 })

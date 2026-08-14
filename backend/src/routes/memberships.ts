@@ -1,6 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
+import { createMembershipPlanSchema, createClientSubscriptionSchema } from '../utils/validators';
 
 export default async function membershipRoutes(app: FastifyInstance) {
   // All routes require authentication
@@ -27,16 +28,11 @@ export default async function membershipRoutes(app: FastifyInstance) {
   // POST /api/admin/memberships/plans — Create a plan
   app.post('/plans', async (request, reply) => {
     const user = request.user as { id: number };
-    const { name, description, price, interval } = request.body as {
-      name: string;
-      description?: string;
-      price: number;
-      interval: 'monthly' | 'yearly';
-    };
-
-    if (!name?.trim() || !price || !interval) {
-      return reply.status(400).send({ error: 'Nome, preço e intervalo são obrigatórios' });
+    const parsed = createMembershipPlanSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
+    const { name, description, price, interval } = parsed.data;
 
     const plan = await prisma.membershipPlan.create({
       data: {
@@ -91,16 +87,11 @@ export default async function membershipRoutes(app: FastifyInstance) {
   // POST /api/admin/memberships/subscriptions — Create a client subscription manually
   app.post('/subscriptions', async (request, reply) => {
     const user = request.user as { id: number };
-    const { clientName, clientPhone, planId, monthsDuration } = request.body as {
-      clientName: string;
-      clientPhone: string;
-      planId: number;
-      monthsDuration?: number;
-    };
-
-    if (!clientName?.trim() || !clientPhone || !planId) {
-      return reply.status(400).send({ error: 'Nome, celular e plano são obrigatórios' });
+    const parsed = createClientSubscriptionSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
+    const { clientName, clientPhone, planId, monthsDuration } = parsed.data;
 
     // Verify plan belongs to admin
     const plan = await prisma.membershipPlan.findFirst({
