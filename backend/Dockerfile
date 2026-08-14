@@ -2,6 +2,9 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# OpenSSL is required by Prisma's schema engine
+RUN apk add --no-cache openssl
+
 COPY package*.json ./
 COPY prisma ./prisma/
 
@@ -15,6 +18,9 @@ RUN npm run build
 FROM node:20-alpine AS runner
 
 WORKDIR /app
+
+# OpenSSL is required by Prisma to connect to PostgreSQL
+RUN apk add --no-cache openssl
 
 ENV NODE_ENV=production
 
