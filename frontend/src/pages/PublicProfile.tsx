@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { api } from '../services/api'
+import { api, PublicReviewItem } from '../services/api'
 import { 
-  Clock, DollarSign, ChevronRight, User, 
-  MapPin, Phone, Instagram, Loader2, AlertCircle 
+  Clock, MapPin, Phone, Instagram, Loader2, AlertCircle, 
+  Star, MessageSquare, CheckCircle, Award
 } from 'lucide-react'
 
 interface ServiceData {
@@ -16,6 +16,7 @@ interface ServiceData {
 }
 
 interface PublicProfileData {
+  id?: number
   businessName: string
   description: string
   photoUrl: string
@@ -27,27 +28,42 @@ interface PublicProfileData {
   secondaryColor?: string
   publicTheme?: string
   bannerUrl?: string
+  averageRating?: number | null
+  totalReviews?: number
 }
 
 export default function PublicProfile() {
   const { username } = useParams<{ username: string }>()
   const [profile, setProfile] = useState<PublicProfileData | null>(null)
+  const [reviews, setReviews] = useState<PublicReviewItem[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (username) {
-      api.getPublicProfile(username)
-        .then(setProfile)
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false))
-    } else {
-      const host = window.location.host
-      api.getPublicProfileByHost(host)
-        .then(setProfile)
-        .catch(err => setError(err.message))
-        .finally(() => setLoading(false))
+    const fetchProfile = async () => {
+      try {
+        let data: PublicProfileData;
+        if (username) {
+          data = await api.getPublicProfile(username)
+        } else {
+          const host = window.location.host
+          data = await api.getPublicProfileByHost(host)
+        }
+        setProfile(data)
+
+        // Se o admin tiver ID, busca as avaliações públicas
+        if (data?.id) {
+          const reviewsData = await api.getPublicReviews(data.id)
+          setReviews(reviewsData.reviews || [])
+        }
+      } catch (err: any) {
+        setError(err.message || 'Falha ao carregar perfil')
+      } finally {
+        setLoading(false)
+      }
     }
+
+    fetchProfile()
   }, [username])
 
   const formatCurrency = (value: number) => {
@@ -55,6 +71,15 @@ export default function PublicProfile() {
       style: 'currency',
       currency: 'BRL'
     }).format(value)
+  }
+
+  const formatDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr)
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })
+    } catch {
+      return ''
+    }
   }
 
   if (loading) {
@@ -138,7 +163,24 @@ export default function PublicProfile() {
             )}
           </div>
           
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-4">{profile.businessName}</h1>
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{profile.businessName}</h1>
+
+          {/* Social Proof / Rating Badge */}
+          <div className="flex items-center justify-center gap-2 mb-4">
+            {profile.averageRating ? (
+              <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 shadow-sm text-xs sm:text-sm font-bold text-amber-700 dark:text-amber-300">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-500" />
+                <span>{profile.averageRating}</span>
+                <span className="text-slate-400 font-normal">({profile.totalReviews || reviews.length} {profile.totalReviews === 1 ? 'avaliação' : 'avaliações'})</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                <Award className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Espaço Verificado BoraMarka</span>
+              </div>
+            )}
+          </div>
+
           <p className="text-slate-500 dark:text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto text-sm sm:text-base">
             {profile.description || 'Bem-vindo ao nosso espaço. Confira abaixo todos os nossos serviços e novidades.'}
           </p>
@@ -216,6 +258,68 @@ export default function PublicProfile() {
                   </div>
                 );
               })}
+            </div>
+          </div>
+        )}
+
+        {/* Reviews / Social Proof Section */}
+        {reviews.length > 0 && (
+          <div className="mt-16 animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
+                  <Star className="w-7 h-7 fill-amber-400 text-amber-500" /> Avaliações dos Clientes
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1">
+                  Opiniões verificadas de clientes que foram atendidos recentemente.
+                </p>
+              </div>
+              <div className="h-1 flex-1 bg-gradient-to-r from-slate-200 dark:from-slate-800 to-transparent ml-6 rounded-full hidden sm:block"></div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {reviews.map((r) => (
+                <div
+                  key={r.id}
+                  className="bg-white dark:bg-[#131826] p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow"
+                >
+                  <div>
+                    {/* Stars */}
+                    <div className="flex items-center gap-1 mb-2.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-4 h-4 ${
+                            star <= r.rating
+                              ? 'fill-amber-400 text-amber-500'
+                              : 'text-slate-200 dark:text-slate-700'
+                          }`}
+                        />
+                      ))}
+                      <span className="text-xs font-bold text-slate-400 ml-1.5">{formatDate(r.createdAt)}</span>
+                    </div>
+
+                    {/* Comment */}
+                    {r.comment ? (
+                      <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 italic mb-4 line-clamp-3">
+                        "{r.comment}"
+                      </p>
+                    ) : (
+                      <p className="text-xs text-slate-400 italic mb-4">Avaliação 5 estrelas sem comentário adicional.</p>
+                    )}
+                  </div>
+
+                  {/* Reviewer Details */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-900 dark:text-slate-200 truncate max-w-[120px]">
+                      {r.clientName}
+                    </span>
+                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 truncate max-w-[120px]">
+                      {r.serviceName}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

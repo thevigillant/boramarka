@@ -52,6 +52,12 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     const sub = await checkAndUpdateSubscription(admin.id);
     const isInactive = sub.status === 'inactive';
 
+    const reviewStats = await prisma.serviceReview.aggregate({
+      where: { adminId: admin.id, approved: true },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
+
     const mappedServices = admin.services.map((s: any) => ({
       id: s.id,
       name: s.name,
@@ -62,6 +68,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     }));
 
     return {
+      id: admin.id,
       businessName: admin.businessName,
       description: admin.description,
       photoUrl: admin.photoUrl,
@@ -75,6 +82,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       bannerUrl: admin.bannerUrl,
       mpAccessToken: admin.mpAccessToken,
       pixKey: (admin.pixKey && admin.pixKey !== 'SIMULADOR') ? admin.pixKey : (admin.phone || ''),
+      averageRating: reviewStats._avg.rating ? parseFloat(reviewStats._avg.rating.toFixed(1)) : null,
+      totalReviews: reviewStats._count.id || 0,
     };
   });
 
@@ -161,6 +170,12 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     const sub = await checkAndUpdateSubscription(admin.id);
     const isInactive = sub.status === 'inactive';
 
+    const reviewStats = await prisma.serviceReview.aggregate({
+      where: { adminId: admin.id, approved: true },
+      _avg: { rating: true },
+      _count: { id: true },
+    });
+
     const mappedServices = admin.services.map((s: any) => ({
       id: s.id,
       name: s.name,
@@ -171,6 +186,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     }));
 
     return {
+      id: admin.id,
       businessName: admin.businessName,
       description: admin.description,
       photoUrl: admin.photoUrl,
@@ -182,6 +198,8 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
+      averageRating: reviewStats._avg.rating ? parseFloat(reviewStats._avg.rating.toFixed(1)) : null,
+      totalReviews: reviewStats._count.id || 0,
     };
   });
 
