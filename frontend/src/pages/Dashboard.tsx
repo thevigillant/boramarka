@@ -48,6 +48,13 @@ import { CuponsTab } from '../components/dashboard/tabs/CuponsTab'
 import { MembershipsTab } from '../components/dashboard/tabs/MembershipsTab'
 import { TrashTab } from '../components/dashboard/tabs/TrashTab'
 import { EstornosTab } from '../components/dashboard/tabs/EstornosTab'
+import { OverviewTab } from '../components/dashboard/tabs/OverviewTab'
+import { NewTransactionModal } from '../components/dashboard/modals/NewTransactionModal'
+import { NewServiceModal } from '../components/dashboard/modals/NewServiceModal'
+import { NewBookingModal } from '../components/dashboard/modals/NewBookingModal'
+import { DeleteSlotModal } from '../components/dashboard/modals/DeleteSlotModal'
+import { MpConfigModal } from '../components/dashboard/modals/MpConfigModal'
+import { MpTutorialModal } from '../components/dashboard/modals/MpTutorialModal'
 
 
 
@@ -2890,237 +2897,19 @@ export default function Dashboard() {
         {/* TAB: Overview */}
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'overview' && (
-          <div className="animate-slide-up space-y-8">
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
-              <StatCard title="Total de Clientes" value={stats.totalBookings} icon={Users} color="#8b5cf6" />
-              <StatCard title="Saldo Financeiro" value={formatCurrency(financeStats.balance)} icon={Wallet} color="#10b981" />
-              <StatCard title="A Receber" value={formatCurrency(financeStats.pendingReceivable)} icon={TrendingUp} color="#06b6d4" />
-              <StatCard title="A Pagar" value={formatCurrency(financeStats.pendingPayable)} icon={TrendingDown} color="#ef4444" />
-            </div>
-
-            {/* Onboarding Checklist (Primeiros Passos) */}
-            {(!services.length || !links.length || (!adminInfo?.pixKey && !adminInfo?.mpAccessToken)) && (
-              <div className="card-simple p-5 sm:p-6 bg-gradient-to-r from-violet-600/10 via-pink-600/10 to-transparent border border-violet-500/20 rounded-3xl animate-slide-up">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 to-pink-600 flex items-center justify-center text-white font-bold shadow-lg shadow-violet-600/20 flex-shrink-0">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Primeiros Passos para sua Agenda Cheia</h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">Complete as configurações para divulgar seu perfil e receber marcações 24/7</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 self-start sm:self-auto">
-                    <span className="text-xs font-bold text-violet-500 dark:text-violet-400 bg-violet-500/10 px-3 py-1 rounded-full border border-violet-500/20">
-                      {[services.length > 0, links.length > 0, (!!adminInfo?.pixKey || !!adminInfo?.mpAccessToken)].filter(Boolean).length} de 3 concluídos
-                    </span>
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                <div className="w-full bg-slate-200 dark:bg-white/10 h-2 rounded-full mb-4 overflow-hidden">
-                  <div 
-                    className="h-full bg-gradient-to-r from-violet-600 to-pink-600 transition-all duration-500 rounded-full"
-                    style={{ width: `${([services.length > 0, links.length > 0, (!!adminInfo?.pixKey || !!adminInfo?.mpAccessToken)].filter(Boolean).length / 3) * 100}%` }}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {/* Step 1: Serviços */}
-                  <div 
-                    onClick={() => setActiveTab('servicos')} 
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
-                      services.length > 0 
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
-                        : 'bg-white/40 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-800 dark:text-white'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                      services.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
-                    }`}>
-                      {services.length > 0 ? <CheckCircle2 className="w-4 h-4" /> : '1'}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xs font-bold">Cadastrar seus Serviços</h4>
-                      <p className="text-[11px] opacity-70">{services.length > 0 ? `${services.length} serviços cadastrados` : 'Configure preços e durações'}</p>
-                    </div>
-                    <span className="text-xs font-bold opacity-60">→</span>
-                  </div>
-
-                  {/* Step 2: Link de Agendamento */}
-                  <div 
-                    onClick={() => setActiveTab('links')} 
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
-                      links.length > 0 
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
-                        : 'bg-white/40 dark:bg-white/5 border-slate-200 dark:border-white/10 hover:border-violet-500/40 text-slate-800 dark:text-white'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                      links.length > 0 ? 'bg-emerald-500 text-white' : 'bg-violet-600/20 text-violet-400 border border-violet-500/30'
-                    }`}>
-                      {links.length > 0 ? <CheckCircle2 className="w-4 h-4" /> : '2'}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xs font-bold">Gerar Link de Agendamento</h4>
-                      <p className="text-[11px] opacity-70">{links.length > 0 ? `${links.length} links de horários ativos` : 'Crie horários para seus clientes'}</p>
-                    </div>
-                    <span className="text-xs font-bold opacity-60">→</span>
-                  </div>
-
-                  {/* Step 3: Cadastrar Chave PIX */}
-                  <div 
-                    onClick={() => { 
-                      setPixInputKey(adminInfo?.pixKey || '')
-                      setMpInputToken(adminInfo?.mpAccessToken || '')
-                      setShowMpConfigModal(true) 
-                    }} 
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-3 ${
-                      (adminInfo?.pixKey || adminInfo?.mpAccessToken) 
-                        ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' 
-                        : 'bg-emerald-500/10 border-emerald-500/30 hover:border-emerald-500 text-slate-800 dark:text-white'
-                    }`}
-                  >
-                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${
-                      (adminInfo?.pixKey || adminInfo?.mpAccessToken) ? 'bg-emerald-500 text-white' : 'bg-emerald-600 text-white'
-                    }`}>
-                      {(adminInfo?.pixKey || adminInfo?.mpAccessToken) ? <CheckCircle2 className="w-4 h-4" /> : '3'}
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="text-xs font-bold">Cadastrar Chave PIX</h4>
-                      <p className="text-[11px] opacity-70">
-                        {(adminInfo?.pixKey || adminInfo?.mpAccessToken) ? 'Chave Pix cadastrada' : 'Receba sinal no Pix sem complicações'}
-                      </p>
-                    </div>
-                    <span className="text-xs font-bold opacity-60">→</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Analytics Charts Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Chart 1: Faturamento Mensal */}
-              <div className="card-simple">
-                <div className="card-simple-inner p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Evolução do Faturamento</h3>
-                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Receita bruta dos últimos 6 meses</p>
-                    </div>
-                    {analyticsData?.trends?.revenueChangePercent !== undefined && (
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${
-                        analyticsData.trends.revenueChangePercent >= 0
-                          ? 'bg-emerald-500/10 text-emerald-500'
-                          : 'bg-red-500/10 text-red-500'
-                      }`}>
-                        {analyticsData.trends.revenueChangePercent >= 0 ? '↑' : '↓'} {Math.abs(analyticsData.trends.revenueChangePercent)}% vs mês anterior
-                      </span>
-                    )}
-                  </div>
-                  <MiniBarChart data={analyticsData?.revenueByMonth || []} height={190} />
-                </div>
-              </div>
-
-              {/* Chart 2: Movimentação por Dia da Semana */}
-              <div className="card-simple">
-                <div className="card-simple-inner p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Movimento por Dia</h3>
-                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Distribuição semanal de agendamentos</p>
-                    </div>
-                  </div>
-                  <WeekdayChart data={analyticsData?.bookingsByWeekday || []} height={180} />
-                </div>
-              </div>
-
-              {/* Chart 3: Top Serviços */}
-              <div className="card-simple">
-                <div className="card-simple-inner p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Serviços Mais Vendidos</h3>
-                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Ranking por volume de atendimentos</p>
-                    </div>
-                  </div>
-                  <MiniDonutChart data={analyticsData?.topServices || []} size={150} />
-                </div>
-              </div>
-
-              {/* Chart 4: Status dos Agendamentos */}
-              <div className="card-simple">
-                <div className="card-simple-inner p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <div>
-                      <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Status dos Agendamentos</h3>
-                      <p className="text-[10px] text-slate-400 dark:text-white/30 font-semibold">Proporção por estado de agendamento</p>
-                    </div>
-                  </div>
-                  <StatusPieChart data={analyticsData?.statusDistribution || {}} size={140} />
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              {/* Recent Bookings */}
-              <div className="card-simple">
-                <div className="card-simple-inner p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Últimos Agendamentos</h3>
-                    <button onClick={() => setActiveTab('agendamentos')} className="text-violet-500 dark:text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Ver todos</button>
-                  </div>
-                  <div className="space-y-3">
-                    {bookings.slice(0, 5).map(b => (
-                      <div key={b.id} className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-white/[0.02] border border-slate-150 dark:border-white/[0.04] transition-all hover:border-violet-500/20">
-                        <div className="w-9 h-9 bg-slate-100 dark:bg-white/[0.04] rounded-lg flex items-center justify-center font-bold text-violet-500 dark:text-violet-400 text-sm border border-slate-200 dark:border-white/[0.06]">
-                          {b.clientName[0].toUpperCase()}
-                        </div>
-                        <div className="flex-1">
-                          <p className="font-semibold text-sm text-slate-800 dark:text-white/80">{b.clientName}</p>
-                          <p className="text-[10px] text-slate-500 dark:text-white/25 font-semibold uppercase">{formatDate(b.timeSlot.date)} — {b.timeSlot.time}</p>
-                        </div>
-                        <a href={`https://wa.me/${b.clientPhone}`} target="_blank" className="p-2 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/[0.06] rounded-lg transition-all">
-                          <Phone className="w-4 h-4" />
-                        </a>
-                      </div>
-                    ))}
-                    {bookings.length === 0 && <p className="text-center py-10 text-slate-400 dark:text-white/20 text-sm italic">Nenhum agendamento recente</p>}
-                  </div>
-                </div>
-              </div>
-              {/* Financial Summary */}
-              <div className="card-simple">
-                <div className="card-simple-inner p-6 overflow-hidden relative">
-                  <div className="flex justify-between items-center mb-6">
-                     <h3 className="font-bold text-[15px] text-slate-800 dark:text-white/80">Resumo Financeiro</h3>
-                     <button onClick={() => setActiveTab('financeiro')} className="text-violet-500 dark:text-violet-400 text-[11px] font-semibold hover:underline uppercase tracking-wider">Gestão completa</button>
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center p-5 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/[0.04] border border-emerald-500/20 dark:border-emerald-500/10">
-                      <div>
-                        <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400/80 uppercase tracking-widest">Recebido</p>
-                        <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{formatCurrency(financeStats.receivedAmount)}</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-xl bg-emerald-500/10 dark:bg-emerald-500/[0.06] flex items-center justify-center">
-                          <ArrowUpRight className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center p-5 rounded-xl bg-red-500/10 dark:bg-red-500/[0.04] border border-red-500/20 dark:border-red-500/10">
-                      <div>
-                        <p className="text-[10px] font-bold text-red-650 dark:text-red-400/80 uppercase tracking-widest">Pago</p>
-                        <p className="text-2xl font-black text-red-600 dark:text-red-400">{formatCurrency(financeStats.paidAmount)}</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-xl bg-red-500/10 dark:bg-red-500/[0.06] flex items-center justify-center">
-                          <ArrowDownRight className="w-5 h-5 text-red-600 dark:text-red-400" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          <OverviewTab
+            stats={stats}
+            financeStats={financeStats}
+            services={services}
+            links={links}
+            bookings={bookings}
+            analyticsData={analyticsData}
+            adminInfo={adminInfo}
+            setActiveTab={setActiveTab as any}
+            setPixInputKey={setPixInputKey}
+            setMpInputToken={setMpInputToken}
+            setShowMpConfigModal={setShowMpConfigModal}
+          />
         )}
 
         {/* ═══════════════════════════════════════════ */}
@@ -3572,241 +3361,31 @@ export default function Dashboard() {
         </footer>
       </main>
 
-      {/* New Transaction Modal */}
-      {showNewTransaction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#131826] w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">Lançar Valor Financeiro</h3>
-              <button onClick={() => setShowNewTransaction(false)} className="p-2 text-slate-400"><X className="w-6 h-6" /></button>
-            </div>
-            <div className="space-y-4">
-              <div className="flex p-1 bg-slate-100 dark:bg-slate-850 rounded-2xl">
-                <button onClick={() => setNewTx({...newTx, type: 'receivable'})} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${newTx.type === 'receivable' ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}>Entrada (+)</button>
-                <button onClick={() => setNewTx({...newTx, type: 'payable'})} className={`flex-1 py-3 rounded-xl text-sm font-black transition-all ${newTx.type === 'payable' ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-sm' : 'text-slate-400 dark:text-slate-500'}`}>Saída (-)</button>
-              </div>
-              <div><label className="block text-xs font-black text-slate-400 uppercase mb-2">Descrição</label><input type="text" value={newTx.description} onChange={e => setNewTx({...newTx, description: e.target.value})} placeholder="Ex: Corte Cabelo, Pagamento Aluguel..." className="input-simple font-bold" /></div>
-              <div className="grid grid-cols-2 gap-4">
-                <div><label className="block text-xs font-black text-slate-400 uppercase mb-2">Valor (R$)</label><input type="text" value={newTx.amount} onChange={e => setNewTx({...newTx, amount: e.target.value})} placeholder="0,00" className="input-simple font-bold" /></div>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-2 flex justify-between">
-                    Data
-                    <button onClick={() => setNewTx({...newTx, dueDate: new Date().toISOString().split('T')[0]})} className="text-pink-500 hover:underline">Hoje</button>
-                  </label>
-                  <input type="date" value={newTx.dueDate} onChange={e => setNewTx({...newTx, dueDate: e.target.value})} className="input-simple font-bold text-xs" />
-                </div>
-              </div>
-              <div><label className="block text-xs font-black text-slate-400 uppercase mb-2">Cliente / Fornecedor</label><input type="text" value={newTx.clientName} onChange={e => setNewTx({...newTx, clientName: e.target.value})} placeholder="Opcional" className="input-simple font-bold" /></div>
-              
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase mb-2">Categoria</label>
-                <div className="grid grid-cols-2 gap-2">
-                  <select 
-                    value={
-                      ['Serviço', 'Venda de Produto', 'Assinatura', 'Fornecedor', 'Aluguel', 'Salário / Comissão', 'Marketing', 'Utilidades', 'Impostos'].includes(newTx.category) 
-                        ? newTx.category 
-                        : newTx.category === '' ? '' : 'custom'
-                    }
-                    onChange={e => {
-                      const val = e.target.value;
-                      if (val === 'custom') {
-                        setNewTx({...newTx, category: ''})
-                      } else {
-                        setNewTx({...newTx, category: val})
-                      }
-                    }}
-                    className="input-simple font-bold text-xs"
-                  >
-                    <option value="">Selecione uma Categoria...</option>
-                    {newTx.type === 'receivable' ? (
-                      <>
-                        <option value="Serviço">Serviço</option>
-                        <option value="Venda de Produto">Venda de Produto</option>
-                        <option value="Assinatura">Assinatura / Recorrência</option>
-                      </>
-                    ) : (
-                      <>
-                        <option value="Fornecedor">Fornecedor</option>
-                        <option value="Aluguel">Aluguel</option>
-                        <option value="Salário / Comissão">Salário / Comissão</option>
-                        <option value="Marketing">Marketing / Anúncios</option>
-                        <option value="Utilidades">Utilidades (Água, Luz...)</option>
-                        <option value="Impostos">Impostos / Taxas</option>
-                      </>
-                    )}
-                    <option value="custom">Outra (Personalizada)...</option>
-                  </select>
+      <NewTransactionModal
+        showNewTransaction={showNewTransaction}
+        setShowNewTransaction={setShowNewTransaction}
+        newTx={newTx}
+        setNewTx={setNewTx}
+        handleCreateTransaction={handleCreateTransaction}
+      />
 
-                  {(!['Serviço', 'Venda de Produto', 'Assinatura', 'Fornecedor', 'Aluguel', 'Salário / Comissão', 'Marketing', 'Utilidades', 'Impostos'].includes(newTx.category) || 
-                    ['Serviço', 'Venda de Produto', 'Assinatura', 'Fornecedor', 'Aluguel', 'Salário / Comissão', 'Marketing', 'Utilidades', 'Impostos'].includes(newTx.category) && newTx.category === '') && (
-                    <input 
-                      type="text" 
-                      value={newTx.category} 
-                      onChange={e => setNewTx({...newTx, category: e.target.value})} 
-                      placeholder="Nome da categoria" 
-                      className="input-simple font-bold" 
-                    />
-                  )}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-2xl border border-slate-100 dark:border-slate-850 cursor-pointer" onClick={() => setNewTx({...newTx, paid: !newTx.paid})}>
-                <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all ${newTx.paid ? 'bg-emerald-500 text-white' : 'bg-white border-2 border-slate-200 text-transparent'}`}>
-                  <Check className="w-4 h-4" />
-                </div>
-                <span className="text-sm font-bold text-slate-700 dark:text-slate-300">Já está {newTx.type === 'receivable' ? 'recebido' : 'pago'}</span>
-              </div>
+      <NewServiceModal
+        showNewService={showNewService}
+        setShowNewService={setShowNewService}
+        editingService={editingService}
+        serviceForm={serviceForm}
+        setServiceForm={setServiceForm}
+        handleCreateService={handleCreateService}
+      />
 
-              <button onClick={handleCreateTransaction} className={`w-full py-5 rounded-2xl text-white font-black text-lg transition-all shadow-xl ${newTx.type === 'receivable' ? 'bg-emerald-600 shadow-emerald-600/20' : 'bg-red-600 shadow-red-600/20'}`}>
-                Confirmar Lançamento
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* New Service Modal */}
-      {showNewService && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#131826] w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">{editingService ? 'Editar Serviço' : 'Cadastrar Novo Serviço'}</h3>
-              <button onClick={() => setShowNewService(false)} className="p-2 text-slate-400"><X className="w-6 h-6" /></button>
-            </div>
-            <form onSubmit={handleCreateService} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase mb-2">Nome do Serviço</label>
-                <input 
-                  type="text" 
-                  value={serviceForm.name} 
-                  onChange={e => setServiceForm({...serviceForm, name: e.target.value})} 
-                  placeholder="Ex: Corte Masculino, Manicure, etc." 
-                  className="input-simple font-bold" 
-                  required 
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-400 uppercase mb-2">Descrição (Opcional)</label>
-                <textarea 
-                  value={serviceForm.description} 
-                  onChange={e => setServiceForm({...serviceForm, description: e.target.value})} 
-                  placeholder="Explique o que inclui o serviço..." 
-                  className="input-simple font-medium text-sm min-h-[80px]" 
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-2">Preço (R$)</label>
-                  <input 
-                    type="number" 
-                    step="0.01" 
-                    value={serviceForm.price} 
-                    onChange={e => setServiceForm({...serviceForm, price: e.target.value})} 
-                    placeholder="0,00" 
-                    className="input-simple font-bold" 
-                    required 
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 uppercase mb-2">Duração (Minutos)</label>
-                  <select 
-                    value={serviceForm.duration} 
-                    onChange={e => setServiceForm({...serviceForm, duration: e.target.value})} 
-                    className="input-simple font-bold"
-                  >
-                    <option value="15">15 min</option>
-                    <option value="30">30 min</option>
-                    <option value="45">45 min</option>
-                    <option value="60">1 hora</option>
-                    <option value="90">1h 30min</option>
-                    <option value="120">2 horas</option>
-                  </select>
-                </div>
-              </div>
-
-              <button type="submit" className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all shadow-xl shadow-pink-500/20 mt-4">
-                {editingService ? 'Salvar Alterações' : 'Criar Serviço'}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* New Booking Modal */}
-      {showNewBookingModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white dark:bg-[#131826] w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-black text-slate-900 dark:text-white">Bora Agendar Novo!</h3>
-              <button onClick={() => setShowNewBookingModal(false)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"><X className="w-6 h-6" /></button>
-            </div>
-            <form onSubmit={handleCreateManualBooking} className="space-y-4">
-              <div>
-                <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Serviço / Link de Venda</label>
-                <select
-                  value={newBookingData.linkId}
-                  onChange={e => setNewBookingData({...newBookingData, linkId: e.target.value})}
-                  className="input-simple font-bold"
-                  required
-                >
-                  <option value="">Selecione...</option>
-                  {links.map(l => (
-                    <option key={l.id} value={l.id}>{l.title}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Data</label>
-                  <input
-                    type="date"
-                    value={newBookingData.date}
-                    onChange={e => setNewBookingData({...newBookingData, date: e.target.value})}
-                    className="input-simple font-bold text-xs"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Horário (HH:MM)</label>
-                  <input
-                    type="time"
-                    value={newBookingData.time}
-                    onChange={e => setNewBookingData({...newBookingData, time: e.target.value})}
-                    className="input-simple font-bold text-xs"
-                    required
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Nome do Cliente</label>
-                <input
-                  type="text"
-                  value={newBookingData.clientName}
-                  onChange={e => setNewBookingData({...newBookingData, clientName: e.target.value})}
-                  placeholder="Nome completo do cliente"
-                  className="input-simple font-bold text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-400 dark:text-slate-500 uppercase mb-2">Celular do Cliente</label>
-                <input
-                  type="text"
-                  value={newBookingData.clientPhone}
-                  onChange={e => setNewBookingData({...newBookingData, clientPhone: e.target.value})}
-                  placeholder="Ex: (11) 99999-9999"
-                  className="input-simple font-bold text-sm"
-                  required
-                />
-              </div>
-
-              <button type="submit" className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all shadow-xl shadow-pink-500/20 mt-4">
-                Agendar Horário
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      <NewBookingModal
+        showNewBookingModal={showNewBookingModal}
+        setShowNewBookingModal={setShowNewBookingModal}
+        newBookingData={newBookingData}
+        setNewBookingData={setNewBookingData}
+        links={links}
+        handleCreateManualBooking={handleCreateManualBooking}
+      />
 
       {/* Edit Profile Modal */}
       {showEditProfile && (
@@ -5370,234 +4949,23 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Mercado Pago Step-by-Step Tutorial Modal */}
-      {showMpTutorialModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#111625] border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-scale-in text-left space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-[#009EE3]/15 text-[#009EE3] flex items-center justify-center font-black">
-                  <CreditCard className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white">Como Conectar seu Mercado Pago</h3>
-                  <p className="text-xs text-slate-400 font-semibold">Passo a passo simples em 30 segundos</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowMpTutorialModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+      <MpTutorialModal
+        showMpTutorialModal={showMpTutorialModal}
+        setShowMpTutorialModal={setShowMpTutorialModal}
+      />
 
-            <div className="space-y-4 text-xs font-medium text-slate-700 dark:text-slate-300">
-              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#182032] border border-slate-100 dark:border-slate-800">
-                <span className="w-6 h-6 rounded-full bg-[#009EE3] text-white font-black text-xs flex items-center justify-center shrink-0">1</span>
-                <div>
-                  <p className="font-bold text-slate-900 dark:text-white">Clique no link direto para o painel oficial:</p>
-                  <a
-                    href="https://www.mercadopago.com.br/developers/panel/app"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 text-[#009EE3] font-bold underline mt-1"
-                  >
-                    Abrir Painel de Desenvolvedores do Mercado Pago <ExternalLink className="w-3 h-3" />
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#182032] border border-slate-100 dark:border-slate-800">
-                <span className="w-6 h-6 rounded-full bg-[#009EE3] text-white font-black text-xs flex items-center justify-center shrink-0">2</span>
-                <div>
-                  <p className="font-bold text-slate-900 dark:text-white">Selecione sua aplicação ou clique em "Criar Aplicação":</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5 font-medium">Nomeie como "BoraMarka" se for criar uma nova aplicação.</p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-[#182032] border border-slate-100 dark:border-slate-800">
-                <span className="w-6 h-6 rounded-full bg-[#009EE3] text-white font-black text-xs flex items-center justify-center shrink-0">3</span>
-                <div>
-                  <p className="font-bold text-slate-900 dark:text-white">Copie a chave "Access Token de Produção":</p>
-                  <p className="text-[11px] text-slate-400 mt-0.5 font-medium">É o código longo que começa com <code className="bg-slate-200 dark:bg-slate-700 px-1 py-0.5 rounded font-mono">APP_USR-...</code></p>
-                </div>
-              </div>
-            </div>
-
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-              <button
-                onClick={() => setShowMpTutorialModal(false)}
-                className="px-5 py-2.5 bg-[#009EE3] hover:bg-[#008ac7] text-white font-extrabold text-xs rounded-xl shadow-md cursor-pointer transition-all"
-              >
-                Entendi!
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Dedicated Pix & Payments Receiving Setup Modal */}
-      {showMpConfigModal && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#111625] border border-slate-200 dark:border-slate-800 w-full max-w-lg rounded-3xl p-6 shadow-2xl relative animate-scale-in text-left space-y-5">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-black shadow-lg shadow-emerald-500/20 shrink-0">
-                  <Wallet className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Recebimento por PIX</h3>
-                  <p className="text-xs text-slate-400 font-medium">Informe onde cairão os pagamentos de sinal dos seus clientes</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowMpConfigModal(false)}
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Status Indicator */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
-              <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Status Atual</span>
-              {adminInfo?.pixKey || (adminInfo?.mpAccessToken && adminInfo.mpAccessToken !== 'SIMULADOR') ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 uppercase tracking-wider">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Pix Configurado & Ativo
-                </span>
-              ) : adminInfo?.mpAccessToken === 'SIMULADOR' ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase tracking-wider">
-                  Modo Simulador
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-black bg-slate-500/10 text-slate-400 border border-slate-500/20 uppercase tracking-wider">
-                  Pendente
-                </span>
-              )}
-            </div>
-
-            {/* Simple Pix Key Form */}
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="block text-xs font-black text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Sua Chave PIX (Telefone, CPF/CNPJ, E-mail ou Chave Aleatória)
-                </label>
-                <div className="relative">
-                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-500" />
-                  <input
-                    type="text"
-                    value={pixInputKey}
-                    onChange={e => setPixInputKey(e.target.value)}
-                    placeholder="Ex: (11) 99999-9999, 123.456.789-00 ou contato@empresa.com"
-                    className="w-full input-simple font-bold text-xs pl-11 bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-white/10 focus:border-emerald-500"
-                  />
-                </div>
-                <p className="text-[11px] text-slate-400 font-medium">
-                  Seus clientes enviarão o sinal de agendamento diretamente para essa chave Pix.
-                </p>
-              </div>
-
-              {/* Quick Actions / Advanced Toggle */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setPixInputKey('SIMULADOR')
-                    setMpInputToken('SIMULADOR')
-                    try {
-                      setSavingMpToken(true)
-                      await api.updateProfile({ pixKey: 'SIMULADOR', mpAccessToken: 'SIMULADOR' })
-                      setAdminInfo(prev => prev ? { ...prev, pixKey: 'SIMULADOR', mpAccessToken: 'SIMULADOR' } : prev)
-                      showToast('Modo Simulador de Testes ativado!')
-                      setShowMpConfigModal(false)
-                    } catch (err: any) {
-                      showToast(err.message || 'Erro ao salvar', 'error')
-                    } finally {
-                      setSavingMpToken(false)
-                    }
-                  }}
-                  className="text-[11px] font-bold text-slate-500 hover:text-emerald-500 dark:text-slate-400 underline transition-colors cursor-pointer"
-                >
-                  Ativar Modo de Testes sem chave real
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedMp(!showAdvancedMp)}
-                  className="text-[11px] font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer flex items-center gap-1"
-                >
-                  <CreditCard className="w-3.5 h-3.5" />
-                  <span>{showAdvancedMp ? 'Ocultar Mercado Pago API' : 'Opção Avançada Mercado Pago'}</span>
-                </button>
-              </div>
-
-              {/* Advanced Mercado Pago API Section */}
-              {showAdvancedMp && (
-                <div className="p-4 rounded-2xl bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-white/10 space-y-3 animate-fade-in">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">Mercado Pago Access Token</span>
-                    <button
-                      type="button"
-                      onClick={() => setShowMpTutorialModal(true)}
-                      className="text-[11px] text-[#009EE3] font-bold underline cursor-pointer"
-                    >
-                      Como pegar chave em 30s
-                    </button>
-                  </div>
-                  <input
-                    type="password"
-                    value={mpInputToken}
-                    onChange={e => setMpInputToken(e.target.value)}
-                    placeholder="Cole aqui seu Access Token (APP_USR-...)"
-                    className="w-full input-simple font-bold text-xs bg-white dark:bg-[#182032] border border-slate-200 dark:border-white/10 focus:border-[#009EE3]"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* Actions Footer */}
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setShowMpConfigModal(false)}
-                className="px-4 py-2.5 text-xs font-bold text-slate-500 hover:text-slate-700 dark:text-slate-400 cursor-pointer"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={savingMpToken}
-                onClick={async () => {
-                  try {
-                    setSavingMpToken(true)
-                    const payload: any = {
-                      pixKey: pixInputKey.trim(),
-                    }
-                    if (mpInputToken.trim() && mpInputToken.trim() !== 'SIMULADOR') {
-                      payload.mpAccessToken = mpInputToken.trim()
-                    } else if (pixInputKey.trim() && pixInputKey.trim() !== 'SIMULADOR') {
-                      payload.mpAccessToken = ''
-                    }
-                    await api.updateProfile(payload)
-                    setAdminInfo(prev => prev ? { ...prev, ...payload } : prev)
-                    showToast('Configuração de Recebimento por Pix salva!')
-                    setShowMpConfigModal(false)
-                  } catch (err: any) {
-                    showToast(err.message || 'Erro ao salvar', 'error')
-                  } finally {
-                    setSavingMpToken(false)
-                  }
-                }}
-                className="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20 cursor-pointer transition-all flex items-center gap-2"
-              >
-                {savingMpToken && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
-                Salvar Chave Pix
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MpConfigModal
+        showMpConfigModal={showMpConfigModal}
+        setShowMpConfigModal={setShowMpConfigModal}
+        adminInfo={adminInfo}
+        setAdminInfo={setAdminInfo}
+        pixInputKey={pixInputKey}
+        setPixInputKey={setPixInputKey}
+        mpInputToken={mpInputToken}
+        setMpInputToken={setMpInputToken}
+        setShowMpTutorialModal={setShowMpTutorialModal}
+        showToast={showToast}
+      />
 
       {/* Floating Support Chat Widget */}
       <SupportChatWidget />
