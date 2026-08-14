@@ -175,260 +175,510 @@ export default function Landing() {
       </header>
 
       {/* ═════════════════════════════════════════════════════════════════
-          2. HERO SECTION — HIGH VALUE CONVERSION PITCH
+          2. HERO SECTION — REFINED BIG TECH STANDARD
           ═════════════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 pt-32 sm:pt-40 pb-20 sm:pb-28 px-4 sm:px-6 max-w-6xl mx-auto text-center">
+      <section className="relative z-10 pt-28 sm:pt-36 pb-16 px-4 sm:px-6 max-w-6xl mx-auto text-center">
         
-        {/* Floating Tag */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-md mb-8 animate-fade-in shadow-inner">
+        {/* Sleek Minimalist Badge */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl mb-6 shadow-sm">
           <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] sm:text-xs font-bold text-slate-300">
-            A Plataforma #1 de Agendamento Autônomo & Lucro para Negócios
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-300">
+            Nova Geração: Agendamentos com Pix & Lembretes WhatsApp
           </span>
         </div>
 
-        {/* Main Headline */}
-        <h1 className="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tight leading-[1.08] mb-6 max-w-4xl mx-auto">
+        {/* Elegant Headline (Breathing Typography) */}
+        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.12] mb-5 max-w-3xl mx-auto">
           Sua agenda no piloto automático.{' '}
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400">
-            Seu faturamento no topo.
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-300 to-amber-200">
+            Seu tempo de volta.
           </span>
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-sm sm:text-lg md:text-xl text-slate-400 font-medium leading-relaxed max-w-2xl mx-auto mb-10">
-          Elimine o prejuízo do cliente que marca e não aparece. Receba sinais no Pix automaticamente, atenda 24h por dia e resgate clientes inativos sem perder tempo digitando no WhatsApp.
+        {/* Refined Subtitle */}
+        <p className="text-sm sm:text-base md:text-lg text-slate-400 font-normal leading-relaxed max-w-xl mx-auto mb-8">
+          Elimine o prejuízo do cliente que marca e não aparece. Receba sinais no Pix automaticamente e pare de perder horas respondendo mensagens no WhatsApp.
         </p>
 
-        {/* CTA Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-8">
           <Link
             to="/register"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-black text-sm uppercase tracking-wider shadow-2xl shadow-pink-500/30 hover:shadow-pink-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            className="w-full sm:w-auto px-7 py-3.5 rounded-xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-bold text-xs uppercase tracking-wider shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
-            <span>Experimente 7 Dias Grátis</span>
-            <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            <span>Começar 7 Dias Grátis</span>
+            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
           </Link>
 
           <a
             href="#simulator"
-            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-200 font-bold text-sm transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-300 font-semibold text-xs transition-all flex items-center justify-center gap-2"
           >
-            <Play className="w-3.5 h-3.5 fill-slate-300 text-slate-300" />
-            <span>Ver Demonstração Interativa</span>
+            <Play className="w-3 h-3 fill-slate-300 text-slate-300" />
+            <span>Ver Demonstração</span>
           </a>
         </div>
 
-        {/* Trust Badges */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs font-semibold text-slate-400">
+        {/* Micro Trust Indicators */}
+        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 text-xs text-slate-400 mb-14">
           <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
             <span>Sem cartão de crédito</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Configuração em 2 minutos</span>
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Configuração em 2 min</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-            <span>Pix cai direto na sua conta</span>
+            <Check className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Pix direto na sua conta</span>
           </div>
         </div>
 
-        {/* Floating KPI Cards Banner */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-16 max-w-4xl mx-auto">
-          <div className="bg-[#0B0F19]/80 border border-white/5 rounded-2xl p-4 sm:p-5 text-center">
-            <div className="text-2xl sm:text-3xl font-black text-white mb-1">{stat1.value}</div>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Menos Faltas (No-Show)</div>
+        {/* ── Direct Hero Product Console Preview (Linear / Stripe Grade) ── */}
+        <div className="max-w-4xl mx-auto rounded-2xl p-1 bg-gradient-to-b from-white/15 via-white/5 to-transparent shadow-[0_20px_70px_rgba(0,0,0,0.8)] border border-white/10 relative">
+          
+          {/* Mac Header */}
+          <div className="bg-[#0D111E] rounded-t-xl px-4 py-3 border-b border-white/5 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+              <div className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+            </div>
+            <div className="px-4 py-1 rounded-full bg-[#070913] border border-white/5 text-[11px] font-mono text-slate-400 flex items-center gap-1.5">
+              <Lock className="w-3 h-3 text-emerald-400" />
+              <span>boramarka.com.br/painel</span>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>Agenda Online</span>
+            </div>
           </div>
-          <div className="bg-[#0B0F19]/80 border border-white/5 rounded-2xl p-4 sm:p-5 text-center">
-            <div className="text-2xl sm:text-3xl font-black text-emerald-400 mb-1">{stat2.value}</div>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Economizadas / Semana</div>
-          </div>
-          <div className="bg-[#0B0F19]/80 border border-white/5 rounded-2xl p-4 sm:p-5 text-center">
-            <div className="text-2xl sm:text-3xl font-black text-pink-400 mb-1">{stat3.value}</div>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Agendamentos / Mês</div>
-          </div>
-          <div className="bg-[#0B0F19]/80 border border-white/5 rounded-2xl p-4 sm:p-5 text-center">
-            <div className="text-2xl sm:text-3xl font-black text-violet-400 mb-1">{stat4.value}</div>
-            <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Autônomo & Seguro</div>
+
+          {/* Console Body */}
+          <div className="bg-[#0A0D18] rounded-b-xl p-4 sm:p-6 text-left">
+            {/* Top Metrics Row */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
+              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
+                <span className="text-[10px] font-semibold text-slate-400 block">Faturamento Hoje</span>
+                <span className="text-base sm:text-lg font-black text-white">R$ 940,00</span>
+                <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">+18% vs ontem</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
+                <span className="text-[10px] font-semibold text-slate-400 block">Agendamentos</span>
+                <span className="text-base sm:text-lg font-black text-white">16 clientes</span>
+                <span className="text-[9px] font-bold text-violet-400 block mt-0.5">100% preenchido</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
+                <span className="text-[10px] font-semibold text-slate-400 block">Taxa de No-Show</span>
+                <span className="text-base sm:text-lg font-black text-emerald-400">0.0%</span>
+                <span className="text-[9px] font-bold text-slate-400 block mt-0.5">Sinais liquidados</span>
+              </div>
+              <div className="p-3.5 rounded-xl bg-[#111626] border border-white/5">
+                <span className="text-[10px] font-semibold text-slate-400 block">Lembretes WhatsApp</span>
+                <span className="text-base sm:text-lg font-black text-pink-400">16 enviados</span>
+                <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">Automático</span>
+              </div>
+            </div>
+
+            {/* Live Agenda Feed Preview */}
+            <div className="bg-[#111626] rounded-xl p-3.5 border border-white/5">
+              <div className="flex justify-between items-center mb-2.5 pb-2 border-b border-white/5">
+                <span className="text-xs font-bold text-slate-200">Próximos Agendamentos de Hoje</span>
+                <span className="text-[10px] font-semibold text-slate-400">Sexta-feira, 14 de Agosto</span>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-lg bg-[#0D111E] border border-white/5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 font-bold flex items-center justify-center text-xs">
+                      14:00
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">Lucas Silva</div>
+                      <div className="text-[10px] text-slate-400">Corte Degradê & Barba • Barbeiro Carlos</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      Pix Sinal Pago
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
+                      WhatsApp Enviado ✓
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-[#0D111E] border border-white/5 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 text-violet-400 font-bold flex items-center justify-center text-xs">
+                      15:00
+                    </div>
+                    <div>
+                      <div className="font-bold text-white">Gabriel Santos</div>
+                      <div className="text-[10px] text-slate-400">Barba Terapia + Toalha Quente • Barbeiro Carlos</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                      Pix Sinal Pago
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-400 hidden sm:inline">
+                      WhatsApp Enviado ✓
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
         </div>
+
       </section>
 
       {/* ═════════════════════════════════════════════════════════════════
-          3. INTERACTIVE SIMULATOR (SEE IT IN ACTION)
+          3. ENTERPRISE LIVE SHOWCASE — APPLE-GRADE IPHONE EXPERIENCE
           ═════════════════════════════════════════════════════════════════ */}
-      <section id="simulator" className="relative z-10 py-20 px-4 sm:px-6 max-w-6xl mx-auto">
-        <div className="text-center mb-12">
+      <section id="simulator" className="relative z-10 py-24 px-4 sm:px-6 max-w-6xl mx-auto">
+        <div className="text-center mb-16">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-400 mb-3">
-            <Sparkles className="w-3.5 h-3.5" /> Experiência do Seu Cliente
+            <Sparkles className="w-3.5 h-3.5" /> Demonstração Interativa em Tempo Real
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-            Veja como seu cliente agenda em 15 segundos
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
+            Simplicidade brutal para o cliente.{' '}
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400">
+              Controle total para você.
+            </span>
           </h2>
-          <p className="text-sm text-slate-400 max-w-xl mx-auto mt-2">
-            Simule a experiência exata de reserva que seus clientes terão no celular pelo link da sua bio do Instagram.
+          <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto mt-3">
+            Sem cadastros burocráticos e sem instalar aplicativos. O cliente clica no link da sua bio e agenda em menos de 20 segundos.
           </p>
         </div>
 
-        {/* Mobile Device Frame Mockup */}
-        <div className="max-w-md mx-auto bg-[#0A0D16] border-4 border-slate-800 rounded-[40px] p-4 shadow-2xl shadow-violet-500/10 relative overflow-hidden">
-          {/* Top Notch */}
-          <div className="w-28 h-4 bg-slate-800 rounded-full mx-auto mb-4 flex items-center justify-center">
-            <div className="w-2.5 h-2.5 rounded-full bg-slate-900 mr-2" />
-            <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-          </div>
-
-          <div className="bg-[#111625] rounded-3xl p-5 border border-slate-800/80 min-h-[460px] flex flex-col justify-between">
-            {/* Header Simulator */}
-            <div className="border-b border-slate-800 pb-3 mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-violet-600 to-pink-500 flex items-center justify-center text-white font-black text-xs">
-                  B
+        {/* Side by Side Showcase Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center max-w-5xl mx-auto">
+          
+          {/* Left Column: Interactive Step Selectors & Value Bullets (7 cols) */}
+          <div className="lg:col-span-7 space-y-4">
+            
+            {/* Step 1 Card */}
+            <div 
+              onClick={() => setSimStep(1)}
+              className={`p-5 sm:p-6 rounded-3xl border transition-all duration-300 cursor-pointer ${
+                simStep === 1 
+                  ? 'bg-[#0F1424] border-pink-500/50 shadow-xl shadow-pink-500/10' 
+                  : 'bg-[#070A12]/60 border-white/5 hover:border-white/10 hover:bg-[#070A12]'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-colors ${
+                  simStep === 1 ? 'bg-gradient-to-tr from-violet-600 to-pink-500 text-white shadow-md shadow-pink-500/20' : 'bg-white/5 text-slate-400'
+                }`}>
+                  01
                 </div>
-                <div>
-                  <h4 className="text-xs font-black text-white">Barbearia Alfa & Estética</h4>
-                  <div className="flex items-center gap-1 text-[10px] text-amber-400 font-bold">
-                    <Star className="w-3 h-3 fill-amber-400" /> 4.9 (128 avaliações)
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-black text-white">Catálogo de Serviços & Venda Adicional (Upsell)</h3>
+                    {simStep === 1 && <span className="text-[10px] font-black text-pink-400 uppercase tracking-wider bg-pink-500/10 px-2 py-0.5 rounded-full">Ativo no celular</span>}
                   </div>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Apresente seus serviços com fotos, duração e preços claros. O cliente pode adicionar combos extras com 1 toque antes de finalizar.
+                  </p>
                 </div>
               </div>
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Aberto
-              </span>
             </div>
 
-            {/* Step 1: Select Service */}
-            {simStep === 1 && (
-              <div className="space-y-3 animate-fade-in">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  1. Escolha o serviço
-                </span>
-                {servicesList.map((svc) => (
-                  <button
-                    key={svc.id}
-                    onClick={() => setSimService(svc)}
-                    className={`w-full p-3.5 rounded-2xl border text-left flex items-center justify-between transition-all ${
-                      simService.id === svc.id
-                        ? 'bg-violet-500/10 border-pink-500 text-white shadow-md'
-                        : 'bg-[#0B0F19] border-slate-800 text-slate-300 hover:border-slate-700'
-                    }`}
-                  >
-                    <div>
-                      <div className="text-xs font-bold text-white">{svc.name}</div>
-                      <div className="text-[10px] text-slate-400">{svc.duration} min</div>
-                    </div>
-                    <div className="text-xs font-black text-pink-400">
-                      R$ {svc.price},00
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Step 2: Select Date & Time */}
-            {simStep === 2 && (
-              <div className="space-y-4 animate-fade-in">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  2. Escolha o dia e horário
-                </span>
-                
-                {/* Days Pills */}
-                <div className="grid grid-cols-4 gap-1.5">
-                  {daysList.map((day) => (
-                    <button
-                      key={day}
-                      onClick={() => setSimDay(day)}
-                      className={`py-2 rounded-xl text-center text-[11px] font-bold border transition-all ${
-                        simDay === day
-                          ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white border-transparent'
-                          : 'bg-[#0B0F19] border-slate-800 text-slate-400 hover:text-white'
-                      }`}
-                    >
-                      {day}
-                    </button>
-                  ))}
+            {/* Step 2 Card */}
+            <div 
+              onClick={() => setSimStep(2)}
+              className={`p-5 sm:p-6 rounded-3xl border transition-all duration-300 cursor-pointer ${
+                simStep === 2 
+                  ? 'bg-[#0F1424] border-violet-500/50 shadow-xl shadow-violet-500/10' 
+                  : 'bg-[#070A12]/60 border-white/5 hover:border-white/10 hover:bg-[#070A12]'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-colors ${
+                  simStep === 2 ? 'bg-gradient-to-tr from-violet-600 to-pink-500 text-white shadow-md shadow-violet-500/20' : 'bg-white/5 text-slate-400'
+                }`}>
+                  02
                 </div>
-
-                {/* Times Grid */}
-                <div className="grid grid-cols-3 gap-2">
-                  {timesList.map((tm) => (
-                    <button
-                      key={tm}
-                      onClick={() => setSimTime(tm)}
-                      className={`py-2 rounded-xl text-center text-xs font-bold border transition-all ${
-                        simTime === tm
-                          ? 'bg-pink-500/20 border-pink-500 text-pink-300'
-                          : 'bg-[#0B0F19] border-slate-800 text-slate-300 hover:border-slate-700'
-                      }`}
-                    >
-                      {tm}
-                    </button>
-                  ))}
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-black text-white">Escolha Inteligente de Horários em Tempo Real</h3>
+                    {simStep === 2 && <span className="text-[10px] font-black text-violet-400 uppercase tracking-wider bg-violet-500/10 px-2 py-0.5 rounded-full">Ativo no celular</span>}
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    Sua agenda só exibe horários realmente livres. Elimina de vez o risco de marcações duplas ou confusão de agenda.
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Step 3: Confirmation Voucher */}
-            {simStep === 3 && (
-              <div className="space-y-3 animate-fade-in text-center">
-                <div className="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                  <Check className="w-6 h-6" />
+            {/* Step 3 Card */}
+            <div 
+              onClick={() => setSimStep(3)}
+              className={`p-5 sm:p-6 rounded-3xl border transition-all duration-300 cursor-pointer ${
+                simStep === 3 
+                  ? 'bg-[#0F1424] border-emerald-500/50 shadow-xl shadow-emerald-500/10' 
+                  : 'bg-[#070A12]/60 border-white/5 hover:border-white/10 hover:bg-[#070A12]'
+              }`}
+            >
+              <div className="flex items-start gap-4">
+                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-black text-sm shrink-0 transition-colors ${
+                  simStep === 3 ? 'bg-gradient-to-tr from-emerald-500 to-teal-400 text-white shadow-md shadow-emerald-500/20' : 'bg-white/5 text-slate-400'
+                }`}>
+                  03
                 </div>
-                <h5 className="text-sm font-black text-white">Horário Reservado!</h5>
-                
-                <div className="bg-[#0B0F19] rounded-2xl p-3.5 border border-slate-800 text-left text-xs space-y-1.5">
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-500 font-bold">Serviço:</span>
-                    <span className="font-bold text-white">{simService.name}</span>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-base font-black text-white">Sinal no Pix + Confirmação no WhatsApp</h3>
+                    {simStep === 3 && <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded-full">Ativo no celular</span>}
                   </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-500 font-bold">Data & Hora:</span>
-                    <span className="font-bold text-emerald-400">{simDay} às {simTime}</span>
-                  </div>
-                  <div className="flex justify-between text-slate-300">
-                    <span className="text-slate-500 font-bold">Sinal (Pix):</span>
-                    <span className="font-bold text-pink-400">R$ 15,00 (Pago)</span>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[10px] text-emerald-300 font-bold flex items-center justify-center gap-1.5">
-                  <MessageSquare className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Comprovante e lembrete enviados via WhatsApp!</span>
+                  <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                    O sinal antecipado garante o compromisso do cliente. O comprovante com código de cancelamento e lembrete é disparado no WhatsApp na hora.
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
 
-            {/* Navigation Buttons inside device */}
-            <div className="pt-4 border-t border-slate-800 flex gap-2">
-              {simStep > 1 && (
-                <button
-                  onClick={() => setSimStep((s) => s - 1)}
-                  className="px-3 py-2 rounded-xl bg-slate-800 text-xs font-bold text-slate-300 hover:text-white"
-                >
-                  Voltar
-                </button>
-              )}
-              {simStep < 3 ? (
-                <button
-                  onClick={() => setSimStep((s) => s + 1)}
-                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white text-xs font-black shadow-md flex items-center justify-center gap-1"
-                >
-                  <span>Continuar</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              ) : (
-                <button
-                  onClick={() => setSimStep(1)}
-                  className="flex-1 py-2.5 rounded-xl bg-slate-800 text-slate-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Testar novamente</span>
-                </button>
-              )}
+            {/* Quick Metrics Bar */}
+            <div className="pt-2 flex items-center gap-4 text-xs font-bold text-slate-400">
+              <div className="flex items-center gap-1.5 text-emerald-400">
+                <CheckCircle2 className="w-4 h-4" /> <span>Conversão Média de 84%</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-pink-400">
+                <Clock className="w-4 h-4" /> <span>Reserva em ~18 segundos</span>
+              </div>
             </div>
           </div>
+
+          {/* Right Column: Titanium iPhone Mockup (5 cols) */}
+          <div className="lg:col-span-5 flex justify-center">
+            
+            {/* Apple iPhone 16 Pro Titanium Frame */}
+            <div className="w-[300px] sm:w-[320px] rounded-[50px] p-[10px] bg-gradient-to-b from-[#2A3040] via-[#151926] to-[#0A0D18] border border-white/20 shadow-[0_25px_70px_rgba(0,0,0,0.9),0_0_50px_rgba(236,72,153,0.12)] ring-1 ring-black/80 relative">
+              
+              {/* Volume and Power Buttons simulation */}
+              <div className="absolute -left-[12px] top-24 w-[3px] h-9 bg-slate-700 rounded-l-md"></div>
+              <div className="absolute -left-[12px] top-36 w-[3px] h-12 bg-slate-700 rounded-l-md"></div>
+              <div className="absolute -right-[12px] top-28 w-[3px] h-16 bg-slate-700 rounded-r-md"></div>
+
+              {/* Screen Glass Container */}
+              <div className="w-full bg-[#090C16] rounded-[40px] overflow-hidden border border-white/5 text-white flex flex-col justify-between h-[580px] relative">
+                
+                {/* Status Bar & Dynamic Island */}
+                <div className="pt-3 px-6 flex items-center justify-between z-20 text-[11px] font-semibold text-slate-300">
+                  <span>09:41</span>
+                  
+                  {/* Dynamic Island Pill */}
+                  <div className="w-24 h-5 bg-black rounded-full flex items-center justify-between px-2.5 shadow-inner">
+                    <div className="w-2 h-2 rounded-full bg-[#1A1E2D]" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-900/60" />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 text-[10px]">
+                    <span>5G</span>
+                    <div className="w-4 h-2.5 border border-white/60 rounded-sm p-0.5 flex items-center">
+                      <div className="w-full h-full bg-white rounded-2xs" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Simulated WhatsApp Push Notification Toast (Only on Step 3) */}
+                {simStep === 3 && (
+                  <div className="absolute top-12 inset-x-3 z-30 animate-slide-up">
+                    <div className="bg-[#121B2B]/95 backdrop-blur-xl border border-emerald-500/30 rounded-2xl p-2.5 shadow-xl flex items-center gap-2.5">
+                      <div className="w-7 h-7 rounded-full bg-[#25D366] flex items-center justify-center shrink-0 text-white font-bold text-xs shadow-md">
+                        <MessageSquare className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-center text-[10px]">
+                          <span className="font-bold text-emerald-400">WhatsApp • Agora</span>
+                        </div>
+                        <p className="text-[10px] text-slate-200 truncate font-medium">
+                          BoraMarka: Seu horário para <strong>{simService.name}</strong> está confirmado!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Inner Screen Content */}
+                <div className="px-4 py-3 flex-1 flex flex-col justify-between overflow-y-auto custom-scrollbar">
+                  
+                  {/* Shop Header */}
+                  <div className="pt-1 pb-3 border-b border-white/5 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center text-white font-black text-xs shadow-sm">
+                        B
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-black text-white">Barbearia Alfa & Spa</h4>
+                        <div className="flex items-center gap-1 text-[9px] text-amber-400 font-bold">
+                          <Star className="w-2.5 h-2.5 fill-amber-400" /> 4.9 (128 avaliações)
+                        </div>
+                      </div>
+                    </div>
+                    <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                      Disponível
+                    </span>
+                  </div>
+
+                  {/* Step 1 View: Service Selection */}
+                  {simStep === 1 && (
+                    <div className="space-y-2 py-2 animate-fade-in">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        <span>Serviços Disponíveis</span>
+                        <span className="text-pink-400">1 de 3</span>
+                      </div>
+
+                      {servicesList.map((svc) => (
+                        <div
+                          key={svc.id}
+                          onClick={() => setSimService(svc)}
+                          className={`p-3 rounded-2xl border transition-all cursor-pointer ${
+                            simService.id === svc.id
+                              ? 'bg-gradient-to-r from-violet-900/30 to-pink-900/30 border-pink-500/60 shadow-md shadow-pink-500/10'
+                              : 'bg-[#111625] border-white/5 hover:border-white/10'
+                          }`}
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <div className="text-xs font-bold text-white">{svc.name}</div>
+                              <div className="text-[9px] text-slate-400 flex items-center gap-1 mt-0.5">
+                                <Clock className="w-2.5 h-2.5" /> {svc.duration} minutos
+                              </div>
+                            </div>
+                            <div className="text-xs font-black text-pink-400">
+                              R$ {svc.price},00
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Upsell mini badge */}
+                      <div className="p-2 rounded-xl bg-violet-500/10 border border-violet-500/20 text-[9px] text-violet-300 flex items-center justify-between">
+                        <span>✨ Combo Cabelo + Sobrancelha (+R$ 15)</span>
+                        <span className="font-bold text-pink-400">Adicionado</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 2 View: Date & Time */}
+                  {simStep === 2 && (
+                    <div className="space-y-3 py-2 animate-fade-in">
+                      <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-wider text-slate-400">
+                        <span>Escolha a Data & Horário</span>
+                        <span className="text-violet-400">2 de 3</span>
+                      </div>
+
+                      {/* Days Row */}
+                      <div className="grid grid-cols-4 gap-1">
+                        {daysList.map((d) => (
+                          <button
+                            key={d}
+                            onClick={() => setSimDay(d)}
+                            className={`py-2 rounded-xl text-center text-[10px] font-bold border transition-all ${
+                              simDay === d
+                                ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white border-transparent shadow-sm'
+                                : 'bg-[#111625] border-white/5 text-slate-400'
+                            }`}
+                          >
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Times Grid */}
+                      <div className="grid grid-cols-3 gap-1.5 pt-1">
+                        {timesList.map((t) => (
+                          <button
+                            key={t}
+                            onClick={() => setSimTime(t)}
+                            className={`py-2 rounded-xl text-center text-[11px] font-bold border transition-all ${
+                              simTime === t
+                                ? 'bg-pink-500/20 border-pink-500 text-pink-300 shadow-sm'
+                                : 'bg-[#111625] border-white/5 text-slate-300'
+                            }`}
+                          >
+                            {t}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Step 3 View: Confirmation Voucher */}
+                  {simStep === 3 && (
+                    <div className="py-2 text-center space-y-2.5 animate-fade-in">
+                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+                        <Check className="w-5 h-5" />
+                      </div>
+                      
+                      <div>
+                        <h5 className="text-xs font-black text-white">Reserva Confirmada!</h5>
+                        <p className="text-[9px] text-slate-400">Comprovante gerado com sucesso</p>
+                      </div>
+
+                      <div className="bg-[#111625] rounded-2xl p-3 border border-white/5 text-left text-[10px] space-y-1.5">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Serviço:</span>
+                          <span className="font-bold text-white truncate max-w-[130px]">{simService.name}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Horário:</span>
+                          <span className="font-bold text-emerald-400">{simDay} às {simTime}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Sinal Pix:</span>
+                          <span className="font-bold text-pink-400">R$ 15,00 (Pago)</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Bottom Action inside Screen */}
+                  <div className="pt-2 border-t border-white/5 flex gap-1.5">
+                    {simStep > 1 && (
+                      <button
+                        onClick={() => setSimStep((s) => s - 1)}
+                        className="px-3 py-2 rounded-xl bg-slate-800 text-[10px] font-bold text-slate-300"
+                      >
+                        Voltar
+                      </button>
+                    )}
+                    {simStep < 3 ? (
+                      <button
+                        onClick={() => setSimStep((s) => s + 1)}
+                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-[11px] font-black uppercase tracking-wider shadow-md flex items-center justify-center gap-1"
+                      >
+                        <span>Próximo Passo</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setSimStep(1)}
+                        className="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-bold flex items-center justify-center gap-1"
+                      >
+                        <RotateCcw className="w-3 h-3" />
+                        <span>Simular Novo Agendamento</span>
+                      </button>
+                    )}
+                  </div>
+
+                </div>
+
+                {/* Home Indicator Bar */}
+                <div className="pb-2 flex justify-center">
+                  <div className="w-28 h-1 bg-white/20 rounded-full" />
+                </div>
+
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </section>
 
