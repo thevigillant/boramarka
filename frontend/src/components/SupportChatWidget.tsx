@@ -1,35 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react'
 import {
   LifeBuoy, MessageSquare, X, Send, Plus, ChevronLeft,
-  CheckCircle2, Clock, Loader2, Sparkles, HelpCircle
+  CheckCircle2, Clock, Loader2, Sparkles, HelpCircle, Star, Paperclip, AlertTriangle, Bot
 } from 'lucide-react'
-import { api } from '../services/api'
-
-interface TicketMessage {
-  id: number
-  ticketId: number
-  senderRole: 'USER' | 'SUPERADMIN'
-  senderName: string
-  message: string
-  createdAt: string
-}
-
-interface SupportTicket {
-  id: number
-  subject: string
-  category: string
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED'
-  priority: string
-  createdAt: string
-  updatedAt: string
-  messages?: TicketMessage[]
-}
+import { api, SupportTicketItem, SupportMessageItem, SupportReplyTemplateItem } from '../services/api'
 
 export default function SupportChatWidget() {
   const [isOpen, setIsOpen] = useState(false)
-  const [tickets, setTickets] = useState<SupportTicket[]>([])
-  const [activeTicket, setActiveTicket] = useState<SupportTicket | null>(null)
-  const [messages, setMessages] = useState<TicketMessage[]>([])
+  const [tickets, setTickets] = useState<SupportTicketItem[]>([])
+  const [activeTicket, setActiveTicket] = useState<SupportTicketItem | null>(null)
+  const [messages, setMessages] = useState<SupportMessageItem[]>([])
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [viewMode, setViewMode] = useState<'LIST' | 'CHAT' | 'NEW'>('LIST')
@@ -39,12 +19,24 @@ export default function SupportChatWidget() {
   const [newCategory, setNewCategory] = useState('DUVIDA')
   const [newMessage, setNewMessage] = useState('')
   const [chatInput, setChatInput] = useState('')
+  const [attachmentUrl, setAttachmentUrl] = useState('')
+  const [attachmentName, setAttachmentName] = useState('')
 
+  // Rating & Satisfaction Modal State
+  const [ratingModalTicketId, setRatingModalTicketId] = useState<number | null>(null)
+  const [starRating, setStarRating] = useState(5)
+  const [ratingComment, setRatingComment] = useState('')
+  const [submittingRating, setSubmittingRating] = useState(false)
+
+  // Templates State
+  const [templates, setTemplates] = useState<SupportReplyTemplateItem[]>([])
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (isOpen) {
       fetchTickets()
+      fetchTemplates()
     }
   }, [isOpen])
 
@@ -72,14 +64,37 @@ export default function SupportChatWidget() {
     }
   }
 
+  const fetchTemplates = async () => {
+    try {
+      const data = await api.getSupportTemplates()
+      setTemplates(data)
+    } catch (err) {
+      console.error('Erro ao carregar templates de resposta:', err)
+    }
+  }
+
   const fetchTicketDetails = async (ticketId: number) => {
     try {
-      const data = await api.getTicketDetails(ticketId)
+      const data = await api.getSupportTicket(ticketId)
       setActiveTicket(data)
       setMessages(data.messages || [])
     } catch (err) {
       console.error('Erro ao carregar conversa:', err)
     }
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        setAttachmentUrl(event.target.result as string)
+        setAttachmentName(file.name)
+      }
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''
   }
 
   const handleCreateTicket = async (e: React.FormEvent) => {
@@ -92,9 +107,13 @@ export default function SupportChatWidget() {
         subject: newSubject,
         category: newCategory,
         message: newMessage,
+        attachmentUrl,
+        attachmentName,
       })
       setNewSubject('')
       setNewMessage('')
+      setAttachmentUrl('')
+      setAttachmentName('')
       await fetchTickets()
       fetchTicketDetails(created.id)
       setViewMode('CHAT')
@@ -110,12 +129,25 @@ export default function SupportChatWidget() {
     if (!chatInput.trim() || !activeTicket) return
 
     const msg = chatInput
+    const url = attachmentUrl
+    const name = attachmentName
+
     setChatInput('')
+    setAttachmentUrl('')
+    setAttachmentName('')
 
     try {
       setSending(true)
-      const sent = await api.sendTicketMessage(activeTicket.id, msg)
-      setMessages((prev: TicketMessage[]) => [...prev, sent])
+      const sent = await api.sendSupportMessage(activeTicket.id, {
+        message: msg,
+        attachmentUrl: url,
+        attachmentName: name,
+      })
+      setMessages((prev: SupportMessageItem[]) => [...prev, sent])
+      // Atualiza o chat para buscar a resposta automática imediata do Assistente IA
+      setTimeout(() => {
+        fetchTicketDetails(activeTicket.id)
+      }, 400)
     } catch (err: any) {
       alert(err.message || 'Erro ao enviar mensagem.')
       setChatInput(msg)
@@ -127,11 +159,27 @@ export default function SupportChatWidget() {
   const handleResolveTicket = async () => {
     if (!activeTicket) return
     try {
-      await api.updateTicketStatus(activeTicket.id, 'RESOLVED')
+      await api.updateSupportStatus(activeTicket.id, 'RESOLVED')
+      setRatingModalTicketId(activeTicket.id)
       fetchTicketDetails(activeTicket.id)
       fetchTickets()
     } catch (err: any) {
       alert(err.message || 'Erro ao atualizar status.')
+    }
+  }
+
+  const handleSubmitRating = async () => {
+    if (!ratingModalTicketId) return
+    try {
+      setSubmittingRating(true)
+      await api.submitSupportSatisfaction(ratingModalTicketId, starRating, ratingComment)
+      setRatingModalTicketId(null)
+      setRatingComment('')
+      fetchTickets()
+    } catch (err: any) {
+      alert(err.message || 'Erro ao salvar avaliação.')
+    } finally {
+      setSubmittingRating(false)
     }
   }
 
@@ -154,15 +202,67 @@ export default function SupportChatWidget() {
           <div className="flex items-center gap-2">
             <LifeBuoy className="w-6 h-6 animate-pulse" />
             <span className="max-w-0 overflow-hidden group-hover:max-w-xs transition-all duration-500 whitespace-nowrap text-xs font-black uppercase tracking-wider pl-1">
-              Chat de Ajuda
+              Helpdesk & Suporte
             </span>
           </div>
         )}
       </button>
 
+      {/* Satisfaction Rating Modal */}
+      {ratingModalTicketId && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#111625] border border-slate-200 dark:border-slate-800 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative text-center space-y-4 animate-scale-in">
+            <div className="w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center mx-auto font-bold">
+              <Star className="w-6 h-6 fill-amber-500" />
+            </div>
+            <div>
+              <h3 className="text-base font-extrabold text-slate-900 dark:text-white">Como foi seu atendimento?</h3>
+              <p className="text-xs text-slate-400 font-medium">Sua avaliação melhora nosso suporte técnico</p>
+            </div>
+
+            {/* Star selector */}
+            <div className="flex items-center justify-center gap-2 py-2">
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  onClick={() => setStarRating(star)}
+                  className="p-1 hover:scale-125 transition-transform"
+                >
+                  <Star className={`w-7 h-7 ${star <= starRating ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-700'}`} />
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              rows={2}
+              value={ratingComment}
+              onChange={e => setRatingComment(e.target.value)}
+              placeholder="Deixe um comentário opcional..."
+              className="input-simple text-xs font-medium w-full bg-slate-50 dark:bg-[#182032] border border-slate-200 dark:border-slate-800 rounded-xl p-3"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={() => setRatingModalTicketId(null)}
+                className="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-800 text-xs font-bold text-slate-400"
+              >
+                Pular
+              </button>
+              <button
+                onClick={handleSubmitRating}
+                disabled={submittingRating}
+                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs font-black shadow-md flex items-center justify-center gap-1 disabled:opacity-50"
+              >
+                {submittingRating ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Enviar Avaliação'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating Chat Drawer Container */}
       {isOpen && (
-        <div className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[560px] max-h-[calc(100vh-8rem)] bg-white/95 dark:bg-[#0D111E]/95 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scale-in">
+        <div className="fixed bottom-24 right-6 z-50 w-[390px] max-w-[calc(100vw-2rem)] h-[580px] max-h-[calc(100vh-8rem)] bg-white/95 dark:bg-[#0D111E]/95 backdrop-blur-2xl border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden animate-scale-in">
           
           {/* Header */}
           <div className="p-4 bg-gradient-to-r from-violet-600 to-pink-600 text-white flex items-center justify-between shrink-0 shadow-md">
@@ -179,10 +279,10 @@ export default function SupportChatWidget() {
                 <LifeBuoy className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-black tracking-wide leading-tight">Suporte BoraMarka</h4>
+                <h4 className="text-sm font-black tracking-wide leading-tight">Helpdesk BoraMarka</h4>
                 <p className="text-[10px] text-white/80 font-bold flex items-center gap-1 mt-0.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping inline-block" />
-                  Atendimento em tempo real
+                  SLA Ativo & Resposta Rápida
                 </p>
               </div>
             </div>
@@ -222,7 +322,7 @@ export default function SupportChatWidget() {
                   <div className="py-12 text-center space-y-3 bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-6">
                     <HelpCircle className="w-10 h-10 text-slate-300 dark:text-slate-700 mx-auto" />
                     <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Precisa de ajuda ou tem dúvidas?</p>
-                    <p className="text-[11px] text-slate-400">Abra um chamado diretamente com a nossa equipe de suporte.</p>
+                    <p className="text-[11px] text-slate-400">Abra um chamado diretamente com nossa equipe técnica.</p>
                     <button
                       onClick={() => setViewMode('NEW')}
                       className="px-4 py-2 bg-pink-500 text-white rounded-xl text-xs font-bold shadow-md hover:bg-pink-600 transition-all cursor-pointer inline-flex items-center gap-1.5"
@@ -232,7 +332,7 @@ export default function SupportChatWidget() {
                   </div>
                 ) : (
                   <div className="space-y-2.5">
-                    {tickets.map((ticket: SupportTicket) => (
+                    {tickets.map((ticket: SupportTicketItem) => (
                       <div
                         key={ticket.id}
                         onClick={() => {
@@ -242,9 +342,16 @@ export default function SupportChatWidget() {
                         className="p-3.5 rounded-2xl bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 hover:border-pink-500/40 transition-all cursor-pointer shadow-sm space-y-2"
                       >
                         <div className="flex items-center justify-between">
-                          <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
-                            #{ticket.id} • {ticket.category}
-                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20">
+                              #{ticket.id} • {ticket.category}
+                            </span>
+                            {ticket.priority === 'HIGH' && (
+                              <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-red-500/10 text-red-500 border border-red-500/20">
+                                Alta
+                              </span>
+                            )}
+                          </div>
                           <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
                             ticket.status === 'RESOLVED'
                               ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
@@ -258,7 +365,11 @@ export default function SupportChatWidget() {
                         <h5 className="text-xs font-black text-slate-900 dark:text-white truncate">{ticket.subject}</h5>
                         <div className="flex items-center justify-between text-[10px] text-slate-400">
                           <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {formatTime(ticket.updatedAt)}</span>
-                          <span className="text-pink-500 font-bold hover:underline">Ver conversa &rarr;</span>
+                          {ticket.isOverdue && (
+                            <span className="text-red-500 font-extrabold flex items-center gap-0.5">
+                              <AlertTriangle className="w-3 h-3" /> SLA Estourado
+                            </span>
+                          )}
                         </div>
                       </div>
                     ))}
@@ -277,10 +388,10 @@ export default function SupportChatWidget() {
                     onChange={e => setNewCategory(e.target.value)}
                     className="input-simple text-xs font-bold w-full bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
                   >
-                    <option value="DUVIDA" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Dúvida de Uso</option>
-                    <option value="FINANCEIRO" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Financeiro / Planos</option>
-                    <option value="TECNICO" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Problema Técnico</option>
-                    <option value="SUGESTAO" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Sugestão de Melhoria</option>
+                    <option value="DUVIDA" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Dúvida de Uso (SLA 48h)</option>
+                    <option value="FINANCEIRO" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Financeiro / Planos (Prioridade Alta 24h)</option>
+                    <option value="TECNICO" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Problema Técnico (Prioridade Alta 24h)</option>
+                    <option value="SUGESTAO" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Sugestão de Melhoria (SLA 48h)</option>
                   </select>
                 </div>
 
@@ -306,6 +417,22 @@ export default function SupportChatWidget() {
                     className="input-simple text-xs font-medium w-full bg-white text-slate-900 dark:bg-[#131826] dark:text-white resize-none"
                     required
                   />
+                </div>
+
+                {/* Attachment options */}
+                <div className="flex items-center gap-2">
+                  <input ref={fileInputRef} type="file" onChange={handleFileUpload} className="hidden" accept="image/*,.pdf" />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-xs font-bold flex items-center gap-1.5"
+                  >
+                    <Paperclip className="w-3.5 h-3.5" />
+                    <span>{attachmentName ? attachmentName.slice(0, 15) + '...' : 'Anexar Print'}</span>
+                  </button>
+                  {attachmentName && (
+                    <button type="button" onClick={() => { setAttachmentUrl(''); setAttachmentName('') }} className="text-red-500 text-xs font-bold">Limpar</button>
+                  )}
                 </div>
 
                 <button
@@ -340,22 +467,35 @@ export default function SupportChatWidget() {
 
                 {/* Messages Feed */}
                 <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar min-h-[220px]">
-                  {messages.map((msg: TicketMessage) => {
+                  {messages.map((msg: SupportMessageItem) => {
                     const isUser = msg.senderRole === 'USER'
+                    const isBot = msg.senderName.includes('IA') || msg.senderName.includes('Assistente')
                     return (
                       <div
                         key={msg.id}
                         className={`flex flex-col ${isUser ? 'items-end' : 'items-start'}`}
                       >
-                        <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider px-1 mb-1">
-                          {msg.senderName} • {formatTime(msg.createdAt)}
-                        </span>
-                        <div className={`p-3 rounded-2xl text-xs font-medium max-w-[85%] leading-relaxed shadow-sm ${
+                        <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-400 uppercase tracking-wider px-1 mb-1">
+                          {isBot && (
+                            <span className="inline-flex items-center gap-1 text-pink-500 font-extrabold bg-pink-500/10 px-1.5 py-0.5 rounded-md">
+                              <Bot className="w-3 h-3" /> IA
+                            </span>
+                          )}
+                          <span>{msg.senderName} • {formatTime(msg.createdAt)}</span>
+                        </div>
+                        <div className={`p-3.5 rounded-2xl text-xs font-medium max-w-[88%] leading-relaxed shadow-sm whitespace-pre-line ${
                           isUser
                             ? 'bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-tr-none'
                             : 'bg-slate-100 dark:bg-[#1A2235] text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-800 rounded-tl-none'
                         }`}>
                           {msg.message}
+                          {msg.attachmentUrl && (
+                            <div className="mt-2 pt-2 border-t border-white/20">
+                              <a href={msg.attachmentUrl} target="_blank" rel="noreferrer" className="text-[11px] font-bold underline flex items-center gap-1">
+                                <Paperclip className="w-3 h-3" /> {msg.attachmentName || 'Ver anexo'}
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     )
@@ -369,21 +509,38 @@ export default function SupportChatWidget() {
                      Este chamado foi marcado como concluído.
                   </div>
                 ) : (
-                  <form onSubmit={handleSendMessage} className="flex items-center gap-2 shrink-0 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <input
-                      type="text"
-                      value={chatInput}
-                      onChange={e => setChatInput(e.target.value)}
-                      placeholder="Escreva sua resposta..."
-                      className="input-simple text-xs py-2 px-3 flex-1 bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
-                    />
-                    <button
-                      type="submit"
-                      disabled={sending || !chatInput.trim()}
-                      className="p-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
-                    >
-                      {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                    </button>
+                  <form onSubmit={handleSendMessage} className="space-y-2 shrink-0 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    {/* Quick Template Selector */}
+                    {templates.length > 0 && (
+                      <select
+                        onChange={e => {
+                          if (e.target.value) setChatInput(e.target.value)
+                        }}
+                        className="w-full text-[11px] font-medium bg-slate-50 dark:bg-[#131826] border border-slate-200 dark:border-slate-800 rounded-xl px-2 py-1"
+                      >
+                        <option value="">Respostas Rápidas de Exemplo...</option>
+                        {templates.map(t => (
+                          <option key={t.id} value={t.content}>{t.title}</option>
+                        ))}
+                      </select>
+                    )}
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={chatInput}
+                        onChange={e => setChatInput(e.target.value)}
+                        placeholder="Escreva sua resposta..."
+                        className="input-simple text-xs py-2 px-3 flex-1 bg-white text-slate-900 dark:bg-[#131826] dark:text-white"
+                      />
+                      <button
+                        type="submit"
+                        disabled={sending || !chatInput.trim()}
+                        className="p-2.5 bg-gradient-to-r from-violet-600 to-pink-600 text-white rounded-xl shadow-md hover:opacity-95 transition-all cursor-pointer disabled:opacity-50"
+                      >
+                        {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                      </button>
+                    </div>
                   </form>
                 )}
               </div>
