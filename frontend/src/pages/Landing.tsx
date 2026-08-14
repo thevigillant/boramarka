@@ -1068,7 +1068,7 @@ export default function Landing() {
       </section>
 
       {/* ═════════════════════════════════════════════════════════════════
-          6. PRICING SECTION — BIGTECH-GRADE SAAS TIERS
+          6. PRICING SECTION — CLEAN ENTERPRISE SAAS TIERS
           ═════════════════════════════════════════════════════════════════ */}
       <section id="pricing" className="relative z-10 py-24 px-4 sm:px-6 max-w-6xl mx-auto">
         
@@ -1078,13 +1078,13 @@ export default function Landing() {
             <CreditCard className="w-3.5 h-3.5" /> Planos & Investimento
           </div>
           <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-            Escolha o plano ideal para a sua escala
+            Escolha o plano ideal para o seu negócio
           </h2>
           <p className="text-sm sm:text-base text-slate-400 max-w-xl mx-auto mt-3">
             Comece com 7 dias de teste gratuito sem precisar cadastrar cartão de crédito. Cancele quando quiser.
           </p>
 
-          {/* Billing Switch Toggle (Monthly vs Annual) */}
+          {/* Billing Switch Toggle (Mensal vs Anual) */}
           <div className="inline-flex items-center bg-[#070A12] border border-white/10 p-1.5 rounded-full mt-8 shadow-xl">
             <button
               onClick={() => setBillingPeriod('monthly')}
@@ -1094,7 +1094,7 @@ export default function Landing() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              Faturamento Mensal
+              Mensal
             </button>
             <button
               onClick={() => setBillingPeriod('annual')}
@@ -1104,9 +1104,9 @@ export default function Landing() {
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <span>Faturamento Anual</span>
+              <span>Anual</span>
               <span className="text-[10px] font-black bg-emerald-400 text-slate-950 px-2 py-0.5 rounded-full">
-                -28% OFF
+                Economize até 28%
               </span>
             </button>
           </div>
@@ -1129,17 +1129,27 @@ export default function Landing() {
 
               {/* Price Display */}
               <div className="mb-6 pb-6 border-b border-white/5">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black text-white">
-                    R$ {billingPeriod === 'annual' ? '29,90' : '39,90'}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">/ mês</span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1">
-                  {billingPeriod === 'annual' 
-                    ? 'R$ 358,80 faturado anualmente' 
-                    : 'Sem fidelidade, cancele quando quiser'}
-                </div>
+                {billingPeriod === 'monthly' ? (
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 39,90</span>
+                      <span className="text-xs text-slate-400 font-medium">/ mês</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Cobrança mensal • Sem fidelidade
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 358,80</span>
+                      <span className="text-xs text-slate-400 font-medium">/ ano</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-400 font-bold mt-1">
+                      Equivale a R$ 29,90/mês (Desconto de R$ 10,00/mês)
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Feature List */}
@@ -1202,17 +1212,27 @@ export default function Landing() {
 
               {/* Price Display */}
               <div className="mb-6 pb-6 border-b border-white/10">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-4xl sm:text-5xl font-black text-white">
-                    R$ {billingPeriod === 'annual' ? '49,90' : '69,90'}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">/ mês</span>
-                </div>
-                <div className="text-[11px] text-pink-300 font-semibold mt-1">
-                  {billingPeriod === 'annual' 
-                    ? 'R$ 598,80 faturado anualmente (Economia de R$ 240/ano)' 
-                    : 'Faturamento mensal sem compromisso'}
-                </div>
+                {billingPeriod === 'monthly' ? (
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl sm:text-5xl font-black text-white">R$ 69,90</span>
+                      <span className="text-xs text-slate-400 font-medium">/ mês</span>
+                    </div>
+                    <div className="text-[11px] text-slate-400 mt-1">
+                      Cobrança mensal • Sem fidelidade
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-4xl sm:text-5xl font-black text-white">R$ 598,80</span>
+                      <span className="text-xs text-slate-400 font-medium">/ ano</span>
+                    </div>
+                    <div className="text-[11px] text-pink-300 font-bold mt-1">
+                      Equivale a R$ 49,90/mês (Desconto de R$ 20,00/mês • Economia de R$ 240,00)
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Feature List */}
@@ -1272,17 +1292,27 @@ export default function Landing() {
 
               {/* Price Display */}
               <div className="mb-6 pb-6 border-b border-white/5">
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl sm:text-4xl font-black text-white">
-                    R$ {billingPeriod === 'annual' ? '89,90' : '119,90'}
-                  </span>
-                  <span className="text-xs text-slate-400 font-medium">/ mês</span>
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1">
-                  {billingPeriod === 'annual' 
-                    ? 'R$ 1.078,80 faturado anualmente' 
-                    : 'Sem fidelidade, cancele quando quiser'}
-                </div>
+                {billingPeriod === 'monthly' ? (
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 119,90</span>
+                      <span className="text-xs text-slate-400 font-medium">/ mês</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      Cobrança mensal • Sem fidelidade
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-3xl sm:text-4xl font-black text-white">R$ 1.078,80</span>
+                      <span className="text-xs text-slate-400 font-medium">/ ano</span>
+                    </div>
+                    <div className="text-[11px] text-amber-400 font-bold mt-1">
+                      Equivale a R$ 89,90/mês (Desconto de R$ 30,00/mês • Economia de R$ 360,00)
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Feature List */}
