@@ -252,198 +252,246 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Floating Pill 2: AI WhatsApp Sent (Top Right) */}
-          <div className="absolute -top-6 -right-2 sm:-right-6 z-30 hidden sm:flex items-center gap-2.5 bg-[#0D1222]/95 backdrop-blur-xl border border-violet-500/30 rounded-2xl px-4 py-2.5 shadow-2xl shadow-violet-500/10 animate-bounce" style={{ animationDuration: '4.8s' }}>
-            <div className="w-7 h-7 rounded-xl bg-violet-500/20 text-violet-400 flex items-center justify-center font-bold text-xs">
-              🤖
-            </div>
-            <div className="text-left text-[11px]">
-              <div className="font-bold text-white">WhatsApp Automático</div>
-              <div className="text-violet-300 text-[10px]">Lembrete de 2h disparado ✓</div>
-            </div>
-          </div>
-
-          {/* Main Dashboard Window */}
-          <div className="bg-[#0A0D18] border border-white/15 rounded-3xl overflow-hidden shadow-2xl text-left">
+          {/* Floating Pill 2: AI WhatsApp Sent           {/* Main Dashboard Window — EXACT REPLICA OF REAL BORAMARKA DASHBOARD */}
+          <div className="bg-[#050711] border border-white/15 rounded-3xl overflow-hidden shadow-2xl text-left">
             
-            {/* Window Topbar */}
-            <div className="bg-[#0E1322] px-4 py-3 border-b border-white/5 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-[#FF5F56]" />
-                <div className="w-3 h-3 rounded-full bg-[#FFBD2E]" />
-                <div className="w-3 h-3 rounded-full bg-[#27C93F]" />
-                <span className="ml-3 text-xs font-bold text-slate-300 hidden sm:inline">
-                  BoraMarka Enterprise • Studio Alfa & Spa
+            {/* Topbar: BoraMarka Logo, Slogan, Search & User Profile */}
+            <div className="bg-[#0A0D18] px-4 sm:px-6 py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <BoraMarkaLogo size="sm" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">
+                  Sua agenda cheia, sem complicação
                 </span>
               </div>
-              
+
+              {/* Search bar ⌘K */}
+              <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050711] border border-white/10 text-xs text-slate-400 w-64">
+                <span>🔍 Buscar cliente, serviço...</span>
+                <kbd className="ml-auto text-[10px] bg-white/5 px-1.5 py-0.5 rounded text-slate-500 font-mono">⌘K</kbd>
+              </div>
+
+              {/* User Avatar Card */}
               <div className="flex items-center gap-2">
-                <div className="px-3 py-1 rounded-full bg-[#060810] border border-white/10 text-[11px] font-mono text-slate-400 hidden sm:flex items-center gap-1.5">
-                  <Lock className="w-3 h-3 text-emerald-400" />
-                  <span>boramarka.com.br/painel</span>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#050711] border border-white/10 text-xs">
+                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center font-bold text-white text-[10px]">
+                    B
+                  </div>
+                  <div className="text-left hidden sm:block">
+                    <div className="font-bold text-white text-[11px]">BoraMarka Admin</div>
+                    <div className="text-[9px] text-pink-400 font-semibold">@odonodoboramarka</div>
+                  </div>
                 </div>
-                <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Ao Vivo
-                </span>
               </div>
             </div>
 
-            {/* Window Body: Sidebar + Main App Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[420px]">
-              
-              {/* Sidebar (Desktop 3 cols) */}
-              <div className="hidden lg:flex lg:col-span-3 bg-[#080B14] border-r border-white/5 p-4 flex-col justify-between">
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 px-2 py-1.5 bg-white/5 rounded-xl border border-white/5">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center font-black text-xs text-white">
-                      A
-                    </div>
-                    <div className="min-w-0">
-                      <div className="text-xs font-bold text-white truncate">Studio Alfa Prime</div>
-                      <div className="text-[10px] text-emerald-400 font-semibold">Plano Pro Ativo</div>
-                    </div>
-                  </div>
+            {/* Tab Navigation Strip */}
+            <div className="bg-[#080B14] px-4 sm:px-6 py-2.5 border-b border-white/5 flex items-center gap-2 overflow-x-auto custom-scrollbar text-xs font-bold">
+              <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md shadow-pink-500/20 shrink-0 flex items-center gap-1.5">
+                <span>⊞ Visão Geral</span>
+              </button>
+              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+                <span>✨ BoraIA</span>
+              </button>
+              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+                <span>📅 Operacional <span className="bg-white/10 text-white px-1.5 py-0.2 rounded-full text-[10px]">6</span> ▾</span>
+              </button>
+              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+                <span>🛍️ Comercial ▾</span>
+              </button>
+              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+                <span>💲 Gestão & Finanças ▾</span>
+              </button>
+              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+                <span>⚙️ Sistema & Ajustes ▾</span>
+              </button>
+            </div>
 
-                  <div className="space-y-1 text-xs font-semibold">
-                    <div className="px-3 py-2 rounded-xl bg-violet-600/15 text-violet-300 border border-violet-500/30 flex items-center justify-between">
-                      <span className="flex items-center gap-2"><Calendar className="w-3.5 h-3.5 text-violet-400" /> Agenda</span>
-                      <span className="text-[10px] font-bold bg-pink-500 text-white px-1.5 py-0.2 rounded-full">18</span>
-                    </div>
-                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
-                      <DollarSign className="w-3.5 h-3.5" /> Financeiro & Pix
-                    </div>
-                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
-                      <Users className="w-3.5 h-3.5" /> Equipe & Comissões
-                    </div>
-                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
-                      <Star className="w-3.5 h-3.5" /> Fidelidade & Cupons
-                    </div>
-                    <div className="px-3 py-2 rounded-xl text-slate-400 hover:text-white flex items-center gap-2">
-                      <MessageSquare className="w-3.5 h-3.5" /> CRM & WhatsApp
-                    </div>
+            {/* Dashboard Body Content */}
+            <div className="p-4 sm:p-6 space-y-5 bg-[#050711]">
+              
+              {/* 4 Real KPI Cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+                
+                {/* Card 1: Total de Clientes */}
+                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                      Total de Clientes
+                    </span>
+                    <span className="text-2xl font-black text-white">6</span>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center">
+                    <Users className="w-5 h-5" />
                   </div>
                 </div>
 
-                {/* Storage Quota */}
-                <div className="p-3 rounded-2xl bg-[#0D1222] border border-white/5 text-[11px] space-y-1.5">
-                  <div className="flex justify-between text-slate-300 font-bold">
-                    <span>Agendamentos do Mês</span>
-                    <span className="text-pink-400">482 / 2.500</span>
+                {/* Card 2: Saldo Financeiro */}
+                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                      Saldo Financeiro
+                    </span>
+                    <span className="text-2xl font-black text-white">R$ 20,00</span>
                   </div>
-                  <div className="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-violet-500 to-pink-500 h-full w-[38%]" />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                    <DollarSign className="w-5 h-5" />
+                  </div>
+                </div>
+
+                {/* Card 3: A Receber */}
+                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                      A Receber
+                    </span>
+                    <span className="text-2xl font-black text-white">R$ 100,00</span>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                    <TrendingUp className="w-5 h-5" />
+                  </div>
+                </div>
+
+                {/* Card 4: A Pagar */}
+                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                      A Pagar
+                    </span>
+                    <span className="text-2xl font-black text-white">R$ 0,00</span>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center">
+                    <Clock className="w-5 h-5" />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Ações Rápidas & Atalhos Banner */}
+              <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 space-y-3">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
+                    <Zap className="w-3.5 h-3.5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Ações Rápidas & Atalhos</h4>
+                    <p className="text-[10px] text-slate-400">Navegue rapidamente para as principais tarefas do seu dia</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold">
+                  <div className="p-2.5 rounded-xl bg-[#050711] border border-violet-500/30 text-violet-300 flex items-center justify-center gap-2 shadow-sm">
+                    <Calendar className="w-3.5 h-3.5" /> Ver Agendamentos
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#050711] border border-emerald-500/30 text-emerald-400 flex items-center justify-center gap-2 shadow-sm">
+                    <DollarSign className="w-3.5 h-3.5" /> Lançar Finança
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#050711] border border-pink-500/30 text-pink-400 flex items-center justify-center gap-2 shadow-sm">
+                    <span>+</span> Novo Serviço
+                  </div>
+                  <div className="p-2.5 rounded-xl bg-[#050711] border border-amber-500/30 text-amber-400 flex items-center justify-center gap-2 shadow-sm">
+                    <Smartphone className="w-3.5 h-3.5" /> Copiar Link Público
                   </div>
                 </div>
               </div>
 
-              {/* Main Content Pane (9 cols) */}
-              <div className="lg:col-span-9 p-4 sm:p-6 space-y-5 bg-[#0A0D18]">
+              {/* 2 Charts Grid (Exact Replica) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* Real KPI Strip */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Faturamento Hoje</span>
-                    <span className="text-lg sm:text-xl font-black text-white">R$ 1.280,00</span>
-                    <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">▲ +24% vs ontem</span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Sinais Pix Pagos</span>
-                    <span className="text-lg sm:text-xl font-black text-emerald-400">100%</span>
-                    <span className="text-[9px] font-bold text-slate-400 block mt-0.5">18 de 18 horários</span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Taxa de No-Show</span>
-                    <span className="text-lg sm:text-xl font-black text-pink-400">0.0%</span>
-                    <span className="text-[9px] font-bold text-emerald-400 block mt-0.5">Zero faltas</span>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#0F1424] border border-white/5">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Clientes Novos</span>
-                    <span className="text-lg sm:text-xl font-black text-violet-400">+7 hoje</span>
-                    <span className="text-[9px] font-bold text-slate-400 block mt-0.5">Via Bio Instagram</span>
-                  </div>
-                </div>
-
-                {/* Timeline / Live Bookings Grid */}
-                <div className="p-4 rounded-2xl bg-[#0F1424] border border-white/5 space-y-3">
-                  <div className="flex justify-between items-center pb-2 border-b border-white/5 text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-bold text-white">Grade de Atendimentos de Hoje</span>
-                      <span className="text-[10px] font-bold text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-md">
-                        Sexta-feira (Pico)
-                      </span>
+                {/* Left Chart: Evolução do Faturamento */}
+                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 space-y-3">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-xs font-bold text-white">Evolução do Faturamento</h4>
+                      <span className="text-[10px] text-slate-400">Receita bruta dos últimos 6 meses</span>
                     </div>
-                    <span className="text-[11px] text-slate-400 font-semibold hidden sm:inline">
-                      3 Profissionais em Atividade
+                    <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                      ↑ 100% vs mês anterior
                     </span>
                   </div>
 
-                  <div className="space-y-2">
-                    {/* Row 1 */}
-                    <div className="p-3 rounded-xl bg-[#080B14] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:border-pink-500/30 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-black text-pink-400 bg-pink-500/10 px-2.5 py-1 rounded-lg">
-                          14:00
-                        </span>
-                        <div>
-                          <div className="font-bold text-white">Lucas Silva Santos</div>
-                          <div className="text-[10px] text-slate-400">Corte Degradê & Barba Terapia • Profissional Carlos</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                          Sinal R$ 20 Pix Pago
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
-                          Lembrete 2h Enviado ✓
-                        </span>
-                      </div>
+                  {/* Visual Bar Chart */}
+                  <div className="h-32 pt-4 flex items-end justify-between gap-2 px-2 border-b border-white/5">
+                    <div className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-slate-800/40 h-2 rounded-t" />
+                      <span className="text-[9px] text-slate-500">Mar</span>
                     </div>
-
-                    {/* Row 2 */}
-                    <div className="p-3 rounded-xl bg-[#080B14] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:border-violet-500/30 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-black text-violet-400 bg-violet-500/10 px-2.5 py-1 rounded-lg">
-                          15:00
-                        </span>
-                        <div>
-                          <div className="font-bold text-white">Gabriel Miranda</div>
-                          <div className="text-[10px] text-slate-400">Combo Cabelo + Sobrancelha (Upsell) • Profissional Carlos</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
-                          Sinal R$ 15 Pix Pago
-                        </span>
-                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
-                          Cliente VIP (5º corte)
-                        </span>
-                      </div>
+                    <div className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-slate-800/40 h-2 rounded-t" />
+                      <span className="text-[9px] text-slate-500">Abr</span>
                     </div>
-
-                    {/* Row 3 */}
-                    <div className="p-3 rounded-xl bg-[#080B14] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs hover:border-emerald-500/30 transition-all">
-                      <div className="flex items-center gap-3">
-                        <span className="font-mono font-black text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
-                          16:00
-                        </span>
-                        <div>
-                          <div className="font-bold text-white">Rodrigo Barbosa</div>
-                          <div className="text-[10px] text-slate-400">Plano Mensal Recorrente (Clube do Corte) • Profissional André</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-black text-violet-400 bg-violet-500/10 border border-violet-500/20 px-2 py-0.5 rounded-full">
-                          Assinante Clube VIP
-                        </span>
-                        <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
-                          Confirmado no WhatsApp ✓
-                        </span>
-                      </div>
+                    <div className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-slate-800/40 h-2 rounded-t" />
+                      <span className="text-[9px] text-slate-500">Mai</span>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-slate-800/40 h-2 rounded-t" />
+                      <span className="text-[9px] text-slate-500">Jun</span>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center gap-1">
+                      <div className="w-full bg-slate-800/40 h-2 rounded-t" />
+                      <span className="text-[9px] text-slate-500">Jul</span>
+                    </div>
+                    <div className="flex-1 flex flex-col items-center gap-1">
+                      <span className="text-[9px] font-bold text-pink-400">R$ 180</span>
+                      <div className="w-full bg-gradient-to-t from-violet-600 to-pink-500 h-20 rounded-t shadow-md" />
+                      <span className="text-[9px] font-bold text-white">Ago</span>
                     </div>
                   </div>
                 </div>
 
+                {/* Right Chart: Movimento por Dia */}
+                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 space-y-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-white">Movimento por Dia</h4>
+                    <span className="text-[10px] text-slate-400">Distribuição semanal de agendamentos</span>
+                  </div>
+
+                  {/* Horizontal Bar list */}
+                  <div className="space-y-1.5 text-[10px]">
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-slate-500">Dom</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-slate-500">Seg</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 font-bold text-white">Ter</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-gradient-to-r from-violet-600 to-pink-500 h-full w-[85%]" />
+                      </div>
+                      <span className="font-bold text-pink-400">5</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-slate-400">Qua</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full overflow-hidden">
+                        <div className="bg-violet-600/60 h-full w-[20%]" />
+                      </div>
+                      <span className="text-slate-400">1</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-slate-500">Qui</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-slate-500">Sex</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="w-6 text-slate-500">Sáb</span>
+                      <div className="flex-1 bg-slate-800/30 h-2.5 rounded-full" />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-between text-[10px] font-bold border-t border-white/5">
+                    <span className="text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">📈 Dia mais forte: Ter (5)</span>
+                    <span className="text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md">📉 Dia mais fraco: Qua (1)</span>
+                  </div>
+                </div>
+
               </div>
+
             </div>
 
           </div>
@@ -547,11 +595,11 @@ export default function Landing() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <h3 className="text-base font-black text-white">Sinal no Pix + Confirmação no WhatsApp</h3>
+                    <h3 className="text-base font-black text-white">Sinal Pix + Código de Cancelamento + WhatsApp</h3>
                     {simStep === 3 && <span className="text-[10px] font-black text-emerald-400 uppercase tracking-wider bg-emerald-500/10 px-2 py-0.5 rounded-full">Ativo no celular</span>}
                   </div>
                   <p className="text-xs text-slate-400 mt-1 leading-relaxed">
-                    O sinal antecipado garante o compromisso do cliente. O comprovante com código de cancelamento e lembrete é disparado no WhatsApp na hora.
+                    O sinal antecipado garante o compromisso do cliente. Ele recebe o comprovante no WhatsApp com o código para remarcar ou cancelar sem complicação.
                   </p>
                 </div>
               </div>
@@ -612,7 +660,7 @@ export default function Landing() {
                           <span className="font-bold text-emerald-400">WhatsApp • Agora</span>
                         </div>
                         <p className="text-[10px] text-slate-200 truncate font-medium">
-                          BoraMarka: Seu horário para <strong>{simService.name}</strong> está confirmado!
+                          BoraMarka: Horário confirmado! Código: <strong>#BM-8492</strong>
                         </p>
                       </div>
                     </div>
@@ -724,11 +772,11 @@ export default function Landing() {
                     </div>
                   )}
 
-                  {/* Step 3 View: Confirmation Voucher */}
+                  {/* Step 3 View: Confirmation Voucher with Cancellation Code */}
                   {simStep === 3 && (
-                    <div className="py-2 text-center space-y-2.5 animate-fade-in">
-                      <div className="w-10 h-10 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
-                        <Check className="w-5 h-5" />
+                    <div className="py-2 text-center space-y-2 animate-fade-in">
+                      <div className="w-9 h-9 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+                        <Check className="w-4 h-4" />
                       </div>
                       
                       <div>
@@ -736,7 +784,8 @@ export default function Landing() {
                         <p className="text-[9px] text-slate-400">Comprovante gerado com sucesso</p>
                       </div>
 
-                      <div className="bg-[#111625] rounded-2xl p-3 border border-white/5 text-left text-[10px] space-y-1.5">
+                      {/* Details Box */}
+                      <div className="bg-[#111625] rounded-2xl p-2.5 border border-white/5 text-left text-[10px] space-y-1">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Serviço:</span>
                           <span className="font-bold text-white truncate max-w-[130px]">{simService.name}</span>
@@ -749,6 +798,19 @@ export default function Landing() {
                           <span className="text-slate-500">Sinal Pix:</span>
                           <span className="font-bold text-pink-400">R$ 15,00 (Pago)</span>
                         </div>
+                      </div>
+
+                      {/* Cancellation & Management Code Card */}
+                      <div className="p-2.5 rounded-2xl bg-[#090C16] border border-amber-500/30 text-left space-y-1">
+                        <div className="flex justify-between items-center text-[9px]">
+                          <span className="font-bold text-slate-400 uppercase tracking-wider">Código de Cancelamento</span>
+                          <span className="font-mono font-black text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                            #BM-8492
+                          </span>
+                        </div>
+                        <p className="text-[8px] text-slate-400 leading-tight">
+                          Guarde este código para remarcar ou cancelar seu horário pelo Portal do Cliente sem precisar ligar.
+                        </p>
                       </div>
                     </div>
                   )}
