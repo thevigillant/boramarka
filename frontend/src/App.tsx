@@ -11,6 +11,8 @@ import SuperAdminDashboard from './pages/SuperAdminDashboard'
 import EmployeePortal from './pages/EmployeePortal'
 import TermosDeUso from './pages/TermosDeUso'
 import PoliticaDePrivacidade from './pages/PoliticaDePrivacidade'
+import { StorePage } from './pages/StorePage'
+import { OrderTrackingPage } from './pages/OrderTrackingPage'
 
 import PWAInstallBanner from './components/PWAInstallBanner'
 
@@ -75,6 +77,8 @@ export default function App() {
           }
         />
         <Route path="/p/:username" element={<PublicProfile />} />
+        <Route path="/:username/loja" element={<StorePage />} />
+        <Route path="/pedido/:orderNumber/rastrear" element={<OrderTrackingPage />} />
         <Route path="/agendar/:token" element={<BookingPage />} />
         <Route path="/agendar/:token/sucesso" element={<BookingSuccess />} />
         <Route path="/agendar/:token/cancelar/:bookingId" element={<BookingCancel />} />

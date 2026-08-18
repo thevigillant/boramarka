@@ -13,7 +13,7 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors, Instagram, BarChart3
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors, Instagram, BarChart3, ShoppingBag
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
@@ -49,6 +49,8 @@ import { MembershipsTab } from '../components/dashboard/tabs/MembershipsTab'
 import { TrashTab } from '../components/dashboard/tabs/TrashTab'
 import { EstornosTab } from '../components/dashboard/tabs/EstornosTab'
 import { OverviewTab } from '../components/dashboard/tabs/OverviewTab'
+import { BoraEncomendaTab } from '../components/dashboard/tabs/BoraEncomendaTab'
+import { Package } from 'lucide-react'
 import { NewTransactionModal } from '../components/dashboard/modals/NewTransactionModal'
 import { NewServiceModal } from '../components/dashboard/modals/NewServiceModal'
 import { NewBookingModal } from '../components/dashboard/modals/NewBookingModal'
@@ -66,7 +68,7 @@ import { MpTutorialModal } from '../components/dashboard/modals/MpTutorialModal'
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'boraencomenda' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
   const [usageData, setUsageData] = useState<SubscriptionUsageData | null>(null)
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -152,6 +154,28 @@ export default function Dashboard() {
   const [links, setLinks] = useState<LinkData[]>([])
   const [bookings, setBookings] = useState<BookingData[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [adminInfo, setAdminInfo] = useState<{ 
+    username: string; 
+    email?: string;
+    businessName: string; 
+    photoUrl?: string; 
+    cnpj?: string; 
+    phone?: string; 
+    description?: string; 
+    address?: string; 
+    operatingHours?: string; 
+    mpAccessToken?: string;
+    pixKey?: string;
+    accentColor?: string;
+    secondaryColor?: string;
+    publicTheme?: string;
+    bannerUrl?: string;
+    customDomain?: string;
+    category?: string;
+    businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+    isOperator?: boolean;
+    currentOperator?: any;
+  } | null>(null)
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
@@ -165,6 +189,70 @@ export default function Dashboard() {
     }
 
     const pendingRefundsCount = refundRequests.filter(r => r.refundStatus === 'PENDING').length
+
+    const bType = adminInfo?.businessType || 'SERVICES'
+
+    if (bType === 'PRODUCTS') {
+      return [
+        {
+          id: 'overview',
+          label: 'Visão Geral',
+          icon: LayoutDashboard,
+          type: 'single' as const,
+          tabId: 'overview' as TabIdType,
+        },
+        {
+          id: 'boraencomenda',
+          label: 'BoraEncomenda',
+          icon: ShoppingBag,
+          type: 'single' as const,
+          tabId: 'boraencomenda' as TabIdType,
+        },
+        {
+          id: 'boraia',
+          label: 'BoraIA',
+          icon: Sparkles,
+          type: 'single' as const,
+          tabId: 'boraia' as TabIdType,
+        },
+        {
+          id: 'comercial',
+          label: 'Vendas & Cardápio',
+          icon: Briefcase,
+          type: 'dropdown' as const,
+          items: [
+            { id: 'boraencomenda', label: 'Cardápio & Pedidos', icon: ShoppingBag, desc: 'Kanban de produção e produtos sob encomenda' },
+            { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Base completa de clientes' },
+            { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
+          ] as NavItem[]
+        },
+        {
+          id: 'gestao',
+          label: 'Gestão & Finanças',
+          icon: DollarSign,
+          type: 'dropdown' as const,
+          items: [
+            { id: 'financeiro', label: 'Financeiro', icon: DollarSign, desc: 'Fluxo de caixa, recebíveis e despesas' },
+            { id: 'recebimentos', label: 'Dados Bancários / Pix', icon: Wallet, desc: 'Gerenciar chave Pix e recebimentos' },
+            { id: 'rh', label: 'RH / Equipe', icon: UserCheck, desc: 'Gestão de funcionários, funções e comissões' },
+            { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano e faturas no BoraMarka' },
+          ] as NavItem[]
+        },
+        {
+          id: 'sistema',
+          label: 'Sistema & Ajustes',
+          icon: Palette,
+          type: 'dropdown' as const,
+          items: [
+            { id: 'seguranca', label: 'Segurança & Permissões', icon: ShieldCheck, desc: 'Controle granular de acesso por operador e perfil (RBAC)' },
+            { id: 'personalizar', label: 'Personalizar Loja', icon: Palette, desc: 'Identidade visual, modelo de atuação, cores e banner' },
+            { id: 'social', label: 'Explorar Rede', icon: Globe, desc: 'Rede de contatos e chat com profissionais' },
+            { id: 'audit', label: 'Logs & Auditoria', icon: ShieldAlert, desc: 'Registro de ações, logins e segurança' },
+            { id: 'trash', label: 'Lixeira', icon: Trash2, desc: 'Recuperar itens excluídos recentemente' },
+          ] as NavItem[]
+        }
+      ]
+    }
 
     return [
       {
@@ -181,6 +269,15 @@ export default function Dashboard() {
         type: 'single' as const,
         tabId: 'boraia' as TabIdType,
       },
+      ...(bType === 'HYBRID' ? [
+        {
+          id: 'boraencomenda',
+          label: 'BoraEncomenda',
+          icon: ShoppingBag,
+          type: 'single' as const,
+          tabId: 'boraencomenda' as TabIdType,
+        }
+      ] : []),
       {
         id: 'operacional',
         label: 'Operacional',
@@ -204,6 +301,9 @@ export default function Dashboard() {
           { id: 'links', label: 'Links de Venda', icon: Link2, desc: 'Links para clientes agendarem online' },
           { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
           { id: 'memberships', label: 'Clube de Assinaturas', icon: Gift, desc: 'Planos e assinaturas recorrentes de clientes' },
+          ...(bType === 'SERVICES' ? [
+            { id: 'boraencomenda', label: 'BoraEncomenda', icon: ShoppingBag, desc: 'Módulo de vendas sob encomenda e cardápio' }
+          ] : [])
         ] as NavItem[]
       },
       {
@@ -225,14 +325,14 @@ export default function Dashboard() {
         type: 'dropdown' as const,
         items: [
           { id: 'seguranca', label: 'Segurança & Permissões', icon: ShieldCheck, desc: 'Controle granular de acesso por operador e perfil (RBAC)' },
-          { id: 'personalizar', label: 'Personalizar Página', icon: Palette, desc: 'Identidade visual, tema, cores e banner' },
+          { id: 'personalizar', label: 'Personalizar Página', icon: Palette, desc: 'Identidade visual, modelo de atuação, cores e banner' },
           { id: 'social', label: 'Explorar Rede', icon: Globe, desc: 'Rede de contatos e chat com profissionais' },
           { id: 'audit', label: 'Logs & Auditoria', icon: ShieldAlert, desc: 'Registro de ações, logins e segurança' },
           { id: 'trash', label: 'Lixeira', icon: Trash2, desc: 'Recuperar itens excluídos recentemente' },
         ] as NavItem[]
       }
     ]
-  }, [bookings.length])
+  }, [bookings.length, adminInfo?.businessType, refundRequests])
 
   const [operatorSession, setOperatorSession] = useState<any | null>(null)
 
@@ -573,26 +673,6 @@ export default function Dashboard() {
   const [newMessage, setNewMessage] = useState('')
   const [loadingExplore, setLoadingExplore] = useState(false)
   const [loadingChat, setLoadingChat] = useState(false)
-  const [adminInfo, setAdminInfo] = useState<{ 
-    username: string; 
-    email?: string;
-    businessName: string; 
-    photoUrl?: string; 
-    cnpj?: string; 
-    phone?: string; 
-    description?: string; 
-    address?: string; 
-    operatingHours?: string; 
-    mpAccessToken?: string;
-    pixKey?: string;
-    accentColor?: string;
-    secondaryColor?: string;
-    publicTheme?: string;
-    bannerUrl?: string;
-    customDomain?: string;
-    isOperator?: boolean;
-    currentOperator?: any;
-  } | null>(null)
   const avatarInputRef = useRef<HTMLInputElement>(null)
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -652,6 +732,7 @@ export default function Dashboard() {
     secondaryColor: '#ec4899',
     publicTheme: 'light',
     customDomain: '',
+    businessType: 'SERVICES' as 'SERVICES' | 'PRODUCTS' | 'HYBRID',
   })
 
   useEffect(() => {
@@ -665,6 +746,7 @@ export default function Dashboard() {
         secondaryColor: adminInfo.secondaryColor || '#ec4899',
         publicTheme: adminInfo.publicTheme || 'light',
         customDomain: adminInfo.customDomain || '',
+        businessType: (adminInfo.businessType || 'SERVICES') as 'SERVICES' | 'PRODUCTS' | 'HYBRID',
       })
     }
   }, [adminInfo])
@@ -880,7 +962,8 @@ export default function Dashboard() {
     name: '',
     description: '',
     price: '',
-    duration: '30'
+    duration: '30',
+    photoUrl: ''
   })
 
   // Relatório de Faturamento por Serviço & Período (Etapa 3-F)
@@ -1633,7 +1716,8 @@ export default function Dashboard() {
         name: serviceForm.name,
         description: serviceForm.description,
         price: parseFloat(serviceForm.price),
-        duration: parseInt(serviceForm.duration)
+        duration: parseInt(serviceForm.duration),
+        photoUrl: serviceForm.photoUrl || '',
       }
       if (editingService) {
         await api.updateService(editingService.id, data)
@@ -1644,7 +1728,7 @@ export default function Dashboard() {
       }
       setShowNewService(false)
       setEditingService(null)
-      setServiceForm({ name: '', description: '', price: '', duration: '30' })
+      setServiceForm({ name: '', description: '', price: '', duration: '30', photoUrl: '' })
       fetchData()
     } catch (err: any) {
       showToast(err.message, 'error')
@@ -2891,6 +2975,17 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'boraia' && (
           <BoraIaTab subscription={subscription} adminInfo={adminInfo} showToast={showToast} />
+        )}
+
+        {/* ═══════════════════════════════════════════ */}
+        {/* TAB: BoraEncomenda */}
+        {/* ═══════════════════════════════════════════ */}
+        {activeTab === 'boraencomenda' && (
+          <BoraEncomendaTab
+            user={adminInfo}
+            subscription={subscription}
+            setShowPaywall={setShowPaywall}
+          />
         )}
 
         {/* ═══════════════════════════════════════════ */}

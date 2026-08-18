@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BoraMarka — Social Media Studio & Post Generator</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- html2canvas for 1-click export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Outfit"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              violet: '#7C3AED',
+              pink: '#EC4899',
+              rose: '#F43F5E',
+              emerald: '#10B981',
+              cyan: '#06B6D4',
+              dark: '#050507',
+              card: '#0B0F19',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Neon glow and premium glassmorphism custom styles */
+    .neon-shaka-glow {
+      filter: drop-shadow(0 0 14px rgba(236, 72, 153, 0.75)) drop-shadow(0 0 28px rgba(124, 58, 237, 0.55));
+    }
+    .neon-emerald-glow {
+      filter: drop-shadow(0 0 12px rgba(16, 185, 129, 0.7));
+    }
+    .neon-text-gradient {
+      background: linear-gradient(135deg, #A78BFA 0%, #EC4899 50%, #F43F5E 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .neon-emerald-gradient {
+      background: linear-gradient(135deg, #34D399 0%, #06B6D4 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .glass-panel {
+      background: rgba(11, 15, 25, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-panel-glow {
+      background: rgba(13, 18, 34, 0.92);
+      backdrop-filter: blur(24px);
+      border: 1.5px solid rgba(236, 72, 153, 0.4);
+      box-shadow: 0 0 40px -10px rgba(236, 72, 153, 0.3), inset 0 0 20px -5px rgba(124, 58, 237, 0.2);
+    }
+    .grid-bg {
+      background-image: radial-gradient(rgba(124, 58, 237, 0.2) 1.5px, transparent 1.5px);
+      background-size: 28px 28px;
+    }
+
+    /* Fixed Aspect Ratio Post Canvas Styles (1080x1350 = 4:5 Instagram Portrait) */
+    .post-canvas {
+      width: 540px;
+      height: 675px;
+      min-width: 540px;
+      min-height: 675px;
+      position: relative;
+      overflow: hidden;
+      background-color: #050507;
+      border-radius: 28px;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.1);
+      transform-origin: top center;
+    }
+
+    @media (max-width: 640px) {
+      .post-canvas-wrapper {
+        transform: scale(0.62);
+        transform-origin: top center;
+        margin-bottom: -240px;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-[#020204] text-slate-100 font-sans min-h-screen antialiased selection:bg-pink-500/30 selection:text-white">
+
+  <!-- Top Studio Header -->
+  <header class="border-b border-white/10 bg-[#07090F]/90 backdrop-blur-xl sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <!-- Official Shaka Logo -->
+        <div class="w-10 h-10 flex items-center justify-center">
+          <svg viewBox="0 0 500 500" width="38" height="38" fill="none" class="neon-shaka-glow">
+            <defs>
+              <linearGradient id="headerShaka" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#7C3AED" />
+                <stop offset="50%" stop-color="#EC4899" />
+                <stop offset="100%" stop-color="#F43F5E" />
+              </linearGradient>
+              <linearGradient id="headerCheck" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#10B981" />
+                <stop offset="100%" stop-color="#06B6D4" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(10, 0)">
+              <path d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312" stroke="url(#headerShaka)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z" stroke="url(#headerShaka)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z" stroke="url(#headerShaka)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z" stroke="url(#headerShaka)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343" stroke="url(#headerShaka)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M133 328 C 172 406, 328 406, 351 297" stroke="url(#headerShaka)" stroke-width="34" stroke-linecap="round"/>
+              <path d="M187 297 L234 343 L343 203" stroke="url(#headerCheck)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+            </g>
+          </svg>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-black text-lg text-white font-display tracking-tight">Bora<span class="neon-text-gradient">Marka</span></span>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-pink-500/10 text-pink-400 border border-pink-500/20">Studio Oficial</span>
+          </div>
+          <p class="text-[11px] text-slate-400 font-medium">Kit Oficial de Vendas & Banners em Ultra-HD (1080x1350)</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <button onclick="downloadAllPosts()" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-violet-600 via-pink-600 to-rose-600 text-xs font-black text-white shadow-lg shadow-pink-600/30 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center gap-2">
+          <i data-lucide="download" class="w-4 h-4"></i>
+          <span>Baixar 5 Posts em PNG HD</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="max-w-7xl mx-auto px-4 sm:px-6 pt-6 pb-2">
+    <div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <button onclick="selectTab('all')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-white border border-white/20" data-tab="all">
+        Ver Todos os Posts
+      </button>
+      <button onclick="selectTab('post1')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/5 text-slate-400 hover:text-white border border-white/5" data-tab="post1">
+        Post 1: R$ 0,99/Dia (Plano Solo)
+      </button>
+      <button onclick="selectTab('post2')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/5 text-slate-400 hover:text-white border border-white/5" data-tab="post2">
+        Post 2: Matemática do Prejuízo
+      </button>
+      <button onclick="selectTab('post3')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/5 text-slate-400 hover:text-white border border-white/5" data-tab="post3">
+        Post 3: Antes vs Depois
+      </button>
+      <button onclick="selectTab('post4')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/5 text-slate-400 hover:text-white border border-white/5" data-tab="post4">
+        Post 4: Sinal PIX (Anti No-Show)
+      </button>
+      <button onclick="selectTab('post5')" class="tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/5 text-slate-400 hover:text-white border border-white/5" data-tab="post5">
+        Post 5: 7 Dias Grátis
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Showcase Grid -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="space-y-16">
+
+      <!-- ══════════════════════════════════════════════════════════
+           POST 1: O VALOR DO PLANO SOLO (R$ 29,90 = R$ 0,99/DIA)
+           ══════════════════════════════════════════════════════════ -->
+      <section id="sec-post1" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div class="lg:col-span-6 flex flex-col items-center">
+          <div class="post-canvas-wrapper">
+            <div id="canvas-post1" class="post-canvas grid-bg p-8 flex flex-col justify-between">
+              <!-- Glow Ambient Orbs -->
+              <div class="absolute -top-24 -left-24 w-72 h-72 bg-violet-600/30 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="absolute -bottom-24 -right-24 w-72 h-72 bg-pink-600/25 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Header -->
+              <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <svg viewBox="0 0 500 500" width="36" height="36" fill="none" class="neon-shaka-glow">
+                    <defs>
+                      <linearGradient id="p1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#7C3AED" />
+                        <stop offset="50%" stop-color="#EC4899" />
+                        <stop offset="100%" stop-color="#F43F5E" />
+                      </linearGradient>
+                      <linearGradient id="p1Chk" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10B981" />
+                        <stop offset="100%" stop-color="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    <g transform="translate(10, 0)">
+                      <path d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312" stroke="url(#p1Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z" stroke="url(#p1Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z" stroke="url(#p1Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z" stroke="url(#p1Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343" stroke="url(#p1Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M133 328 C 172 406, 328 406, 351 297" stroke="url(#p1Grad)" stroke-width="34" stroke-linecap="round"/>
+                      <path d="M187 297 L234 343 L343 203" stroke="url(#p1Chk)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                  </svg>
+                  <span class="font-black text-base text-white font-display">Bora<span class="neon-text-gradient">Marka</span></span>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/30 text-[10px] font-black uppercase tracking-wider text-violet-300">
+                  Plano Essencial
+                </div>
+              </div>
+
+              <!-- Main Hook -->
+              <div class="relative z-10 my-auto space-y-4">
+                <div>
+                  <span class="text-[11px] font-extrabold uppercase tracking-widest text-slate-400 block mb-1">
+                    Quanto custa profissionalizar seu negócio?
+                  </span>
+                  <h2 class="text-3xl font-black text-white font-display leading-[1.1] tracking-tight">
+                    R$ 29,90<span class="text-slate-400 text-lg font-bold">/mês</span>
+                  </h2>
+                  <p class="text-emerald-400 font-extrabold text-xs mt-1 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                    Equivale a menos de R$ 0,99 por dia
+                  </p>
+                </div>
+
+                <!-- Glassmorphism Feature Card -->
+                <div class="glass-panel-glow rounded-2xl p-4 space-y-2.5">
+                  <div class="text-[11px] font-bold text-slate-300 flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span><strong>Link na Bio</strong> que agenda clientes 24h/dia sozinho</span>
+                  </div>
+
+                  <div class="text-[11px] font-bold text-slate-300 flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span><strong>Cobrança de Sinal PIX</strong> — nunca mais tome bolo</span>
+                  </div>
+
+                  <div class="text-[11px] font-bold text-slate-300 flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span><strong>Lembrete no WhatsApp</strong> enviado automaticamente</span>
+                  </div>
+
+                  <div class="text-[11px] font-bold text-slate-300 flex items-center gap-2">
+                    <div class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                      <i data-lucide="check" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span><strong>Até 500 agendamentos</strong> e controle financeiro total</span>
+                  </div>
+                </div>
+
+                <!-- Impact Callout -->
+                <div class="p-3 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+                  <div class="text-[11px] text-slate-300">
+                    <span class="text-white font-black">1 cliente salvo no mês</span> já paga o sistema.
+                  </div>
+                  <span class="text-xs font-black text-pink-400 font-display">Sem fidelidade</span>
+                </div>
+              </div>
+
+              <!-- Footer CTA -->
+              <div class="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
+                <div>
+                  <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Experimente Grátis</div>
+                  <div class="text-xs font-black text-white font-mono">boramarka.com.br</div>
+                </div>
+                <div class="px-4 py-2 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-rose-600 text-white text-[11px] font-black uppercase tracking-wider shadow-md">
+                  7 Dias Grátis 🤙
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="exportPostAsPNG('canvas-post1', 'boramarka_post1_plano_solo.png')" class="mt-4 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-white flex items-center gap-2 transition-all">
+            <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
+            <span>Exportar Post 1 em Alta Resolução (PNG)</span>
+          </button>
+        </div>
+
+        <!-- Copywriting & Strategy Box -->
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-6 rounded-2xl bg-[#090D17] border border-white/10 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-extrabold">
+                Post 1 • Valor Real & Acessibilidade
+              </span>
+              <button onclick="copyToClipboard('caption-1')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Legenda
+              </button>
+            </div>
+
+            <h3 class="text-lg font-bold text-white">Quanto vale sua paz de espírito por R$ 0,99 ao dia?</h3>
+
+            <div class="p-4 rounded-xl bg-black/40 border border-white/5 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-wrap select-all" id="caption-1">Você gasta mais de R$ 5 num cafezinho... mas ainda perde 2 horas por dia respondendo "qual o preço?" no WhatsApp? ☕🤯
+
+Com o plano Essencial do BoraMarka por R$ 29,90/mês (menos de R$ 0,99 por dia), você transforma seu negócio:
+
+👉 Seu cliente clica no link da sua Bio
+👉 Escolhe o serviço e o horário disponível
+👉 Paga um sinal no PIX para confirmar
+👉 Recebe lembrete automático no WhatsApp
+👉 Você só abre a agenda e atende!
+
+💡 A conta é simples: se o BoraMarka evitar que UM único cliente falte no mês, o sistema já se pagou 2 ou 3 vezes.
+
+Sem contrato chato. Sem taxa escondida. Sem complicação.
+
+⚡ Comece agora com 7 DIAS GRÁTIS:
+🔗 Toque no link da bio ou acesse boramarka.com.br 🤙
+
+#boramarka #agendamentoonline #barbearia #salaodebeleza #estetica #tatuagem #petshop #gestaodenegocios #autonomos #marketingparabarbearia #empreendedor</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════════
+           POST 2: A MATEMÁTICA DO PREJUÍZO (DOR FINANCEIRA)
+           ══════════════════════════════════════════════════════════ -->
+      <section id="sec-post2" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-white/10 pt-16">
+        <div class="lg:col-span-6 flex flex-col items-center">
+          <div class="post-canvas-wrapper">
+            <div id="canvas-post2" class="post-canvas grid-bg p-8 flex flex-col justify-between">
+              <!-- Ambient Red/Violet Glow -->
+              <div class="absolute -top-24 -right-24 w-72 h-72 bg-rose-600/30 rounded-full blur-3xl pointer-events-none"></div>
+              <div class="absolute -bottom-24 -left-24 w-72 h-72 bg-violet-600/25 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Header -->
+              <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <svg viewBox="0 0 500 500" width="36" height="36" fill="none" class="neon-shaka-glow">
+                    <defs>
+                      <linearGradient id="p2Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#7C3AED" />
+                        <stop offset="50%" stop-color="#EC4899" />
+                        <stop offset="100%" stop-color="#F43F5E" />
+                      </linearGradient>
+                      <linearGradient id="p2Chk" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10B981" />
+                        <stop offset="100%" stop-color="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    <g transform="translate(10, 0)">
+                      <path d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312" stroke="url(#p2Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z" stroke="url(#p2Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z" stroke="url(#p2Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z" stroke="url(#p2Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343" stroke="url(#p2Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M133 328 C 172 406, 328 406, 351 297" stroke="url(#p2Grad)" stroke-width="34" stroke-linecap="round"/>
+                      <path d="M187 297 L234 343 L343 203" stroke="url(#p2Chk)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                  </svg>
+                  <span class="font-black text-base text-white font-display">Bora<span class="neon-text-gradient">Marka</span></span>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/30 text-[10px] font-black uppercase tracking-wider text-rose-300 flex items-center gap-1">
+                  <i data-lucide="alert-triangle" class="w-3 h-3 text-rose-400"></i> Alerta Financeiro
+                </div>
+              </div>
+
+              <!-- Main Content -->
+              <div class="relative z-10 my-auto space-y-4">
+                <div>
+                  <span class="text-[11px] font-black uppercase tracking-widest text-rose-400 block mb-1">
+                    Faça essa conta rápida:
+                  </span>
+                  <h2 class="text-2xl font-black text-white font-display leading-tight">
+                    Quanto custa NÃO ter um sistema de agendamento?
+                  </h2>
+                </div>
+
+                <!-- Loss Math Breakdown -->
+                <div class="space-y-2">
+                  <div class="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">
+                        1
+                      </div>
+                      <div class="text-xs text-slate-200">
+                        <span class="font-bold text-white">3 clientes faltam</span> por semana
+                      </div>
+                    </div>
+                    <span class="text-xs font-mono font-bold text-rose-400">No-show</span>
+                  </div>
+
+                  <div class="p-3.5 rounded-xl bg-rose-950/20 border border-rose-500/30 flex items-center justify-between">
+                    <div class="flex items-center gap-2.5">
+                      <div class="w-7 h-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">
+                        2
+                      </div>
+                      <div class="text-xs text-slate-200">
+                        Ticket médio de <span class="font-bold text-white">R$ 50,00</span>
+                      </div>
+                    </div>
+                    <span class="text-xs font-mono font-bold text-rose-400">12 faltas/mês</span>
+                  </div>
+
+                  <div class="p-4 rounded-2xl bg-gradient-to-r from-rose-900/40 via-red-900/30 to-black border-2 border-rose-500/60 shadow-lg shadow-rose-950/50">
+                    <div class="flex items-center justify-between">
+                      <div>
+                        <div class="text-[10px] font-black uppercase tracking-widest text-rose-300">Prejuízo Calculado</div>
+                        <div class="text-2xl font-black text-rose-400 font-display">R$ 7.200,00<span class="text-xs font-bold text-slate-300">/ano</span></div>
+                      </div>
+                      <div class="text-right">
+                        <div class="text-[10px] font-bold text-slate-400">BoraMarka custa:</div>
+                        <div class="text-sm font-black text-emerald-400 font-mono">R$ 29,90/mês</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="text-[11px] text-center text-slate-300 font-medium italic">
+                  "O custo de NÃO ter um sistema é <span class="text-white font-extrabold not-italic">20x maior</span> do que o valor da assinatura."
+                </p>
+              </div>
+
+              <!-- Footer -->
+              <div class="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
+                <div class="text-xs font-mono text-slate-400">boramarka.com.br</div>
+                <div class="text-xs font-black text-white flex items-center gap-1.5">
+                  <span>Pare de perder dinheiro</span>
+                  <i data-lucide="arrow-right" class="w-3.5 h-3.5 text-pink-400"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="exportPostAsPNG('canvas-post2', 'boramarka_post2_prejuizo.png')" class="mt-4 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-white flex items-center gap-2 transition-all">
+            <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
+            <span>Exportar Post 2 em Alta Resolução (PNG)</span>
+          </button>
+        </div>
+
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-6 rounded-2xl bg-[#090D17] border border-white/10 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-extrabold">
+                Post 2 • Dor Financeira & No-Show
+              </span>
+              <button onclick="copyToClipboard('caption-2')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Legenda
+              </button>
+            </div>
+
+            <h3 class="text-lg font-bold text-white">A conta que nenhum profissional quer fazer (mas precisa)</h3>
+
+            <div class="p-4 rounded-xl bg-black/40 border border-white/5 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-wrap select-all" id="caption-2">Aquele cliente que agendou na sexta às 16h e simplesmente NÃO APARECEU te custou R$ 50.
+
+Se isso acontece só 3 vezes na semana:
+❌ R$ 150 jogados fora por semana
+❌ R$ 600 perdidos no mês
+❌ R$ 7.200,00 DE PREJUÍZO NO ANO! 🗑️
+
+E você ainda gasta horas respondendo mensagem, conferindo comprovante falso de Pix e tentando preencher buracos na agenda.
+
+O BoraMarka Essencial custa R$ 29,90 por mês.
+
+Com cobrança de sinal no Pix via Mercado Pago + lembretes automáticos no WhatsApp, sua taxa de faltas cai até 90%.
+
+Economizar R$ 29,90 para perder R$ 600 todo mês não faz sentido, né?
+
+🤙 Mude essa realidade hoje. Teste 7 dias grátis sem compromisso.
+🔗 Link na bio: boramarka.com.br
+
+#gestaofinanceira #barbeirosbrasil #salaodebeleza #esteticaavancada #tattoobrasil #petshopbrasil #boramarka #noshow #agendadigital #produtividade</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════════
+           POST 3: ANTES VS DEPOIS (TRANSFORMAÇÃO DE ROTINA)
+           ══════════════════════════════════════════════════════════ -->
+      <section id="sec-post3" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-white/10 pt-16">
+        <div class="lg:col-span-6 flex flex-col items-center">
+          <div class="post-canvas-wrapper">
+            <div id="canvas-post3" class="post-canvas grid-bg p-8 flex flex-col justify-between">
+              <!-- Ambient Glow -->
+              <div class="absolute -top-24 left-1/2 -translate-x-1/2 w-80 h-80 bg-violet-600/30 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Header -->
+              <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <svg viewBox="0 0 500 500" width="36" height="36" fill="none" class="neon-shaka-glow">
+                    <defs>
+                      <linearGradient id="p3Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#7C3AED" />
+                        <stop offset="50%" stop-color="#EC4899" />
+                        <stop offset="100%" stop-color="#F43F5E" />
+                      </linearGradient>
+                      <linearGradient id="p3Chk" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10B981" />
+                        <stop offset="100%" stop-color="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    <g transform="translate(10, 0)">
+                      <path d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312" stroke="url(#p3Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z" stroke="url(#p3Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z" stroke="url(#p3Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z" stroke="url(#p3Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343" stroke="url(#p3Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M133 328 C 172 406, 328 406, 351 297" stroke="url(#p3Grad)" stroke-width="34" stroke-linecap="round"/>
+                      <path d="M187 297 L234 343 L343 203" stroke="url(#p3Chk)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                  </svg>
+                  <span class="font-black text-base text-white font-display">Bora<span class="neon-text-gradient">Marka</span></span>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider text-emerald-300">
+                  Transformação
+                </div>
+              </div>
+
+              <!-- Main Split Comparison -->
+              <div class="relative z-10 my-auto space-y-3.5">
+                <div class="text-center">
+                  <h2 class="text-2xl font-black text-white font-display leading-tight">
+                    Sua Rotina: Antes vs Depois
+                  </h2>
+                  <p class="text-xs text-slate-400 mt-0.5">O que muda ao ativar o BoraMarka</p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                  <!-- SEM BORAMARKA -->
+                  <div class="p-3.5 rounded-2xl bg-rose-950/20 border border-rose-500/30 space-y-2">
+                    <div class="flex items-center gap-1.5 text-xs font-black text-rose-400 uppercase tracking-wider">
+                      <i data-lucide="x-circle" class="w-3.5 h-3.5"></i> Sem Sistema
+                    </div>
+                    <ul class="text-[10px] text-slate-300 space-y-1.5 font-medium">
+                      <li>❌ Interrompe o atendimento para responder zap</li>
+                      <li>❌ Faltas sem aviso prévio</li>
+                      <li>❌ Caderno rabiscado</li>
+                      <li>❌ Sem saber o lucro real</li>
+                    </ul>
+                  </div>
+
+                  <!-- COM BORAMARKA -->
+                  <div class="p-3.5 rounded-2xl bg-emerald-950/25 border border-emerald-500/40 space-y-2 shadow-lg shadow-emerald-950/30">
+                    <div class="flex items-center gap-1.5 text-xs font-black text-emerald-400 uppercase tracking-wider">
+                      <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i> Com BoraMarka
+                    </div>
+                    <ul class="text-[10px] text-slate-200 space-y-1.5 font-semibold">
+                      <li>✅ Cliente agenda sozinho na Bio</li>
+                      <li>✅ Sinal no Pix recebido antes</li>
+                      <li>✅ Lembrete automático no WhatsApp</li>
+                      <li>✅ Painel financeiro em tempo real</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <!-- Price Anchor -->
+                <div class="p-3 rounded-xl bg-gradient-to-r from-violet-900/30 to-pink-900/30 border border-pink-500/30 text-center">
+                  <div class="text-xs font-black text-white">
+                    Tudo isso por apenas <span class="neon-text-gradient font-black text-sm">R$ 29,90/mês</span>
+                  </div>
+                  <div class="text-[10px] text-slate-300 font-medium">Você foca no seu talento, o sistema cuida do resto.</div>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
+                <div class="text-xs font-mono text-slate-400">boramarka.com.br</div>
+                <div class="px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-[10px] font-bold text-white">
+                  Teste 7 Dias Grátis 🤙
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="exportPostAsPNG('canvas-post3', 'boramarka_post3_antes_depois.png')" class="mt-4 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-white flex items-center gap-2 transition-all">
+            <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
+            <span>Exportar Post 3 em Alta Resolução (PNG)</span>
+          </button>
+        </div>
+
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-6 rounded-2xl bg-[#090D17] border border-white/10 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-extrabold">
+                Post 3 • Comparativo Antes vs Depois
+              </span>
+              <button onclick="copyToClipboard('caption-3')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Legenda
+              </button>
+            </div>
+
+            <h3 class="text-lg font-bold text-white">Você é profissional ou atendente de WhatsApp?</h3>
+
+            <div class="p-4 rounded-xl bg-black/40 border border-white/5 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-wrap select-all" id="caption-3">Se você passa metade do seu dia digitando no WhatsApp:
+"Oi fulano, tenho vaga às 14h ou 17h, qual prefere?"
+"Qual corte você quer?"
+"Me manda o comprovante do Pix..."
+
+Você não está trabalhando no seu negócio, você virou escravo do chat. 📱⛓️
+
+Olha como fica sua rotina com o BoraMarka:
+1️⃣ O link fica na sua bio do Instagram e no WhatsApp
+2️⃣ O cliente entra, vê seus serviços com fotos e preços
+3️⃣ Escolhe o profissional e o melhor horário
+4️⃣ Paga a taxa de sinal no Pix se você configurar
+5️⃣ O BoraMarka manda mensagem de confirmação e lembrete pra ele!
+
+Tudo 100% automático. Você só olha a agenda e atende com tranquilidade.
+
+Planos a partir de R$ 29,90/mês.
+👉 Comece com 7 DIAS GRÁTIS: boramarka.com.br 🤙
+
+#gestaointeligente #boramarka #agendamento #barbearias #salao #beleza #estetica #automacao #empreendedorismo #negocioslocais</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════════
+           POST 4: O PODER DO SINAL NO PIX (KILLER FEATURE)
+           ══════════════════════════════════════════════════════════ -->
+      <section id="sec-post4" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-white/10 pt-16">
+        <div class="lg:col-span-6 flex flex-col items-center">
+          <div class="post-canvas-wrapper">
+            <div id="canvas-post4" class="post-canvas grid-bg p-8 flex flex-col justify-between">
+              <!-- Ambient Cyan/Emerald Glow -->
+              <div class="absolute -top-20 -right-20 w-72 h-72 bg-cyan-500/25 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Header -->
+              <div class="relative z-10 flex items-center justify-between">
+                <div class="flex items-center gap-2.5">
+                  <svg viewBox="0 0 500 500" width="36" height="36" fill="none" class="neon-shaka-glow">
+                    <defs>
+                      <linearGradient id="p4Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#7C3AED" />
+                        <stop offset="50%" stop-color="#EC4899" />
+                        <stop offset="100%" stop-color="#F43F5E" />
+                      </linearGradient>
+                      <linearGradient id="p4Chk" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10B981" />
+                        <stop offset="100%" stop-color="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    <g transform="translate(10, 0)">
+                      <path d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312" stroke="url(#p4Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z" stroke="url(#p4Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z" stroke="url(#p4Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z" stroke="url(#p4Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343" stroke="url(#p4Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M133 328 C 172 406, 328 406, 351 297" stroke="url(#p4Grad)" stroke-width="34" stroke-linecap="round"/>
+                      <path d="M187 297 L234 343 L343 203" stroke="url(#p4Chk)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                  </svg>
+                  <span class="font-black text-base text-white font-display">Bora<span class="neon-text-gradient">Marka</span></span>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-[10px] font-black uppercase tracking-wider text-cyan-300">
+                  Anti No-Show
+                </div>
+              </div>
+
+              <!-- Main Content -->
+              <div class="relative z-10 my-auto space-y-4">
+                <div>
+                  <span class="text-[10px] font-black uppercase tracking-widest text-cyan-400 block mb-1">
+                    Recurso Exclusivo no Plano Essencial
+                  </span>
+                  <h2 class="text-2xl font-black text-white font-display leading-tight">
+                    Cobre Sinal no PIX e Diga Adeus aos Clientes que Furam.
+                  </h2>
+                </div>
+
+                <!-- Feature Highlights -->
+                <div class="glass-panel rounded-2xl p-4 space-y-3">
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-cyan-500 to-emerald-400 text-slate-950 flex items-center justify-center font-black text-xs shrink-0 shadow-md">
+                      PIX
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-white">Depósito Garantido Automático</h4>
+                      <p class="text-[10px] text-slate-400 mt-0.5">Defina 20%, 50% ou valor fixo de sinal para segurar a vaga do cliente.</p>
+                    </div>
+                  </div>
+
+                  <div class="h-px bg-white/5"></div>
+
+                  <div class="flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-violet-500/20 text-violet-300 flex items-center justify-center shrink-0 border border-violet-500/30">
+                      <i data-lucide="shield-check" class="w-4 h-4 text-violet-400"></i>
+                    </div>
+                    <div>
+                      <h4 class="text-xs font-bold text-white">Mercado Pago Integrado</h4>
+                      <p class="text-[10px] text-slate-400 mt-0.5">O dinheiro cai direto na sua conta, com QR Code dinâmico instantâneo.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Stat Tag -->
+                <div class="p-3 rounded-xl bg-emerald-950/20 border border-emerald-500/30 flex items-center justify-between">
+                  <span class="text-[11px] text-slate-300 font-medium">Redução comprovada de faltas:</span>
+                  <span class="text-sm font-black text-emerald-400 font-mono">-92%</span>
+                </div>
+              </div>
+
+              <!-- Footer -->
+              <div class="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
+                <div class="text-xs font-mono text-slate-400">boramarka.com.br</div>
+                <div class="px-4 py-2 rounded-full bg-gradient-to-r from-violet-600 to-pink-600 text-white text-[11px] font-black uppercase tracking-wider">
+                  Testar 7 Dias Grátis 🤙
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="exportPostAsPNG('canvas-post4', 'boramarka_post4_sinal_pix.png')" class="mt-4 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-white flex items-center gap-2 transition-all">
+            <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
+            <span>Exportar Post 4 em Alta Resolução (PNG)</span>
+          </button>
+        </div>
+
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-6 rounded-2xl bg-[#090D17] border border-white/10 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-extrabold">
+                Post 4 • Feature Campeã: Sinal PIX
+              </span>
+              <button onclick="copyToClipboard('caption-4')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Legenda
+              </button>
+            </div>
+
+            <h3 class="text-lg font-bold text-white">O segredo dos profissionais que nunca têm horário vago</h3>
+
+            <div class="p-4 rounded-xl bg-black/40 border border-white/5 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-wrap select-all" id="caption-4">Sabe por que cliente fura sem avisar?
+Porque quando não custa nada agendar, não custa nada faltar. 🤷‍♂️
+
+Quando você ativa o Sinal PIX do BoraMarka:
+1. O cliente escolhe o horário e gera um Pix na hora
+2. Ele paga R$ 10, R$ 20 ou a porcentagem que você escolher
+3. O horário só é bloqueado após a confirmação do pagamento
+4. O dinheiro vai direto pra sua conta Mercado Pago!
+
+Resultado?
+✅ O cliente comparece pontualmente (quem paga valoriza)
+✅ Se desmarcar em cima da hora, você não fica no prejuízo
+✅ Sua agenda ganha respeito e autoridade
+
+Tudo isso já está incluso no plano de R$ 29,90/mês do BoraMarka.
+
+👉 Faça seu teste grátis por 7 dias: boramarka.com.br 🤙
+
+#pix #mercadopago #noshow #barbearia #salaodebeleza #clinica #estudio #boramarka #profissionalismo #faturamento</div>
+          </div>
+        </div>
+      </section>
+
+
+      <!-- ══════════════════════════════════════════════════════════
+           POST 5: OFERTA DIRETA (7 DIAS GRÁTIS + HERO LOGO)
+           ══════════════════════════════════════════════════════════ -->
+      <section id="sec-post5" class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start border-t border-white/10 pt-16">
+        <div class="lg:col-span-6 flex flex-col items-center">
+          <div class="post-canvas-wrapper">
+            <div id="canvas-post5" class="post-canvas grid-bg p-8 flex flex-col justify-between text-center">
+              <!-- Giant Ambient Glow -->
+              <div class="absolute inset-0 bg-gradient-to-b from-violet-950/30 via-transparent to-pink-950/30 pointer-events-none"></div>
+              <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-pink-600/20 rounded-full blur-3xl pointer-events-none"></div>
+
+              <!-- Top Brand Tag -->
+              <div class="relative z-10 flex items-center justify-center gap-2">
+                <span class="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-300">
+                  Plataforma de Agendamento Inteligente
+                </span>
+              </div>
+
+              <!-- Center Hero Logo + Offer -->
+              <div class="relative z-10 my-auto space-y-4 flex flex-col items-center">
+                <!-- Large Glowing Official Logo -->
+                <div class="w-28 h-28 flex items-center justify-center my-1">
+                  <svg viewBox="0 0 500 500" width="100" height="100" fill="none" class="neon-shaka-glow scale-110">
+                    <defs>
+                      <linearGradient id="p5Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#7C3AED" />
+                        <stop offset="50%" stop-color="#EC4899" />
+                        <stop offset="100%" stop-color="#F43F5E" />
+                      </linearGradient>
+                      <linearGradient id="p5Chk" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#10B981" />
+                        <stop offset="0%" stop-color="#06B6D4" />
+                      </linearGradient>
+                    </defs>
+                    <g transform="translate(10, 0)">
+                      <path d="M296 218 C 327 172, 390 94, 421 94 C 445 94, 453 117, 421 164 C 382 218, 335 281, 327 312" stroke="url(#p5Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M242 187 C 242 148, 281 148, 281 187 C 281 218, 242 218, 242 187 Z" stroke="url(#p5Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M195 203 C 195 164, 234 164, 234 203 C 234 234, 195 234, 195 203 Z" stroke="url(#p5Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M148 218 C 148 180, 187 180, 187 218 C 187 250, 148 250, 148 218 Z" stroke="url(#p5Grad)" stroke-width="30" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M156 250 C 125 218, 86 156, 62 156 C 39 156, 31 180, 55 218 C 86 265, 133 312, 156 343" stroke="url(#p5Grad)" stroke-width="34" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M133 328 C 172 406, 328 406, 351 297" stroke="url(#p5Grad)" stroke-width="34" stroke-linecap="round"/>
+                      <path d="M187 297 L234 343 L343 203" stroke="url(#p5Chk)" stroke-width="42" stroke-linecap="round" stroke-linejoin="round"/>
+                    </g>
+                  </svg>
+                </div>
+
+                <div>
+                  <h1 class="text-3xl font-black text-white font-display tracking-tight leading-none">
+                    Bora<span class="neon-text-gradient">Marka</span>
+                  </h1>
+                  <p class="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Sua agenda cheia, sem complicação.</p>
+                </div>
+
+                <div class="p-4 rounded-2xl glass-panel-glow w-full max-w-sm space-y-2">
+                  <div class="text-2xl font-black text-white font-display">
+                    7 DIAS <span class="neon-text-gradient">GRÁTIS</span>
+                  </div>
+                  <p class="text-[11px] text-slate-300 leading-relaxed font-medium">
+                    Configure seus serviços em 2 minutos e comece a receber agendamentos automáticos hoje.
+                  </p>
+                  <div class="pt-2 flex items-center justify-center gap-3 text-[10px] font-bold text-emerald-400">
+                    <span>✓ Sem Cartão</span>
+                    <span>✓ Sem Fidelidade</span>
+                    <span>✓ Suporte 24h</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Footer URL Button -->
+              <div class="relative z-10 pt-2 border-t border-white/10 flex items-center justify-between">
+                <span class="text-xs font-mono font-bold text-pink-400">boramarka.com.br</span>
+                <span class="text-xs font-black text-white flex items-center gap-1">
+                  Toque no link da Bio 🤙
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button onclick="exportPostAsPNG('canvas-post5', 'boramarka_post5_oferta_7dias.png')" class="mt-4 px-5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/10 text-xs font-bold text-white flex items-center gap-2 transition-all">
+            <i data-lucide="image" class="w-4 h-4 text-pink-400"></i>
+            <span>Exportar Post 5 em Alta Resolução (PNG)</span>
+          </button>
+        </div>
+
+        <div class="lg:col-span-6 space-y-4">
+          <div class="p-6 rounded-2xl bg-[#090D17] border border-white/10 space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-extrabold">
+                Post 5 • Oferta Direta & Conversão
+              </span>
+              <button onclick="copyToClipboard('caption-5')" class="text-xs text-slate-400 hover:text-white flex items-center gap-1.5">
+                <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar Legenda
+              </button>
+            </div>
+
+            <h3 class="text-lg font-bold text-white">Sua empresa merece agendamento profissional</h3>
+
+            <div class="p-4 rounded-xl bg-black/40 border border-white/5 font-sans text-xs text-slate-300 leading-relaxed whitespace-pre-wrap select-all" id="caption-5">Chega de perder cliente porque demorou para responder no WhatsApp. ⚡
+
+Com o BoraMarka, você tem seu próprio sistema de agendamento online:
+✅ Seu link exclusivo para Bio e WhatsApp
+✅ Seus clientes agendam 24 horas por dia sozinhos
+✅ Lembretes automáticos no WhatsApp
+✅ Cobrança de sinal via Pix integrado
+✅ Relatório financeiro e controle de caixa
+
+Tudo isso configurado no seu celular em menos de 2 minutos!
+
+🎁 TESTE POR 7 DIAS GRÁTIS:
+Sem cartão de crédito no cadastro. Sem fidelidade.
+
+🔗 Acesse agora: boramarka.com.br (link na bio) 🤙
+
+#boramarka #startup #agendamento #negociolocal #barbearia #salaodebeleza #estetica #tatuador #autonomo #empreender</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 bg-emerald-500 text-slate-950 font-bold px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 text-xs">
+    <i data-lucide="check-circle" class="w-4 h-4"></i>
+    <span id="toast-msg">Texto copiado!</span>
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Tab switcher
+    function selectTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabId) {
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/10 text-white border border-white/20';
+        } else {
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-xs font-bold transition-all bg-white/5 text-slate-400 hover:text-white border border-white/5';
+        }
+      });
+
+      const sections = ['post1', 'post2', 'post3', 'post4', 'post5'];
+      sections.forEach(s => {
+        const sec = document.getElementById('sec-' + s);
+        if (tabId === 'all' || tabId === s) {
+          sec.style.display = 'grid';
+        } else {
+          sec.style.display = 'none';
+        }
+      });
+    }
+
+    // High-Res PNG Exporter using html2canvas
+    async function exportPostAsPNG(canvasId, fileName) {
+      const element = document.getElementById(canvasId);
+      showToast('Renderizando imagem em alta resolução (1080x1350)...');
+
+      try {
+        const canvas = await html2canvas(element, {
+          scale: 2, // 2x Retina scale (produces 1080x1350 PNG)
+          backgroundColor: '#050507',
+          useCORS: true,
+          allowTaint: true,
+          logging: false,
+        });
+
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+        showToast('Download concluído com sucesso!');
+      } catch (err) {
+        console.error('Erro ao exportar PNG:', err);
+        showToast('Erro ao exportar imagem.');
+      }
+    }
+
+    // Download All Posts sequentially
+    async function downloadAllPosts() {
+      const posts = [
+        { id: 'canvas-post1', name: 'boramarka_post1_plano_solo.png' },
+        { id: 'canvas-post2', name: 'boramarka_post2_prejuizo.png' },
+        { id: 'canvas-post3', name: 'boramarka_post3_antes_depois.png' },
+        { id: 'canvas-post4', name: 'boramarka_post4_sinal_pix.png' },
+        { id: 'canvas-post5', name: 'boramarka_post5_oferta_7dias.png' },
+      ];
+
+      for (let i = 0; i < posts.length; i++) {
+        await exportPostAsPNG(posts[i].id, posts[i].name);
+        await new Promise(r => setTimeout(r, 600));
+      }
+    }
+
+    // Clipboard copy helper
+    function copyToClipboard(id) {
+      const text = document.getElementById(id).innerText;
+      navigator.clipboard.writeText(text);
+      showToast('Legenda copiada para a área de transferência!');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 3000);
+    }
+  </script>
+</body>
+</html>

@@ -6,15 +6,17 @@ import {
   Menu, X, MessageSquare, Timer, TrendingUp, TrendingDown, Heart, Award,
   HelpCircle, ArrowUpRight, Smartphone, ArrowUp, ShieldCheck, Globe, 
   CreditCard, Bot, Play, ChevronRight, Sliders, BarChart3, Lock, Search,
-  LayoutGrid, ShoppingBag, Settings, Plus
+  LayoutGrid, ShoppingBag, Settings, Plus, Bell
 } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 import { FAQItem } from '../components/landing/FAQItem'
 import { Reveal, useCountUp } from '../components/landing/Reveal'
+import { UpdatesModal } from '../components/landing/UpdatesModal'
 
 export default function Landing() {
   const navigate = useNavigate()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [updatesModalOpen, setUpdatesModalOpen] = useState(false)
   const [showScrollTop, setShowScrollTop] = useState(false)
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'annual'>('annual')
 
@@ -77,10 +79,8 @@ export default function Landing() {
 
   const navLinks = [
     { label: 'Recursos', href: '#features' },
-    { label: 'Demonstração', href: '#simulator' },
-    { label: 'Calculadora ROI', href: '#roi' },
+    { label: 'BoraEncomenda', href: '#features', badge: 'Novo' },
     { label: 'Preços', href: '#pricing' },
-    { label: 'Depoimentos', href: '#testimonials' },
     { label: 'FAQ', href: '#faq' },
   ]
 
@@ -95,49 +95,69 @@ export default function Landing() {
       </div>
 
       {/* ═════════════════════════════════════════════════════════════════
-          1. FLOATING PILL NAVBAR
+          1. FLOATING PILL NAVBAR (CLEAN ENTERPRISE GLASS)
           ═════════════════════════════════════════════════════════════════ */}
-      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[90%] max-w-5xl">
-        <nav className="backdrop-blur-2xl bg-[#0B0F19]/80 border border-white/10 rounded-full px-5 py-2.5 sm:py-3 flex items-center justify-between shadow-2xl shadow-black/60 transition-all duration-300 hover:border-white/20">
-          <Link to="/" className="flex items-center gap-2">
+      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] sm:w-[88%] max-w-4xl">
+        <nav className="backdrop-blur-2xl bg-[#0B0F19]/85 border border-white/10 rounded-full px-4 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between shadow-2xl shadow-black/70 transition-all duration-300 hover:border-white/20">
+          <Link to="/" className="flex items-center gap-2 shrink-0">
             <BoraMarkaLogo size="sm" />
           </Link>
 
-          {/* Desktop Nav Links */}
-          <div className="hidden md:flex items-center gap-6">
+          {/* Desktop Nav Links (Limpos, focados e sem poluição) */}
+          <div className="hidden md:flex items-center gap-7">
             {navLinks.map((link) => (
               <a
-                key={link.href}
+                key={link.label}
                 href={link.href}
-                className="text-xs font-semibold text-slate-400 hover:text-white transition-colors duration-200"
+                className="text-xs font-semibold text-slate-300 hover:text-white transition-colors duration-200 flex items-center gap-1.5"
               >
-                {link.label}
+                <span>{link.label}</span>
+                {link.badge && (
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/25">
+                    {link.badge}
+                  </span>
+                )}
               </a>
             ))}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Sininho de Novidades & Atualizações */}
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-full bg-white/5 border border-white/10 text-slate-300 hover:text-white"
+              onClick={() => setUpdatesModalOpen(true)}
+              className="relative p-2 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-300 hover:text-white transition-all group shrink-0"
+              title="Ver Novidades e Atualizações da Plataforma"
             >
-              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              <Bell className="w-3.5 h-3.5 text-pink-400 group-hover:scale-110 transition-transform" />
+              <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
+              </span>
             </button>
+
+            <div className="h-4 w-px bg-white/10 hidden sm:block"></div>
 
             <Link
               to="/login"
-              className="text-xs font-bold text-slate-300 hover:text-white px-3 py-1.5 transition-colors hidden sm:block"
+              className="text-xs font-bold text-slate-300 hover:text-white px-2.5 py-1.5 transition-colors hidden sm:block"
             >
               Entrar
             </Link>
 
             <Link
               to="/register"
-              className="group relative inline-flex items-center gap-2 px-4 sm:px-5 py-2 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-xs font-extrabold shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all duration-300"
+              className="group relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-xs font-black shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all duration-300"
             >
               <span>Testar Grátis</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
             </Link>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-full bg-white/5 border border-white/10 text-slate-300 hover:text-white"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </nav>
 
@@ -147,12 +167,17 @@ export default function Landing() {
             <div className="flex flex-col gap-2">
               {navLinks.map((link) => (
                 <a
-                  key={link.href}
+                  key={link.label}
                   href={link.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5"
+                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-white/5 flex items-center justify-between"
                 >
-                  {link.label}
+                  <span>{link.label}</span>
+                  {link.badge && (
+                    <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/15 text-pink-400 border border-pink-500/25">
+                      {link.badge}
+                    </span>
+                  )}
                 </a>
               ))}
               <div className="h-px bg-white/10 my-1"></div>
@@ -1152,23 +1177,23 @@ export default function Landing() {
                 )}
               </div>
 
-              {/* Feature List */}
+              {/* Feature List 1: Essencial */}
               <ul className="space-y-3 text-xs text-slate-300 mb-8">
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>1 profissional</strong> (agenda individual)</span>
+                  <span><strong>1 profissional</strong> (agenda ou produção individual)</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Até <strong>500 agendamentos</strong> por mês</span>
+                  <span>Até <strong>500 agendamentos ou encomendas</strong> por mês</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Link de agendamento personalizado para Bio</span>
+                  <span>Link de agendamento e vitrine de encomendas para Bio</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Cobrança de Sinal no Pix via Mercado Pago</span>
+                  <span>Cobrança de Sinal / Entrada no Pix via Mercado Pago</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -1205,9 +1230,9 @@ export default function Landing() {
                   Em Crescimento
                 </span>
               </div>
-              <h3 className="text-xl font-black text-white mt-1 mb-2">Para Barbearias & Salões</h3>
+              <h3 className="text-xl font-black text-white mt-1 mb-2">Para Negócios em Expansão</h3>
               <p className="text-xs text-slate-300 mb-6">
-                O motor completo de escala com equipe, comissões, vendas adicionais e inteligência artificial.
+                O motor completo de escala com equipe, comissões, vendas de encomendas com Kanban e inteligência artificial.
               </p>
 
               {/* Price Display */}
@@ -1235,7 +1260,7 @@ export default function Landing() {
                 )}
               </div>
 
-              {/* Feature List */}
+              {/* Feature List 2: Profissional */}
               <ul className="space-y-3 text-xs text-slate-200 mb-8">
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -1247,15 +1272,19 @@ export default function Landing() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Até <strong>3.000 agendamentos</strong> por mês</span>
+                  <span>Até <strong>3.000 agendamentos ou encomendas</strong> por mês</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span><strong>Venda Adicional (Upsell)</strong> no checkout</span>
+                  <span><strong>Módulo BoraEncomenda</strong>: Cardápio digital e Kanban de produção</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  <span>Cartão Fidelidade digital e cupons</span>
+                  <span><strong>Venda Adicional (Upsell)</strong> com fotos no checkout</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                  <span>Cartão Fidelidade digital e Cupons de desconto</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
@@ -1276,7 +1305,7 @@ export default function Landing() {
             </Link>
           </div>
 
-          {/* Card 3: Studio & Enterprise */}
+          {/* Card 3: Studio VIP */}
           <div className="bg-[#0B0F19] border border-white/10 rounded-3xl p-6 sm:p-8 flex flex-col justify-between hover:border-white/20 transition-all shadow-xl">
             <div>
               <div className="flex items-center justify-between">
@@ -1287,7 +1316,7 @@ export default function Landing() {
               </div>
               <h3 className="text-xl font-black text-white mt-1 mb-2">Para Grandes Estruturas</h3>
               <p className="text-xs text-slate-400 mb-6">
-                Para estúdios e clínicas com alta equipe, necessidade de RH completo e marca personalizada.
+                Para estúdios, clínicas, redes e confeitarias de grande porte com equipe ampliada, RH completo e marca própria.
               </p>
 
               {/* Price Display */}
@@ -1315,7 +1344,7 @@ export default function Landing() {
                 )}
               </div>
 
-              {/* Feature List */}
+              {/* Feature List 3: Studio VIP */}
               <ul className="space-y-3 text-xs text-slate-300 mb-8">
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -1323,11 +1352,11 @@ export default function Landing() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span><strong>Profissionais e agendamentos ilimitados</strong></span>
+                  <span><strong>Profissionais, agendamentos e produtos ilimitados</strong></span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Módulo de RH: Ponto digital com geolocalização</span>
+                  <span>Módulo de RH: Ponto digital com geolocalização e holerites</span>
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
@@ -1339,7 +1368,11 @@ export default function Landing() {
                 </li>
                 <li className="flex items-start gap-2.5">
                   <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  <span>Gerente de conta dedicado e suporte prioritário</span>
+                  <span>Controle de Acesso Multioperador Granular (RBAC)</span>
+                </li>
+                <li className="flex items-start gap-2.5">
+                  <Check className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <span>Gerente de conta dedicado e suporte prioritário VIP</span>
                 </li>
               </ul>
             </div>
@@ -1545,6 +1578,12 @@ export default function Landing() {
           <ArrowUp className="w-4 h-4" />
         </button>
       )}
+
+      {/* Updates / Changelog Modal */}
+      <UpdatesModal
+        isOpen={updatesModalOpen}
+        onClose={() => setUpdatesModalOpen(false)}
+      />
     </div>
   )
 }

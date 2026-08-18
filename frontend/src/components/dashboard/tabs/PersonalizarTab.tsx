@@ -1,4 +1,4 @@
-import { Camera, Store, Instagram, Copy } from 'lucide-react'
+import { Camera, Store, Instagram, Copy, Calendar, ShoppingBag, Layers, CheckCircle2 } from 'lucide-react'
 
 interface PersonalizarTabProps {
   handleBrandingSubmit: (e: any) => void
@@ -29,8 +29,8 @@ export function PersonalizarTab({
     <div className="animate-slide-up space-y-6">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Personalizar Página Pública</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Configure a identidade visual e o banner do seu link de agendamento</p>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Personalizar Página & Perfil</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">Configure o modelo de atuação, identidade visual e banner do seu negócio</p>
         </div>
       </div>
 
@@ -40,8 +40,78 @@ export function PersonalizarTab({
         {/* CONFIGURATIONS COLUMN (left 7 cols) */}
         <form onSubmit={handleBrandingSubmit} className="lg:col-span-7 card-simple p-4 sm:p-8 space-y-6 border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-[#131826]">
           
-          {/* Business Name and Description */}
+          {/* Business Type & Profile */}
           <div className="space-y-4">
+            <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">Modelo de Atuação</h3>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <button
+                type="button"
+                onClick={() => setBrandingForm({ ...brandingForm, businessType: 'SERVICES' })}
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
+                  (brandingForm.businessType || 'SERVICES') === 'SERVICES'
+                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-md'
+                    : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                <div className="flex justify-between items-center w-full">
+                  <Calendar className="w-5 h-5 text-pink-400" />
+                  {(brandingForm.businessType || 'SERVICES') === 'SERVICES' && (
+                    <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">Serviços Autônomos</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Agendamentos por horário</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBrandingForm({ ...brandingForm, businessType: 'PRODUCTS' })}
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
+                  brandingForm.businessType === 'PRODUCTS'
+                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-md'
+                    : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                <div className="flex justify-between items-center w-full">
+                  <ShoppingBag className="w-5 h-5 text-pink-400" />
+                  {brandingForm.businessType === 'PRODUCTS' && (
+                    <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">Venda sob Encomenda</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Cardápio & Produção</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBrandingForm({ ...brandingForm, businessType: 'HYBRID' })}
+                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
+                  brandingForm.businessType === 'HYBRID'
+                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-md'
+                    : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-white'
+                }`}
+              >
+                <div className="flex justify-between items-center w-full">
+                  <Layers className="w-5 h-5 text-emerald-400" />
+                  {brandingForm.businessType === 'HYBRID' && (
+                    <CheckCircle2 className="w-4 h-4 text-pink-400" />
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-slate-900 dark:text-white">Ambos / Híbrido</p>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Serviços e Encomendas</p>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          {/* Business Name and Description */}
+          <div className="space-y-4 pt-4 border-t border-slate-100 dark:border-slate-800">
             <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">Informações do Perfil</h3>
             
             <div>
@@ -50,7 +120,7 @@ export function PersonalizarTab({
                 type="text"
                 value={brandingForm.businessName}
                 onChange={e => setBrandingForm({ ...brandingForm, businessName: e.target.value })}
-                placeholder="Ex: Barber Shop Elite"
+                placeholder="Ex: Barber Shop Elite ou Doceria Gourmet"
                 className="w-full input-simple font-bold text-sm bg-slate-50 dark:bg-[#1A2235]"
                 required
               />

@@ -138,6 +138,7 @@ export const api = {
     address?: string;
     operatingHours?: string;
     category?: string;
+    businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
   }) =>
     request<{ token: string; refreshToken?: string; username: string; businessName: string; role?: string }>('/auth/register', {
       method: 'POST',
@@ -163,7 +164,7 @@ export const api = {
     }),
 
   forgotPassword: (email: string) =>
-    request<{ message: string }>('/auth/forgot-password', {
+    request<{ message: string; devCode?: string }>('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
@@ -187,6 +188,8 @@ export const api = {
       photoUrl: string;
       address: string;
       operatingHours: string;
+      category?: string;
+      businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
       mpAccessToken?: string;
       pixKey?: string;
       accentColor?: string;
@@ -211,6 +214,8 @@ export const api = {
     photoUrl?: string;
     address?: string;
     operatingHours?: string;
+    category?: string;
+    businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
     mpAccessToken?: string;
     pixKey?: string;
     accentColor?: string;
@@ -311,6 +316,7 @@ export const api = {
       description: string | null;
       price: number;
       duration: number;
+      photoUrl: string;
       isUpsellable?: boolean;
       upsellDiscount?: number;
       createdAt: string;
@@ -331,6 +337,7 @@ export const api = {
     description?: string;
     price: number;
     duration: number;
+    photoUrl?: string;
     isUpsellable?: boolean;
     upsellDiscount?: number;
     addonServiceIds?: number[];
@@ -344,6 +351,7 @@ export const api = {
       description?: string;
       price?: number;
       duration?: number;
+      photoUrl?: string;
       isUpsellable?: boolean;
       upsellDiscount?: number;
       addonServiceIds?: number[];
@@ -538,6 +546,9 @@ export const api = {
       bookingFeeAmount: number;
       serviceName: string;
       servicePrice: number;
+      servicePhotoUrl?: string;
+      serviceDescription?: string;
+      serviceDuration?: number;
       activeCoupons?: Array<{
         code: string;
         discountType: 'percentage' | 'fixed';
@@ -549,6 +560,7 @@ export const api = {
         price: number;
         duration: number;
         description?: string;
+        photoUrl?: string;
         upsellDiscount?: number;
       }>;
       accentColor?: string;
@@ -1472,6 +1484,94 @@ export const api = {
       method: 'PATCH',
       body: JSON.stringify({ approved }),
     }),
+
+  // ═══ 🍰 BoraEncomenda API ═══
+  getOrderSettings: () =>
+    request<any>('/order-settings'),
+
+  updateOrderSettings: (data: any) =>
+    request<any>('/order-settings', { method: 'PUT', body: JSON.stringify(data) }),
+
+  getProductCategories: () =>
+    request<any[]>('/products/categories'),
+
+  createProductCategory: (data: { name: string; iconUrl?: string }) =>
+    request<any>('/products/categories', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateProductCategory: (id: number, data: { name?: string; iconUrl?: string }) =>
+    request<any>(`/products/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteProductCategory: (id: number) =>
+    request(`/products/categories/${id}`, { method: 'DELETE' }),
+
+  getProducts: () =>
+    request<any[]>('/products'),
+
+  getProduct: (id: number) =>
+    request<any>(`/products/${id}`),
+
+  createProduct: (data: any) =>
+    request<any>('/products', { method: 'POST', body: JSON.stringify(data) }),
+
+  updateProduct: (id: number, data: any) =>
+    request<any>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+  deleteProduct: (id: number) =>
+    request(`/products/${id}`, { method: 'DELETE' }),
+
+  reorderProducts: (productIds: number[]) =>
+    request<{ success: boolean }>('/products/reorder', {
+      method: 'PATCH',
+      body: JSON.stringify({ productIds }),
+    }),
+
+  getOrders: (params?: { status?: string; startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    const qs = query.toString();
+    return request<any[]>(`/orders${qs ? `?${qs}` : ''}`);
+  },
+
+  getOrderStats: () =>
+    request<any>('/orders/stats'),
+
+  getOrder: (id: number) =>
+    request<any>(`/orders/${id}`),
+
+  updateOrderStatus: (id: number, status: string, note?: string) =>
+    request<any>(`/orders/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, note }),
+    }),
+
+  updateOrderPayment: (id: number, depositPaid: boolean) =>
+    request<any>(`/orders/${id}/payment`, {
+      method: 'PATCH',
+      body: JSON.stringify({ depositPaid }),
+    }),
+
+  deleteOrder: (id: number) =>
+    request(`/orders/${id}`, { method: 'DELETE' }),
+
+  // ═══ Vitrine Pública & Rastreamento ═══
+  getPublicStore: (username: string) =>
+    request<any>(`/store/${encodeURIComponent(username)}`),
+
+  createPublicOrder: (username: string, data: any) =>
+    request<{
+      order: any;
+      paymentUrl?: string;
+      whatsappUrl?: string;
+      trackingUrl: string;
+    }>(`/store/${encodeURIComponent(username)}/order`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  trackPublicOrder: (orderNumber: string) =>
+    request<any>(`/store/order/${encodeURIComponent(orderNumber)}/track`),
 };
 
 export interface PublicReviewItem {

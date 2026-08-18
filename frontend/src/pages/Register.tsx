@@ -5,7 +5,8 @@ import {
   Store, User, Lock, Phone, FileText, MapPin, Clock,
   ChevronRight, ChevronLeft, Loader2, AlertCircle,
   Sparkles, Star, CheckCircle2, Image, Building2, X, ArrowLeft, Mail, RefreshCw, KeyRound, Edit2, ShieldCheck,
-  Scissors, PenTool, Droplet, Dumbbell, Heart, Stethoscope, Lightbulb
+  Scissors, PenTool, Droplet, Dumbbell, Heart, Stethoscope, Lightbulb,
+  ShoppingBag, Calendar, Layers, Package, Utensils, Gift, Eye, EyeOff
 } from 'lucide-react'
 import { BoraMarkaLogo } from '../components/BoraMarkaLogo'
 
@@ -95,6 +96,8 @@ export default function Register() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   // E-mail Verification Modal state
   const [showVerifyModal, setShowVerifyModal] = useState(false)
@@ -134,6 +137,7 @@ export default function Register() {
   }, [showVerifyModal])
 
   // Step 2 — Negócio
+  const [businessType, setBusinessType] = useState<'SERVICES' | 'PRODUCTS' | 'HYBRID'>('SERVICES')
   const [businessName, setBusinessName] = useState('')
   const [category, setCategory] = useState('barber')
   const [photoUrl, setPhotoUrl] = useState('')
@@ -141,15 +145,30 @@ export default function Register() {
   const [phone, setPhone] = useState('')
   const [address, setAddress] = useState('')
 
-  const categories = [
-    { id: 'barber', icon: Scissors, name: 'Barbearia', desc: 'Cortes, Barba & Combos' },
+  const serviceCategories = [
+    { id: 'barber', icon: Scissors, name: 'Barbearia', desc: 'Cortes, Barba & Cuidados' },
     { id: 'beauty', icon: Sparkles, name: 'Salão & Esmalteria', desc: 'Pé & Mão, Cabelo, Gel' },
     { id: 'tattoo', icon: PenTool, name: 'Tatuagem & Piercing', desc: 'Sessões & Perfurações' },
-    { id: 'aesthetics', icon: Droplet, name: 'Estética & Cílios/Sobrancelhas', desc: 'Design, Henna, Cílios' },
+    { id: 'aesthetics', icon: Droplet, name: 'Estética & Sobrancelhas', desc: 'Design, Henna, Cílios' },
     { id: 'health', icon: Dumbbell, name: 'Personal & Saúde/Fisio', desc: 'Treinos & Fisioterapia' },
     { id: 'pet', icon: Heart, name: 'Pet Shop & Banho e Tosa', desc: 'Banho, Tosa & Pet Care' },
     { id: 'clinic', icon: Stethoscope, name: 'Consultório & Clínica', desc: 'Consultas & Retornos' },
   ]
+
+  const productCategories = [
+    { id: 'confectionery', icon: Utensils, name: 'Confeitaria & Bolos', desc: 'Bolos, Doces & Tortas' },
+    { id: 'chocolates', icon: Gift, name: 'Doces & Chocolates', desc: 'Bombons & Caixas de Brigadeiros' },
+    { id: 'buffet', icon: ShoppingBag, name: 'Salgados & Buffet', desc: 'Centos de Salgados & Festas' },
+    { id: 'crafts', icon: Package, name: 'Artesanato & Lembranças', desc: 'Lembrancinhas & Peças' },
+    { id: 'gourmet', icon: Store, name: 'Gastronomia & Marmitas', desc: 'Pratos Artesanais & Kits' },
+  ]
+
+  const activeCategories =
+    businessType === 'SERVICES'
+      ? serviceCategories
+      : businessType === 'PRODUCTS'
+      ? productCategories
+      : [...serviceCategories, ...productCategories]
 
   // Step 3 — Perfil
   const [description, setDescription] = useState('')
@@ -334,7 +353,8 @@ export default function Register() {
     setSendingCode(true)
     setVerifyError('')
     try {
-      await api.sendVerificationCode(email.trim(), username.trim())
+      const res = await api.sendVerificationCode(email.trim(), username.trim())
+      if (res.devCode) setDevCode(res.devCode)
       setResendTimer(60)
     } catch (err: any) {
       setVerifyError(err.message || 'Erro ao reenviar código.')
@@ -361,6 +381,7 @@ export default function Register() {
         address: address.trim(),
         operatingHours,
         category,
+        businessType,
       })
 
       localStorage.removeItem('token')
@@ -514,8 +535,21 @@ export default function Register() {
                   <label className={labelClass}>Senha</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                    <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-                      placeholder="Mínimo 6 caracteres" className={inputIconClass} />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={password}
+                      onChange={e => setPassword(e.target.value)}
+                      placeholder="Mínimo 6 caracteres"
+                      className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-10 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors cursor-pointer p-1"
+                      title={showPassword ? "Ocultar senha" : "Ver senha"}
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -523,8 +557,21 @@ export default function Register() {
                   <label className={labelClass}>Confirmar Senha</label>
                   <div className="relative">
                     <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                    <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
-                      placeholder="Digite a senha novamente" className={inputIconClass} />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={e => setConfirmPassword(e.target.value)}
+                      placeholder="Digite a senha novamente"
+                      className="w-full bg-white/[0.03] border border-white/[0.06] focus:border-violet-500/50 rounded-xl pl-10 pr-10 py-3 text-[13px] text-white/80 font-medium focus:outline-none transition-colors duration-500 ease-[cubic-bezier(0.32,0.72,0,1)] placeholder:text-white/15"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-white/30 hover:text-white transition-colors cursor-pointer p-1"
+                      title={showConfirmPassword ? "Ocultar senha" : "Ver senha"}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
                   </div>
                 </div>
 
@@ -538,19 +585,93 @@ export default function Register() {
             {/* ═══ STEP 2 — Dados do Negócio ═══ */}
             {step === 2 && (
               <div className="space-y-5 animate-slide-up">
+                {/* Seletor de Modelo de Atuação */}
+                <div>
+                  <label className={labelClass}>
+                    Modelo de Atuação do seu Negócio <span className="text-red-400">*</span>
+                  </label>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBusinessType('SERVICES')
+                        setCategory('barber')
+                      }}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all duration-300 ${
+                        businessType === 'SERVICES'
+                          ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
+                          : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <Calendar className="w-5 h-5 text-violet-400" />
+                        {businessType === 'SERVICES' && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
+                      </div>
+                      <div>
+                        <p className="text-[12px] font-bold text-white leading-tight">Serviços Autônomos</p>
+                        <p className="text-[10px] text-white/40 mt-0.5">Agendamentos & Horários</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBusinessType('PRODUCTS')
+                        setCategory('confectionery')
+                      }}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all duration-300 ${
+                        businessType === 'PRODUCTS'
+                          ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
+                          : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <ShoppingBag className="w-5 h-5 text-pink-400" />
+                        {businessType === 'PRODUCTS' && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
+                      </div>
+                      <div>
+                        <p className="text-[12px] font-bold text-white leading-tight">Venda por Encomenda</p>
+                        <p className="text-[10px] text-white/40 mt-0.5">Bolos, Doces & Cardápio</p>
+                      </div>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBusinessType('HYBRID')
+                        setCategory('confectionery')
+                      }}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all duration-300 ${
+                        businessType === 'HYBRID'
+                          ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
+                          : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
+                      }`}
+                    >
+                      <div className="flex justify-between items-center w-full">
+                        <Layers className="w-5 h-5 text-emerald-400" />
+                        {businessType === 'HYBRID' && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
+                      </div>
+                      <div>
+                        <p className="text-[12px] font-bold text-white leading-tight">Ambos / Híbrido</p>
+                        <p className="text-[10px] text-white/40 mt-0.5">Serviços e Encomendas</p>
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className={labelClass}>Nome do Negócio <span className="text-red-400">*</span></label>
                   <div className="relative">
                     <Store className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                     <input type="text" value={businessName} onChange={e => setBusinessName(e.target.value)}
-                      placeholder="Ex: Barbearia do João" className={inputIconClass} autoFocus />
+                      placeholder={businessType === 'PRODUCTS' ? 'Ex: Doceria Gourmet da Maria' : 'Ex: Barbearia do João'} className={inputIconClass} autoFocus />
                   </div>
                 </div>
 
                 <div>
                   <label className={labelClass}>Nicho / Categoria do Negócio <span className="text-red-400">*</span></label>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-[220px] overflow-y-auto pr-1 custom-scrollbar">
-                    {categories.map((cat) => {
+                    {activeCategories.map((cat) => {
                       const isSelected = category === cat.id
                       return (
                         <button
@@ -816,16 +937,33 @@ export default function Register() {
                     </div>
 
                     {devCode && (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const digits = devCode.split('')
-                          setPin(digits)
-                        }}
-                        className="mt-3 w-full bg-violet-500/10 hover:bg-violet-500/20 border border-violet-500/20 p-3 rounded-xl text-center text-xs text-violet-300 font-semibold animate-fadeIn transition-colors cursor-pointer"
-                      >
-                        Modo de Testes / Fallback: Clique para preencher <strong className="text-pink-400 text-sm font-mono tracking-widest bg-pink-500/10 px-2 py-0.5 rounded-md border border-pink-500/20">{devCode}</strong>
-                      </button>
+                      <div className="mt-4 p-3 bg-gradient-to-r from-violet-950/60 via-[#13172B] to-pink-950/60 border border-pink-500/30 rounded-2xl shadow-xl animate-fadeIn">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-pink-400 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-300" />
+                            Ambiente Local • Código de Teste
+                          </span>
+                          <span className="text-[9px] text-white/40 font-mono">
+                            localhost
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const digits = devCode.split('')
+                            setPin(digits)
+                          }}
+                          className="w-full py-2 px-3 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 text-white text-xs font-bold transition-all flex items-center justify-between group cursor-pointer"
+                        >
+                          <span className="text-white/70 text-[11px]">Código gerado:</span>
+                          <span className="font-mono font-black text-sm tracking-widest text-pink-300 bg-pink-500/30 px-2 py-0.5 rounded-lg border border-pink-400/40">
+                            {devCode}
+                          </span>
+                          <span className="text-[10px] text-pink-400 group-hover:text-pink-300 underline font-semibold">
+                            Clique para preencher
+                          </span>
+                        </button>
+                      </div>
                     )}
                   </div>
 

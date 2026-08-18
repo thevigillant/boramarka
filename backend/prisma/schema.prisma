@@ -20,6 +20,7 @@ model Admin {
   address        String @default("")
   operatingHours String @default("") @map("operating_hours")
   category       String @default("barber")
+  businessType   String @default("SERVICES") @map("business_type") // "SERVICES" | "PRODUCTS" | "HYBRID"
   mpAccessToken  String @default("") @map("mp_access_token")
   pixKey         String @default("") @map("pix_key")
   accentColor    String @default("#f97316") @map("accent_color")
@@ -71,6 +72,10 @@ model Admin {
   employeeAnnouncements EmployeeAnnouncement[]
   refreshTokens     RefreshToken[]
   serviceReviews    ServiceReview[]
+  orderSettings     OrderSettings?
+  productCategories ProductCategory[]
+  products          Product[]
+  orders            Order[]
 
   @@map("admin")
 }
@@ -111,6 +116,7 @@ model Service {
   description String?
   price       Float
   duration    Int      // duration in minutes
+  photoUrl    String   @default("") @map("photo_url")
   isUpsellable   Boolean  @default(true) @map("is_upsellable")
   upsellDiscount Float    @default(0.0) @map("upsell_discount")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -733,4 +739,165 @@ model ServiceReview {
 
   @@map("service_reviews")
 }
+
+// ═══════════════════════════════════════════════════════════
+// 🍰 Módulo BoraEncomenda (Sistema de Encomendas & Cardápio)
+// ═══════════════════════════════════════════════════════════
+
+model OrderSettings {
+  id                   Int      @id @default(autoincrement())
+  adminId              Int      @unique @map("admin_id")
+  admin                Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  enabled              Boolean  @default(true)
+  storeName            String   @default("") @map("store_name")
+  storeDescription     String   @default("") @map("store_description")
+  bannerUrl            String   @default("") @map("banner_url")
+  minOrderAmount       Float    @default(0.0) @map("min_order_amount")
+  depositPercentage    Float    @default(50.0) @map("deposit_percentage") // % de entrada (ex: 50%)
+  allowScheduledPickup Boolean  @default(true) @map("allow_scheduled_pickup")
+  allowDelivery        Boolean  @default(true) @map("allow_delivery")
+  deliveryFee          Float    @default(0.0) @map("delivery_fee")
+  minAdvanceDays       Int      @default(2) @map("min_advance_days") // antecedência mínima global em dias
+  whatsappNotifications Boolean @default(true) @map("whatsapp_notifications")
+  pixKey               String   @default("") @map("pix_key")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @default(now()) @map("updated_at")
+
+  @@map("order_settings")
+}
+
+model ProductCategory {
+  id        Int       @id @default(autoincrement())
+  name      String
+  iconUrl   String    @default("") @map("icon_url")
+  position  Int       @default(0)
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  adminId   Int       @map("admin_id")
+  admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  products  Product[]
+
+  @@map("product_categories")
+}
+
+model Product {
+  id                  Int                  @id @default(autoincrement())
+  name                String
+  description         String               @default("")
+  price               Float
+  minDaysNotice       Int                  @default(2) @map("min_days_notice") // prazo mínimo de produção em dias
+  maxQuantityPerOrder Int                  @default(99) @map("max_quantity_per_order")
+  unitLabel           String               @default("unidade") @map("unit_label") // "unidade", "kg", "cento", "fatia"
+  available           Boolean              @default(true)
+  featured            Boolean              @default(false)
+  position            Int                  @default(0)
+  createdAt           DateTime             @default(now()) @map("created_at")
+  updatedAt           DateTime             @updatedAt @default(now()) @map("updated_at")
+
+  adminId             Int                  @map("admin_id")
+  admin               Admin                @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  categoryId          Int?                 @map("category_id")
+  category            ProductCategory?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  photos              ProductPhoto[]
+  customFields        ProductCustomField[]
+  orderItems          OrderItem[]
+
+  @@map("products")
+}
+
+model ProductPhoto {
+  id        Int      @id @default(autoincrement())
+  url       String
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_photos")
+}
+
+model ProductCustomField {
+  id        Int      @id @default(autoincrement())
+  label     String   // Ex: "Sabor da massa", "Recheio", "Nome e idade para topo"
+  fieldType String   @default("TEXT") @map("field_type") // "TEXT" | "SELECT" | "CHECKBOX"
+  options   String   @default("[]") // JSON Array com as opções, ex: ["Chocolate Belga", "Ninho com Nutella"]
+  required  Boolean  @default(false)
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  productId Int      @map("product_id")
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("product_custom_fields")
+}
+
+model Order {
+  id               Int              @id @default(autoincrement())
+  orderNumber      String           @unique @map("order_number") // Ex: "#ENK-1042"
+  clientName       String           @map("client_name")
+  clientPhone      String           @map("client_phone")
+  clientEmail      String           @default("") @map("client_email")
+  deliveryDate     String           @map("delivery_date") // "YYYY-MM-DD"
+  deliveryTime     String           @default("14:00") @map("delivery_time") // "HH:MM"
+  deliveryType     String           @default("PICKUP") @map("delivery_type") // "PICKUP" | "DELIVERY"
+  deliveryAddress  String           @default("") @map("delivery_address")
+  status           String           @default("NOVO") // "NOVO" | "CONFIRMADO" | "EM_PRODUCAO" | "PRONTO" | "ENTREGUE" | "CANCELADO"
+  notes            String           @default("")
+  subtotal         Float            @default(0.0)
+  deliveryFee      Float            @default(0.0) @map("delivery_fee")
+  discount         Float            @default(0.0)
+  total            Float            @default(0.0)
+  depositPercentage Float           @default(50.0) @map("deposit_percentage")
+  depositAmount    Float            @default(0.0) @map("deposit_amount")
+  depositPaid      Boolean          @default(false) @map("deposit_paid")
+  remainingAmount  Float            @default(0.0) @map("remaining_amount")
+  mpPaymentId      String           @default("") @map("mp_payment_id")
+  cancellationCode String           @default("") @map("cancellation_code")
+  createdAt        DateTime         @default(now()) @map("created_at")
+  updatedAt        DateTime         @updatedAt @default(now()) @map("updated_at")
+
+  adminId          Int              @map("admin_id")
+  admin            Admin            @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  items            OrderItem[]
+  statusLogs       OrderStatusLog[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id             Int      @id @default(autoincrement())
+  productName    String   @default("") @map("product_name")
+  quantity       Int      @default(1)
+  unitPrice      Float    @map("unit_price")
+  subtotal       Float
+  customizations String   @default("{}") // JSON com as respostas do cliente
+  notes          String   @default("")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  orderId        Int      @map("order_id")
+  order          Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  productId      Int?     @map("product_id")
+  product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@map("order_items")
+}
+
+model OrderStatusLog {
+  id        Int      @id @default(autoincrement())
+  oldStatus String   @map("old_status")
+  newStatus String   @map("new_status")
+  note      String   @default("")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  orderId   Int      @map("order_id")
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("order_status_logs")
+}
+
 

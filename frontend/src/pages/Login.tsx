@@ -29,6 +29,7 @@ export default function Login() {
   const [forgotLoading, setForgotLoading] = useState(false)
   const [forgotError, setForgotError] = useState('')
   const [forgotSuccess, setForgotSuccess] = useState('')
+  const [resetDevCode, setResetDevCode] = useState('')
 
   // Estados de visibilidade de senha
   const [showPassword, setShowPassword] = useState(false)
@@ -121,6 +122,7 @@ export default function Login() {
     setForgotLoading(true)
     try {
       const res = await api.forgotPassword(resetEmail)
+      if (res.devCode) setResetDevCode(res.devCode)
       setForgotSuccess(res.message || 'Código enviado! Verifique seu e-mail.')
       setForgotStep(2)
     } catch (err: any) {
@@ -473,6 +475,33 @@ export default function Login() {
                     <p className="text-[12px] text-white/60 leading-relaxed">
                       Digite o código de 6 dígitos que você recebeu e a sua nova senha.
                     </p>
+
+                    {resetDevCode && (
+                      <div className="p-3 bg-gradient-to-r from-violet-950/60 via-[#13172B] to-pink-950/60 border border-pink-500/30 rounded-2xl shadow-xl animate-fadeIn">
+                        <div className="flex items-center justify-between gap-2 mb-2">
+                          <span className="text-[10px] font-black uppercase tracking-wider text-pink-400 flex items-center gap-1">
+                            <Sparkles className="w-3 h-3 text-amber-300" />
+                            Ambiente Local • Código de Teste
+                          </span>
+                          <span className="text-[9px] text-white/40 font-mono">
+                            localhost
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setResetCode(resetDevCode)}
+                          className="w-full py-2 px-3 rounded-xl bg-pink-500/20 hover:bg-pink-500/30 border border-pink-500/40 text-white text-xs font-bold transition-all flex items-center justify-between group cursor-pointer"
+                        >
+                          <span className="text-white/70 text-[11px]">Código gerado:</span>
+                          <span className="font-mono font-black text-sm tracking-widest text-pink-300 bg-pink-500/30 px-2 py-0.5 rounded-lg border border-pink-400/40">
+                            {resetDevCode}
+                          </span>
+                          <span className="text-[10px] text-pink-400 group-hover:text-pink-300 underline font-semibold">
+                            Clique para preencher
+                          </span>
+                        </button>
+                      </div>
+                    )}
 
                     <div>
                       <label className="text-[9px] font-bold uppercase text-white/25 tracking-[0.15em] block mb-2">Código de Verificação</label>
