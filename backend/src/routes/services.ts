@@ -52,7 +52,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
-    const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds } = parsed.data;
+    const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds, photoUrl } = parsed.data;
 
     const quota = await checkQuota(user.id, 'services');
     if (!quota.allowed) {
@@ -66,6 +66,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
           description: description?.trim(),
           price,
           duration,
+          photoUrl: photoUrl || '',
           isUpsellable: isUpsellable !== undefined ? isUpsellable : true,
           upsellDiscount: upsellDiscount || 0.0,
           adminId: user.id,
@@ -111,7 +112,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   app.put('/:id', async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
-    const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds } = request.body as {
+    const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds, photoUrl } = request.body as {
       name?: string;
       description?: string;
       price?: number;
@@ -119,6 +120,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
       isUpsellable?: boolean;
       upsellDiscount?: number;
       addonServiceIds?: number[];
+      photoUrl?: string;
     };
 
     const serviceId = parseInt(id);
@@ -134,6 +136,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
             ...(duration !== undefined && { duration }),
             ...(isUpsellable !== undefined && { isUpsellable }),
             ...(upsellDiscount !== undefined && { upsellDiscount }),
+            ...(photoUrl !== undefined && { photoUrl }),
           },
         });
 

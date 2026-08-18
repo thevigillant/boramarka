@@ -39,6 +39,9 @@ export default function BookingPage() {
   const [bookingFeeAmount, setBookingFeeAmount] = useState(0)
   const [serviceName, setServiceName] = useState('')
   const [servicePrice, setServicePrice] = useState(0)
+  const [servicePhotoUrl, setServicePhotoUrl] = useState('')
+  const [serviceDescription, setServiceDescription] = useState('')
+  const [serviceDuration, setServiceDuration] = useState(30)
 
   // Selection state
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
@@ -68,7 +71,7 @@ export default function BookingPage() {
   const [adminPhone, setAdminPhone] = useState('')
   
   // Upsell / Addons state
-  const [availableUpsells, setAvailableUpsells] = useState<Array<{ id: number; name: string; price: number; duration: number; description?: string; upsellDiscount?: number }>>([])
+  const [availableUpsells, setAvailableUpsells] = useState<Array<{ id: number; name: string; price: number; duration: number; description?: string; photoUrl?: string; upsellDiscount?: number }>>([])
   const [selectedAddonIds, setSelectedAddonIds] = useState<number[]>([])
 
   useEffect(() => {
@@ -82,6 +85,9 @@ export default function BookingPage() {
         setBookingFeeAmount(data.bookingFeeAmount)
         setServiceName(data.serviceName)
         setServicePrice(data.servicePrice)
+        setServicePhotoUrl(data.servicePhotoUrl || '')
+        setServiceDescription(data.serviceDescription || '')
+        setServiceDuration(data.serviceDuration || 30)
         setActiveCoupons(data.activeCoupons || [])
         setAvailableUpsells(data.availableUpsells || [])
         setAccentColor(data.accentColor || '#f97316')
@@ -440,6 +446,46 @@ export default function BookingPage() {
 
       <div className="max-w-xl mx-auto px-4 -mt-16 animate-slide-up">
         <div className="bg-white dark:bg-[#131826] rounded-3xl border border-slate-200 dark:border-slate-800/80 shadow-2xl overflow-hidden">
+          {/* Service Highlight Card */}
+          {serviceName && (
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/40">
+              <div className="flex gap-4 items-center">
+                {servicePhotoUrl ? (
+                  <img
+                    src={servicePhotoUrl}
+                    alt={serviceName}
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl object-cover shadow-md border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                  />
+                ) : (
+                  <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0 text-slate-400">
+                    <Calendar className="w-8 h-8 text-pink-400" />
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-pink-100 dark:bg-pink-950/60 text-pink-600 dark:text-pink-400 border border-pink-200 dark:border-pink-800">
+                      Serviço Selecionado
+                    </span>
+                    <span className="text-xs font-bold text-slate-400 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {serviceDuration} min
+                    </span>
+                  </div>
+                  <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white leading-tight truncate">
+                    {serviceName}
+                  </h2>
+                  {serviceDescription && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                      {serviceDescription}
+                    </p>
+                  )}
+                  <div className="mt-2 text-base sm:text-lg font-black text-pink-600 dark:text-pink-400">
+                    {servicePrice > 0 ? `R$ ${servicePrice.toFixed(2)}` : 'A combinar'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Step 1: Date */}
           <div className="p-6 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-sm font-bold text-slate-500 dark:text-slate-450 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -559,18 +605,27 @@ export default function BookingPage() {
                               : 'bg-white/80 dark:bg-[#131826]/90 border-slate-200 dark:border-slate-800 hover:border-pink-500/40'
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className={`w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                               isSelected ? 'bg-gradient-to-tr from-pink-500 to-violet-500 border-transparent text-white shadow-md' : 'border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800'
                             }`}>
-                              {isSelected && <span className="text-xs font-black"></span>}
+                              {isSelected && <span className="text-xs font-black">✓</span>}
                             </div>
-                            <div>
-                              <p className="text-xs font-black text-slate-900 dark:text-white">{addon.name}</p>
+                            {addon.photoUrl && (
+                              <img
+                                src={addon.photoUrl}
+                                alt={addon.name}
+                                className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
+                              />
+                            )}
+                            <div className="min-w-0">
+                              <p className="text-xs font-black text-slate-900 dark:text-white truncate">{addon.name}</p>
                               {addon.description && (
                                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-medium line-clamp-1">{addon.description}</p>
                               )}
-                              <span className="text-[10px] text-slate-400 font-bold">⏱️ +{addon.duration} min</span>
+                              <span className="text-[10px] text-slate-400 font-bold flex items-center gap-1 mt-0.5">
+                                <Clock className="w-3 h-3" /> +{addon.duration} min
+                              </span>
                             </div>
                           </div>
 

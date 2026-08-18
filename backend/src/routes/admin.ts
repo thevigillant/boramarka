@@ -100,6 +100,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
       customDomain: admin.customDomain,
+      category: admin.category || 'barber',
+      businessType: admin.businessType || 'SERVICES',
       reminderEnabled: admin.reminderEnabled,
       reminderHours: admin.reminderHours,
       reminderChannels: admin.reminderChannels,
@@ -127,6 +129,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme,
       bannerUrl,
       customDomain,
+      category,
+      businessType,
       reminderEnabled,
       reminderHours,
       reminderChannels
@@ -147,6 +151,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme?: string;
       bannerUrl?: string;
       customDomain?: string | null;
+      category?: string;
+      businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
       reminderEnabled?: boolean;
       reminderHours?: string;
       reminderChannels?: string;
@@ -169,11 +175,12 @@ export default async function adminRoutes(app: FastifyInstance) {
       if (customDomain === null || customDomain.trim() === '') {
         finalCustomDomain = null;
       } else {
-        // Format customDomain: trim, lowercase, remove protocol
-        let formatted = customDomain.trim().toLowerCase();
-        formatted = formatted.replace(/^(https?:\/\/)?(www\.)?/, '');
-        formatted = formatted.replace(/\/$/, ''); // remove trailing slash
-
+        const cleanDomain = customDomain.trim().toLowerCase().replace(/^https?:\/\//, '').replace(/\/$/, '');
+        const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+        if (!domainRegex.test(cleanDomain)) {
+          return reply.status(400).send({ error: 'Formato de domínio inválido. Use exemplo.com.br ou app.meusite.com' });
+        }
+        
         // Check if professional has premium plan
         const sub = await prisma.subscription.findUnique({ where: { adminId: user.id } });
         if (!sub || sub.plan !== 'premium' || sub.status !== 'active') {
@@ -183,7 +190,7 @@ export default async function adminRoutes(app: FastifyInstance) {
         // Check if domain is already taken
         const existing = await prisma.admin.findFirst({
           where: {
-            customDomain: formatted,
+            customDomain: cleanDomain,
             id: { not: user.id }
           }
         });
@@ -192,7 +199,7 @@ export default async function adminRoutes(app: FastifyInstance) {
           return reply.status(400).send({ error: 'Este domínio já está mapeado para outra conta.' });
         }
 
-        finalCustomDomain = formatted;
+        finalCustomDomain = cleanDomain;
       }
     }
 
@@ -215,6 +222,8 @@ export default async function adminRoutes(app: FastifyInstance) {
         ...(publicTheme !== undefined && { publicTheme: publicTheme.trim() }),
         ...(bannerUrl !== undefined && { bannerUrl: bannerUrl.trim() }),
         ...(finalCustomDomain !== undefined && { customDomain: finalCustomDomain }),
+        ...(category !== undefined && { category: category.trim() }),
+        ...(businessType !== undefined && { businessType }),
         ...(reminderEnabled !== undefined && { reminderEnabled }),
         ...(reminderHours !== undefined && { reminderHours: reminderHours.trim() }),
         ...(reminderChannels !== undefined && { reminderChannels: reminderChannels.trim().toLowerCase() }),
@@ -237,6 +246,8 @@ export default async function adminRoutes(app: FastifyInstance) {
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
       customDomain: admin.customDomain,
+      category: admin.category,
+      businessType: admin.businessType,
       reminderEnabled: admin.reminderEnabled,
       reminderHours: admin.reminderHours,
       reminderChannels: admin.reminderChannels,

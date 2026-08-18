@@ -46,6 +46,7 @@ export const createServiceSchema = z.object({
   price: z.number().nonnegative('Preço deve ser positivo'),
   duration: z.number().positive('Duração deve ser maior que 0'),
   description: z.string().optional(),
+  photoUrl: z.string().optional(),
   isUpsellable: z.boolean().optional(),
   upsellDiscount: z.number().optional(),
   addonServiceIds: z.array(z.number().int()).optional()

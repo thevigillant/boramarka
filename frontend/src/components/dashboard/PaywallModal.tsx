@@ -22,29 +22,40 @@ export function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean;
           Sua conta está no modo de visualização. Para reativar sua agenda online, gerenciar seus horários e continuar recebendo agendamentos automáticos, escolha um de nossos planos.
         </p>
         
-        <div className="space-y-4">
+        <div className="space-y-3">
           <button 
             onClick={() => onCheckout('mensal')}
-            className="w-full py-4 bg-slate-800 hover:bg-slate-700 text-white rounded-2xl font-black transition-all flex items-center justify-center gap-2 border border-slate-750 hover:scale-[1.02]"
+            className="w-full p-4 bg-slate-800/90 hover:bg-slate-700/90 text-white rounded-2xl font-bold transition-all flex items-center justify-between border border-slate-700 hover:scale-[1.01]"
           >
-            <CreditCard className="w-5 h-5" />
-            Plano Mensal — R$ 29,90/mês
+            <div className="text-left">
+              <span className="text-xs font-black uppercase text-slate-400 block">Essencial (Solo)</span>
+              <span className="text-sm font-black text-white">R$ 29,90 / mês</span>
+            </div>
+            <CreditCard className="w-5 h-5 text-slate-400" />
           </button>
           
           <button 
             onClick={() => onCheckout('anual')}
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-pink-500/25 flex items-center justify-center gap-2"
+            className="w-full p-4 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-2xl font-bold transition-all hover:scale-[1.01] shadow-lg shadow-pink-500/20 flex items-center justify-between"
           >
-            <CreditCard className="w-5 h-5" />
-            Plano Anual — R$ 260/ano <span className="text-xs opacity-80 ml-1">(economize R$ 100)</span>
+            <div className="text-left">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase text-pink-200 block">Profissional (Mais Escolhido)</span>
+              </div>
+              <span className="text-sm font-black text-white">R$ 49,90 / mês</span>
+            </div>
+            <Sparkles className="w-5 h-5 text-amber-200" />
           </button>
 
           <button 
             onClick={() => onCheckout('premium')}
-            className="w-full py-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-black transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-indigo-500/25 flex items-center justify-center gap-2"
+            className="w-full p-4 bg-gradient-to-r from-violet-600 to-indigo-600 text-white rounded-2xl font-bold transition-all hover:scale-[1.01] shadow-lg shadow-indigo-500/20 flex items-center justify-between"
           >
+            <div className="text-left">
+              <span className="text-xs font-black uppercase text-violet-200 block">Studio VIP (Ilimitado & RH)</span>
+              <span className="text-sm font-black text-white">R$ 79,90 / mês</span>
+            </div>
             <Sparkles className="w-5 h-5 text-yellow-300" />
-            Plano Premium — R$ 79,90/mês
           </button>
         </div>
       </div>

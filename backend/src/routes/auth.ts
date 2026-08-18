@@ -74,7 +74,7 @@ export default async function authRoutes(app: FastifyInstance) {
       message: emailSent
         ? `Código de verificação de 4 dígitos enviado para ${cleanEmail}`
         : `Código de verificação enviado para ${cleanEmail}`,
-      devCode: (emailSent || isProd) ? undefined : code,
+      devCode: isProd ? undefined : code,
     };
   });
 
@@ -132,6 +132,7 @@ export default async function authRoutes(app: FastifyInstance) {
       address,
       operatingHours,
       category,
+      businessType,
     } = request.body as {
       username: string;
       email?: string;
@@ -144,6 +145,7 @@ export default async function authRoutes(app: FastifyInstance) {
       address?: string;
       operatingHours?: string;
       category?: string;
+      businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
     };
 
     if (!username?.trim() || !password) {
@@ -157,6 +159,7 @@ export default async function authRoutes(app: FastifyInstance) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const chosenCategory = category?.trim() || 'barber';
+    const chosenBusinessType = businessType || (chosenCategory === 'confectionery' || chosenCategory === 'crafts' ? 'PRODUCTS' : 'SERVICES');
 
     let admin;
     try {
@@ -173,6 +176,7 @@ export default async function authRoutes(app: FastifyInstance) {
           address: address?.trim() || '',
           operatingHours: operatingHours || '',
           category: chosenCategory,
+          businessType: chosenBusinessType,
         },
       });
     } catch (error: any) {
@@ -187,60 +191,124 @@ export default async function authRoutes(app: FastifyInstance) {
       { expiresIn: '24h' }
     );
 
-    // Auto-seed default services based on category
-    const defaultServices: Record<string, Array<{ name: string; price: number; durationMinutes: number; description: string }>> = {
-      barber: [
-        { name: 'Corte Social / Degradê', price: 35.0, durationMinutes: 30, description: 'Corte moderno com acabamento e alinhamento do pezinho' },
-        { name: 'Barba Completa + Toalha Quente', price: 30.0, durationMinutes: 25, description: 'Modelagem de barba com esfoliação e toalha quente' },
-        { name: 'Combo Cabelo & Barba Premium', price: 60.0, durationMinutes: 50, description: 'Corte completo + barba tratada e finalizada' },
-      ],
-      beauty: [
-        { name: 'Pé & Mão Completo', price: 55.0, durationMinutes: 50, description: 'Cutilagem, esmaltação e hidratação das mãos e pés' },
-        { name: 'Escova & Modelagem', price: 60.0, durationMinutes: 45, description: 'Lavagem especial com lavatório e escova modelada' },
-        { name: 'Esmaltação em Gel', price: 70.0, durationMinutes: 60, description: 'Aplicação e secagem com luz UV de alta durabilidade' },
-      ],
-      tattoo: [
-        { name: 'Sessão Tatuagem (1 hora)', price: 150.0, durationMinutes: 60, description: 'Sessão inicial de tatuagem personalizada' },
-        { name: 'Aplicação de Piercing', price: 70.0, durationMinutes: 30, description: 'Perfuração asséptica com joia em titânio inclusa' },
-        { name: 'Avaliação & Decalque', price: 50.0, durationMinutes: 30, description: 'Criação de arte e teste de posicionamento' },
-      ],
-      aesthetics: [
-        { name: 'Design de Sobrancelha com Henna', price: 45.0, durationMinutes: 35, description: 'Mapeamento facial e pigmentação com henna' },
-        { name: 'Extensão de Cílios (Volume Russo)', price: 120.0, durationMinutes: 90, description: 'Aplicação fio a fio com curvatura marcante' },
-        { name: 'Limpeza de Pele Profunda', price: 130.0, durationMinutes: 60, description: 'Higienização, extração de cravos e máscara calmante' },
-      ],
-      health: [
-        { name: 'Avaliação Física & Anamnese', price: 80.0, durationMinutes: 45, description: 'Medição de dobras, bioimpedância e metas' },
-        { name: 'Treino Acompanhado / Personal (1h)', price: 90.0, durationMinutes: 60, description: 'Sessão individual com correção postural' },
-        { name: 'Fisioterapia & Liberação Miofascial', price: 120.0, durationMinutes: 50, description: 'Alívio de dores e liberação muscular profunda' },
-      ],
-      pet: [
-        { name: 'Banho & Tosa Higiênica (Pequeno Porte)', price: 50.0, durationMinutes: 45, description: 'Banho com shampoo neutro, corte de unhas e higienização' },
-        { name: 'Banho & Tosa Completa (Médio/Grande Porte)', price: 80.0, durationMinutes: 60, description: 'Banho completo com toalha morna e tosa da raça' },
-        { name: 'Hidratação de Pelagem Profunda', price: 35.0, durationMinutes: 20, description: 'Tratamento de brilho e maciez dos pelos' },
-      ],
-      clinic: [
-        { name: 'Consulta Inicial / Avaliação', price: 150.0, durationMinutes: 50, description: 'Primeira consulta diagnóstica e plano de tratamento' },
-        { name: 'Sessão de Acompanhamento', price: 120.0, durationMinutes: 40, description: 'Retorno e acompanhamento evolutivo' },
-      ],
-    };
-
-    const initialServices = defaultServices[chosenCategory] || defaultServices.barber;
-
-    try {
-      for (const s of initialServices) {
-        await prisma.service.create({
+    // Se for PRODUTOS ou HÍBRIDO, cria configurações de loja BoraEncomenda e categorias padrão
+    if (chosenBusinessType === 'PRODUCTS' || chosenBusinessType === 'HYBRID') {
+      try {
+        await prisma.orderSettings.create({
           data: {
             adminId: admin.id,
-            name: s.name,
-            price: s.price,
-            duration: s.durationMinutes,
-            description: s.description,
+            enabled: true,
+            storeName: admin.businessName || 'Minha Loja de Encomendas',
+            storeDescription: admin.description || 'Produtos artesanais sob encomenda.',
+            depositPercentage: 50.0,
+            allowScheduledPickup: true,
+            allowDelivery: true,
+            deliveryFee: 10.0,
+            minAdvanceDays: 2,
+            pixKey: admin.phone || '',
           },
         });
+
+        // Cria categoria inicial de confeitaria/encomenda
+        const cat = await prisma.productCategory.create({
+          data: {
+            name: chosenCategory === 'crafts' ? 'Artesanato & Lembranças' : 'Bolos & Tortas',
+            adminId: admin.id,
+            position: 0,
+          },
+        });
+
+        // Cria um produto de demonstração para encomenda
+        await prisma.product.create({
+          data: {
+            name: chosenCategory === 'crafts' ? 'Kit Lembrancinhas Personalizadas' : 'Bolo Vulcão Ninho & Chocolate',
+            description: 'Feito sob encomenda com ingredientes selecionados. Escolha o sabor e detalhes.',
+            price: chosenCategory === 'crafts' ? 120.0 : 85.0,
+            minDaysNotice: 2,
+            maxQuantityPerOrder: 10,
+            unitLabel: chosenCategory === 'crafts' ? 'kit' : 'unidade',
+            available: true,
+            featured: true,
+            position: 0,
+            categoryId: cat.id,
+            adminId: admin.id,
+            customFields: {
+              create: [
+                {
+                  label: 'Sabor da Massa / Detalhe',
+                  fieldType: 'SELECT',
+                  options: JSON.stringify(['Chocolate Tradicional', 'Baunilha Fina', 'Cenoura Especial']),
+                  required: true,
+                  position: 0,
+                },
+                {
+                  label: 'Nome para Dedicatória no Topo',
+                  fieldType: 'TEXT',
+                  options: '[]',
+                  required: false,
+                  position: 1,
+                },
+              ],
+            },
+          },
+        });
+      } catch (err: any) {
+        console.error('Erro ao semear dados iniciais de BoraEncomenda:', err.message);
       }
-    } catch (err: any) {
-      console.error('Erro ao semear serviços padrão para categoria:', err.message);
+    }
+
+    // Se for SERVIÇOS ou HÍBRIDO, semeia os serviços de autônomos por hora
+    if (chosenBusinessType === 'SERVICES' || chosenBusinessType === 'HYBRID') {
+      const defaultServices: Record<string, Array<{ name: string; price: number; durationMinutes: number; description: string }>> = {
+        barber: [
+          { name: 'Corte Social / Degradê', price: 35.0, durationMinutes: 30, description: 'Corte moderno com acabamento e alinhamento do pezinho' },
+          { name: 'Barba Completa + Toalha Quente', price: 30.0, durationMinutes: 25, description: 'Modelagem de barba com esfoliação e toalha quente' },
+          { name: 'Combo Cabelo & Barba Premium', price: 60.0, durationMinutes: 50, description: 'Corte completo + barba tratada e finalizada' },
+        ],
+        beauty: [
+          { name: 'Pé & Mão Completo', price: 55.0, durationMinutes: 50, description: 'Cutilagem, esmaltação e hidratação das mãos e pés' },
+          { name: 'Escova & Modelagem', price: 60.0, durationMinutes: 45, description: 'Lavagem especial com lavatório e escova modelada' },
+          { name: 'Esmaltação em Gel', price: 70.0, durationMinutes: 60, description: 'Aplicação e secagem com luz UV de alta durabilidade' },
+        ],
+        tattoo: [
+          { name: 'Sessão Tatuagem (1 hora)', price: 150.0, durationMinutes: 60, description: 'Sessão inicial de tatuagem personalizada' },
+          { name: 'Aplicação de Piercing', price: 70.0, durationMinutes: 30, description: 'Perfuração asséptica com joia em titânio inclusa' },
+        ],
+        aesthetics: [
+          { name: 'Design de Sobrancelha com Henna', price: 45.0, durationMinutes: 35, description: 'Mapeamento facial e pigmentação com henna' },
+          { name: 'Limpeza de Pele Profunda', price: 130.0, durationMinutes: 60, description: 'Higienização, extração de cravos e máscara calmante' },
+        ],
+        health: [
+          { name: 'Avaliação Física & Anamnese', price: 80.0, durationMinutes: 45, description: 'Medição de dobras, bioimpedância e metas' },
+          { name: 'Treino Acompanhado / Personal (1h)', price: 90.0, durationMinutes: 60, description: 'Sessão individual com correção postural' },
+        ],
+        pet: [
+          { name: 'Banho & Tosa Higiênica', price: 50.0, durationMinutes: 45, description: 'Banho com shampoo neutro e higienização' },
+          { name: 'Banho & Tosa Completa', price: 80.0, durationMinutes: 60, description: 'Banho completo e tosa da raça' },
+        ],
+        clinic: [
+          { name: 'Consulta Inicial / Avaliação', price: 150.0, durationMinutes: 50, description: 'Primeira consulta diagnóstica e plano de tratamento' },
+          { name: 'Sessão de Acompanhamento', price: 120.0, durationMinutes: 40, description: 'Retorno e acompanhamento evolutivo' },
+        ],
+      };
+
+      const initialServices = defaultServices[chosenCategory] || defaultServices.barber;
+
+      try {
+        for (const s of initialServices) {
+          await prisma.service.create({
+            data: {
+              adminId: admin.id,
+              name: s.name,
+              price: s.price,
+              duration: s.durationMinutes,
+              description: s.description,
+            },
+          });
+        }
+      } catch (err: any) {
+        console.error('Erro ao semear serviços padrão para categoria:', err.message);
+      }
     }
 
     // Cria a assinatura com 7 dias de trial grátis
@@ -600,7 +668,12 @@ export default async function authRoutes(app: FastifyInstance) {
 
     await sendPasswordResetEmail(admin.email, admin.username, code);
 
-    return { message: successMessage };
+    const isProd = process.env.NODE_ENV === 'production';
+
+    return { 
+      message: successMessage,
+      devCode: isProd ? undefined : code,
+    };
   });
 
   // POST /api/auth/reset-password

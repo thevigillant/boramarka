@@ -23,6 +23,11 @@ import analyticsRoutes from './routes/analytics';
 import supportRoutes from './routes/support';
 import portalRoutes from './routes/portal';
 import reviewRoutes from './routes/reviews';
+import uploadRoutes from './routes/upload';
+import productRoutes from './routes/products';
+import orderRoutes from './routes/orders';
+import orderSettingsRoutes from './routes/orderSettings';
+import storefrontRoutes from './routes/storefront';
 import { startReminderService } from './services/reminder';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
@@ -200,6 +205,17 @@ app.register(portalRoutes, { prefix: '/api/portal' });
 app.register(portalRoutes, { prefix: '/api/v1/portal' });
 app.register(reviewRoutes, { prefix: '/api/reviews' });
 app.register(reviewRoutes, { prefix: '/api/v1/reviews' });
+app.register(uploadRoutes, { prefix: '/api/upload' });
+app.register(uploadRoutes, { prefix: '/api/v1/upload' });
+// 🍰 Módulo BoraEncomenda
+app.register(productRoutes, { prefix: '/api/products' });
+app.register(productRoutes, { prefix: '/api/v1/products' });
+app.register(orderRoutes, { prefix: '/api/orders' });
+app.register(orderRoutes, { prefix: '/api/v1/orders' });
+app.register(orderSettingsRoutes, { prefix: '/api/order-settings' });
+app.register(orderSettingsRoutes, { prefix: '/api/v1/order-settings' });
+app.register(storefrontRoutes, { prefix: '/api/store' });
+app.register(storefrontRoutes, { prefix: '/api/v1/store' });
 
 const healthCheckHandler = async (request: any, reply: any) => {
   try {
