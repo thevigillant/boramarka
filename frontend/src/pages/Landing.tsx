@@ -97,8 +97,8 @@ export default function Landing() {
       {/* ═════════════════════════════════════════════════════════════════
           1. FLOATING PILL NAVBAR (CLEAN ENTERPRISE GLASS)
           ═════════════════════════════════════════════════════════════════ */}
-      <header className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[92%] sm:w-[88%] max-w-4xl">
-        <nav className="backdrop-blur-2xl bg-[#0B0F19]/85 border border-white/10 rounded-full px-4 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between shadow-2xl shadow-black/70 transition-all duration-300 hover:border-white/20">
+      <header className="fixed top-3 sm:top-4 left-1/2 -translate-x-1/2 z-50 w-[94%] sm:w-[88%] max-w-4xl">
+        <nav className="backdrop-blur-2xl bg-[#0B0F19]/90 border border-white/10 rounded-full px-3.5 sm:px-5 py-2 sm:py-2.5 flex items-center justify-between shadow-2xl shadow-black/70 transition-all duration-300 hover:border-white/20">
           <Link to="/" className="flex items-center gap-2 shrink-0">
             <BoraMarkaLogo size="sm" />
           </Link>
@@ -121,7 +121,7 @@ export default function Landing() {
             ))}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
             {/* Sininho de Novidades & Atualizações */}
             <button
               onClick={() => setUpdatesModalOpen(true)}
@@ -146,7 +146,7 @@ export default function Landing() {
 
             <Link
               to="/register"
-              className="group relative inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-xs font-black shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all duration-300"
+              className="hidden sm:inline-flex group relative items-center gap-1.5 px-4 py-2 rounded-full bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white text-xs font-black shadow-lg shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] transition-all duration-300 shrink-0"
             >
               <span>Testar Grátis</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
@@ -154,7 +154,8 @@ export default function Landing() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-full bg-white/5 border border-white/10 text-slate-300 hover:text-white"
+              className="md:hidden p-2 rounded-full bg-white/5 border border-white/10 text-slate-300 hover:text-white shrink-0"
+              aria-label="Abrir Menu"
             >
               {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
@@ -203,18 +204,18 @@ export default function Landing() {
       {/* ═════════════════════════════════════════════════════════════════
           2. HERO SECTION — ENTERPRISE LEVEL BIG TECH SHOWCASE
           ═════════════════════════════════════════════════════════════════ */}
-      <section className="relative z-10 pt-28 sm:pt-36 pb-20 px-4 sm:px-6 max-w-6xl mx-auto text-center">
+      <section className="relative z-10 pt-20 sm:pt-36 pb-14 sm:pb-20 px-3 sm:px-6 max-w-6xl mx-auto text-center">
         
         {/* Floating Top Badge */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl mb-6 shadow-sm">
-          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs font-semibold text-slate-300">
-            A Plataforma #1 de Agendamento Autônomo & Lucro no Piloto Automático
+        <div className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl mb-4 sm:mb-6 shadow-sm max-w-full">
+          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="text-[11px] sm:text-xs font-semibold text-slate-300 truncate">
+            A Plataforma #1 de Agendamento Autônomo & Venda no Piloto Automático
           </span>
         </div>
 
         {/* High-Impact Headline */}
-        <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.12] mb-5 max-w-4xl mx-auto">
+        <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.18] sm:leading-[1.12] mb-3.5 sm:mb-5 max-w-4xl mx-auto px-1">
           Sua agenda no piloto automático.{' '}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-violet-300 via-pink-300 to-amber-200">
             Seu tempo e faturamento de volta.
@@ -222,15 +223,15 @@ export default function Landing() {
         </h1>
 
         {/* Subtitle */}
-        <p className="text-sm sm:text-base md:text-lg text-slate-400 font-normal leading-relaxed max-w-2xl mx-auto mb-8">
+        <p className="text-xs sm:text-base md:text-lg text-slate-400 font-normal leading-relaxed max-w-2xl mx-auto mb-6 sm:mb-8 px-2 sm:px-0">
           Elimine o prejuízo do cliente que marca e não aparece. Receba sinais no Pix automaticamente, preencha seus horários 24h por dia e resgate clientes sumidos sem perder tempo digitando no WhatsApp.
         </p>
 
         {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3.5 mb-8">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3.5 mb-6 sm:mb-8">
           <Link
             to="/register"
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
+            className="w-full sm:w-auto px-6 sm:px-8 py-3.5 sm:py-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider shadow-xl shadow-pink-500/25 hover:shadow-pink-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2 group cursor-pointer"
           >
             <span>Experimentar 7 Dias Grátis</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
@@ -238,7 +239,7 @@ export default function Landing() {
 
           <a
             href="#features"
-            className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-300 font-bold text-xs transition-all flex items-center justify-center gap-2"
+            className="w-full sm:w-auto px-5 sm:px-7 py-3.5 sm:py-4 rounded-2xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 hover:border-white/20 text-slate-300 font-bold text-xs transition-all flex items-center justify-center gap-2"
           >
             <Zap className="w-3.5 h-3.5 text-amber-400" />
             <span>Conhecer Todos os Recursos</span>
@@ -246,18 +247,18 @@ export default function Landing() {
         </div>
 
         {/* Micro Trust Indicators */}
-        <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-xs text-slate-400 mb-14">
+        <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-8 text-[11px] sm:text-xs text-slate-400 mb-8 sm:mb-14">
           <div className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-emerald-400" />
+            <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
             <span>Sem cartão de crédito</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>Configuração guiada em 2 min</span>
+            <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Configuração em 2 min</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <Check className="w-4 h-4 text-emerald-400" />
-            <span>Pix cai direto na sua conta</span>
+            <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Pix direto na sua conta</span>
           </div>
         </div>
 
@@ -290,11 +291,11 @@ export default function Landing() {
           </div>
 
           {/* Main Dashboard Window — EXACT REPLICA OF REAL BORAMARKA DASHBOARD */}
-          <div className="bg-[#050711] border border-white/15 rounded-3xl overflow-hidden shadow-2xl text-left">
+          <div className="bg-[#050711] border border-white/15 rounded-2xl sm:rounded-3xl overflow-hidden shadow-2xl text-left">
             
             {/* Topbar: BoraMarka Logo, Slogan, Search & User Profile */}
-            <div className="bg-[#0A0D18] px-4 sm:px-6 py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
+            <div className="bg-[#0A0D18] px-3 sm:px-6 py-2.5 sm:py-3 border-b border-white/10 flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <BoraMarkaLogo size="sm" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 hidden sm:inline">
                   Sua agenda cheia, sem complicação
@@ -310,8 +311,8 @@ export default function Landing() {
 
               {/* User Avatar Card */}
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-2 px-3 py-1 rounded-xl bg-[#050711] border border-white/10 text-xs">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center font-bold text-white text-[10px]">
+                <div className="flex items-center gap-2 px-2 sm:px-3 py-1 rounded-xl bg-[#050711] border border-white/10 text-xs">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-gradient-to-tr from-violet-600 to-pink-500 flex items-center justify-center font-bold text-white text-[9px] sm:text-[10px]">
                     A
                   </div>
                   <div className="text-left hidden sm:block">
@@ -323,121 +324,116 @@ export default function Landing() {
             </div>
 
             {/* Tab Navigation Strip */}
-            <div className="bg-[#080B14] px-4 sm:px-6 py-2.5 border-b border-white/5 flex items-center gap-2 overflow-x-auto custom-scrollbar text-xs font-bold">
-              <button className="px-4 py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md shadow-pink-500/20 shrink-0 flex items-center gap-1.5">
+            <div className="bg-[#080B14] px-2.5 sm:px-6 py-2 sm:py-2.5 border-b border-white/5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar text-xs font-bold">
+              <button className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-md shadow-pink-500/20 shrink-0 flex items-center gap-1.5 text-[11px] sm:text-xs">
                 <LayoutGrid className="w-3.5 h-3.5" />
                 <span>Visão Geral</span>
               </button>
-              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+              <button className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5 text-[11px] sm:text-xs">
                 <Sparkles className="w-3.5 h-3.5 text-pink-400" />
                 <span>BoraIA</span>
               </button>
-              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+              <button className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5 text-[11px] sm:text-xs">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>Operacional <span className="bg-white/10 text-white px-1.5 py-0.2 rounded-full text-[10px]">6</span></span>
+                <span>Operacional <span className="bg-white/10 text-white px-1.5 py-0.2 rounded-full text-[9px]">6</span></span>
                 <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
-              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+              <button className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5 text-[11px] sm:text-xs">
                 <ShoppingBag className="w-3.5 h-3.5 text-slate-400" />
                 <span>Comercial</span>
                 <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
-              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
+              <button className="px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5 text-[11px] sm:text-xs">
                 <DollarSign className="w-3.5 h-3.5 text-slate-400" />
-                <span>Gestão & Finanças</span>
-                <ChevronRight className="w-3 h-3 rotate-90" />
-              </button>
-              <button className="px-3.5 py-2 rounded-xl text-slate-400 hover:text-white shrink-0 flex items-center gap-1.5">
-                <Settings className="w-3.5 h-3.5 text-slate-400" />
-                <span>Sistema & Ajustes</span>
+                <span>Gestão</span>
                 <ChevronRight className="w-3 h-3 rotate-90" />
               </button>
             </div>
 
             {/* Dashboard Body Content */}
-            <div className="p-4 sm:p-6 space-y-5 bg-[#050711]">
+            <div className="p-3 sm:p-6 space-y-3.5 sm:space-y-5 bg-[#050711]">
               
               {/* 4 Real KPI Cards */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
                 
                 {/* Card 1: Total de Clientes */}
-                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                      Total de Clientes
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between gap-1">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold sm:font-black uppercase tracking-wider text-slate-400 block mb-0.5 truncate">
+                      Clientes
                     </span>
-                    <span className="text-2xl font-black text-white">6</span>
+                    <span className="text-lg sm:text-2xl font-black text-white">6</span>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center">
-                    <Users className="w-5 h-5" />
+                  <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-violet-500/10 border border-violet-500/20 text-violet-400 flex items-center justify-center shrink-0">
+                    <Users className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                   </div>
                 </div>
 
                 {/* Card 2: Saldo Financeiro */}
-                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                      Saldo Financeiro
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between gap-1">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold sm:font-black uppercase tracking-wider text-slate-400 block mb-0.5 truncate">
+                      Saldo
                     </span>
-                    <span className="text-2xl font-black text-white">R$ 20,00</span>
+                    <span className="text-base sm:text-2xl font-black text-white truncate">R$ 20,00</span>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                    <DollarSign className="w-5 h-5" />
+                  <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+                    <DollarSign className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                   </div>
                 </div>
 
                 {/* Card 3: A Receber */}
-                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between gap-1">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold sm:font-black uppercase tracking-wider text-slate-400 block mb-0.5 truncate">
                       A Receber
                     </span>
-                    <span className="text-2xl font-black text-white">R$ 100,00</span>
+                    <span className="text-base sm:text-2xl font-black text-white truncate">R$ 100,00</span>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
-                    <TrendingUp className="w-5 h-5" />
+                  <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0">
+                    <TrendingUp className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                   </div>
                 </div>
 
                 {/* Card 4: A Pagar */}
-                <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
+                <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0A0D18] border border-white/10 flex items-center justify-between gap-1">
+                  <div className="min-w-0">
+                    <span className="text-[9px] sm:text-[10px] font-bold sm:font-black uppercase tracking-wider text-slate-400 block mb-0.5 truncate">
                       A Pagar
                     </span>
-                    <span className="text-2xl font-black text-white">R$ 0,00</span>
+                    <span className="text-base sm:text-2xl font-black text-white truncate">R$ 0,00</span>
                   </div>
-                  <div className="w-10 h-10 rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center">
-                    <Clock className="w-5 h-5" />
+                  <div className="w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-pink-500/10 border border-pink-500/20 text-pink-400 flex items-center justify-center shrink-0">
+                    <Clock className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
                   </div>
                 </div>
 
               </div>
 
               {/* Ações Rápidas & Atalhos Banner */}
-              <div className="p-4 rounded-2xl bg-[#0A0D18] border border-white/10 space-y-3">
+              <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#0A0D18] border border-white/10 space-y-2.5 sm:space-y-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center">
-                    <Zap className="w-3.5 h-3.5" />
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                    <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-white">Ações Rápidas & Atalhos</h4>
-                    <p className="text-[10px] text-slate-400">Navegue rapidamente para as principais tarefas do seu dia</p>
+                    <h4 className="text-[11px] sm:text-xs font-bold text-white">Ações Rápidas & Atalhos</h4>
+                    <p className="text-[9px] sm:text-[10px] text-slate-400 hidden sm:block">Navegue rapidamente para as principais tarefas do seu dia</p>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-bold">
-                  <div className="p-2.5 rounded-xl bg-[#050711] border border-violet-500/30 text-violet-300 flex items-center justify-center gap-2 shadow-sm">
-                    <Calendar className="w-3.5 h-3.5" /> Ver Agendamentos
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2 text-[10px] sm:text-xs font-bold">
+                  <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-[#050711] border border-violet-500/30 text-violet-300 flex items-center justify-center gap-1.5 shadow-sm">
+                    <Calendar className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Agendamentos</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#050711] border border-emerald-500/30 text-emerald-400 flex items-center justify-center gap-2 shadow-sm">
-                    <DollarSign className="w-3.5 h-3.5" /> Lançar Finança
+                  <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-[#050711] border border-emerald-500/30 text-emerald-400 flex items-center justify-center gap-1.5 shadow-sm">
+                    <DollarSign className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Finança</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#050711] border border-pink-500/30 text-pink-400 flex items-center justify-center gap-2 shadow-sm">
-                    <Plus className="w-3.5 h-3.5" /> Novo Serviço
+                  <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-[#050711] border border-pink-500/30 text-pink-400 flex items-center justify-center gap-1.5 shadow-sm">
+                    <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Serviço</span>
                   </div>
-                  <div className="p-2.5 rounded-xl bg-[#050711] border border-amber-500/30 text-amber-400 flex items-center justify-center gap-2 shadow-sm">
-                    <Smartphone className="w-3.5 h-3.5" /> Copiar Link Público
+                  <div className="p-2 sm:p-2.5 rounded-lg sm:rounded-xl bg-[#050711] border border-amber-500/30 text-amber-400 flex items-center justify-center gap-1.5 shadow-sm">
+                    <Smartphone className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0" /> <span className="truncate">Link Público</span>
                   </div>
                 </div>
               </div>
@@ -1572,7 +1568,7 @@ export default function Landing() {
       {showScrollTop && (
         <button
           onClick={scrollToTop}
-          className="fixed bottom-6 left-6 z-40 p-3 rounded-full bg-slate-900/80 backdrop-blur-md border border-white/10 text-white shadow-xl hover:bg-slate-800 transition-all cursor-pointer"
+          className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 p-2.5 sm:p-3 rounded-full bg-slate-900/90 backdrop-blur-md border border-white/10 text-white shadow-2xl hover:bg-slate-800 hover:scale-110 active:scale-95 transition-all cursor-pointer"
           title="Voltar ao topo"
         >
           <ArrowUp className="w-4 h-4" />
