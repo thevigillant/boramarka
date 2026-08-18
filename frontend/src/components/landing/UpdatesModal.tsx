@@ -41,7 +41,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
       id: 'encomendas',
       version: 'v2.4',
       date: 'Agosto 2026',
-      title: 'Módulo BoraEncomenda: Gestão Completa de Encomendas',
+      title: 'Módulo BoraEncomenda: Gestão de Encomendas',
       tag: 'Novo Módulo',
       badgeClass: 'bg-pink-500/10 text-pink-400 border border-pink-500/20',
       iconBg: 'bg-pink-500/10 border border-pink-500/20',
@@ -79,7 +79,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
       id: 'business-modes',
       version: 'v2.2',
       date: 'Agosto 2026',
-      title: 'Segregação Inteligente de Escopo e Modelo de Negócio',
+      title: 'Segregação Inteligente de Escopo de Negócio',
       tag: 'Personalização',
       badgeClass: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
       iconBg: 'bg-emerald-500/10 border border-emerald-500/20',
@@ -115,7 +115,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
       id: 'rbac',
       version: 'v2.0',
       date: 'Julho 2026',
-      title: 'Controle de Acesso Granular & Segurança Multioperador (RBAC)',
+      title: 'Controle de Acesso Granular & Segurança Multioperador',
       tag: 'Segurança & RH',
       badgeClass: 'bg-blue-500/10 text-blue-400 border border-blue-500/20',
       iconBg: 'bg-blue-500/10 border border-blue-500/20',
@@ -138,76 +138,73 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
   })
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-6 bg-black/80 backdrop-blur-md animate-fade-in">
       {/* Backdrop Click to Close */}
       <div className="absolute inset-0" onClick={onClose} />
 
       {/* Modal Container */}
-      <div className="relative w-full max-w-3xl max-h-[88vh] bg-[#0E1424] border border-slate-800/90 rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in">
+      <div className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] bg-[#0E1424] border border-slate-800/90 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in">
         
         {/* Top Header */}
-        <div className="relative p-6 sm:p-7 border-b border-slate-800/80 bg-[#12192D] flex items-start justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-violet-600/20 via-pink-600/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-md shrink-0">
-              <Sparkles className="w-6 h-6" />
+        <div className="relative p-3.5 sm:p-5 border-b border-slate-800/80 bg-[#12192D] flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-violet-600/20 via-pink-600/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-sm shrink-0">
+              <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2 flex-wrap mb-1">
-                <span className="text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
                   Changelog Oficial
                 </span>
-                <span className="text-xs text-slate-400 font-medium">
-                  Atualizações recentes da plataforma
+                <span className="text-[10px] text-slate-400 font-medium hidden sm:inline">
+                  Atualizações recentes
                 </span>
               </div>
-              <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h3 className="text-sm sm:text-lg font-black text-white tracking-tight truncate mt-0.5">
                 Novidades & Atualizações
               </h3>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Conheça os novos recursos desenvolvidos para impulsionar seu faturamento
-              </p>
             </div>
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-800/60 hover:bg-slate-800 border border-slate-700/80 text-slate-400 hover:text-white transition-all shrink-0 cursor-pointer"
+            className="p-1.5 sm:p-2 rounded-lg sm:rounded-xl bg-slate-800/80 hover:bg-slate-800 border border-slate-700 text-slate-400 hover:text-white transition-all shrink-0 cursor-pointer"
             title="Fechar Modal"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Sub Navigation (Segmented Control Robustíssimo sem desalinhamento) */}
-        <div className="px-6 sm:px-7 py-3 border-b border-slate-800/80 bg-[#0B101D]">
-          <div className="inline-flex items-center p-1 bg-slate-900/90 rounded-2xl border border-slate-800 gap-1 max-w-full overflow-x-auto no-scrollbar">
+        {/* Sub Navigation (Segmented Control com Scroll Suave) */}
+        <div className="px-3 sm:px-5 py-2 sm:py-2.5 border-b border-slate-800/80 bg-[#0B101D] overflow-x-auto no-scrollbar">
+          <div className="inline-flex items-center p-0.5 sm:p-1 bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-800 gap-1">
             <button
               type="button"
               onClick={() => setSelectedCategory('ALL')}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'ALL'
                   ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
               }`}
             >
-              Todas as Atualizações ({updates.length})
+              Todas ({updates.length})
             </button>
             <button
               type="button"
               onClick={() => setSelectedCategory('MAJOR')}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'MAJOR'
                   ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
               }`}
             >
-              Novos Módulos & Recursos
+              Novos Módulos
             </button>
             <button
               type="button"
               onClick={() => setSelectedCategory('SECURITY')}
-              className={`inline-flex items-center justify-center px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'SECURITY'
                   ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
@@ -218,53 +215,53 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
           </div>
         </div>
 
-        {/* Updates List (Scrollable com espaçamento confortável) */}
-        <div className="flex-1 overflow-y-auto p-6 sm:p-7 space-y-5 bg-[#090D18] custom-scrollbar">
+        {/* Updates List (Scrollable com paddings refinados) */}
+        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4 bg-[#090D18] custom-scrollbar">
           {filteredUpdates.map((item) => {
             const IconComponent = item.icon
             return (
               <div
                 key={item.id}
-                className="bg-[#131A2D] border border-slate-800/90 hover:border-slate-700 rounded-2xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-all space-y-4"
+                className="bg-[#131A2D] border border-slate-800/90 rounded-xl sm:rounded-2xl p-3.5 sm:p-5 shadow-sm space-y-2.5 sm:space-y-3"
               >
                 {/* Card Header */}
-                <div className="flex items-start gap-3.5">
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
-                    <IconComponent className="w-5 h-5" />
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center shrink-0 ${item.iconBg} ${item.iconColor}`}>
+                    <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap mb-1">
-                      <span className="text-[11px] font-mono font-bold text-white px-2 py-0.5 rounded-md bg-slate-800 border border-slate-700">
+                    <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+                      <span className="text-[9px] sm:text-[10px] font-mono font-bold text-white px-1.5 py-0.2 rounded bg-slate-800 border border-slate-700">
                         {item.version}
                       </span>
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full ${item.badgeClass}`}>
+                      <span className={`text-[8px] sm:text-[9px] font-black uppercase tracking-wider px-2 py-0.2 rounded-full ${item.badgeClass}`}>
                         {item.tag}
                       </span>
-                      <span className="text-[11px] text-slate-500 font-semibold">
+                      <span className="text-[10px] text-slate-500 font-semibold">
                         {item.date}
                       </span>
                     </div>
-                    <h4 className="text-base font-black text-white leading-tight">
+                    <h4 className="text-xs sm:text-sm font-black text-white leading-snug">
                       {item.title}
                     </h4>
                   </div>
                 </div>
 
                 {/* Description */}
-                <p className="text-xs text-slate-300 leading-relaxed font-medium">
+                <p className="text-[11px] sm:text-xs text-slate-300 leading-relaxed font-normal">
                   {item.description}
                 </p>
 
                 {/* Highlights Grid */}
-                <div className="pt-3 border-t border-slate-800/80 space-y-2">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block">
+                <div className="pt-2 sm:pt-2.5 border-t border-slate-800/80 space-y-1.5">
+                  <span className="text-[9px] font-black uppercase tracking-wider text-slate-400 block">
                     Principais Destaques
                   </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1 sm:gap-1.5">
                     {item.highlights.map((h, i) => (
-                      <div key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span className="text-[11px] leading-snug text-slate-300 font-medium">
+                      <div key={i} className="flex items-start gap-1.5 text-xs text-slate-300">
+                        <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
+                        <span className="text-[10px] sm:text-[11px] leading-tight text-slate-300">
                           {h}
                         </span>
                       </div>
@@ -277,28 +274,24 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
         </div>
 
         {/* Modal Footer */}
-        <div className="p-4 sm:p-5 border-t border-slate-800/80 bg-[#12192D] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <span className="text-xs text-slate-400 font-medium text-center sm:text-left">
-            Todas as novidades já estão ativas e disponíveis no seu painel.
-          </span>
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 sm:flex-initial px-5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700 cursor-pointer"
-            >
-              Fechar
-            </button>
-            <Link
-              to="/register"
-              onClick={onClose}
-              className="flex-1 sm:flex-initial px-6 py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/20 hover:opacity-95 transition-all"
-            >
-              <span>Experimentar Agora</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-          </div>
+        <div className="p-2.5 sm:p-4 border-t border-slate-800/80 bg-[#12192D] flex items-center justify-between gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex-1 sm:flex-initial px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700 cursor-pointer text-center"
+          >
+            Fechar
+          </button>
+          <Link
+            to="/register"
+            onClick={onClose}
+            className="flex-1 sm:flex-initial px-4 sm:px-6 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-orange-500 to-pink-500 text-white text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-pink-500/20 hover:opacity-95 transition-all text-center whitespace-nowrap"
+          >
+            <span>Testar Agora</span>
+            <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+          </Link>
         </div>
+
       </div>
     </div>
   )
