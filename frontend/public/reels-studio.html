@@ -1,0 +1,1026 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BoraMarka — Reels & Video Ads Studio (9:16)</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            display: ['"Outfit"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              violet: '#7C3AED',
+              pink: '#EC4899',
+              rose: '#F43F5E',
+              emerald: '#10B981',
+              cyan: '#06B6D4',
+              dark: '#050507',
+              card: '#0D1222',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #070A12; }
+    ::-webkit-scrollbar-thumb { background: #1F293D; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+    /* Neon Lighting */
+    .neon-shaka-glow {
+      filter: drop-shadow(0 0 16px rgba(236, 72, 153, 0.8)) drop-shadow(0 0 32px rgba(124, 58, 237, 0.6));
+    }
+    .neon-emerald-glow {
+      filter: drop-shadow(0 0 14px rgba(16, 185, 129, 0.75));
+    }
+
+    /* 9:16 Phone Aspect Ratio (360x640 preview) */
+    .reels-stage {
+      width: 360px;
+      height: 640px;
+      min-width: 360px;
+      min-height: 640px;
+      position: relative;
+      overflow: hidden;
+      background: #030712;
+      border-radius: 36px;
+      box-shadow: 0 25px 70px -15px rgba(0, 0, 0, 0.95), 0 0 0 2px rgba(255, 255, 255, 0.1);
+      transform-origin: top center;
+    }
+
+    @media (min-width: 1024px) {
+      .reels-stage {
+        width: 405px;
+        height: 720px;
+        min-width: 405px;
+        min-height: 720px;
+      }
+    }
+
+    /* Smooth Motion Animations */
+    @keyframes pulseGlow {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.08); opacity: 1; }
+    }
+    .animate-pulse-glow {
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes floatPhone {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(-1deg); }
+    }
+    .animate-float-phone {
+      animation: floatPhone 4s ease-in-out infinite;
+    }
+
+    @keyframes popIn {
+      0% { transform: scale(0.6); opacity: 0; }
+      70% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+    .animate-pop-in {
+      animation: popIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-[#030712] text-slate-100 font-sans min-h-screen selection:bg-pink-500/30 overflow-x-hidden">
+
+  <!-- Ambient Light Orbs -->
+  <div class="fixed inset-0 pointer-events-none z-0">
+    <div class="absolute top-[-10%] left-1/4 w-[600px] h-[600px] bg-violet-600/10 blur-[150px] rounded-full"></div>
+    <div class="absolute bottom-[-10%] right-1/4 w-[600px] h-[600px] bg-pink-600/10 blur-[150px] rounded-full"></div>
+  </div>
+
+  <!-- Top App Navigation -->
+  <header class="relative z-20 border-b border-white/10 bg-[#090D18]/80 backdrop-blur-xl px-6 py-4">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-violet-600 via-pink-600 to-orange-500 p-0.5 shadow-lg shadow-pink-500/25">
+          <div class="w-full h-full bg-[#090D18] rounded-[14px] flex items-center justify-center">
+            <svg class="w-6 h-6 text-pink-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M28 42C28 35.3726 33.3726 30 40 30C46.6274 30 52 35.3726 52 42V55C52 66.0457 43.0457 75 32 75H25" stroke="currentColor" stroke-width="8" stroke-linecap="round"/>
+              <path d="M52 48V42C52 35.3726 57.3726 30 64 30C70.6274 30 76 35.3726 76 42V55C76 66.0457 67.0457 75 56 75H48" stroke="url(#logo_grad)" stroke-width="8" stroke-linecap="round"/>
+              <circle cx="68" cy="22" r="6" fill="#EC4899" />
+              <defs>
+                <linearGradient id="logo_grad" x1="52" y1="30" x2="76" y2="75" gradientUnits="userSpaceOnUse">
+                  <stop stop-color="#8B5CF6"/>
+                  <stop offset="0.5" stop-color="#EC4899"/>
+                  <stop offset="1" stop-color="#F97316"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-lg font-black text-white tracking-tight font-display">BoraMarka Reels Studio</h1>
+            <span class="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-gradient-to-r from-pink-500/20 to-violet-500/20 text-pink-300 border border-pink-500/30">
+              Gerador 9:16 Viral
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Gere vídeos em alta definição prontos para Reels, Stories e Anúncios</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <a href="/" class="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-slate-300 hover:text-white transition-all flex items-center gap-1.5">
+          <i data-lucide="arrow-left" class="w-4 h-4"></i>
+          Voltar ao Início
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Studio Workspace -->
+  <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 py-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      
+      <!-- LEFT / CENTER: The 9:16 Video Player & Stage -->
+      <div class="lg:col-span-6 flex flex-col items-center justify-center">
+        
+        <!-- Controls Bar Above Video -->
+        <div class="w-full max-w-[405px] bg-[#0E1424] border border-slate-800 rounded-2xl p-3 mb-4 flex flex-col gap-2.5 shadow-xl">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <button id="btnPlayPause" onclick="togglePlay()" class="p-2.5 rounded-xl bg-gradient-to-r from-violet-600 to-pink-600 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-pink-500/20 hover:scale-105 transition-all cursor-pointer">
+                <i data-lucide="play" id="playIcon" class="w-4 h-4"></i>
+                <span id="playText">Reproduzir</span>
+              </button>
+
+              <button onclick="restartVideo()" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all cursor-pointer" title="Reiniciar">
+                <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+              </button>
+            </div>
+
+            <span id="timeCounter" class="text-xs font-mono font-bold text-slate-400 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
+              00:00 / 00:15
+            </span>
+          </div>
+
+          <!-- Action Download Buttons -->
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+            <button id="btnRecord" onclick="recordAndExportVideo()" class="py-2.5 px-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black text-xs uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/25 hover:scale-[1.02] transition-all cursor-pointer">
+              <i data-lucide="video" class="w-4 h-4"></i>
+              <span id="recordBtnLabel">Gravar Vídeo Real</span>
+            </button>
+
+            <button onclick="downloadCurrentFramePNG()" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-750 text-white font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 hover:scale-[1.02] transition-all cursor-pointer" title="Baixar Frame / Slide Atual em Imagem HD">
+              <i data-lucide="camera" class="w-4 h-4 text-pink-400"></i>
+              <span>Baixar Imagem HD</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Recording Progress Bar (Visible during export) -->
+        <div id="recordingProgressBox" class="w-full max-w-[405px] bg-slate-900 border border-slate-800 rounded-xl p-3 mb-3 hidden animate-fadeIn">
+          <div class="flex justify-between items-center text-[11px] font-bold text-slate-300 mb-1.5">
+            <span class="flex items-center gap-1.5 text-emerald-400">
+              <i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i>
+              <span id="progressStatusText">Gravando 15s em Full HD...</span>
+            </span>
+            <span id="progressPercent" class="font-mono text-white">0%</span>
+          </div>
+          <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+            <div id="progressBar" class="h-full bg-gradient-to-r from-emerald-500 to-pink-500 transition-all duration-100" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- 9:16 VIDEO CANVAS / STAGE -->
+        <div id="reelsStage" class="reels-stage relative flex flex-col justify-between p-6 select-none">
+          
+          <!-- Background Atmospheric Gradients -->
+          <div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+            <div class="absolute -top-[20%] -left-[20%] w-[140%] h-[60%] bg-gradient-to-b from-violet-600/20 via-pink-600/15 to-transparent blur-[80px]"></div>
+            <div class="absolute bottom-0 left-0 right-0 h-[40%] bg-gradient-to-t from-[#020617] via-[#090D1A] to-transparent"></div>
+            <div class="absolute inset-0 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.03]"></div>
+          </div>
+
+          <!-- Top Stage Bar: Brand Header -->
+          <div class="relative z-20 flex items-center justify-between">
+            <div class="flex items-center gap-2 bg-[#0E1424]/90 backdrop-blur-md border border-white/10 px-3.5 py-1.5 rounded-full shadow-lg">
+              <span class="w-2 h-2 rounded-full bg-pink-500 animate-ping"></span>
+              <span id="stageLogoName" class="text-xs font-black text-white tracking-tight font-display">BoraMarka</span>
+            </div>
+            <div class="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[10px] font-bold text-slate-300">
+              <span id="badgeNicheText">Autônomos & Encomendas</span>
+            </div>
+          </div>
+
+          <!-- DYNAMIC SCENE CONTAINER (Animated Transitions) -->
+          <div id="sceneContainer" class="relative z-10 flex-1 flex flex-col justify-center items-center my-4 text-center">
+            
+            <!-- SCENE 1: O GANCHO / PROBLEMA (0s - 4s) -->
+            <div id="scene1" class="scene-item w-full flex flex-col items-center justify-center space-y-4">
+              <div class="w-16 h-16 rounded-3xl bg-red-500/20 border border-red-500/30 flex items-center justify-center text-red-400 shadow-xl shadow-red-500/20 animate-bounce">
+                <i data-lucide="message-square-x" class="w-8 h-8"></i>
+              </div>
+
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-[11px] font-bold uppercase tracking-wider">
+                Chega de Prejuízo!
+              </div>
+
+              <h2 id="scene1Headline" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-2">
+                Cansado de <span class="text-red-400 underline decoration-red-500/50">perder clientes no WhatsApp</span> e levar calote?
+              </h2>
+
+              <!-- WhatsApp Chat Mockup Balloon -->
+              <div class="w-full max-w-[280px] bg-[#1F293D]/90 backdrop-blur-md border border-white/10 rounded-2xl p-3.5 text-left shadow-2xl space-y-2 mt-3 animate-fade-in">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-full bg-slate-700 flex items-center justify-center text-xs text-slate-300 font-bold">C</div>
+                  <div>
+                    <p class="text-[11px] font-bold text-white leading-none">Cliente</p>
+                    <p class="text-[9px] text-slate-400">14:22</p>
+                  </div>
+                </div>
+                <p class="text-[11px] text-slate-200 bg-slate-800/80 p-2.5 rounded-xl border border-white/5">
+                  "Oi, tem horário amanhã? Quanto é o bolo? Me passa o Pix..."
+                </p>
+                <div class="text-[10px] text-amber-400 font-bold flex items-center gap-1">
+                  <i data-lucide="clock" class="w-3 h-3"></i>
+                  <span>Você demorou 1 hora e o cliente sumiu!</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SCENE 2: A SOLUÇÃO BORAMARKA & ENCOMENDAS (4s - 8s) -->
+            <div id="scene2" class="scene-item hidden w-full flex flex-col items-center justify-center space-y-4">
+              <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-violet-600 via-pink-600 to-orange-500 p-0.5 shadow-2xl shadow-pink-500/30">
+                <div class="w-full h-full bg-[#0E1424] rounded-[22px] flex items-center justify-center text-pink-400">
+                  <i data-lucide="sparkles" class="w-8 h-8"></i>
+                </div>
+              </div>
+
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-pink-500/10 border border-pink-500/20 text-pink-400 text-[11px] font-black uppercase tracking-wider">
+                A Revolução da Sua Agenda
+              </div>
+
+              <h2 id="scene2Headline" class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-2">
+                Seu link de <span class="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Agendamentos & Encomendas</span> no Piloto Automático!
+              </h2>
+
+              <!-- Smartphone Screen Mockup -->
+              <div class="w-full max-w-[280px] bg-[#0E1424] border border-pink-500/40 rounded-2xl p-4 text-left shadow-2xl shadow-pink-500/15 space-y-2.5 animate-float-phone">
+                <div class="flex items-center justify-between border-b border-white/10 pb-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                      <i data-lucide="store" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <span class="text-xs font-bold text-white">Cardápio & Agenda</span>
+                  </div>
+                  <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Online</span>
+                </div>
+
+                <div class="bg-slate-900/80 p-2.5 rounded-xl border border-white/5 flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-pink-500/20 flex items-center justify-center text-pink-400 font-bold text-xs">
+                      <i data-lucide="gift" class="w-4 h-4"></i>
+                    </div>
+                    <div>
+                      <p id="mockItemName" class="text-[11px] font-black text-white">Bolo Vulcão Ninho & Nutella</p>
+                      <p class="text-[10px] text-slate-400">Antecedência: 2 dias</p>
+                    </div>
+                  </div>
+                  <span class="text-xs font-black text-emerald-400">R$ 85,00</span>
+                </div>
+
+                <div class="text-[10px] text-center text-slate-300 font-semibold bg-white/5 py-1.5 rounded-lg">
+                  Cliente escolhe sabor, data e paga o sinal em 15s!
+                </div>
+              </div>
+            </div>
+
+            <!-- SCENE 3: SINAL NO PIX & PRODUÇÃO (8s - 12s) -->
+            <div id="scene3" class="scene-item hidden w-full flex flex-col items-center justify-center space-y-4">
+              <div class="w-16 h-16 rounded-3xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-2xl shadow-emerald-500/20 neon-emerald-glow">
+                <i data-lucide="check-circle-2" class="w-8 h-8"></i>
+              </div>
+
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
+                Garantia de Faturamento
+              </div>
+
+              <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-2">
+                Receba <span class="text-emerald-400">Entrada no Pix</span> e acabe com o prejuízo!
+              </h2>
+
+              <!-- Pix Notification Card -->
+              <div class="w-full max-w-[280px] bg-gradient-to-r from-emerald-950/80 via-[#0B1524] to-slate-900 border border-emerald-500/40 rounded-2xl p-4 text-left shadow-2xl space-y-2.5 animate-pop-in">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-2">
+                    <div class="w-7 h-7 rounded-full bg-emerald-500 text-slate-950 flex items-center justify-center font-black text-xs">
+                      Pix
+                    </div>
+                    <div>
+                      <p class="text-[11px] font-black text-white">Sinal Recebido!</p>
+                      <p class="text-[9px] text-emerald-400 font-bold">Mercado Pago • Instantâneo</p>
+                    </div>
+                  </div>
+                  <span class="text-sm font-black text-emerald-400">+ R$ 42,50</span>
+                </div>
+
+                <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[10px] text-slate-300">
+                  <span>Lembrete no WhatsApp:</span>
+                  <span class="font-bold text-pink-400">Disparado Automático</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- SCENE 4: CTA FINAL & OFERTA (12s - 15s) -->
+            <div id="scene4" class="scene-item hidden w-full flex flex-col items-center justify-center space-y-4">
+              <div class="w-16 h-16 rounded-3xl bg-gradient-to-tr from-violet-600 to-pink-600 flex items-center justify-center text-white shadow-2xl shadow-pink-500/40 animate-pulse-glow">
+                <i data-lucide="zap" class="w-8 h-8 text-amber-300"></i>
+              </div>
+
+              <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-violet-500/20 to-pink-500/20 border border-pink-500/30 text-pink-300 text-[11px] font-black uppercase tracking-wider">
+                7 Dias Grátis • Sem Cartão
+              </div>
+
+              <h2 class="text-2xl sm:text-3xl font-black text-white tracking-tight leading-tight px-2">
+                Pronto para lotar sua agenda e vender encomendas?
+              </h2>
+
+              <p class="text-xs text-slate-300 max-w-[260px]">
+                Crie sua conta em 2 minutos e comece a faturar no automático hoje mesmo.
+              </p>
+
+              <div class="w-full max-w-[280px] p-3.5 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white font-black text-xs uppercase tracking-wider shadow-2xl shadow-pink-500/40 animate-bounce cursor-pointer flex items-center justify-center gap-2">
+                <span>Clique no Link da Bio</span>
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Stage Bar: Call to Action Footer -->
+          <div class="relative z-20 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
+            <span class="flex items-center gap-1 font-bold text-white">
+              <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-400"></i>
+              boramarka.com.br
+            </span>
+            <span class="text-[10px] text-pink-400 font-black uppercase tracking-wider">
+              Teste 7 Dias Grátis
+            </span>
+          </div>
+
+        </div>
+
+        <!-- Render Canvas (Visível para o compositor da GPU fora da tela para gravação perfeita) -->
+        <canvas id="renderCanvas" width="720" height="1280" style="position: fixed; left: -9999px; top: 0; pointer-events: none; z-index: -100;"></canvas>
+      </div>
+
+      <!-- RIGHT: Customizer, Templates, Script & Ad Strategy -->
+      <div class="lg:col-span-6 space-y-6">
+        
+        <!-- Niche Template Selector -->
+        <div class="bg-[#0D1222] border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-black text-white flex items-center gap-2">
+              <i data-lucide="layers" class="w-5 h-5 text-pink-400"></i>
+              Selecione o Roteiro do Vídeo
+            </h3>
+            <span class="text-xs text-slate-400">Troca instantânea</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button onclick="setNiche('confectionery')" id="btnNicheConfectionery" class="p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-pink-500/10 border-pink-500 text-white transition-all cursor-pointer">
+              <div class="p-2 rounded-xl bg-pink-500/20 text-pink-400">
+                <i data-lucide="cake" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-xs font-black text-white">Confeitarias & Encomendas</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Bolos, doces, salgados e buffet</p>
+              </div>
+            </button>
+
+            <button onclick="setNiche('services')" id="btnNicheServices" class="p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-slate-900 border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer">
+              <div class="p-2 rounded-xl bg-slate-800 text-violet-400">
+                <i data-lucide="scissors" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-xs font-black text-white">Barbearias & Salões</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Cortes, sobrancelhas e estética</p>
+              </div>
+            </button>
+
+            <button onclick="setNiche('general')" id="btnNicheGeneral" class="p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-slate-900 border-slate-800 text-slate-400 hover:text-white transition-all sm:col-span-2 cursor-pointer">
+              <div class="p-2 rounded-xl bg-slate-800 text-amber-400">
+                <i data-lucide="sparkles" class="w-5 h-5"></i>
+              </div>
+              <div>
+                <p class="text-xs font-black text-white">Geral / Autônomos & Produtores</p>
+                <p class="text-[10px] text-slate-400 mt-0.5">Ideal para atingir todos os públicos em campanhas de tráfego pago</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Copywriting Script for Instagram / TikTok -->
+        <div class="bg-[#0D1222] border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <div class="flex items-center justify-between">
+            <h3 class="text-base font-black text-white flex items-center gap-2">
+              <i data-lucide="file-text" class="w-5 h-5 text-violet-400"></i>
+              Legenda Pronta para o Reels / Anúncio
+            </h3>
+            <button onclick="copyCaption()" class="px-3 py-1.5 rounded-xl bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i>
+              <span id="copyText">Copiar Legenda</span>
+            </button>
+          </div>
+
+          <div id="captionBox" class="bg-slate-950 p-4 rounded-2xl border border-slate-800 text-xs text-slate-300 font-sans leading-relaxed whitespace-pre-line select-all">
+Você ainda perde horas negociando no WhatsApp para o cliente sumir no final?
+
+Com o BoraMarka, você cria seu link profissional em 2 minutos:
+- Seus clientes agendam e encomendam sozinhos 24h por dia
+- Cobrança de Sinal no Pix (Mercado Pago) direto na sua conta
+- Cardápio de Encomendas com sabores e fotos em alta definição
+- Lembretes automáticos pelo WhatsApp (zero faltas e calotes!)
+
+Pare de perder dinheiro com desorganização.
+Teste 7 dias GRÁTIS sem precisar cadastrar cartão de crédito!
+
+Link oficial na bio: boramarka.com.br
+
+#empreendedorismo #confeitaria #barbearia #estetica #agendamento #encomendas #boramarka #docesgourmet #negocioslocais
+          </div>
+        </div>
+
+        <!-- Strategic Paid Traffic Guide (Meta Ads / Instagram Ads) -->
+        <div class="bg-[#0D1222] border border-slate-800 rounded-3xl p-6 shadow-xl space-y-4">
+          <h3 class="text-base font-black text-white flex items-center gap-2">
+            <i data-lucide="trending-up" class="w-5 h-5 text-emerald-400"></i>
+            Como Impulsionar para Viralizar & Ganhar Clientes
+          </h3>
+
+          <div class="space-y-3 text-xs text-slate-300">
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-white/5 space-y-1">
+              <p class="font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="target" class="w-3.5 h-3.5 text-pink-400"></i>
+                1. Objetivo da Campanha no Gerenciador de Anúncios:
+              </p>
+              <p class="text-slate-400">Selecione **Tráfego** (direcionando para `https://boramarka.com.br/register`) ou **Cadastros**.</p>
+            </div>
+
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-white/5 space-y-1">
+              <p class="font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="users" class="w-3.5 h-3.5 text-violet-400"></i>
+                2. Interesses do Público-Alvo:
+              </p>
+              <p class="text-slate-400">Pequenas empresas, Confeitaria, Doceria, Salão de beleza, Barbearia, Empreendedorismo, Microempreendedor individual (MEI).</p>
+            </div>
+
+            <div class="p-3 bg-slate-900/80 rounded-xl border border-white/5 space-y-1">
+              <p class="font-bold text-white flex items-center gap-1.5">
+                <i data-lucide="music" class="w-3.5 h-3.5 text-amber-400"></i>
+                3. Dica para Reels Orgânico no Instagram:
+              </p>
+              <p class="text-slate-400">Ao postar no Reels, adicione um áudio em alta (trending audio) com volume baixo (10%) para alavancar a distribuição algorítmica.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    lucide.createIcons();
+
+    // Scene Timeline Controller (15 seconds total)
+    let currentSecond = 0;
+    let isPlaying = false;
+    let timerInterval = null;
+    const totalSeconds = 15;
+    let currentNiche = 'confectionery';
+
+    const scenes = {
+      scene1: document.getElementById('scene1'),
+      scene2: document.getElementById('scene2'),
+      scene3: document.getElementById('scene3'),
+      scene4: document.getElementById('scene4'),
+    };
+
+    function updateSceneDisplay(sec) {
+      scenes.scene1.classList.add('hidden');
+      scenes.scene2.classList.add('hidden');
+      scenes.scene3.classList.add('hidden');
+      scenes.scene4.classList.add('hidden');
+
+      if (sec <= 3) {
+        scenes.scene1.classList.remove('hidden');
+      } else if (sec <= 7) {
+        scenes.scene2.classList.remove('hidden');
+      } else if (sec <= 11) {
+        scenes.scene3.classList.remove('hidden');
+      } else {
+        scenes.scene4.classList.remove('hidden');
+      }
+
+      const min = Math.floor(sec / 60).toString().padStart(2, '0');
+      const s = (sec % 60).toString().padStart(2, '0');
+      document.getElementById('timeCounter').innerText = `${min}:${s} / 00:15`;
+    }
+
+    function togglePlay() {
+      if (isPlaying) {
+        pauseVideo();
+      } else {
+        playVideo();
+      }
+    }
+
+    function playVideo() {
+      isPlaying = true;
+      document.getElementById('playText').innerText = 'Pausar';
+      document.getElementById('playIcon').setAttribute('data-lucide', 'pause');
+      lucide.createIcons();
+
+      if (currentSecond >= totalSeconds) {
+        currentSecond = 0;
+      }
+
+      timerInterval = setInterval(() => {
+        currentSecond++;
+        if (currentSecond > totalSeconds) {
+          pauseVideo();
+          currentSecond = 0;
+        }
+        updateSceneDisplay(currentSecond);
+      }, 1000);
+    }
+
+    function pauseVideo() {
+      isPlaying = false;
+      clearInterval(timerInterval);
+      document.getElementById('playText').innerText = 'Reproduzir';
+      document.getElementById('playIcon').setAttribute('data-lucide', 'play');
+      lucide.createIcons();
+    }
+
+    function restartVideo() {
+      pauseVideo();
+      currentSecond = 0;
+      updateSceneDisplay(0);
+      playVideo();
+    }
+
+    // Niche Preset Switcher
+    function setNiche(niche) {
+      currentNiche = niche;
+      const btnConfectionery = document.getElementById('btnNicheConfectionery');
+      const btnServices = document.getElementById('btnNicheServices');
+      const btnGeneral = document.getElementById('btnNicheGeneral');
+
+      btnConfectionery.className = 'p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-slate-900 border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer';
+      btnServices.className = 'p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-slate-900 border-slate-800 text-slate-400 hover:text-white transition-all cursor-pointer';
+      btnGeneral.className = 'p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-slate-900 border-slate-800 text-slate-400 hover:text-white transition-all sm:col-span-2 cursor-pointer';
+
+      if (niche === 'confectionery') {
+        btnConfectionery.className = 'p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-pink-500/10 border-pink-500 text-white transition-all cursor-pointer';
+        document.getElementById('badgeNicheText').innerText = 'Confeitarias & Docerias';
+        document.getElementById('scene1Headline').innerHTML = 'Cansado de <span class="text-red-400 underline decoration-red-500/50">anotar encomendas no papel</span> e levar calote no bolo?';
+        document.getElementById('scene2Headline').innerHTML = 'Seu <span class="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Cardápio de Encomendas</span> com Pix e Kanban de Produção!';
+        document.getElementById('mockItemName').innerText = 'Bolo Vulcão Ninho & Nutella';
+      } else if (niche === 'services') {
+        btnServices.className = 'p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-violet-500/10 border-violet-500 text-white transition-all cursor-pointer';
+        document.getElementById('badgeNicheText').innerText = 'Barbearias & Salões';
+        document.getElementById('scene1Headline').innerHTML = 'Cansado de <span class="text-red-400 underline decoration-red-500/50">perder clientes no WhatsApp</span> e levar falta na cadeira?';
+        document.getElementById('scene2Headline').innerHTML = 'Sua <span class="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Agenda Online 24h</span> com Lembretes no WhatsApp!';
+        document.getElementById('mockItemName').innerText = 'Corte Degradê + Barba Terapia';
+      } else {
+        btnGeneral.className = 'p-3.5 rounded-2xl border text-left flex items-start gap-3 bg-amber-500/10 border-amber-500 text-white transition-all sm:col-span-2 cursor-pointer';
+        document.getElementById('badgeNicheText').innerText = 'Autônomos & Encomendas';
+        document.getElementById('scene1Headline').innerHTML = 'Cansado de <span class="text-red-400 underline decoration-red-500/50">perder clientes no WhatsApp</span> e levar calote?';
+        document.getElementById('scene2Headline').innerHTML = 'Seu link de <span class="bg-gradient-to-r from-violet-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">Agendamentos & Encomendas</span> no Piloto Automático!';
+        document.getElementById('mockItemName').innerText = 'Serviço & Encomenda Sob Medida';
+      }
+
+      restartVideo();
+    }
+
+    // Copy Caption Helper
+    function copyCaption() {
+      const text = document.getElementById('captionBox').innerText;
+      navigator.clipboard.writeText(text).then(() => {
+        document.getElementById('copyText').innerText = 'Copiado!';
+        setTimeout(() => {
+          document.getElementById('copyText').innerText = 'Copiar Legenda';
+        }, 2000);
+      });
+    }
+
+    // Canvas Frame Drawer Function
+    function drawCanvasFrame(ctx, width, height, t) {
+      // 1. Fundo Escuro com Gradientes de Iluminação
+      ctx.fillStyle = '#050714';
+      ctx.fillRect(0, 0, width, height);
+
+      // Glows
+      const glowGrad = ctx.createRadialGradient(width/2, height * 0.25, 20, width/2, height * 0.25, 450);
+      glowGrad.addColorStop(0, 'rgba(236, 72, 153, 0.25)');
+      glowGrad.addColorStop(0.5, 'rgba(124, 58, 237, 0.15)');
+      glowGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, width, height);
+
+      // 2. Header do Topo (Logo + Badge)
+      ctx.fillStyle = '#0E1424';
+      roundRect(ctx, 40, 50, 240, 60, 30);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.font = '900 26px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('⚡ BoraMarka', 65, 89);
+
+      // Badge Nicho
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+      roundRect(ctx, width - 290, 50, 250, 60, 30);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+      ctx.stroke();
+
+      ctx.fillStyle = '#EC4899';
+      ctx.font = 'bold 18px "Plus Jakarta Sans", sans-serif';
+      const badgeLabel = currentNiche === 'confectionery' ? 'Confeitaria & Bolos' : (currentNiche === 'services' ? 'Barbearias & Salões' : 'Autônomos & Lojas');
+      ctx.fillText(badgeLabel, width - 268, 88);
+
+      // 3. Renderização Dinâmica das Cenas
+      if (t <= 3.8) {
+        // ─── CENA 1: O PROBLEMA / HOOK (0s - 3.8s) ───
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.18)';
+        roundRect(ctx, width/2 - 140, 220, 280, 50, 25);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#F87171';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CHEGA DE PREJUÍZO!', width/2, 252);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+        if (currentNiche === 'confectionery') {
+          ctx.fillText('Cansado de anotar', width/2, 345);
+          ctx.fillStyle = '#F87171';
+          ctx.fillText('encomendas no papel', width/2, 400);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText('e levar calote no bolo?', width/2, 455);
+        } else {
+          ctx.fillText('Cansado de perder', width/2, 345);
+          ctx.fillStyle = '#F87171';
+          ctx.fillText('clientes no WhatsApp', width/2, 400);
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillText('e levar desmarcados?', width/2, 455);
+        }
+
+        // Balão WhatsApp
+        ctx.fillStyle = '#1E293B';
+        roundRect(ctx, 60, 560, width - 120, 340, 32);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('💬 Mensagem do Cliente', 95, 620);
+
+        ctx.fillStyle = '#0F172A';
+        roundRect(ctx, 90, 660, width - 180, 120, 20);
+        ctx.fill();
+
+        ctx.fillStyle = '#E2E8F0';
+        ctx.font = '500 22px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('"Oi! Tem vaga amanhã?', 115, 710);
+        ctx.fillText('Quanto fica o bolo? Me passa o Pix..."', 115, 748);
+
+        ctx.fillStyle = '#FBBF24';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('⚠️ Você demorou 1 hora e o cliente sumiu!', 100, 845);
+
+      } else if (t <= 7.8) {
+        // ─── CENA 2: A SOLUÇÃO (3.8s - 7.8s) ───
+        ctx.fillStyle = 'rgba(236, 72, 153, 0.18)';
+        roundRect(ctx, width/2 - 170, 200, 340, 50, 25);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(236, 72, 153, 0.5)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#EC4899';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('A REVOLUÇÃO DO SEU NEGÓCIO', width/2, 232);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('Seu link profissional de', width/2, 310);
+        ctx.fillStyle = '#EC4899';
+        ctx.fillText('Agendamentos & Vendas', width/2, 365);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText('no Piloto Automático!', width/2, 420);
+
+        // Cardápio / Celular Mockup
+        ctx.fillStyle = '#0F172A';
+        roundRect(ctx, 80, 500, width - 160, 420, 36);
+        ctx.fill();
+        ctx.strokeStyle = '#EC4899';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 26px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('📱 Cardápio & Agenda Online', 120, 565);
+
+        // Item
+        ctx.fillStyle = '#1E293B';
+        roundRect(ctx, 110, 605, width - 220, 150, 24);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+        const itemName = currentNiche === 'confectionery' ? '🎂 Bolo Vulcão Ninho & Nutella' : '✂️ Corte Degradê + Barba';
+        ctx.fillText(itemName, 135, 660);
+
+        ctx.fillStyle = '#34D399';
+        ctx.font = '900 26px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('R$ 85,00', 135, 710);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        roundRect(ctx, 110, 790, width - 220, 70, 20);
+        ctx.fill();
+
+        ctx.fillStyle = '#CBD5E1';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('⚡ Cliente agenda e escolhe opções em 15s!', width/2, 835);
+
+      } else if (t <= 11.8) {
+        // ─── CENA 3: SINAL NO PIX & ZERO CALOTE (7.8s - 11.8s) ───
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.18)';
+        roundRect(ctx, width/2 - 150, 200, 300, 50, 25);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(16, 185, 129, 0.5)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#34D399';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('ZERO CALOTES OU FALTAS', width/2, 232);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('Receba', width/2, 310);
+        ctx.fillStyle = '#34D399';
+        ctx.fillText('Entrada no Pix', width/2, 365);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText('direto na sua conta!', width/2, 420);
+
+        // Card Pix Recebido
+        ctx.fillStyle = '#06281E';
+        roundRect(ctx, 70, 520, width - 140, 380, 36);
+        ctx.fill();
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        ctx.fillStyle = '#10B981';
+        ctx.font = 'bold 26px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('💰 Notificação de Pagamento', 110, 585);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 40px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('+ R$ 42,50', 110, 660);
+
+        ctx.fillStyle = '#A7F3D0';
+        ctx.font = '500 22px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('Sinal de 50% confirmado via Pix', 110, 710);
+        ctx.fillText('Mercado Pago • Instantâneo', 110, 745);
+
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+        roundRect(ctx, 100, 790, width - 200, 70, 20);
+        ctx.fill();
+
+        ctx.fillStyle = '#EC4899';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('📲 Lembrete WhatsApp enviado automático!', width/2, 833);
+
+      } else {
+        // ─── CENA 4: CTA FINAL & OFERTA (11.8s - 15s) ───
+        ctx.fillStyle = 'rgba(124, 58, 237, 0.25)';
+        roundRect(ctx, width/2 - 160, 200, 320, 50, 25);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(236, 72, 153, 0.6)';
+        ctx.stroke();
+
+        ctx.fillStyle = '#F472B6';
+        ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('7 DIAS GRÁTIS • SEM CARTÃO', width/2, 232);
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 44px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('Pronto para lotar sua', width/2, 310);
+        ctx.fillStyle = '#EC4899';
+        ctx.fillText('Agenda e Encomendas?', width/2, 365);
+
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = '500 24px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('Crie seu link em 2 minutos e comece', width/2, 450);
+        ctx.fillText('a receber clientes no automático hoje!', width/2, 490);
+
+        // Botão CTA Neon
+        const ctaGrad = ctx.createLinearGradient(80, 600, width - 80, 710);
+        ctaGrad.addColorStop(0, '#7C3AED');
+        ctaGrad.addColorStop(0.5, '#EC4899');
+        ctaGrad.addColorStop(1, '#F97316');
+        ctx.fillStyle = ctaGrad;
+        roundRect(ctx, 80, 620, width - 160, 110, 32);
+        ctx.fill();
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = '900 28px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('CLIQUE NO LINK DA BIO ➔', width/2, 688);
+
+        ctx.fillStyle = '#34D399';
+        ctx.font = 'bold 24px "Plus Jakarta Sans", sans-serif';
+        ctx.fillText('🌐 boramarka.com.br', width/2, 805);
+      }
+
+      // 4. Rodapé Fixo
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+      ctx.font = 'bold 20px "Plus Jakarta Sans", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('BoraMarka • A Plataforma Oficial de Agendamento e Encomendas', width/2, height - 60);
+    }
+
+    // Helper Canvas Round Rectangle
+    function roundRect(ctx, x, y, width, height, radius) {
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.lineTo(x + width - radius, y);
+      ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+      ctx.lineTo(x + width, y + height - radius);
+      ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+      ctx.lineTo(x + radius, y + height);
+      ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+      ctx.lineTo(x, y + radius);
+      ctx.quadraticCurveTo(x, y, x + radius, y);
+      ctx.closePath();
+    }
+
+    // 1-CLICK INSTANT DOWNLOAD: Current Frame in High-Res PNG (1080x1920)
+    function downloadCurrentFramePNG() {
+      const canvas = document.getElementById('renderCanvas');
+      const ctx = canvas.getContext('2d');
+      const width = 720;
+      const height = 1280;
+      canvas.width = width;
+      canvas.height = height;
+
+      drawCanvasFrame(ctx, width, height, currentSecond);
+
+      const a = document.createElement('a');
+      a.href = canvas.toDataURL('image/png');
+      a.download = `boramarka-slide-${currentNiche}-cena-${currentSecond}s.png`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    // ROBUST REAL-TIME VIDEO RECORDER WITH DIRECT BLOB EXPORT
+    async function recordAndExportVideo() {
+      const canvas = document.getElementById('renderCanvas');
+      const ctx = canvas.getContext('2d');
+      const width = 720;
+      const height = 1280;
+      canvas.width = width;
+      canvas.height = height;
+
+      const progressBox = document.getElementById('recordingProgressBox');
+      const progressBar = document.getElementById('progressBar');
+      const progressPercent = document.getElementById('progressPercent');
+      const recordBtn = document.getElementById('btnRecord');
+      const recordLabel = document.getElementById('recordBtnLabel');
+
+      progressBox.classList.remove('hidden');
+      recordBtn.disabled = true;
+      recordLabel.innerText = 'Gravando...';
+
+      // Captura o stream nativo do Canvas
+      const stream = canvas.captureStream(30);
+      let mimeType = 'video/webm;codecs=vp9';
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+        mimeType = 'video/webm';
+      }
+
+      let mediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, {
+          mimeType,
+          videoBitsPerSecond: 3500000
+        });
+      } catch (err) {
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
+      const recordedChunks = [];
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          recordedChunks.push(e.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const videoBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        const videoUrl = URL.createObjectURL(videoBlob);
+
+        // Download direto do arquivo real
+        const downloadLink = document.createElement('a');
+        downloadLink.href = videoUrl;
+        downloadLink.download = `boramarka-reels-${currentNiche}-9x16.webm`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        
+        setTimeout(() => {
+          document.body.removeChild(downloadLink);
+          URL.revokeObjectURL(videoUrl);
+        }, 1000);
+
+        progressPercent.innerText = '100% - Baixado!';
+        progressBar.style.width = '100%';
+        recordLabel.innerText = 'Vídeo Baixado!';
+        
+        setTimeout(() => {
+          progressBox.classList.add('hidden');
+          recordBtn.disabled = false;
+          recordLabel.innerText = 'Gravar Vídeo Real';
+        }, 3000);
+      };
+
+      // Inicia a gravação emitindo fatias a cada 500ms
+      mediaRecorder.start(500);
+
+      // Inicia a timeline em tempo real
+      let frame = 0;
+      const totalFrames = 450; // 15 segundos a 30fps
+      const frameInterval = 33.3; // ~30 FPS
+
+      const recordInterval = setInterval(() => {
+        frame++;
+        const t = frame / 30;
+
+        // Desenha frame no canvas
+        drawCanvasFrame(ctx, width, height, t);
+        
+        // Atualiza preview na tela
+        updateSceneDisplay(Math.floor(t));
+
+        // Atualiza barra de progresso
+        const pct = Math.min(100, Math.round((frame / totalFrames) * 100));
+        progressBar.style.width = `${pct}%`;
+        progressPercent.innerText = `${pct}% (${Math.floor(t)}s / 15s)`;
+
+        if (frame >= totalFrames) {
+          clearInterval(recordInterval);
+          mediaRecorder.stop();
+        }
+      }, frameInterval);
+    }
+
+    // Initialize Scene 1
+    updateSceneDisplay(0);
+  </script>
+</body>
+</html>
