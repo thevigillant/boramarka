@@ -41,24 +41,33 @@ export default async function portalRoutes(app: FastifyInstance) {
         return reply.status(401).send({ error: 'Link de acesso inválido ou expirado. Peça um novo ao RH.' });
       }
     } else if (login?.trim() && password) {
-      // B. Login por Credenciais (CPF ou E-mail ou Nome) + Senha
+      // B. Login por Credenciais (CPF ou E-mail) + Senha
       const cleanLogin = login.trim().toLowerCase();
       const cleanCpf = login.replace(/\D/g, '');
 
+      // 🛡️ Prevenção contra Colisão de Contas Cross-Tenant: Busca estritamente por identificadores unívocos (Email ou CPF)
+      const searchCriteria: any[] = [];
+      if (cleanLogin.includes('@')) {
+        searchCriteria.push({ email: cleanLogin });
+      }
+      if (cleanCpf.length === 11) {
+        searchCriteria.push({ cpf: cleanCpf });
+      }
+      if (searchCriteria.length === 0) {
+        searchCriteria.push({ email: cleanLogin });
+        if (cleanCpf.length > 0) searchCriteria.push({ cpf: cleanCpf });
+      }
+
       employee = await prisma.employee.findFirst({
         where: {
-          OR: [
-            { email: cleanLogin },
-            { cpf: cleanCpf.length > 0 ? cleanCpf : undefined },
-            { name: { contains: cleanLogin } },
-          ],
+          OR: searchCriteria,
           status: 'ACTIVE',
         },
         include: { admin: { select: { id: true, businessName: true, photoUrl: true } } },
       });
 
       if (!employee) {
-        return reply.status(401).send({ error: 'Funcionário não encontrado ou inativo.' });
+        return reply.status(401).send({ error: 'Funcionário não encontrado ou inativo. Verifique seu CPF ou e-mail.' });
       }
 
       if (!employee.passwordHash) {
@@ -121,7 +130,7 @@ export default async function portalRoutes(app: FastifyInstance) {
     protectedApp.addHook('onRequest', authenticateEmployee);
 
     // GET /api/portal/me — Perfil completo do funcionário
-    protectedApp.get('/me', async (request: FastifyRequest) => {
+    protectedApp.get('/me', async (request: FastifyRequest, reply: FastifyReply) => {
       const user = request.user as any;
       const employee = await prisma.employee.findUnique({
         where: { id: user.employeeId },
@@ -137,7 +146,13 @@ export default async function portalRoutes(app: FastifyInstance) {
         },
       });
 
-      return employee;
+      if (!employee) {
+        return reply.status(404).send({ error: 'Colaborador não encontrado.' });
+      }
+
+      // 🛡️ Oculta passwordHash e portalToken
+      const { passwordHash: _, portalToken: __, ...safeEmployee } = employee;
+      return safeEmployee;
     });
 
     // GET /api/portal/time-registers — Registros de ponto e espelho de jornada

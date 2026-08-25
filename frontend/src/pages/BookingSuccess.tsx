@@ -48,18 +48,19 @@ export default function BookingSuccess() {
   const [reviewSubmitted, setReviewSubmitted] = useState<boolean>(false)
   const [reviewError, setReviewError] = useState<string | null>(null)
 
+  const queryCode = searchParams.get('code') || state?.booking?.cancellationCode || ''
   const bookingId = state?.booking?.id || (queryBookingId ? parseInt(queryBookingId) : null)
   const isPayFullPrice = state?.payFullPrice || false
 
   useEffect(() => {
     if (bookingId) {
       setFetchLoading(true)
-      api.getPublicBookingDetails(bookingId)
+      api.getPublicBookingDetails(bookingId, queryCode)
         .then(data => setFetchedBooking(data))
         .catch(() => {})
         .finally(() => setFetchLoading(false))
     }
-  }, [bookingId])
+  }, [bookingId, queryCode])
 
   // Check push notification support
   useEffect(() => {

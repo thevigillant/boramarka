@@ -18,9 +18,18 @@ import {
   ChevronRight,
   Info,
   Sparkles,
+  Copy,
+  Check,
+  QrCode,
+  MessageSquare,
+  ArrowRight,
+  ExternalLink,
+  ShieldCheck,
+  Wallet,
+  CreditCard,
 } from 'lucide-react'
 import { api } from '../services/api'
-import { formatCurrency } from '../utils/dashboardHelpers'
+import { formatCurrency, formatImageUrl } from '../utils/dashboardHelpers'
 import type { ProductData, ProductCategoryData, OrderSettingsData } from '../types/dashboard'
 
 interface CartItem {
@@ -66,8 +75,16 @@ export function StorePage() {
   const [deliveryType, setDeliveryType] = useState<'PICKUP' | 'DELIVERY'>('PICKUP')
   const [deliveryAddress, setDeliveryAddress] = useState('')
   const [orderNotes, setOrderNotes] = useState('')
+  const [paymentOption, setPaymentOption] = useState<'DEPOSIT' | 'FULL'>('DEPOSIT')
+  const [paymentMethod, setPaymentMethod] = useState<'PIX' | 'MERCADOPAGO'>('PIX')
   const [submittingOrder, setSubmittingOrder] = useState(false)
   const [submitError, setSubmitError] = useState('')
+
+  // Modal de Pagamento PIX e Confirmação de Sucesso
+  const [submittedOrderData, setSubmittedOrderData] = useState<any>(null)
+  const [showPixSuccessModal, setShowPixSuccessModal] = useState(false)
+  const [copiedPixKey, setCopiedPixKey] = useState(false)
+  const [copiedOrderNumber, setCopiedOrderNumber] = useState(false)
 
   useEffect(() => {
     if (!username) return
@@ -142,7 +159,9 @@ export function StorePage() {
   const cartTotal = cartSubtotal + deliveryFee
   const depositPercentage = settings?.depositPercentage !== undefined ? settings.depositPercentage : 50
   const depositAmount = (cartTotal * depositPercentage) / 100
-  const remainingAmount = Math.max(0, cartTotal - depositAmount)
+  const isFullPayment = paymentOption === 'FULL'
+  const amountToPayNow = isFullPayment ? cartTotal : depositAmount
+  const amountRemaining = isFullPayment ? 0 : Math.max(0, cartTotal - depositAmount)
   const totalCartCount = cart.reduce((sum, item) => sum + item.quantity, 0)
 
   // Submit Order
@@ -181,6 +200,8 @@ export function StorePage() {
         deliveryType,
         deliveryAddress: deliveryAddress.trim(),
         notes: orderNotes.trim(),
+        paymentOption,
+        paymentMethod,
         items: cart.map(item => ({
           productId: item.product.id,
           quantity: item.quantity,
@@ -190,22 +211,29 @@ export function StorePage() {
       }
 
       const res = await api.createPublicOrder(username, payload)
-
-      // Se houver URL de pagamento Mercado Pago, redireciona o cliente para pagar a entrada
-      if (res.paymentUrl) {
-        window.location.href = res.paymentUrl
-      } else {
-        // Se houver link do WhatsApp, abre e redireciona para a página de rastreamento
-        if (res.whatsappUrl) {
-          window.open(res.whatsappUrl, '_blank')
-        }
-        navigate(res.trackingUrl)
-      }
+      setSubmittedOrderData(res)
+      setShowCheckout(false)
+      setCart([])
+      setShowPixSuccessModal(true)
     } catch (err: any) {
       setSubmitError(err.message || 'Erro ao enviar pedido. Tente novamente.')
     } finally {
       setSubmittingOrder(false)
     }
+  }
+
+  function handleCopyPix(pixKey: string) {
+    if (!pixKey) return
+    navigator.clipboard.writeText(pixKey)
+    setCopiedPixKey(true)
+    setTimeout(() => setCopiedPixKey(false), 3000)
+  }
+
+  function handleCopyOrderNumber(orderNumber: string) {
+    if (!orderNumber) return
+    navigator.clipboard.writeText(orderNumber)
+    setCopiedOrderNumber(true)
+    setTimeout(() => setCopiedOrderNumber(false), 3000)
   }
 
   const filteredProducts = products.filter(p => {
@@ -345,8 +373,11 @@ export function StorePage() {
                 {prod.photos?.[0]?.url ? (
                   <div className="w-full h-48 overflow-hidden relative bg-slate-100 dark:bg-slate-800">
                     <img
-                      src={prod.photos[0].url}
+                      src={formatImageUrl(prod.photos[0].url)}
                       alt={prod.name}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/400x400/1e293b/f43f5e?text=' + encodeURIComponent(prod.name);
+                      }}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
                     {prod.featured && (
@@ -427,8 +458,11 @@ export function StorePage() {
               {selectedProduct.photos?.length > 0 ? (
                 <div className="w-full h-64 bg-slate-900 overflow-hidden">
                   <img
-                    src={selectedProduct.photos[activePhotoIndex]?.url || selectedProduct.photos[0].url}
+                    src={formatImageUrl(selectedProduct.photos[activePhotoIndex]?.url || selectedProduct.photos[0].url)}
                     alt={selectedProduct.name}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/600x400/1e293b/f43f5e?text=' + encodeURIComponent(selectedProduct.name);
+                    }}
                     className="w-full h-full object-cover"
                   />
                   {selectedProduct.photos.length > 1 && (
@@ -789,6 +823,102 @@ export function StorePage() {
                 )}
               </div>
 
+              {/* ── Opção de Pagamento: Sinal vs Total ── */}
+              <div className="space-y-3 pt-2">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                  Como deseja pagar agora?
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentOption('DEPOSIT')}
+                    className={`p-3.5 rounded-2xl border text-left transition-all ${
+                      paymentOption === 'DEPOSIT'
+                        ? 'border-pink-500 bg-pink-50/50 dark:bg-pink-950/30 ring-2 ring-pink-500/20'
+                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${paymentOption === 'DEPOSIT' ? 'border-pink-500 bg-pink-500 text-white' : 'border-slate-400'}`}>
+                          {paymentOption === 'DEPOSIT' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </span>
+                        Pagar Entrada ({depositPercentage}%)
+                      </span>
+                      <span className="text-xs font-black text-emerald-500">
+                        {formatCurrency(depositAmount)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 pl-5">
+                      Garante a produção agora e pague o restante ({formatCurrency(Math.max(0, cartTotal - depositAmount))}) na entrega/retirada.
+                    </p>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentOption('FULL')}
+                    className={`p-3.5 rounded-2xl border text-left transition-all ${
+                      paymentOption === 'FULL'
+                        ? 'border-pink-500 bg-pink-50/50 dark:bg-pink-950/30 ring-2 ring-pink-500/20'
+                        : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs font-black text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <span className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${paymentOption === 'FULL' ? 'border-pink-500 bg-pink-500 text-white' : 'border-slate-400'}`}>
+                          {paymentOption === 'FULL' && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                        </span>
+                        Pagar Valor Total (100%)
+                      </span>
+                      <span className="text-xs font-black text-pink-500">
+                        {formatCurrency(cartTotal)}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400 pl-5">
+                      Quita o valor integral da encomenda antecipadamente.
+                    </p>
+                  </button>
+                </div>
+              </div>
+
+              {/* ── Forma de Pagamento ── */}
+              <div className="space-y-2 pt-1">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-widest block">
+                  Forma de Pagamento
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod('PIX')}
+                    className={`p-3 rounded-2xl border text-xs font-black flex items-center gap-2 transition-all ${
+                      paymentMethod === 'PIX'
+                        ? 'border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
+                        : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                    }`}
+                  >
+                    <QrCode className="w-4 h-4 text-emerald-500" />
+                    PIX Instantâneo
+                  </button>
+
+                  {admin.mpAccessToken && (
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod('MERCADOPAGO')}
+                      className={`p-3 rounded-2xl border text-xs font-black flex items-center gap-2 transition-all ${
+                        paymentMethod === 'MERCADOPAGO'
+                          ? 'border-sky-500 bg-sky-50/50 dark:bg-sky-950/30 text-sky-600 dark:text-sky-400'
+                          : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                      }`}
+                    >
+                      <CreditCard className="w-4 h-4 text-sky-500" />
+                      Cartão / Mercado Pago
+                    </button>
+                  )}
+                </div>
+              </div>
+
               {/* ── Resumo Financeiro ── */}
               <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2">
                 <div className="flex justify-between text-xs font-medium text-slate-400">
@@ -807,22 +937,24 @@ export function StorePage() {
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800">
-                  <div className="bg-slate-800/80 p-2.5 rounded-xl">
-                    <span className="text-[10px] font-bold text-slate-400 block">
-                      Entrada ({depositPercentage}%)
+                  <div className={`p-2.5 rounded-xl border ${paymentOption === 'DEPOSIT' ? 'bg-emerald-950/40 border-emerald-500/30' : 'bg-pink-950/40 border-pink-500/30'}`}>
+                    <span className="text-[10px] font-bold text-slate-300 block">
+                      {paymentOption === 'DEPOSIT' ? `Entrada (${depositPercentage}%)` : 'Valor Total (100%)'}
                     </span>
                     <span className="text-sm font-black text-emerald-400">
-                      {formatCurrency(depositAmount)}
+                      {formatCurrency(amountToPayNow)}
                     </span>
-                    <span className="text-[9px] text-slate-400 block mt-0.5">Pagamento online agora</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">Pagar agora via PIX</span>
                   </div>
 
-                  <div className="bg-slate-800/80 p-2.5 rounded-xl">
+                  <div className="bg-slate-800/80 p-2.5 rounded-xl border border-slate-700/40">
                     <span className="text-[10px] font-bold text-slate-400 block">Restante</span>
                     <span className="text-sm font-black text-slate-200">
-                      {formatCurrency(remainingAmount)}
+                      {formatCurrency(amountRemaining)}
                     </span>
-                    <span className="text-[9px] text-slate-400 block mt-0.5">Pagar na entrega/retirada</span>
+                    <span className="text-[9px] text-slate-400 block mt-0.5">
+                      {amountRemaining === 0 ? 'Quitado antecipadamente' : 'Pagar na entrega/retirada'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -844,11 +976,174 @@ export function StorePage() {
                   </>
                 ) : (
                   <>
-                    <CheckCircle className="w-5 h-5" /> Enviar Pedido de Encomenda
+                    <CheckCircle className="w-5 h-5" /> Confirmar e Pagar via PIX ({formatCurrency(amountToPayNow)})
                   </>
                 )}
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════ */}
+      {/* 4. MODAL DE PAGAMENTO PIX E CONFIRMAÇÃO DE PEDIDO */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {showPixSuccessModal && submittedOrderData && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-white dark:bg-[#131826] w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100 border border-slate-200 dark:border-slate-800 space-y-6 max-h-[95vh] overflow-y-auto">
+            {/* Header de Sucesso */}
+            <div className="text-center space-y-2 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="w-14 h-14 bg-emerald-500/10 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+                <CheckCircle className="w-8 h-8" />
+              </div>
+              <span className="text-xs font-black text-emerald-500 uppercase tracking-widest">
+                Pedido Realizado com Sucesso!
+              </span>
+              <div className="flex items-center justify-center gap-2">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white">
+                  {submittedOrderData.order?.orderNumber}
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => handleCopyOrderNumber(submittedOrderData.order?.orderNumber)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-lg bg-slate-100 dark:bg-slate-800 text-xs font-bold"
+                  title="Copiar número do pedido"
+                >
+                  {copiedOrderNumber ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-slate-400 font-medium">
+                Guarde o número do pedido para acompanhar a produção
+              </p>
+            </div>
+
+            {/* Card de Pagamento PIX */}
+            <div className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <QrCode className="w-4 h-4 text-emerald-500" /> Pagamento via PIX
+                </span>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                  {submittedOrderData.pixInfo?.paymentLabel || 'Entrada'}
+                </span>
+              </div>
+
+              {/* Valor em destaque */}
+              <div className="bg-white dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-center space-y-1">
+                <span className="text-xs font-bold text-slate-400">Valor a Transferir Agora:</span>
+                <p className="text-3xl font-black text-emerald-500 font-mono">
+                  {formatCurrency(submittedOrderData.pixInfo?.amount || submittedOrderData.order?.depositAmount || 0)}
+                </p>
+                {submittedOrderData.order?.remainingAmount > 0 && (
+                  <p className="text-[11px] font-semibold text-slate-400">
+                    Restante de {formatCurrency(submittedOrderData.order.remainingAmount)} a pagar na entrega/retirada
+                  </p>
+                )}
+              </div>
+
+              {/* Chave PIX com botão de copiar */}
+              {submittedOrderData.pixInfo?.pixKey ? (
+                <div className="space-y-1.5">
+                  <label className="block text-[11px] font-black text-slate-400 uppercase">
+                    Chave PIX do Estabelecimento ({submittedOrderData.pixInfo?.merchantName || admin.businessName})
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      readOnly
+                      value={submittedOrderData.pixInfo.pixKey}
+                      className="input-simple text-xs font-bold font-mono select-all bg-slate-100 dark:bg-slate-800 py-2.5"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPix(submittedOrderData.pixInfo.pixKey)}
+                      className={`px-4 py-2.5 rounded-xl font-black text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+                        copiedPixKey
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600'
+                      }`}
+                    >
+                      {copiedPixKey ? (
+                        <>
+                          <Check className="w-4 h-4" /> Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" /> Copiar Chave
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-medium">
+                  Combine o pagamento diretamente com o estabelecimento no WhatsApp abaixo.
+                </div>
+              )}
+
+              {/* Passo a passo */}
+              <div className="p-3.5 rounded-2xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200/60 dark:border-pink-900/40 text-xs space-y-1.5 text-slate-700 dark:text-slate-300">
+                <p className="font-black text-pink-600 dark:text-pink-400 text-[11px] uppercase tracking-wider">
+                  Como concluir seu pedido:
+                </p>
+                <ol className="list-decimal list-inside space-y-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">
+                  <li>Copie a chave PIX acima</li>
+                  <li>Abra o app do seu banco e faça a transferência no valor indicado</li>
+                  <li>Clique no botão verde abaixo para <strong>enviar o comprovante no WhatsApp</strong></li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Ações */}
+            <div className="space-y-2.5">
+              {(() => {
+                const rawPhone = admin?.phone || admin?.pixKey || settings?.pixKey || '';
+                const cleanPhone = rawPhone.replace(/\D/g, '');
+                const msg = encodeURIComponent(
+                  `Olá! Acabei de fazer o pedido *${submittedOrderData.order?.orderNumber}* no valor de ${formatCurrency(submittedOrderData.pixInfo?.amount || submittedOrderData.order?.depositAmount || 0)} via PIX na sua loja. Segue o comprovante em anexo!`
+                );
+                const finalWhatsappUrl = submittedOrderData.whatsappUrl || (
+                  (cleanPhone.length === 10 || cleanPhone.length === 11)
+                    ? `https://wa.me/55${cleanPhone}?text=${msg}`
+                    : `https://api.whatsapp.com/send?text=${msg}`
+                );
+
+                return (
+                  <a
+                    href={finalWhatsappUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/25 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 text-center"
+                  >
+                    <MessageSquare className="w-5 h-5" /> Enviar Comprovante no WhatsApp
+                  </a>
+                );
+              })()}
+
+              {submittedOrderData.paymentUrl && (
+                <a
+                  href={submittedOrderData.paymentUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-3.5 bg-sky-500 hover:bg-sky-600 text-white rounded-2xl font-black text-xs shadow-lg shadow-sky-500/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2 text-center"
+                >
+                  <CreditCard className="w-4 h-4" /> Pagar via Mercado Pago / Cartão
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPixSuccessModal(false)
+                  if (submittedOrderData.trackingUrl) {
+                    navigate(submittedOrderData.trackingUrl)
+                  }
+                }}
+                className="w-full py-3.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-black text-xs transition-all flex items-center justify-center gap-1.5"
+              >
+                Acompanhar Status da Encomenda <ArrowRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle } from 'lucide-react'
-import { formatCurrency } from '../../../utils/dashboardHelpers'
+import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import type { OrderData } from '../../../types/dashboard'
 
 interface OrderDetailModalProps {
@@ -145,8 +145,11 @@ export function OrderDetailModal({
                   >
                     {item.product?.photos?.[0]?.url ? (
                       <img
-                        src={item.product.photos[0].url}
+                        src={formatImageUrl(item.product.photos[0].url)}
                         alt={item.productName}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/100x100/1e293b/f43f5e?text=' + encodeURIComponent(item.productName);
+                        }}
                         className="w-14 h-14 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
                       />
                     ) : (
@@ -202,8 +205,8 @@ export function OrderDetailModal({
             </div>
           )}
 
-          {/* ── Resumo Financeiro ── */}
-          <div className="p-4 rounded-2xl bg-slate-900 text-white space-y-2.5">
+          {/* ── Resumo Financeiro & Conferência de Pagamento PIX ── */}
+          <div className="p-5 rounded-3xl bg-slate-900 text-white space-y-4 border border-slate-800">
             <div className="flex justify-between text-xs font-medium text-slate-400">
               <span>Subtotal dos itens</span>
               <span>{formatCurrency(order.subtotal)}</span>
@@ -216,38 +219,79 @@ export function OrderDetailModal({
             )}
             <div className="flex justify-between text-base font-black text-white pt-2 border-t border-slate-800">
               <span>Total do Pedido</span>
-              <span className="text-pink-400">{formatCurrency(order.total)}</span>
+              <span className="text-pink-400 font-mono">{formatCurrency(order.total)}</span>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-3 border-t border-slate-800">
-              <div className="bg-slate-800/80 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-400 block">
-                  Entrada ({order.depositPercentage}%)
-                </span>
-                <span className="text-sm font-black text-emerald-400">
-                  {formatCurrency(order.depositAmount)}
-                </span>
-                <div className="mt-1 flex items-center gap-1.5">
-                  <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${order.depositPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}`}>
-                    {order.depositPaid ? '✓ PAGO' : 'PENDENTE'}
+            {/* Box de Status do Pagamento (PIX) */}
+            <div className="p-4 rounded-2xl bg-slate-800/90 border border-slate-700/80 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
+                    Conferência do Sinal / Entrada ({order.depositPercentage}%)
                   </span>
-                  <button
-                    type="button"
-                    onClick={() => onUpdatePayment(order.id, !order.depositPaid)}
-                    className="text-[10px] text-pink-400 hover:underline font-bold"
-                  >
-                    Alternar
-                  </button>
+                  <p className="text-xl font-black text-emerald-400 font-mono mt-0.5">
+                    {formatCurrency(order.depositAmount)}
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs font-black px-3 py-1 rounded-full flex items-center gap-1 ${
+                    order.depositPaid 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                      : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                  }`}>
+                    {order.depositPaid ? '✓ PIX RECEBIDO' : '⚠️ AGUARDANDO PIX'}
+                  </span>
                 </div>
               </div>
 
-              <div className="bg-slate-800/80 p-3 rounded-xl">
-                <span className="text-[10px] font-bold text-slate-400 block">Restante na Entrega</span>
-                <span className="text-sm font-black text-slate-200">
-                  {formatCurrency(order.remainingAmount)}
-                </span>
-                <span className="text-[10px] text-slate-400 block mt-1">Cobrar na entrega/retirada</span>
-              </div>
+              {!order.depositPaid ? (
+                <div className="pt-2 border-t border-slate-700/60 flex flex-col sm:flex-row items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await onUpdatePayment(order.id, true);
+                      if (order.status === 'NOVO') {
+                        await onUpdateStatus(order.id, 'CONFIRMADO', 'Pagamento do sinal confirmado pelo profissional');
+                      }
+                    }}
+                    className="w-full sm:flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                  >
+                    <CheckCircle className="w-4 h-4" /> Confirmar Recebimento do PIX & Liberar Pedido
+                  </button>
+
+                  <a
+                    href={`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(
+                      `Olá ${order.clientName}! Tudo bem? Estou conferindo os pedidos da ${order.orderNumber} e gostaria de confirmar se já conseguiu realizar o PIX de R$ ${order.depositAmount.toFixed(2)}. Aguardo seu comprovante! 😊`
+                    )}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full sm:w-auto py-3 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1"
+                  >
+                    <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> Cobrar PIX
+                  </a>
+                </div>
+              ) : (
+                <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-300">
+                  <span className="text-emerald-400 font-bold flex items-center gap-1">
+                    <CheckCircle className="w-3.5 h-3.5" /> Entrada verificada e confirmada na conta
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => onUpdatePayment(order.id, false)}
+                    className="text-[11px] text-slate-400 hover:text-red-400 underline font-medium"
+                  >
+                    Desmarcar como pago
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center text-xs text-slate-400 pt-1">
+              <span>Restante a ser cobrado na entrega:</span>
+              <span className="font-black text-slate-200 font-mono">
+                {formatCurrency(order.remainingAmount)}
+              </span>
             </div>
           </div>
 

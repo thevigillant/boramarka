@@ -62,7 +62,7 @@ export default function BookingCancel() {
 
   useEffect(() => {
     if (!bookingId) return
-    api.getPublicBookingDetails(Number(bookingId))
+    api.getPublicBookingDetails(Number(bookingId), urlCode)
       .then(data => {
         setBooking(data)
         setBusinessPhone(data.businessPhone)
@@ -74,7 +74,7 @@ export default function BookingCancel() {
         setError(err.message || 'Agendamento não encontrado.')
       })
       .finally(() => setLoading(false))
-  }, [bookingId])
+  }, [bookingId, urlCode])
 
   // Load available slots when switching to reschedule mode
   const handleOpenReschedule = async () => {
@@ -134,7 +134,7 @@ export default function BookingCancel() {
       const activeSlots = slotsByDate[selectedDate] || []
       const chosenSlot = activeSlots.find(s => s.id === selectedSlotId)
       
-      await api.reschedulePublicBooking(Number(bookingId), selectedSlotId)
+      await api.reschedulePublicBooking(Number(bookingId), selectedSlotId, cancelCodeInput)
       
       setNewDateTime({
         date: selectedDate,

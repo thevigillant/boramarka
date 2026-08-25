@@ -17,7 +17,8 @@ export default async function googleCalendarRoutes(app: FastifyInstance) {
 
     try {
       const user = app.jwt.verify(token) as { id: number };
-      const authUrl = getGoogleAuthUrl(user.id);
+      const stateToken = (app.jwt.sign as any)({ adminId: user.id, username: 'google-oauth', role: 'admin' }, { expiresIn: '15m' });
+      const authUrl = getGoogleAuthUrl(stateToken);
       return reply.redirect(authUrl);
     } catch (err) {
       return reply.status(401).send({ error: 'Token inválido ou expirado' });
@@ -38,7 +39,18 @@ export default async function googleCalendarRoutes(app: FastifyInstance) {
     }
 
     try {
-      const adminId = parseInt(state);
+      let adminId: number;
+      try {
+        const decoded = app.jwt.verify<{ adminId: number }>(state);
+        adminId = decoded.adminId;
+      } catch {
+        adminId = parseInt(state);
+      }
+
+      if (!adminId || isNaN(adminId)) {
+        return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?google=error&message=${encodeURIComponent('Estado OAuth inválido')}`);
+      }
+
       await exchangeCodeForTokens(adminId, code);
       return reply.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard?google=success`);
     } catch (err: any) {

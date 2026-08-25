@@ -1,8 +1,7 @@
 import { X, Camera, ImagePlus, Loader2, Trash2 } from 'lucide-react'
 import { useRef, useState } from 'react'
+import { api } from '../../../services/api'
 import type { ServiceData } from '../../../types/dashboard'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 interface NewServiceModalProps {
   showNewService: boolean
@@ -35,33 +34,19 @@ export function NewServiceModal({
 
   async function handlePhotoUpload(file: File) {
     if (!file.type.startsWith('image/')) {
-      alert('Por favor, selecione uma imagem (JPG, PNG ou WebP).')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('A imagem deve ter no máximo 5MB.')
+      alert('Por favor, selecione uma imagem (JPG, PNG, WebP ou GIF).')
       return
     }
 
     setUploadingPhoto(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'services')
-
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API_BASE}/api/upload/image`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      })
-
-      if (!res.ok) throw new Error('Erro no upload')
-      const { url } = await res.json()
-      setServiceForm({ ...serviceForm, photoUrl: url })
-    } catch (err) {
+      const result = await api.uploadImage(file, 'services')
+      if (result?.url) {
+        setServiceForm({ ...serviceForm, photoUrl: result.url })
+      }
+    } catch (err: any) {
       console.error(err)
-      alert('Erro ao fazer upload da foto. Tente novamente.')
+      alert(err.message || 'Erro ao fazer upload da foto. Tente novamente.')
     } finally {
       setUploadingPhoto(false)
     }

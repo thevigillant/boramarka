@@ -1,15 +1,41 @@
 import { FastifyInstance } from 'fastify';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db';
-import { authenticate } from '../plugins/auth';
+import { authenticate, requirePermission } from '../plugins/auth';
 
 export default async function securityRoutes(app: FastifyInstance) {
   // GET /api/security/permissions — List all user permissions for the current business
-  app.get('/permissions', { preHandler: [authenticate] }, async (request, reply) => {
+  app.get('/permissions', { preHandler: [authenticate, requirePermission('canSeguranca')] }, async (request, reply) => {
     const user = request.user as { id: number };
 
     const permissions = await prisma.userPermission.findMany({
       where: { adminId: user.id },
+      select: {
+        id: true,
+        userName: true,
+        email: true,
+        roleTitle: true,
+        active: true,
+        canAgendamentos: true,
+        canEstornos: true,
+        canClientes: true,
+        canHorarios: true,
+        canServicos: true,
+        canLinks: true,
+        canCupons: true,
+        canMemberships: true,
+        canFinanceiro: true,
+        canRh: true,
+        canFaturamento: true,
+        canSeguranca: true,
+        canPersonalizar: true,
+        canSocial: true,
+        canAudit: true,
+        canTrash: true,
+        createdAt: true,
+        updatedAt: true,
+        // 🛡️ Oculta passwordHash por segurança
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -17,7 +43,7 @@ export default async function securityRoutes(app: FastifyInstance) {
   });
 
   // POST /api/security/permissions — Create a new user permission profile/operator with password
-  app.post('/permissions', { preHandler: [authenticate] }, async (request, reply) => {
+  app.post('/permissions', { preHandler: [authenticate, requirePermission('canSeguranca')] }, async (request, reply) => {
     const user = request.user as { id: number };
     const body = request.body as any;
 
@@ -65,11 +91,12 @@ export default async function securityRoutes(app: FastifyInstance) {
       },
     });
 
-    return permission;
+    const { passwordHash: _, ...safePermission } = permission;
+    return safePermission;
   });
 
   // PUT /api/security/permissions/:id — Update a user permission profile / password
-  app.put('/permissions/:id', { preHandler: [authenticate] }, async (request, reply) => {
+  app.put('/permissions/:id', { preHandler: [authenticate, requirePermission('canSeguranca')] }, async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
     const permId = parseInt(id, 10);
@@ -123,11 +150,12 @@ export default async function securityRoutes(app: FastifyInstance) {
       },
     });
 
-    return updated;
+    const { passwordHash: _, ...safeUpdated } = updated;
+    return safeUpdated;
   });
 
   // DELETE /api/security/permissions/:id — Delete a user permission profile
-  app.delete('/permissions/:id', { preHandler: [authenticate] }, async (request, reply) => {
+  app.delete('/permissions/:id', { preHandler: [authenticate, requirePermission('canSeguranca')] }, async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
     const permId = parseInt(id, 10);

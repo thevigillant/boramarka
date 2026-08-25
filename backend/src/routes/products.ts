@@ -191,13 +191,19 @@ export default async function productRoutes(app: FastifyInstance) {
 
       // Cria fotos
       if (Array.isArray(photos) && photos.length > 0) {
-        await tx.productPhoto.createMany({
-          data: photos.map((url, index) => ({
-            url,
-            position: index,
-            productId: p.id,
-          })),
-        });
+        const validPhotos = photos
+          .map((p: any) => (typeof p === 'string' ? p : p?.url))
+          .filter((url: any) => typeof url === 'string' && url.trim().length > 0);
+
+        if (validPhotos.length > 0) {
+          await tx.productPhoto.createMany({
+            data: validPhotos.map((url: string, index: number) => ({
+              url: url.trim(),
+              position: index,
+              productId: p.id,
+            })),
+          });
+        }
       }
 
       // Cria campos customizados
@@ -299,10 +305,14 @@ export default async function productRoutes(app: FastifyInstance) {
       // Atualiza fotos se fornecidas
       if (Array.isArray(photos)) {
         await tx.productPhoto.deleteMany({ where: { productId } });
-        if (photos.length > 0) {
+        const validPhotos = photos
+          .map((p: any) => (typeof p === 'string' ? p : p?.url))
+          .filter((url: any) => typeof url === 'string' && url.trim().length > 0);
+
+        if (validPhotos.length > 0) {
           await tx.productPhoto.createMany({
-            data: photos.map((url, index) => ({
-              url,
+            data: validPhotos.map((url: string, index: number) => ({
+              url: url.trim(),
               position: index,
               productId,
             })),

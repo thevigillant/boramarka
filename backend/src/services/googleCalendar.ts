@@ -6,7 +6,7 @@ const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3001/api/admin/google-calendar/callback';
 
-export function getGoogleAuthUrl(adminId: number): string {
+export function getGoogleAuthUrl(stateToken: string): string {
   if (!CLIENT_ID) {
     console.warn('⚠️ GOOGLE_CLIENT_ID não está configurado no arquivo .env!');
   }
@@ -17,7 +17,7 @@ export function getGoogleAuthUrl(adminId: number): string {
     scope: 'https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/userinfo.email',
     access_type: 'offline',
     prompt: 'consent',
-    state: adminId.toString(),
+    state: stateToken,
   });
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
 }

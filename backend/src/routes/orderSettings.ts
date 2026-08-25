@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
-import { authenticate } from '../plugins/auth';
+import { authenticate, requirePermission } from '../plugins/auth';
 import { createAuditLog } from '../utils/auditLogger';
 
 export default async function orderSettingsRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
+  app.addHook('preHandler', requirePermission('canPersonalizar'));
 
   // GET /api/order-settings — Get settings for the authenticated admin
   app.get('/', async (request) => {
@@ -43,7 +44,7 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
 
   // PUT /api/order-settings — Update settings
   app.put('/', async (request, reply) => {
-    const user = request.user as { id: number };
+    const user = request.user as { id: number; role?: string; permissions?: Record<string, boolean> };
     const {
       enabled,
       storeName,
@@ -71,6 +72,11 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
       whatsappNotifications?: boolean;
       pixKey?: string;
     };
+
+    // Bloqueia alteração de chave Pix por operadores sem permissão financeira
+    if (pixKey !== undefined && user.role === 'operator' && !user.permissions?.canFinanceiro) {
+      return reply.status(403).send({ error: 'Apenas administradores ou operadores com permissão financeira podem alterar a Chave Pix da loja.' });
+    }
 
     const updated = await prisma.orderSettings.upsert({
       where: { adminId: user.id },

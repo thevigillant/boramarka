@@ -583,13 +583,13 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  confirmSimulationBooking: (id: number, payFullPrice?: boolean) =>
+  confirmSimulationBooking: (id: number, payFullPrice?: boolean, code?: string) =>
     request<{ success: boolean; booking: any }>(`/schedule/booking/${id}/confirm-simulation`, {
       method: 'POST',
-      body: JSON.stringify({ payFullPrice }),
+      body: JSON.stringify({ payFullPrice, code }),
     }),
 
-  getPublicBookingDetails: (id: number) =>
+  getPublicBookingDetails: (id: number, code?: string) =>
     request<{
       id: number;
       clientName: string;
@@ -607,7 +607,7 @@ export const api = {
       refundStatus?: string;
       selectedAddons?: string;
       totalAmount?: number;
-    }>(`/schedule/booking/${id}`),
+    }>(`/schedule/booking/${id}${code ? `?code=${encodeURIComponent(code)}` : ''}`),
 
   cancelPublicBooking: (id: number, code?: string) =>
     request<{ success: boolean; refundPending?: boolean; refundAmount?: number; message?: string }>(`/schedule/booking/${id}/cancel`, {
@@ -615,10 +615,10 @@ export const api = {
       body: JSON.stringify({ code })
     }),
 
-  reschedulePublicBooking: (id: number, newTimeSlotId: number) =>
+  reschedulePublicBooking: (id: number, newTimeSlotId: number, code?: string) =>
     request<{ success: boolean }>(`/schedule/booking/${id}/reschedule`, {
       method: 'POST',
-      body: JSON.stringify({ newTimeSlotId })
+      body: JSON.stringify({ newTimeSlotId, code })
     }),
 
   getRefundRequests: () =>
@@ -1485,6 +1485,49 @@ export const api = {
       body: JSON.stringify({ approved }),
     }),
 
+  // ═══ 📸 Upload API ═══
+  uploadImage: async (
+    file: File | Blob,
+    folder: string = 'products'
+  ): Promise<{ url: string; publicId?: string; storage?: string }> => {
+    const token = getToken();
+    const formData = new FormData();
+    formData.append('folder', folder);
+    formData.append('file', file);
+
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_URL}/upload/image?folder=${encodeURIComponent(folder)}`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (!res.ok) {
+      let errorMsg = 'Erro ao fazer upload da imagem';
+      try {
+        const errorData = await res.json();
+        if (errorData?.error) errorMsg = errorData.error;
+      } catch {}
+      throw new Error(errorMsg);
+    }
+
+    return res.json();
+  },
+
+  uploadBase64: async (
+    base64: string,
+    folder: string = 'products'
+  ): Promise<{ url: string; publicId?: string; storage?: string }> => {
+    return request<{ url: string; publicId?: string; storage?: string }>('/upload/base64', {
+      method: 'POST',
+      body: JSON.stringify({ base64, folder }),
+    });
+  },
+
   // ═══ 🍰 BoraEncomenda API ═══
   getOrderSettings: () =>
     request<any>('/order-settings'),
@@ -1570,8 +1613,8 @@ export const api = {
       body: JSON.stringify(data),
     }),
 
-  trackPublicOrder: (orderNumber: string) =>
-    request<any>(`/store/order/${encodeURIComponent(orderNumber)}/track`),
+  trackPublicOrder: (orderNumber: string, code?: string) =>
+    request<any>(`/store/order/${encodeURIComponent(orderNumber)}/track${code ? `?code=${encodeURIComponent(code)}` : ''}`),
 };
 
 export interface PublicReviewItem {

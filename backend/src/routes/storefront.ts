@@ -109,6 +109,8 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       deliveryAddress,
       notes,
       items,
+      paymentOption = 'DEPOSIT', // 'DEPOSIT' | 'FULL'
+      paymentMethod = 'PIX', // 'PIX' | 'MERCADOPAGO'
     } = request.body as {
       clientName: string;
       clientPhone: string;
@@ -118,6 +120,8 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       deliveryType: 'PICKUP' | 'DELIVERY';
       deliveryAddress?: string;
       notes?: string;
+      paymentOption?: 'DEPOSIT' | 'FULL';
+      paymentMethod?: 'PIX' | 'MERCADOPAGO';
       items: Array<{
         productId: number;
         quantity: number;
@@ -157,7 +161,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     }
 
     const settings = admin.orderSettings;
-    const depositPercentage = settings?.depositPercentage !== undefined ? settings.depositPercentage : 50.0;
+    const isFullPayment = paymentOption === 'FULL';
+    const baseDepositPct = settings?.depositPercentage !== undefined ? settings.depositPercentage : 50.0;
+    const depositPercentage = isFullPayment ? 100.0 : baseDepositPct;
     const deliveryFee = deliveryType === 'DELIVERY' ? (settings?.deliveryFee || 0.0) : 0.0;
 
     // Calcula totais com base nos produtos reais do banco de dados (segurança anti-tampering)
@@ -200,7 +206,7 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     }
 
     const total = subtotal + deliveryFee;
-    const depositAmount = (total * depositPercentage) / 100;
+    const depositAmount = isFullPayment ? total : (total * depositPercentage) / 100;
     const remainingAmount = Math.max(0, total - depositAmount);
 
     // Gera número único do pedido
@@ -251,11 +257,11 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       return o;
     });
 
-    // ═══ Integração de Pagamento de Entrada (Mercado Pago se configurado) ═══
+    // ═══ Integração de Pagamento de Entrada (Mercado Pago se configurado e solicitado) ═══
     let paymentUrl: string | undefined;
     const mpToken = admin.mpAccessToken || process.env.MERCADOPAGO_ACCESS_TOKEN;
 
-    if (mpToken && depositAmount > 0) {
+    if (paymentMethod === 'MERCADOPAGO' && mpToken && depositAmount > 0) {
       try {
         const client = new MercadoPagoConfig({ accessToken: mpToken });
         const preference = new Preference(client);
@@ -265,7 +271,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
             items: [
               {
                 id: `order-${order.id}`,
-                title: `Entrada (${depositPercentage}%) - Pedido ${order.orderNumber} - ${admin.businessName || admin.username}`,
+                title: isFullPayment
+                  ? `Pagamento Total - Pedido ${order.orderNumber} - ${admin.businessName || admin.username}`
+                  : `Entrada (${depositPercentage}%) - Pedido ${order.orderNumber} - ${admin.businessName || admin.username}`,
                 quantity: 1,
                 unit_price: Number(depositAmount.toFixed(2)),
                 currency_id: 'BRL',
@@ -292,26 +300,42 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       }
     }
 
+    // Informações para pagamento via PIX
+    const storePixKey = settings?.pixKey || admin.pixKey || admin.phone || '';
+    let cleanAdminPhone = admin.phone?.replace(/\D/g, '') || '';
+    if (!cleanAdminPhone && storePixKey) {
+      const cleanKey = storePixKey.replace(/\D/g, '');
+      if (cleanKey.length === 10 || cleanKey.length === 11) {
+        cleanAdminPhone = cleanKey;
+      }
+    }
+    const paymentLabel = isFullPayment ? 'Valor Total (100%)' : `Entrada (${depositPercentage}%)`;
+
     // Link do WhatsApp com mensagem pré-formatada para o profissional e para o cliente
     const itemsSummary = orderItemsToCreate
       .map((i) => `• ${i.quantity}x ${i.productName} (R$ ${i.subtotal.toFixed(2)})`)
       .join('\n');
 
-    const cleanAdminPhone = admin.phone?.replace(/\D/g, '') || '';
     const whatsappMessage = encodeURIComponent(
-      `Olá! Fiz um pedido de encomenda na sua loja pelo BoraMarka!\n\n` +
-      `📦 *Pedido ${order.orderNumber}*\n` +
+      `Olá! Acabei de fazer um pedido de encomenda na sua loja!\n\n` +
+      `📦 *Pedido:* ${order.orderNumber}\n` +
       `👤 *Cliente:* ${clientName}\n` +
       `📅 *Data desejada:* ${deliveryDate} às ${deliveryTime || '14:00'}\n` +
       `🚗 *Tipo:* ${deliveryType === 'DELIVERY' ? `Entrega em: ${deliveryAddress}` : 'Retirada no local'}\n\n` +
       `*Itens:* \n${itemsSummary}\n\n` +
-      `💰 *Total:* R$ ${total.toFixed(2)}\n` +
-      `💳 *Entrada (${depositPercentage}%):* R$ ${depositAmount.toFixed(2)}\n` +
-      `💵 *Restante na entrega:* R$ ${remainingAmount.toFixed(2)}\n\n` +
-      `Acompanhe o status aqui: https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear`
+      `💰 *Total do Pedido:* R$ ${total.toFixed(2)}\n` +
+      `💳 *${paymentLabel} para pagar via PIX:* R$ ${depositAmount.toFixed(2)}\n` +
+      (remainingAmount > 0 ? `💵 *Restante na entrega:* R$ ${remainingAmount.toFixed(2)}\n\n` : `🎉 *Pagamento integral antecipado!*\n\n`) +
+      `Segue o comprovante em anexo! 👇\n\n` +
+      `Link do pedido: https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear`
     );
 
-    const whatsappUrl = cleanAdminPhone ? `https://wa.me/55${cleanAdminPhone}?text=${whatsappMessage}` : undefined;
+    const whatsappUrl = cleanAdminPhone
+      ? `https://wa.me/55${cleanAdminPhone}?text=${whatsappMessage}`
+      : `https://api.whatsapp.com/send?text=${whatsappMessage}`;
+
+    const trackingCode = order.cancellationCode;
+    const trackingUrl = `/pedido/${order.orderNumber.replace('#', '')}/rastrear?code=${trackingCode}`;
 
     return reply.status(201).send({
       order: {
@@ -323,18 +347,30 @@ export default async function storefrontRoutes(app: FastifyInstance) {
         remainingAmount: order.remainingAmount,
         deliveryDate: order.deliveryDate,
         deliveryTime: order.deliveryTime,
+        clientName: order.clientName,
+        clientPhone: order.clientPhone,
+      },
+      pixInfo: {
+        pixKey: storePixKey,
+        merchantName: settings?.storeName || admin.businessName || admin.username,
+        amount: depositAmount,
+        paymentOption: isFullPayment ? 'FULL' : 'DEPOSIT',
+        paymentLabel,
+        remainingAmount,
+        orderNumber: order.orderNumber,
       },
       paymentUrl,
       whatsappUrl,
-      trackingUrl: `/pedido/${order.orderNumber.replace('#', '')}/rastrear`,
+      trackingUrl,
     });
   });
 
   // ═══════════════════════════════════════════════════════════
-  // GET /api/store/order/:orderNumber/track — Public Order Tracking
+  // GET /api/store/order/:orderNumber/track — Public Order Tracking (Masked PII)
   // ═══════════════════════════════════════════════════════════
   app.get('/order/:orderNumber/track', async (request, reply) => {
     const { orderNumber } = request.params as { orderNumber: string };
+    const { code } = (request.query || {}) as { code?: string };
     const formattedNumber = orderNumber.startsWith('#') ? orderNumber : `#${orderNumber}`;
 
     const order = await prisma.order.findFirst({
@@ -370,6 +406,51 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Pedido não encontrado' });
     }
 
-    return order;
+    // 🛡️ Prevenção contra Vazamento de Endereços e Dados Pessoais (LGPD / OWASP)
+    // Se o código de segurança do pedido foi fornecido e é válido, retorna completo
+    const isOwnerAuthorized = code && order.cancellationCode && code.trim().toUpperCase() === order.cancellationCode.toUpperCase();
+
+    if (isOwnerAuthorized) {
+      return order;
+    }
+
+    // Caso seja consulta anônima ou enumeração de número de pedido, retorna dados mascarados
+    const maskName = (name: string) => {
+      if (!name) return '';
+      const parts = name.trim().split(/\s+/);
+      if (parts.length === 1) return parts[0].length > 2 ? `${parts[0][0]}***` : parts[0];
+      return `${parts[0]} ${parts[parts.length - 1][0]}.`;
+    };
+
+    const maskPhone = (phone: string) => {
+      if (!phone) return '';
+      const digits = phone.replace(/\D/g, '');
+      if (digits.length <= 4) return '***';
+      return `(${digits.slice(0, 2)}) 9****-${digits.slice(-4)}`;
+    };
+
+    const maskEmail = (email: string) => {
+      if (!email || !email.includes('@')) return '';
+      const [local, domain] = email.split('@');
+      return `${local.slice(0, 1)}***@${domain}`;
+    };
+
+    const maskAddress = (address: string) => {
+      if (!address) return '';
+      const parts = address.split('-');
+      if (parts.length > 1) {
+        return `Rua *** - ${parts.slice(1).join('-').trim()}`;
+      }
+      return 'Endereço cadastrado para entrega (Oculto por proteção)';
+    };
+
+    return {
+      ...order,
+      clientName: maskName(order.clientName),
+      clientPhone: maskPhone(order.clientPhone),
+      clientEmail: maskEmail(order.clientEmail),
+      deliveryAddress: maskAddress(order.deliveryAddress),
+      cancellationCode: undefined, // Nunca expõe o código na consulta anônima
+    };
   });
 }

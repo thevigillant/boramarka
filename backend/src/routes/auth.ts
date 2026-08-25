@@ -6,6 +6,9 @@ import { sendPasswordResetEmail, sendEmailVerificationCode, sendWelcomeEmail } f
 import { sendVerificationCodeSchema, verifyCodeSchema, registerSchema, loginSchema } from '../utils/validators';
 import { createRefreshToken, verifyAndRotateRefreshToken, revokeRefreshToken } from '../services/refreshTokenService';
 
+const verifyAttempts = new Map<string, { count: number; expiresAt: number }>();
+const resetAttempts = new Map<string, { count: number; expiresAt: number }>();
+
 export default async function authRoutes(app: FastifyInstance) {
   // GET /api/auth/check — Check if any admin account exists
   app.get('/check', async () => {
@@ -40,6 +43,9 @@ export default async function authRoutes(app: FastifyInstance) {
     // Gera código numérico de 4 dígitos
     const code = Math.floor(1000 + Math.random() * 9000).toString();
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutos
+
+    // Reseta tentativas prévias para este e-mail
+    verifyAttempts.delete(cleanEmail);
 
     // Armazena no PostgreSQL (persiste entre restarts/deploys)
     await prisma.verificationCode.upsert({
@@ -78,9 +84,7 @@ export default async function authRoutes(app: FastifyInstance) {
     };
   });
 
-
-
-  // POST /api/auth/verify-code — Valida o código de 4 dígitos digitado pelo usuário
+  // POST /api/auth/verify-code — Valida o código de 4 dígitos com proteção anti-força bruta (max 5 tentativas)
   app.post('/verify-code', async (request, reply) => {
     const { email, code } = request.body as { email: string; code: string };
 
@@ -91,12 +95,22 @@ export default async function authRoutes(app: FastifyInstance) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanCode = code.trim();
 
+    const attemptKey = cleanEmail;
+    const now = Date.now();
+    const currentAttempt = verifyAttempts.get(attemptKey);
+
+    if (currentAttempt && currentAttempt.expiresAt > now && currentAttempt.count >= 5) {
+      await prisma.verificationCode.deleteMany({ where: { email: cleanEmail } });
+      verifyAttempts.delete(attemptKey);
+      return reply.status(429).send({ error: 'Muitas tentativas incorretas. O código foi cancelado por segurança. Solicite um novo código.' });
+    }
+
     const storedData = await prisma.verificationCode.findUnique({
       where: { email: cleanEmail },
     });
 
     if (!storedData) {
-      return reply.status(400).send({ error: 'Nenhum código encontrado para este e-mail. Solicite um novo código.' });
+      return reply.status(400).send({ error: 'Nenhum código ativo encontrado para este e-mail. Solicite um novo código.' });
     }
 
     if (new Date() > storedData.expiresAt) {
@@ -105,10 +119,19 @@ export default async function authRoutes(app: FastifyInstance) {
     }
 
     if (storedData.code !== cleanCode) {
-      return reply.status(400).send({ error: 'Código de verificação incorreto. Verifique os 4 dígitos e tente novamente.' });
+      const newCount = (currentAttempt && currentAttempt.expiresAt > now) ? currentAttempt.count + 1 : 1;
+      verifyAttempts.set(attemptKey, { count: newCount, expiresAt: now + 15 * 60 * 1000 });
+      const remaining = 5 - newCount;
+      if (remaining <= 0) {
+        await prisma.verificationCode.deleteMany({ where: { email: cleanEmail } });
+        verifyAttempts.delete(attemptKey);
+        return reply.status(429).send({ error: 'Limite de 5 tentativas excedido. O código foi cancelado por segurança. Solicite um novo.' });
+      }
+      return reply.status(400).send({ error: `Código de verificação incorreto. Você tem mais ${remaining} tentativa(s).` });
     }
 
-    // Código correto -> remove do banco
+    // Código correto -> limpa contador e remove do banco
+    verifyAttempts.delete(attemptKey);
     await prisma.verificationCode.delete({ where: { email: cleanEmail } });
 
     return {
@@ -676,7 +699,7 @@ export default async function authRoutes(app: FastifyInstance) {
     };
   });
 
-  // POST /api/auth/reset-password
+  // POST /api/auth/reset-password — Redefine a senha com proteção anti-força bruta
   app.post('/reset-password', async (request, reply) => {
     const { email, code, newPassword } = request.body as {
       email: string;
@@ -695,6 +718,10 @@ export default async function authRoutes(app: FastifyInstance) {
     const cleanEmail = email.trim().toLowerCase();
     const cleanCode = code.trim();
 
+    const attemptKey = cleanEmail;
+    const now = Date.now();
+    const currentAttempt = resetAttempts.get(attemptKey);
+
     const admin = await prisma.admin.findFirst({
       where: {
         OR: [
@@ -704,14 +731,40 @@ export default async function authRoutes(app: FastifyInstance) {
       },
     });
 
+    if (currentAttempt && currentAttempt.expiresAt > now && currentAttempt.count >= 5) {
+      if (admin) {
+        await prisma.admin.update({
+          where: { id: admin.id },
+          data: { resetToken: null, resetTokenExpiry: null },
+        });
+      }
+      resetAttempts.delete(attemptKey);
+      return reply.status(429).send({ error: 'Muitas tentativas incorretas. O código foi cancelado por segurança. Solicite uma nova recuperação.' });
+    }
+
     if (!admin || !admin.resetToken || admin.resetToken !== cleanCode) {
-      return reply.status(400).send({ error: 'Código de verificação inválido ou incorreto' });
+      const newCount = (currentAttempt && currentAttempt.expiresAt > now) ? currentAttempt.count + 1 : 1;
+      resetAttempts.set(attemptKey, { count: newCount, expiresAt: now + 15 * 60 * 1000 });
+      const remaining = 5 - newCount;
+      if (remaining <= 0) {
+        if (admin) {
+          await prisma.admin.update({
+            where: { id: admin.id },
+            data: { resetToken: null, resetTokenExpiry: null },
+          });
+        }
+        resetAttempts.delete(attemptKey);
+        return reply.status(429).send({ error: 'Limite de 5 tentativas excedido. O código foi cancelado por segurança. Solicite uma nova recuperação.' });
+      }
+      return reply.status(400).send({ error: `Código de verificação inválido ou incorreto. Você tem mais ${remaining} tentativa(s).` });
     }
 
     if (!admin.resetTokenExpiry || admin.resetTokenExpiry < new Date()) {
+      resetAttempts.delete(attemptKey);
       return reply.status(400).send({ error: 'O código de verificação expirou. Solicite um novo código.' });
     }
 
+    resetAttempts.delete(attemptKey);
     const passwordHash = await bcrypt.hash(newPassword, 10);
 
     await prisma.admin.update({

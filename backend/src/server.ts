@@ -29,8 +29,17 @@ import orderRoutes from './routes/orders';
 import orderSettingsRoutes from './routes/orderSettings';
 import storefrontRoutes from './routes/storefront';
 import { startReminderService } from './services/reminder';
+import fastifyStatic from '@fastify/static';
+import path from 'path';
+import fs from 'fs';
 import bcrypt from 'bcryptjs';
 import { prisma } from './db';
+
+// Garante que o diretório de uploads local exista
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 // ═══════════════════════════════════════════════════════════
 // Global error handlers — segurança contra crashes silenciosos
@@ -117,6 +126,11 @@ app.setErrorHandler((error, request, reply) => {
 app.register(helmet, {
   contentSecurityPolicy: false,
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  frameguard: { action: 'sameorigin' },
+  noSniff: true,
+  xssFilter: true,
+  hidePoweredBy: true,
+  hsts: isDev ? false : { maxAge: 31536000, includeSubDomains: true, preload: true },
 });
 
 // 🛡️ Rate Limiting (Proteção Anti Brute-force / DoS)
@@ -158,6 +172,13 @@ if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
 
 app.register(jwt, {
   secret: jwtSecret,
+});
+
+// 🖼️ Arquivos Estáticos / Uploads Locais
+app.register(fastifyStatic, {
+  root: uploadsDir,
+  prefix: '/uploads/',
+  decorateReply: false,
 });
 
 import pushRoutes from './routes/push';

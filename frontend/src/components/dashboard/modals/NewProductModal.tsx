@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Plus, Trash2, Camera, Loader2, ImagePlus } from 'lucide-react'
+import { X, Plus, Trash2, Camera, Loader2, ImagePlus, Star, Link as LinkIcon, AlertCircle } from 'lucide-react'
+import { api } from '../../../services/api'
 import type { ProductData, ProductCategoryData, ProductCustomFieldData } from '../../../types/dashboard'
-
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
 interface NewProductModalProps {
   show: boolean
@@ -10,6 +9,59 @@ interface NewProductModalProps {
   editingProduct: ProductData | null
   categories: ProductCategoryData[]
   onSave: (data: any) => Promise<void>
+}
+
+/**
+ * Comprime e redimensiona imagem no lado do cliente (Canvas) para envio rápido e sem falhas de limite
+ */
+async function compressImage(file: File, maxWidth = 1400, maxHeight = 1400, quality = 0.85): Promise<Blob> {
+  return new Promise((resolve) => {
+    // Se não for imagem comum ou for svg, envia original
+    if (!file.type.startsWith('image/') || file.type.includes('svg')) {
+      return resolve(file)
+    }
+
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const img = new Image()
+      img.onload = () => {
+        let width = img.width
+        let height = img.height
+
+        if (width > maxWidth || height > maxHeight) {
+          if (width > height) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          } else {
+            width = Math.round((width * maxHeight) / height)
+            maxHeight = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+        }
+
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height)
+          canvas.toBlob(
+            (blob) => {
+              resolve(blob || file)
+            },
+            'image/jpeg',
+            quality
+          )
+        } else {
+          resolve(file)
+        }
+      }
+      img.onerror = () => resolve(file)
+      img.src = e.target?.result as string
+    }
+    reader.onerror = () => resolve(file)
+    reader.readAsDataURL(file)
+  })
 }
 
 export function NewProductModal({
@@ -22,6 +74,10 @@ export function NewProductModal({
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [submitting, setSubmitting] = useState(false)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [isDragOver, setIsDragOver] = useState(false)
+  const [showUrlInput, setShowUrlInput] = useState(false)
+  const [customImageUrl, setCustomImageUrl] = useState('')
 
   // Form states
   const [name, setName] = useState('')
@@ -47,7 +103,11 @@ export function NewProductModal({
       setAvailable(editingProduct.available)
       setFeatured(editingProduct.featured || false)
       setCategoryId(editingProduct.categoryId ? editingProduct.categoryId.toString() : '')
-      setPhotos(editingProduct.photos?.map(p => p.url) || [])
+      setPhotos(
+        (editingProduct.photos || [])
+          .map((p: any) => (typeof p === 'string' ? p : p?.url))
+          .filter(Boolean)
+      )
       setCustomFields(
         editingProduct.customFields?.map(cf => ({
           label: cf.label,
@@ -69,46 +129,86 @@ export function NewProductModal({
       setPhotos([])
       setCustomFields([])
     }
+    setUploadError(null)
+    setShowUrlInput(false)
+    setCustomImageUrl('')
   }, [editingProduct, show])
 
   if (!show) return null
 
-  async function handlePhotoUpload(file: File) {
-    if (!file.type.startsWith('image/')) {
-      alert('Selecione uma imagem válida (JPG, PNG ou WebP).')
+  async function handlePhotoFiles(files: FileList | File[]) {
+    const fileArray = Array.from(files)
+    if (fileArray.length === 0) return
+
+    const remainingSlots = 5 - photos.length
+    if (remainingSlots <= 0) {
+      alert('Você já atingiu o limite máximo de 5 fotos para este produto.')
       return
     }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('A foto deve ter no máximo 5MB.')
-      return
-    }
+
+    const filesToUpload = fileArray.slice(0, remainingSlots)
 
     setUploadingPhoto(true)
-    try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('folder', 'products')
+    setUploadError(null)
 
-      const token = localStorage.getItem('token')
-      const res = await fetch(`${API_BASE}/api/upload/image`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-        body: formData,
-      })
+    const uploadedUrls: string[] = []
 
-      if (!res.ok) throw new Error('Erro no upload')
-      const { url } = await res.json()
-      setPhotos(prev => [...prev, url])
-    } catch (err) {
-      console.error(err)
-      alert('Erro ao fazer upload da foto. Tente novamente.')
-    } finally {
-      setUploadingPhoto(false)
+    for (const file of filesToUpload) {
+      if (!file.type.startsWith('image/')) {
+        setUploadError('Por favor selecione arquivos de imagem válidos (JPG, PNG, WebP).')
+        continue
+      }
+
+      try {
+        // Comprime a imagem antes de subir
+        const compressedBlob = await compressImage(file)
+        const result = await api.uploadImage(compressedBlob, 'products')
+        if (result?.url) {
+          uploadedUrls.push(result.url)
+        }
+      } catch (err: any) {
+        console.error('Erro no upload da foto:', err)
+        setUploadError(err.message || 'Erro ao enviar a imagem. Tente novamente.')
+      }
     }
+
+    if (uploadedUrls.length > 0) {
+      setPhotos(prev => [...prev, ...uploadedUrls])
+    }
+
+    setUploadingPhoto(false)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+
+  function handleAddUrlPhoto() {
+    const cleanUrl = customImageUrl.trim()
+    if (!cleanUrl) return
+    if (!cleanUrl.startsWith('http://') && !cleanUrl.startsWith('https://') && !cleanUrl.startsWith('data:image/')) {
+      alert('Insira uma URL de imagem válida (começando com https:// ou http://)')
+      return
+    }
+    if (photos.length >= 5) {
+      alert('Limite de 5 fotos atingido.')
+      return
+    }
+    setPhotos(prev => [...prev, cleanUrl])
+    setCustomImageUrl('')
+    setShowUrlInput(false)
   }
 
   function handleRemovePhoto(index: number) {
     setPhotos(prev => prev.filter((_, i) => i !== index))
+  }
+
+  function handleSetAsCover(index: number) {
+    if (index === 0) return
+    setPhotos(prev => {
+      const copy = [...prev]
+      const [selected] = copy.splice(index, 1)
+      return [selected, ...copy]
+    })
   }
 
   function handleAddCustomField() {
@@ -153,7 +253,7 @@ export function NewProductModal({
         available,
         featured,
         categoryId: categoryId ? parseInt(categoryId) : null,
-        photos,
+        photos: photos.filter(Boolean),
         customFields: customFields.map(cf => ({
           label: cf.label.trim(),
           fieldType: cf.fieldType,
@@ -173,7 +273,7 @@ export function NewProductModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100 overflow-y-auto max-h-[90vh]">
+      <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100 overflow-y-auto max-h-[90vh] border border-slate-200 dark:border-slate-800">
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <span className="text-xs font-black text-pink-500 uppercase tracking-widest">
@@ -183,7 +283,7 @@ export function NewProductModal({
               {editingProduct ? 'Editar Produto de Encomenda' : 'Cadastrar Novo Produto'}
             </h3>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl">
+          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
@@ -191,21 +291,101 @@ export function NewProductModal({
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* ── Galeria de Fotos ── */}
           <div>
-            <label className="block text-xs font-black text-slate-400 uppercase mb-2">
-              Galeria de Fotos ({photos.length}/5)
-            </label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-xs font-black text-slate-400 uppercase tracking-wider">
+                Galeria de Fotos ({photos.length}/5)
+              </label>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowUrlInput(!showUrlInput)}
+                  className="text-[11px] font-bold text-pink-500 hover:text-pink-600 flex items-center gap-1 transition-colors"
+                >
+                  <LinkIcon className="w-3 h-3" />
+                  {showUrlInput ? 'Ocultar Link' : 'Adicionar via Link'}
+                </button>
+              </div>
+            </div>
+
+            {/* Input para URL direta */}
+            {showUrlInput && (
+              <div className="mb-3 p-3 rounded-2xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200 dark:border-pink-900/50 flex gap-2">
+                <input
+                  type="url"
+                  value={customImageUrl}
+                  onChange={(e) => setCustomImageUrl(e.target.value)}
+                  placeholder="Cole a URL da imagem (ex: https://site.com/foto.jpg)"
+                  className="input-simple text-xs flex-1 py-1.5 px-3"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddUrlPhoto}
+                  className="px-4 py-1.5 bg-pink-500 hover:bg-pink-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm shrink-0"
+                >
+                  Adicionar
+                </button>
+              </div>
+            )}
+
+            {uploadError && (
+              <div className="mb-3 p-3 rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-xs flex items-center gap-2 font-medium">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{uploadError}</span>
+              </div>
+            )}
+
+            {/* Área de Fotos com Drag and Drop */}
+            <div
+              onDragOver={(e) => {
+                e.preventDefault()
+                setIsDragOver(true)
+              }}
+              onDragLeave={() => setIsDragOver(false)}
+              onDrop={(e) => {
+                e.preventDefault()
+                setIsDragOver(false)
+                if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                  handlePhotoFiles(e.dataTransfer.files)
+                }
+              }}
+              className={`grid grid-cols-3 sm:grid-cols-4 gap-3 p-3 rounded-2xl transition-all border-2 ${
+                isDragOver
+                  ? 'border-pink-500 bg-pink-50/30 dark:bg-pink-500/10 border-dashed'
+                  : 'border-transparent'
+              }`}
+            >
               {photos.map((url, idx) => (
-                <div key={idx} className="relative rounded-2xl overflow-hidden h-28 bg-slate-100 dark:bg-slate-800 group border border-slate-200 dark:border-slate-700">
-                  <img src={url} alt={`Foto ${idx + 1}`} className="w-full h-full object-cover" />
-                  {idx === 0 && (
-                    <span className="absolute top-1.5 left-1.5 text-[9px] font-black bg-pink-500 text-white px-2 py-0.5 rounded-full shadow">
-                      Capa
+                <div
+                  key={idx}
+                  className="relative rounded-2xl overflow-hidden h-28 bg-slate-100 dark:bg-slate-800 group border border-slate-200 dark:border-slate-700 shadow-sm"
+                >
+                  <img
+                    src={url}
+                    alt={`Foto ${idx + 1}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback se a imagem não carregar
+                      (e.target as HTMLElement).style.display = 'none'
+                    }}
+                  />
+                  {idx === 0 ? (
+                    <span className="absolute top-1.5 left-1.5 text-[9px] font-black bg-pink-500 text-white px-2 py-0.5 rounded-full shadow flex items-center gap-1">
+                      <Star className="w-2.5 h-2.5 fill-current" /> Capa
                     </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => handleSetAsCover(idx)}
+                      title="Definir como foto principal"
+                      className="absolute top-1.5 left-1.5 text-[9px] font-bold bg-slate-900/80 hover:bg-pink-500 text-white px-1.5 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-all shadow"
+                    >
+                      Tornar Capa
+                    </button>
                   )}
                   <button
                     type="button"
                     onClick={() => handleRemovePhoto(idx)}
+                    title="Excluir foto"
                     className="absolute inset-0 bg-red-500/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -216,27 +396,34 @@ export function NewProductModal({
               {photos.length < 5 && (
                 <div
                   onClick={() => fileInputRef.current?.click()}
-                  className="cursor-pointer border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 rounded-2xl h-28 flex flex-col items-center justify-center gap-1.5 transition-all text-slate-400"
+                  className="cursor-pointer border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-pink-500 hover:bg-pink-50 dark:hover:bg-pink-500/10 rounded-2xl h-28 flex flex-col items-center justify-center gap-1.5 transition-all text-slate-400 p-2 text-center"
                 >
                   {uploadingPhoto ? (
-                    <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
+                    <div className="flex flex-col items-center gap-1">
+                      <Loader2 className="w-6 h-6 text-pink-500 animate-spin" />
+                      <span className="text-[10px] font-bold text-pink-500">Enviando...</span>
+                    </div>
                   ) : (
                     <>
-                      <ImagePlus className="w-6 h-6 text-slate-400" />
+                      <ImagePlus className="w-6 h-6 text-slate-400 group-hover:text-pink-500 transition-colors" />
                       <span className="text-[10px] font-bold">+ Adicionar Foto</span>
+                      <span className="text-[8px] text-slate-400 hidden sm:inline">ou arraste aqui</span>
                     </>
                   )}
                 </div>
               )}
             </div>
+
             <input
               ref={fileInputRef}
               type="file"
-              accept="image/jpeg,image/jpg,image/png,image/webp"
+              accept="image/jpeg,image/jpg,image/png,image/webp,image/gif"
+              multiple
               className="hidden"
               onChange={(e) => {
-                const file = e.target.files?.[0]
-                if (file) handlePhotoUpload(file)
+                if (e.target.files && e.target.files.length > 0) {
+                  handlePhotoFiles(e.target.files)
+                }
               }}
             />
           </div>
@@ -439,7 +626,7 @@ export function NewProductModal({
           <button
             type="submit"
             disabled={submitting || uploadingPhoto}
-            className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-base transition-all shadow-xl shadow-pink-500/20 disabled:opacity-50"
+            className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-base transition-all shadow-xl shadow-pink-500/20 disabled:opacity-50 hover:shadow-pink-500/30 hover:scale-[1.01] active:scale-[0.99]"
           >
             {submitting ? 'Salvando...' : editingProduct ? 'Salvar Alterações' : 'Criar Produto no Cardápio'}
           </button>
@@ -448,3 +635,4 @@ export function NewProductModal({
     </div>
   )
 }
+

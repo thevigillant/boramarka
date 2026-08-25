@@ -46,3 +46,14 @@ export function maskPhone(value: string): string {
   if (digits.length <= 7) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`
 }
+
+export function formatImageUrl(url?: string | null): string {
+  if (!url) return ''
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:')) {
+    return url
+  }
+  const apiBase = import.meta.env.VITE_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:3001' : '')
+  const cleanBase = apiBase.replace(/\/api\/?$/, '').replace(/\/+$/, '')
+  return `${cleanBase}${url.startsWith('/') ? '' : '/'}${url}`
+}
+

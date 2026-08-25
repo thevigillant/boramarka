@@ -1,13 +1,14 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
-import { authenticate } from '../plugins/auth';
+import { authenticate, requirePermission } from '../plugins/auth';
 import { sendWhatsAppMessage } from '../services/whatsapp';
 import { checkQuota } from '../services/subscription';
 import { createCustomerContactSchema, updateCustomerContactSchema, sendCrmMessageSchema } from '../utils/validators';
 
 export default async function crmChatRoutes(app: FastifyInstance) {
-  // All routes require authentication
+  // All routes require authentication and canClientes permission
   app.addHook('onRequest', authenticate);
+  app.addHook('preHandler', requirePermission('canClientes'));
 
   // ═══════════════════════════════════════════════════════════
   // 1. CONTACTS MANAGEMENT

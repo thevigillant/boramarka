@@ -74,6 +74,11 @@ export default async function reviewRoutes(app: FastifyInstance) {
 
     const { bookingId, clientPhone, rating, comment } = parsed.data;
 
+    const cleanReqPhone = (clientPhone || '').replace(/\D/g, '');
+    if (!cleanReqPhone || cleanReqPhone.length < 10) {
+      return reply.status(400).send({ error: 'Informe um número de telefone válido com DDD (mínimo 10 dígitos).' });
+    }
+
     // Busca o agendamento
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
@@ -95,11 +100,15 @@ export default async function reviewRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Agendamento não encontrado.' });
     }
 
-    // Valida se o telefone bate com o agendamento
-    const cleanReqPhone = clientPhone.replace(/\D/g, '');
+    // Valida se o telefone bate exatamente com o agendamento
     const cleanBookingPhone = booking.clientPhone.replace(/\D/g, '');
+    const isPhoneMatch =
+      cleanReqPhone === cleanBookingPhone ||
+      cleanBookingPhone === `55${cleanReqPhone}` ||
+      cleanReqPhone === `55${cleanBookingPhone}` ||
+      (cleanBookingPhone.length >= 10 && cleanReqPhone.length >= 10 && cleanBookingPhone.slice(-9) === cleanReqPhone.slice(-9));
 
-    if (cleanReqPhone !== cleanBookingPhone && !cleanBookingPhone.endsWith(cleanReqPhone) && !cleanReqPhone.endsWith(cleanBookingPhone)) {
+    if (!isPhoneMatch) {
       return reply.status(403).send({ error: 'O telefone informado não confere com o agendamento.' });
     }
 

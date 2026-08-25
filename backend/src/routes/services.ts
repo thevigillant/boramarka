@@ -1,6 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
-import { authenticate } from '../plugins/auth';
+import { authenticate, requirePermission } from '../plugins/auth';
 import { v4 as uuidv4 } from 'uuid';
 import { createAuditLog } from '../utils/auditLogger';
 import { checkQuota } from '../services/subscription';
@@ -46,7 +46,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   });
 
   // POST /api/services — Create a new service and automatically create its scheduling link + upsell relations
-  app.post('/', async (request, reply) => {
+  app.post('/', { preHandler: [requirePermission('canServicos')] }, async (request, reply) => {
     const user = request.user as { id: number };
     const parsed = createServiceSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -109,7 +109,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   });
 
   // PUT /api/services/:id — Update a service and its upsell relations
-  app.put('/:id', async (request, reply) => {
+  app.put('/:id', { preHandler: [requirePermission('canServicos')] }, async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
     const { name, description, price, duration, isUpsellable, upsellDiscount, addonServiceIds, photoUrl } = request.body as {
@@ -177,7 +177,7 @@ export default async function serviceRoutes(app: FastifyInstance) {
   });
 
   // DELETE /api/services/:id — Delete a service
-  app.delete('/:id', async (request, reply) => {
+  app.delete('/:id', { preHandler: [requirePermission('canServicos')] }, async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
 

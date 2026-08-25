@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
-import { authenticate } from '../plugins/auth';
+import { authenticate, requirePermission } from '../plugins/auth';
 import { createTransactionSchema } from '../utils/validators';
 
 export default async function financeRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
+  app.addHook('preHandler', requirePermission('canFinanceiro'));
 
   // ═══════════════════════════════════════════
   //  STATS

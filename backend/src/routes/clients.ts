@@ -1,10 +1,11 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
-import { authenticate } from '../plugins/auth';
+import { authenticate, requirePermission } from '../plugins/auth';
 
 export default async function clientRoutes(app: FastifyInstance) {
-  // All routes require admin authentication
+  // All routes require admin authentication + canClientes permission for operators
   app.addHook('onRequest', authenticate);
+  app.addHook('preHandler', requirePermission('canClientes'));
 
   // GET /api/admin/clients/:phone/history — Get past and future bookings for a specific client
   app.get('/:phone/history', async (request, reply) => {

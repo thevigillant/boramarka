@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, useSearchParams, Link } from 'react-router-dom'
 import {
   Package,
   Calendar,
@@ -12,25 +12,31 @@ import {
   AlertCircle,
   Loader2,
   Store,
+  Copy,
+  Check,
+  QrCode,
 } from 'lucide-react'
 import { api } from '../services/api'
-import { formatCurrency } from '../utils/dashboardHelpers'
+import { formatCurrency, formatImageUrl } from '../utils/dashboardHelpers'
 import type { OrderData } from '../types/dashboard'
 
 export function OrderTrackingPage() {
   const { orderNumber } = useParams<{ orderNumber: string }>()
+  const [searchParams] = useSearchParams()
+  const code = searchParams.get('code') || ''
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [order, setOrder] = useState<any>(null)
+  const [copiedPix, setCopiedPix] = useState(false)
 
   useEffect(() => {
     if (!orderNumber) return
-    api.trackPublicOrder(orderNumber)
+    api.trackPublicOrder(orderNumber, code)
       .then(data => setOrder(data))
       .catch(err => setError(err.message || 'Pedido não encontrado'))
       .finally(() => setLoading(false))
-  }, [orderNumber])
+  }, [orderNumber, code])
 
   if (loading) {
     return (
@@ -207,8 +213,11 @@ export function OrderTrackingPage() {
                 >
                   {item.product?.photos?.[0]?.url ? (
                     <img
-                      src={item.product.photos[0].url}
+                      src={formatImageUrl(item.product.photos[0].url)}
                       alt={item.productName}
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/100x100/1e293b/f43f5e?text=' + encodeURIComponent(item.productName);
+                      }}
                       className="w-12 h-12 rounded-xl object-cover border border-slate-200 dark:border-slate-700 flex-shrink-0"
                     />
                   ) : (
@@ -255,6 +264,55 @@ export function OrderTrackingPage() {
           </div>
         </div>
 
+        {/* ── Pagamento PIX se Pendente ── */}
+        {!order.depositPaid && order.admin?.pixKey && (
+          <div className="bg-white dark:bg-[#131826] rounded-3xl p-6 shadow-xl border border-slate-200 dark:border-slate-800/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
+                <QrCode className="w-4 h-4 text-emerald-500" /> Pagar Entrada via PIX
+              </span>
+              <span className="text-xs font-black text-emerald-500 font-mono">
+                {formatCurrency(order.depositAmount)}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={order.admin.pixKey}
+                className="input-simple text-xs font-bold font-mono select-all bg-slate-100 dark:bg-slate-800 py-2"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(order.admin.pixKey);
+                  setCopiedPix(true);
+                  setTimeout(() => setCopiedPix(false), 3000);
+                }}
+                className={`px-4 py-2 rounded-xl font-bold text-xs transition-all flex items-center gap-1.5 shrink-0 ${
+                  copiedPix
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600'
+                }`}
+              >
+                {copiedPix ? (
+                  <>
+                    <Check className="w-4 h-4" /> Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" /> Copiar PIX
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium">
+              Após transferir o valor da entrada, envie o comprovante no WhatsApp abaixo.
+            </p>
+          </div>
+        )}
+
         {/* ── WhatsApp CTA ── */}
         {whatsappUrl && (
           <a
@@ -263,7 +321,7 @@ export function OrderTrackingPage() {
             rel="noreferrer"
             className="w-full py-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl font-black text-sm shadow-xl shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
           >
-            <MessageSquare className="w-5 h-5" /> Falar com o Estabelecimento no WhatsApp
+            <MessageSquare className="w-5 h-5" /> Enviar Comprovante / Falar no WhatsApp
           </a>
         )}
       </div>

@@ -11,7 +11,13 @@ export default async function employeeRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
 
   app.addHook('preHandler', async (request, reply) => {
-    const user = request.user as { id: number; username?: string; role?: string };
+    const user = request.user as { id: number; username?: string; role?: string; permissions?: Record<string, boolean> };
+    
+    // 🛡️ Validação de Permissão para Operadores
+    if (user.role === 'operator' && !user.permissions?.canRh) {
+      return reply.status(403).send({ error: 'Acesso negado. Seu perfil de operador não possui permissão para o módulo de RH.' });
+    }
+
     const admin = await prisma.admin.findUnique({
       where: { id: user.id },
       select: { username: true, role: true }
@@ -42,7 +48,7 @@ export default async function employeeRoutes(app: FastifyInstance) {
       where.pendingResolved = pendingResolved === 'true';
     }
 
-    return prisma.employee.findMany({
+    const employees = await prisma.employee.findMany({
       where,
       include: {
         documents: {
@@ -65,6 +71,12 @@ export default async function employeeRoutes(app: FastifyInstance) {
         },
       },
       orderBy: { name: 'asc' },
+    });
+
+    // 🛡️ Oculta hashes de senha e tokens das respostas da API
+    return employees.map((emp: any) => {
+      const { passwordHash: _, portalToken: __, ...safeEmp } = emp;
+      return safeEmp;
     });
   });
 
@@ -119,7 +131,8 @@ export default async function employeeRoutes(app: FastifyInstance) {
       adminId: user.id,
     });
 
-    return reply.status(201).send(employee);
+    const { passwordHash: _, portalToken: __, ...safeEmployee } = employee;
+    return reply.status(201).send(safeEmployee);
   });
 
   app.put('/:id', async (request, reply) => {

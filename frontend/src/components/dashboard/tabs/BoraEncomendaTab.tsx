@@ -29,7 +29,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import { api } from '../../../services/api'
-import { formatCurrency } from '../../../utils/dashboardHelpers'
+import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import { NewProductModal } from '../modals/NewProductModal'
 import { OrderDetailModal } from '../modals/OrderDetailModal'
 import type {
@@ -469,12 +469,79 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
 
                         <div className="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-[10px]">
                           <span className={`font-bold ${order.depositPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {order.depositPaid ? 'Entrada Paga' : 'Entrada Pendente'}
+                            {order.depositPaid ? '✓ Entrada Paga' : '⚠️ Entrada Pendente'}
                           </span>
                           <span className="text-slate-400 group-hover:text-white flex items-center gap-0.5 transition-colors">
                             Detalhes <ChevronRight className="w-3 h-3" />
                           </span>
                         </div>
+
+                        {/* Botões de Ação Rápida no Card */}
+                        {order.status === 'NOVO' && !order.depositPaid && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handleUpdateOrderPayment(order.id, true);
+                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'PIX confirmado pelo painel');
+                            }}
+                            className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Confirmar PIX & Avançar
+                          </button>
+                        )}
+
+                        {order.status === 'NOVO' && order.depositPaid && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'Aprovado para produção');
+                            }}
+                            className="w-full mt-2.5 py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Confirmar Pedido
+                          </button>
+                        )}
+
+                        {order.status === 'CONFIRMADO' && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo');
+                            }}
+                            className="w-full mt-2.5 py-2 px-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 active:scale-95"
+                          >
+                            <Clock className="w-3.5 h-3.5" /> Iniciar Produção
+                          </button>
+                        )}
+
+                        {order.status === 'EM_PRODUCAO' && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handleUpdateOrderStatus(order.id, 'PRONTO', 'Pedido finalizado e pronto');
+                            }}
+                            className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
+                          >
+                            <CheckCircle className="w-3.5 h-3.5" /> Marcar como Pronto
+                          </button>
+                        )}
+
+                        {order.status === 'PRONTO' && (
+                          <button
+                            type="button"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              await handleUpdateOrderStatus(order.id, 'ENTREGUE', 'Entregue ao cliente');
+                            }}
+                            className="w-full mt-2.5 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                          >
+                            <Truck className="w-3.5 h-3.5" /> Concluir Entrega
+                          </button>
+                        )}
                       </div>
                     ))}
 
@@ -567,11 +634,22 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
               >
                 <div>
                   {prod.photos?.[0]?.url ? (
-                    <div className="w-full h-44 overflow-hidden bg-slate-900 relative">
+                    <div className="w-full h-44 overflow-hidden bg-slate-900 relative flex items-center justify-center">
                       <img
-                        src={prod.photos[0].url}
+                        src={formatImageUrl(prod.photos[0].url)}
                         alt={prod.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent && !parent.querySelector('.img-fallback')) {
+                            const fallback = document.createElement('div');
+                            fallback.className = 'img-fallback text-center text-slate-500 py-8';
+                            fallback.innerHTML = '<svg class="w-8 h-8 mx-auto mb-1 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg><p class="text-[10px] font-bold uppercase tracking-widest">Sem foto</p>';
+                            parent.appendChild(fallback);
+                          }
+                        }}
                       />
                       {prod.photos.length > 1 && (
                         <span className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">

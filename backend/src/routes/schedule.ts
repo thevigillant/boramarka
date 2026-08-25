@@ -80,7 +80,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       secondaryColor: admin.secondaryColor,
       publicTheme: admin.publicTheme,
       bannerUrl: admin.bannerUrl,
-      mpAccessToken: admin.mpAccessToken,
+      hasMercadoPago: !!admin.mpAccessToken && admin.mpAccessToken.startsWith('APP_USR'),
       pixKey: (admin.pixKey && admin.pixKey !== 'SIMULADOR') ? admin.pixKey : (admin.phone || ''),
       averageRating: reviewStats._avg.rating ? parseFloat(reviewStats._avg.rating.toFixed(1)) : null,
       totalReviews: reviewStats._count.id || 0,
@@ -710,6 +710,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
   // GET /api/schedule/booking/:id — Get details of a booking
   app.get('/booking/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { code } = (request.query || {}) as { code?: string };
 
     const booking = await prisma.booking.findUnique({
       where: { id: parseInt(id) },
@@ -720,6 +721,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
               include: {
                 admin: {
                   select: {
+                    id: true,
                     businessName: true,
                     phone: true,
                     username: true
@@ -740,6 +742,24 @@ export default async function scheduleRoutes(app: FastifyInstance) {
 
     if (!booking) {
       return reply.status(404).send({ error: 'Agendamento não encontrado' });
+    }
+
+    // 🛡️ Prevenção contra Scraping de Clientes / IDOR: Exige validação do código de cancelamento ou token do lojista
+    let isAuthorized = false;
+    if (code && booking.cancellationCode && code.trim().toUpperCase() === booking.cancellationCode.toUpperCase()) {
+      isAuthorized = true;
+    } else {
+      try {
+        await request.jwtVerify();
+        const user = request.user as { id: number; role?: string };
+        if (user && (user.id === booking.timeSlot.link.admin.id || user.role === 'superadmin')) {
+          isAuthorized = true;
+        }
+      } catch {}
+    }
+
+    if (!isAuthorized) {
+      return reply.status(403).send({ error: 'Acesso não autorizado. Código de validação do agendamento necessário.' });
     }
 
     return {
@@ -795,9 +815,9 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Agendamento não encontrado' });
     }
 
-    // Optional validation of cancellation code if supplied
-    if (code && booking.cancellationCode && code.trim().toUpperCase() !== booking.cancellationCode.toUpperCase()) {
-      return reply.status(400).send({ error: 'Código de cancelamento inválido.' });
+    // 🛡️ Validação OBRIGATÓRIA do código de cancelamento para prevenir vandalismo de agenda
+    if (!code?.trim() || !booking.cancellationCode || code.trim().toUpperCase() !== booking.cancellationCode.toUpperCase()) {
+      return reply.status(403).send({ error: 'Código de cancelamento obrigatório e inválido.' });
     }
 
     // Check cancellation policy (2-hour limit)
@@ -885,7 +905,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
   // POST /api/schedule/booking/:id/reschedule — Public reschedule with 2-hour deadline check
   app.post('/booking/:id/reschedule', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { newTimeSlotId } = request.body as { newTimeSlotId: number };
+    const { newTimeSlotId, code } = request.body as { newTimeSlotId: number; code?: string };
 
     if (!newTimeSlotId) {
       return reply.status(400).send({ error: 'Novo horário não especificado.' });
@@ -918,6 +938,11 @@ export default async function scheduleRoutes(app: FastifyInstance) {
 
     if (!booking) {
       return reply.status(404).send({ error: 'Agendamento não encontrado.' });
+    }
+
+    // 🛡️ Validação OBRIGATÓRIA do código de cancelamento / remarcação
+    if (!code?.trim() || !booking.cancellationCode || code.trim().toUpperCase() !== booking.cancellationCode.toUpperCase()) {
+      return reply.status(403).send({ error: 'Código de validação obrigatório e inválido para reagendamento.' });
     }
 
     // Check rescheduling policy (2-hour limit)
@@ -972,6 +997,7 @@ export default async function scheduleRoutes(app: FastifyInstance) {
   // POST /api/schedule/booking/:id/confirm-simulation — Public endpoint to simulate payment approval
   app.post('/booking/:id/confirm-simulation', async (request, reply) => {
     const { id } = request.params as { id: string };
+    const { payFullPrice, code } = (request.body || {}) as { payFullPrice?: boolean; code?: string };
 
     const booking = await prisma.booking.findUnique({
       where: { id: parseInt(id) },
@@ -990,6 +1016,16 @@ export default async function scheduleRoutes(app: FastifyInstance) {
       return reply.status(404).send({ error: 'Agendamento não encontrado' });
     }
 
+    const admin = booking.timeSlot.link.admin;
+    const isSimulatorEnabled = admin.pixKey === 'SIMULADOR' || admin.mpAccessToken === 'SIMULADOR' || process.env.NODE_ENV !== 'production';
+    if (!isSimulatorEnabled) {
+      return reply.status(403).send({ error: 'Ambiente de testes/simulação não habilitado para este estabelecimento.' });
+    }
+
+    if (code && booking.cancellationCode && code.trim().toUpperCase() !== booking.cancellationCode.toUpperCase()) {
+      return reply.status(403).send({ error: 'Código de validação do agendamento inválido.' });
+    }
+
     if (booking.status !== 'AGUARDANDO_PAGAMENTO') {
       return { success: true, message: 'Agendamento já processado.' };
     }
@@ -1000,7 +1036,6 @@ export default async function scheduleRoutes(app: FastifyInstance) {
     const feeAmount = link.bookingFeeAmount;
     // If paidAmount would be service price, it was a full payment; otherwise it's the fee
     // We'll use request body to determine, but for simulation we check a query param or default to fee
-    const { payFullPrice } = request.body as { payFullPrice?: boolean };
     const paidAmount = payFullPrice ? servicePrice : feeAmount;
     const isFullPayment = payFullPrice && servicePrice > 0;
     const paymentLabel = isFullPayment ? 'Pagamento Total do Serviço' : 'Taxa de Agendamento';
