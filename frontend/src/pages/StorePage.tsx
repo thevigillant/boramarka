@@ -30,6 +30,7 @@ import {
 } from 'lucide-react'
 import { api } from '../services/api'
 import { formatCurrency, formatImageUrl } from '../utils/dashboardHelpers'
+import { generatePixPayload, generatePixQrCodeDataUrl } from '../utils/pixPayload'
 import type { ProductData, ProductCategoryData, OrderSettingsData } from '../types/dashboard'
 
 interface CartItem {
@@ -83,8 +84,35 @@ export function StorePage() {
   // Modal de Pagamento PIX e Confirmação de Sucesso
   const [submittedOrderData, setSubmittedOrderData] = useState<any>(null)
   const [showPixSuccessModal, setShowPixSuccessModal] = useState(false)
+  const [pixPayloadCode, setPixPayloadCode] = useState('')
+  const [pixQrCodeDataUrl, setPixQrCodeDataUrl] = useState('')
+  const [copiedPixPayload, setCopiedPixPayload] = useState(false)
   const [copiedPixKey, setCopiedPixKey] = useState(false)
   const [copiedOrderNumber, setCopiedOrderNumber] = useState(false)
+
+  // Gera o PIX Copia e Cola e o QR Code automaticamente quando o pedido é criado
+  useEffect(() => {
+    if (!submittedOrderData?.pixInfo?.pixKey) return
+
+    const key = submittedOrderData.pixInfo.pixKey
+    const amount = Number(submittedOrderData.pixInfo.amount || submittedOrderData.order?.depositAmount || 0)
+    const name = submittedOrderData.pixInfo.merchantName || admin?.businessName || 'BoraMarka'
+    const orderNum = submittedOrderData.order?.orderNumber?.replace(/[^a-zA-Z0-9]/g, '') || 'ENK'
+
+    const payload = generatePixPayload({
+      pixKey: key,
+      merchantName: name,
+      amount: amount > 0 ? amount : undefined,
+      txid: orderNum,
+      description: `Pedido ${submittedOrderData.order?.orderNumber || ''}`,
+    })
+
+    setPixPayloadCode(payload)
+
+    generatePixQrCodeDataUrl(payload).then(url => {
+      setPixQrCodeDataUrl(url)
+    })
+  }, [submittedOrderData, admin])
 
   useEffect(() => {
     if (!username) return
@@ -265,7 +293,7 @@ export function StorePage() {
   const secondaryColor = admin.secondaryColor || '#ec4899'
 
   return (
-    <div className={`min-h-screen ${admin.publicTheme === 'dark' ? 'dark bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-900'} pb-28 font-sans`}>
+    <div className={`min-h-screen ${admin.publicTheme === 'dark' ? 'dark bg-[#0B0F19] text-white' : 'bg-slate-50 text-slate-900'} pb-32 font-sans`}>
       <style>{`
         .store-accent-gradient { background: linear-gradient(135deg, ${accentColor}, ${secondaryColor}) !important; }
         .store-accent-color { color: ${accentColor} !important; }
@@ -275,53 +303,55 @@ export function StorePage() {
       {/* ── Hero Banner da Loja ── */}
       <div className="relative">
         {admin.bannerUrl ? (
-          <div className="w-full h-48 sm:h-64 overflow-hidden bg-slate-900">
-            <img src={admin.bannerUrl} alt="Banner" className="w-full h-full object-cover opacity-80" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
+          <div className="w-full h-56 sm:h-72 md:h-80 overflow-hidden bg-slate-900">
+            <img src={admin.bannerUrl} alt="Banner" className="w-full h-full object-cover opacity-85" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
           </div>
         ) : (
-          <div className="w-full h-44 sm:h-56 store-accent-gradient flex items-center justify-center">
-            <Store className="w-16 h-16 text-white/40" />
+          <div className="w-full h-52 sm:h-64 md:h-72 store-accent-gradient flex items-center justify-center relative overflow-hidden">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(255,255,255,0.12),_transparent_60%)]" />
+            <Store className="w-20 h-20 text-white/20" />
           </div>
         )}
 
-        <div className="max-w-4xl mx-auto px-4 -mt-16 sm:-mt-20 relative z-10">
-          <div className="bg-white dark:bg-[#131826] rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 -mt-16 sm:-mt-20 relative z-10">
+          <div className="bg-white dark:bg-[#131826] rounded-3xl p-5 sm:p-8 shadow-2xl border border-slate-200 dark:border-slate-700/80 flex flex-col sm:flex-row items-start sm:items-center gap-5 sm:gap-7">
             {admin.photoUrl ? (
               <img
                 src={admin.photoUrl}
                 alt={admin.businessName}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-4 border-white dark:border-[#131826] shadow-xl flex-shrink-0"
+                className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl object-cover border-4 border-white dark:border-slate-800 shadow-xl flex-shrink-0"
               />
             ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl store-accent-gradient flex items-center justify-center text-2xl font-black text-white shadow-xl flex-shrink-0">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-2xl sm:rounded-3xl store-accent-gradient flex items-center justify-center text-3xl font-black text-white shadow-xl flex-shrink-0">
                 {admin.businessName?.[0] || 'B'}
               </div>
             )}
 
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                <span className="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <span className="text-[11px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
                   Encomendas Abertas
                 </span>
                 <span className="text-xs font-semibold text-slate-400 flex items-center gap-1">
-                  <Clock className="w-3.5 h-3.5 text-slate-400" /> Mín. {settings?.minAdvanceDays || 2} dias de antecedência
+                  <Clock className="w-3.5 h-3.5" /> Mín. {settings?.minAdvanceDays || 2} dias de antecedência
                 </span>
               </div>
 
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
+              <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white leading-tight">
                 {settings?.storeName || admin.businessName || admin.username}
               </h1>
 
               {(settings?.storeDescription || admin.description) && (
-                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 font-medium">
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 line-clamp-2 font-medium leading-relaxed">
                   {settings?.storeDescription || admin.description}
                 </p>
               )}
 
               {admin.address && (
-                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1">
-                  <MapPin className="w-3.5 h-3.5 flex-shrink-0" /> {admin.address}
+                <p className="text-xs text-slate-400 mt-2 flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5 flex-shrink-0 text-pink-400" /> {admin.address}
                 </p>
               )}
             </div>
@@ -330,8 +360,8 @@ export function StorePage() {
       </div>
 
       {/* ── Categorias (Chips) ── */}
-      <div className="max-w-4xl mx-auto px-4 mt-8">
-        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-8">
+        <div className="flex items-center gap-2.5 overflow-x-auto no-scrollbar pb-2">
           <button
             onClick={() => setSelectedCategory('ALL')}
             className={`py-2 px-5 rounded-2xl text-xs font-black transition-all whitespace-nowrap ${
@@ -360,79 +390,77 @@ export function StorePage() {
       </div>
 
       {/* ── Grid de Produtos do Cardápio ── */}
-      <div className="max-w-4xl mx-auto px-4 mt-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 mt-6">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
           {filteredProducts.map(prod => (
             <div
               key={prod.id}
               onClick={() => handleOpenProduct(prod)}
-              className="bg-white dark:bg-[#131826] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800/80 shadow-md hover:shadow-2xl hover:scale-[1.02] transition-all cursor-pointer flex flex-col justify-between group"
+              className="bg-white dark:bg-[#131826] rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-100 dark:border-slate-800/80 shadow-md hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col justify-between group"
             >
               <div>
                 {/* Foto */}
                 {prod.photos?.[0]?.url ? (
-                  <div className="w-full h-48 overflow-hidden relative bg-slate-100 dark:bg-slate-800">
+                  <div className="w-full aspect-square overflow-hidden relative bg-slate-100 dark:bg-slate-800">
                     <img
                       src={formatImageUrl(prod.photos[0].url)}
                       alt={prod.name}
                       onError={(e) => {
                         (e.currentTarget as HTMLImageElement).src = 'https://placehold.co/400x400/1e293b/f43f5e?text=' + encodeURIComponent(prod.name);
                       }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                     />
                     {prod.featured && (
-                      <span className="absolute top-3 left-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-md">
-                        Destaque
+                      <span className="absolute top-2 left-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-[9px] sm:text-[10px] font-black px-2 py-0.5 rounded-full shadow-lg">
+                        ⭐ Destaque
                       </span>
                     )}
                     {prod.photos.length > 1 && (
-                      <span className="absolute bottom-2 right-2 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                        {prod.photos.length} fotos
+                      <span className="absolute bottom-2 right-2 bg-black/60 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded-full">
+                        📷 {prod.photos.length}
                       </span>
                     )}
+                    {/* Overlay gradient para o texto ficar mais legível */}
+                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
                   </div>
                 ) : (
-                  <div className="w-full h-48 bg-slate-900 flex items-center justify-center text-slate-600">
-                    <Package className="w-10 h-10" />
+                  <div className="w-full aspect-square bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
+                    <Package className="w-10 h-10 text-slate-600" />
                   </div>
                 )}
 
-                <div className="p-5">
+                <div className="p-3 sm:p-4">
                   {prod.category && (
-                    <span className="text-[10px] font-black uppercase tracking-wider text-pink-500 block mb-1">
+                    <span className="text-[9px] sm:text-[10px] font-black uppercase tracking-wider text-pink-500 block mb-0.5">
                       {prod.category.name}
                     </span>
                   )}
 
-                  <h3 className="text-base font-black text-slate-900 dark:text-white leading-tight mb-1">
+                  <h3 className="text-xs sm:text-sm font-black text-slate-900 dark:text-white leading-tight mb-1 line-clamp-2">
                     {prod.name}
                   </h3>
 
-                  <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-medium mb-3">
+                  <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 line-clamp-2 font-medium hidden sm:block">
                     {prod.description || 'Produto artesanal sob encomenda.'}
                   </p>
-
-                  <div className="flex items-center gap-2 text-[11px] text-slate-400 font-semibold">
-                    <span>Mín. {prod.minDaysNotice} dias</span>
-                    <span>·</span>
-                    <span>{prod.unitLabel}</span>
-                  </div>
                 </div>
               </div>
 
-              <div className="p-5 pt-0 flex justify-between items-center border-t border-slate-100 dark:border-slate-800/80 mt-2">
+              <div className="px-3 pb-3 sm:px-4 sm:pb-4 flex justify-between items-center border-t border-slate-100 dark:border-slate-800/60 pt-2.5 mt-1">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 block">A partir de</span>
-                  <span className="text-base font-black text-pink-600 dark:text-pink-400">
+                  <span className="text-[9px] font-bold text-slate-400 block">A partir de</span>
+                  <span className="text-sm sm:text-base font-black text-pink-600 dark:text-pink-400">
                     {formatCurrency(prod.price)}
                   </span>
                 </div>
 
                 <button
                   type="button"
-                  className="py-2 px-4 rounded-xl store-accent-gradient text-white text-xs font-black shadow-md flex items-center gap-1 hover:opacity-90"
+                  className="py-1.5 px-3 sm:py-2 sm:px-4 rounded-xl store-accent-gradient text-white text-[10px] sm:text-xs font-black shadow-md flex items-center gap-1 hover:opacity-90 active:scale-95 transition-all"
                 >
-                  <Plus className="w-3.5 h-3.5" /> Encomendar
+                  <Plus className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                  <span className="hidden sm:inline">Encomendar</span>
+                  <span className="sm:hidden">Pedir</span>
                 </button>
               </div>
             </div>
@@ -1017,20 +1045,20 @@ export function StorePage() {
               </p>
             </div>
 
-            {/* Card de Pagamento PIX */}
+            {/* Card de Pagamento PIX com QR Code e Copia e Cola */}
             <div className="p-5 rounded-3xl bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                  <QrCode className="w-4 h-4 text-emerald-500" /> Pagamento via PIX
+                  <QrCode className="w-4 h-4 text-emerald-500" /> Pagamento Instantâneo via PIX
                 </span>
-                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <span className="text-[10px] font-black uppercase px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
                   {submittedOrderData.pixInfo?.paymentLabel || 'Entrada'}
                 </span>
               </div>
 
               {/* Valor em destaque */}
               <div className="bg-white dark:bg-slate-800/80 p-4 rounded-2xl border border-slate-200 dark:border-slate-700/80 text-center space-y-1">
-                <span className="text-xs font-bold text-slate-400">Valor a Transferir Agora:</span>
+                <span className="text-xs font-bold text-slate-400">Valor a Pagar Agora:</span>
                 <p className="text-3xl font-black text-emerald-500 font-mono">
                   {formatCurrency(submittedOrderData.pixInfo?.amount || submittedOrderData.order?.depositAmount || 0)}
                 </p>
@@ -1041,11 +1069,62 @@ export function StorePage() {
                 )}
               </div>
 
-              {/* Chave PIX com botão de copiar */}
-              {submittedOrderData.pixInfo?.pixKey ? (
+              {/* QR Code Oficial */}
+              {pixQrCodeDataUrl && (
+                <div className="flex flex-col items-center justify-center p-3 bg-white rounded-2xl border border-slate-200 shadow-sm">
+                  <img
+                    src={pixQrCodeDataUrl}
+                    alt="QR Code PIX"
+                    className="w-48 h-48 object-contain rounded-lg"
+                  />
+                  <span className="text-[10px] font-bold text-slate-500 mt-1 uppercase tracking-wider">
+                    Escaneie com o app do seu banco
+                  </span>
+                </div>
+              )}
+
+              {/* Botão Principal: PIX Copia e Cola (Com Valor Automático) */}
+              {pixPayloadCode ? (
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText(pixPayloadCode)
+                      setCopiedPixPayload(true)
+                      setTimeout(() => setCopiedPixPayload(false), 3000)
+                    }}
+                    className={`w-full py-3.5 px-4 rounded-2xl font-black text-xs transition-all flex items-center justify-center gap-2 shadow-lg ${
+                      copiedPixPayload
+                        ? 'bg-emerald-600 text-white shadow-emerald-500/30'
+                        : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/20 hover:scale-[1.01]'
+                    }`}
+                  >
+                    {copiedPixPayload ? (
+                      <>
+                        <Check className="w-4 h-4" /> Código PIX Copiado com Sucesso!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="w-4 h-4" /> Copiar PIX Copia e Cola (Valor Automático)
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
+                    <span>Ou copie apenas a chave PIX:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPix(submittedOrderData.pixInfo?.pixKey)}
+                      className="text-pink-500 hover:text-pink-400 font-bold underline flex items-center gap-1"
+                    >
+                      {copiedPixKey ? 'Chave copiada!' : `Chave: ${submittedOrderData.pixInfo?.pixKey}`}
+                    </button>
+                  </div>
+                </div>
+              ) : submittedOrderData.pixInfo?.pixKey ? (
                 <div className="space-y-1.5">
                   <label className="block text-[11px] font-black text-slate-400 uppercase">
-                    Chave PIX do Estabelecimento ({submittedOrderData.pixInfo?.merchantName || admin.businessName})
+                    Chave PIX do Estabelecimento
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -1063,33 +1142,21 @@ export function StorePage() {
                           : 'bg-slate-900 text-white hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600'
                       }`}
                     >
-                      {copiedPixKey ? (
-                        <>
-                          <Check className="w-4 h-4" /> Copiado!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="w-4 h-4" /> Copiar Chave
-                        </>
-                      )}
+                      {copiedPixKey ? <><Check className="w-4 h-4" /> Copiado!</> : <><Copy className="w-4 h-4" /> Copiar Chave</>}
                     </button>
                   </div>
                 </div>
-              ) : (
-                <div className="p-3 bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl text-xs font-medium">
-                  Combine o pagamento diretamente com o estabelecimento no WhatsApp abaixo.
-                </div>
-              )}
+              ) : null}
 
               {/* Passo a passo */}
-              <div className="p-3.5 rounded-2xl bg-pink-50/50 dark:bg-pink-950/20 border border-pink-200/60 dark:border-pink-900/40 text-xs space-y-1.5 text-slate-700 dark:text-slate-300">
-                <p className="font-black text-pink-600 dark:text-pink-400 text-[11px] uppercase tracking-wider">
-                  Como concluir seu pedido:
+              <div className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200/60 dark:border-emerald-900/40 text-xs space-y-1.5 text-slate-700 dark:text-slate-300">
+                <p className="font-black text-emerald-600 dark:text-emerald-400 text-[11px] uppercase tracking-wider flex items-center gap-1">
+                  <Sparkles className="w-3.5 h-3.5" /> Como pagar em 3 passos:
                 </p>
                 <ol className="list-decimal list-inside space-y-1 text-[11px] font-medium text-slate-600 dark:text-slate-400">
-                  <li>Copie a chave PIX acima</li>
-                  <li>Abra o app do seu banco e faça a transferência no valor indicado</li>
-                  <li>Clique no botão verde abaixo para <strong>enviar o comprovante no WhatsApp</strong></li>
+                  <li>Clique no botão acima para <strong>Copiar o PIX Copia e Cola</strong></li>
+                  <li>Abra o app do seu banco e escolha <strong>Pix Copia e Cola</strong> (o valor já virá preenchido sozinho)</li>
+                  <li>Após pagar, clique no botão verde abaixo para <strong>enviar o comprovante</strong></li>
                 </ol>
               </div>
             </div>
@@ -1097,14 +1164,21 @@ export function StorePage() {
             {/* Ações */}
             <div className="space-y-2.5">
               {(() => {
-                const rawPhone = admin?.phone || admin?.pixKey || settings?.pixKey || '';
-                const cleanPhone = rawPhone.replace(/\D/g, '');
+                const rawPhone = (admin?.phone || '').replace(/\D/g, '');
+                let formattedPhone = '';
+                if (rawPhone.length >= 10) {
+                  if ((rawPhone.length === 12 || rawPhone.length === 13) && rawPhone.startsWith('55')) {
+                    formattedPhone = rawPhone;
+                  } else {
+                    formattedPhone = `55${rawPhone}`;
+                  }
+                }
                 const msg = encodeURIComponent(
                   `Olá! Acabei de fazer o pedido *${submittedOrderData.order?.orderNumber}* no valor de ${formatCurrency(submittedOrderData.pixInfo?.amount || submittedOrderData.order?.depositAmount || 0)} via PIX na sua loja. Segue o comprovante em anexo!`
                 );
                 const finalWhatsappUrl = submittedOrderData.whatsappUrl || (
-                  (cleanPhone.length === 10 || cleanPhone.length === 11)
-                    ? `https://wa.me/55${cleanPhone}?text=${msg}`
+                  formattedPhone
+                    ? `https://wa.me/${formattedPhone}?text=${msg}`
                     : `https://api.whatsapp.com/send?text=${msg}`
                 );
 

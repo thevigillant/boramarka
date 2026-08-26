@@ -161,6 +161,26 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     }
 
     const settings = admin.orderSettings;
+
+    // 🛡️ Validação de Segurança: Impede datas no passado ou que violem a antecedência mínima
+    const minAdvanceDays = settings?.minAdvanceDays !== undefined ? settings.minAdvanceDays : 1;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const chosenDate = new Date(`${deliveryDate}T00:00:00`);
+    
+    if (isNaN(chosenDate.getTime())) {
+      return reply.status(400).send({ error: 'Formato de data inválido' });
+    }
+
+    const diffTime = chosenDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays < minAdvanceDays) {
+      return reply.status(400).send({
+        error: `Esta loja exige pelo menos ${minAdvanceDays} dia(s) de antecedência para encomendas. Data mais próxima: ${new Date(Date.now() + minAdvanceDays * 86400000).toLocaleDateString('pt-BR')}`,
+      });
+    }
+
     const isFullPayment = paymentOption === 'FULL';
     const baseDepositPct = settings?.depositPercentage !== undefined ? settings.depositPercentage : 50.0;
     const depositPercentage = isFullPayment ? 100.0 : baseDepositPct;
@@ -300,13 +320,17 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       }
     }
 
-    // Informações para pagamento via PIX
-    const storePixKey = settings?.pixKey || admin.pixKey || admin.phone || '';
-    let cleanAdminPhone = admin.phone?.replace(/\D/g, '') || '';
-    if (!cleanAdminPhone && storePixKey) {
-      const cleanKey = storePixKey.replace(/\D/g, '');
-      if (cleanKey.length === 10 || cleanKey.length === 11) {
-        cleanAdminPhone = cleanKey;
+    // Informações para pagamento via PIX (exclusivo para pagamento)
+    const storePixKey = settings?.pixKey || admin.pixKey || '';
+    
+    // Telefone oficial do WhatsApp do profissional (SEMPRE o cadastrado no perfil)
+    let rawAdminPhone = (admin.phone || '').replace(/\D/g, '');
+    let formattedWhatsAppPhone = '';
+    if (rawAdminPhone.length >= 10) {
+      if ((rawAdminPhone.length === 12 || rawAdminPhone.length === 13) && rawAdminPhone.startsWith('55')) {
+        formattedWhatsAppPhone = rawAdminPhone;
+      } else {
+        formattedWhatsAppPhone = `55${rawAdminPhone}`;
       }
     }
     const paymentLabel = isFullPayment ? 'Valor Total (100%)' : `Entrada (${depositPercentage}%)`;
@@ -330,8 +354,8 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       `Link do pedido: https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear`
     );
 
-    const whatsappUrl = cleanAdminPhone
-      ? `https://wa.me/55${cleanAdminPhone}?text=${whatsappMessage}`
+    const whatsappUrl = formattedWhatsAppPhone
+      ? `https://wa.me/${formattedWhatsAppPhone}?text=${whatsappMessage}`
       : `https://api.whatsapp.com/send?text=${whatsappMessage}`;
 
     const trackingCode = order.cancellationCode;

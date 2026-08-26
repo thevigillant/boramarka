@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   ShoppingBag,
   Plus,
@@ -27,6 +27,10 @@ import {
   User,
   AlertCircle,
   Sparkles,
+  MessageCircle,
+  Link2,
+  Send,
+  Bell,
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
@@ -65,7 +69,95 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
   const [copiedLink, setCopiedLink] = useState(false)
   const [savingSettings, setSavingSettings] = useState(false)
 
+  // WhatsApp Notification Modal
+  const [whatsappModal, setWhatsappModal] = useState<{
+    open: boolean
+    clientName: string
+    clientPhone: string
+    message: string
+    statusLabel: string
+    color: string
+    emoji: string
+  } | null>(null)
+  const whatsappTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const storeUrl = `${window.location.origin}/${user?.username || ''}/loja`
+
+  // Gera a URL de rastreamento para o cliente
+  function getTrackingUrl(order: OrderData) {
+    const num = order.orderNumber.replace('#', '')
+    const code = (order as any).cancellationCode || ''
+    return `${window.location.origin}/pedido/${num}/rastrear${code ? `?code=${code}` : ''}`
+  }
+
+  // Monta mensagem WhatsApp por status e dispara o modal de notificação
+  function triggerWhatsAppNotification(order: OrderData, newStatus: string) {
+    const cleanPhone = order.clientPhone.replace(/\D/g, '')
+    const trackingUrl = getTrackingUrl(order)
+    const storeName = user?.businessName || user?.username || 'a loja'
+
+    const configs: Record<string, { label: string; emoji: string; color: string; msg: string }> = {
+      CONFIRMADO: {
+        label: 'Pedido Confirmado',
+        emoji: '✅',
+        color: 'from-blue-500 to-blue-600',
+        msg:
+          `✅ Olá, *${order.clientName}*! Seu pedido *${order.orderNumber}* foi *CONFIRMADO* por ${storeName}!\n\n` +
+          `🗓️ Previsão: ${order.deliveryDate} às ${order.deliveryTime}\n\n` +
+          `Acompanhe em tempo real:\n${trackingUrl}`,
+      },
+      EM_PRODUCAO: {
+        label: 'Em Produção',
+        emoji: '👩‍🍳',
+        color: 'from-purple-500 to-purple-600',
+        msg:
+          `👩‍🍳 Olá, *${order.clientName}*! Sua encomenda *${order.orderNumber}* está sendo *PREPARADA* agora! 🎉\n\n` +
+          `Acompanhe o progresso:\n${trackingUrl}`,
+      },
+      PRONTO: {
+        label: 'Pronto!',
+        emoji: '🎉',
+        color: 'from-emerald-500 to-emerald-600',
+        msg:
+          `🎉 Olá, *${order.clientName}*! Sua encomenda *${order.orderNumber}* está *PRONTA*!\n\n` +
+          (order.deliveryType === 'DELIVERY'
+            ? `🚗 Estamos saindo para entrega!`
+            : `📦 Pode retirar a qualquer momento!`) +
+          `\n\nAcompanhe: ${trackingUrl}`,
+      },
+      ENTREGUE: {
+        label: 'Entregue',
+        emoji: '🙏',
+        color: 'from-slate-600 to-slate-700',
+        msg:
+          `🙏 Olá, *${order.clientName}*! Sua encomenda *${order.orderNumber}* foi *ENTREGUE*! Obrigado pela preferência!\n\n` +
+          `Se puder nos avaliar, ficamos muito felizes! 💕`,
+      },
+    }
+
+    const cfg = configs[newStatus]
+    if (!cfg) return
+
+    if (whatsappTimerRef.current) clearTimeout(whatsappTimerRef.current)
+
+    setWhatsappModal({
+      open: true,
+      clientName: order.clientName,
+      clientPhone: cleanPhone,
+      message: cfg.msg,
+      statusLabel: cfg.label,
+      color: cfg.color,
+      emoji: cfg.emoji,
+    })
+
+    // Fecha automaticamente após 60 segundos
+    whatsappTimerRef.current = setTimeout(() => setWhatsappModal(null), 60000)
+  }
+
+  function closeWhatsappModal() {
+    if (whatsappTimerRef.current) clearTimeout(whatsappTimerRef.current)
+    setWhatsappModal(null)
+  }
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -127,13 +219,17 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
   }
 
   // Handlers para Pedidos
-  async function handleUpdateOrderStatus(id: number, status: string, note?: string) {
+  async function handleUpdateOrderStatus(id: number, status: string, note?: string, orderForNotif?: OrderData) {
     await api.updateOrderStatus(id, status, note)
     const updatedOrders = await api.getOrders()
     setOrders(updatedOrders || [])
     if (selectedOrder && selectedOrder.id === id) {
       const single = await api.getOrder(id)
       setSelectedOrder(single)
+    }
+    // Dispara modal WhatsApp para avisar cliente
+    if (orderForNotif) {
+      triggerWhatsAppNotification(orderForNotif, status)
     }
   }
 
@@ -483,7 +579,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                             onClick={async (e) => {
                               e.stopPropagation();
                               await handleUpdateOrderPayment(order.id, true);
-                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'PIX confirmado pelo painel');
+                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'PIX confirmado pelo painel', order);
                             }}
                             className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
                           >
@@ -496,7 +592,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                             type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'Aprovado para produção');
+                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'Aprovado para produção', order);
                             }}
                             className="w-full mt-2.5 py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                           >
@@ -509,7 +605,13 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                             type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo');
+                              if (!order.depositPaid) {
+                                const proceed = confirm(
+                                  '⚠️ ALERTA DE SEGURANÇA:\n\nA entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?'
+                                );
+                                if (!proceed) return;
+                              }
+                              await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo', order);
                             }}
                             className="w-full mt-2.5 py-2 px-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 active:scale-95"
                           >
@@ -522,7 +624,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                             type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'PRONTO', 'Pedido finalizado e pronto');
+                              await handleUpdateOrderStatus(order.id, 'PRONTO', 'Pedido finalizado e pronto', order);
                             }}
                             className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
                           >
@@ -535,7 +637,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                             type="button"
                             onClick={async (e) => {
                               e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'ENTREGUE', 'Entregue ao cliente');
+                              await handleUpdateOrderStatus(order.id, 'ENTREGUE', 'Entregue ao cliente', order);
                             }}
                             className="w-full mt-2.5 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                           >
@@ -626,19 +728,19 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
           </div>
 
           {/* Grid de Produtos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-5">
             {products.map(prod => (
               <div
                 key={prod.id}
-                className="bg-[#131826] rounded-2xl overflow-hidden border border-slate-800/90 hover:border-slate-700 shadow-md hover:shadow-xl transition-all flex flex-col justify-between group"
+                className="bg-[#131826] rounded-2xl overflow-hidden border border-slate-800/90 hover:border-slate-600 shadow-md hover:shadow-2xl hover:-translate-y-0.5 transition-all duration-300 flex flex-col justify-between group"
               >
                 <div>
                   {prod.photos?.[0]?.url ? (
-                    <div className="w-full h-44 overflow-hidden bg-slate-900 relative flex items-center justify-center">
+                    <div className="w-full aspect-square overflow-hidden bg-slate-900 relative flex items-center justify-center">
                       <img
                         src={formatImageUrl(prod.photos[0].url)}
                         alt={prod.name}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         onError={(e) => {
                           const target = e.currentTarget;
                           target.style.display = 'none';
@@ -663,7 +765,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                       )}
                     </div>
                   ) : (
-                    <div className="w-full h-44 bg-slate-900 flex items-center justify-center">
+                    <div className="w-full aspect-square bg-slate-900 flex items-center justify-center">
                       <div className="text-center">
                         <ImageIcon className="w-8 h-8 text-slate-600 mx-auto mb-1" />
                         <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Sem foto</p>
@@ -671,7 +773,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                     </div>
                   )}
 
-                  <div className="p-5">
+                  <div className="p-4">
                     {prod.category && (
                       <span className="text-[10px] font-black uppercase tracking-wider text-pink-400 mb-1 block">
                         {prod.category.name}
@@ -679,35 +781,33 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                     )}
 
                     <div className="flex justify-between items-start mb-1">
-                      <h4 className="text-base font-black text-white leading-tight">
+                      <h4 className="text-sm font-black text-white leading-tight line-clamp-2 flex-1">
                         {prod.name}
                       </h4>
-                      <p className="text-base font-black text-pink-400 ml-2 shrink-0 font-mono">
+                      <p className="text-sm font-black text-pink-400 ml-2 shrink-0 font-mono">
                         {formatCurrency(prod.price)}
                       </p>
                     </div>
 
-                    <p className="text-xs text-slate-400 line-clamp-2 mb-3">
+                    <p className="text-xs text-slate-400 line-clamp-2 mb-2">
                       {prod.description || 'Sem descrição.'}
                     </p>
 
-                    <div className="flex items-center gap-3 text-[11px] text-slate-400 font-semibold">
-                      <span>Mín. {prod.minDaysNotice} dias</span>
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500 font-semibold">
+                      <span>Mín. {prod.minDaysNotice}d</span>
                       <span>·</span>
                       <span>{prod.unitLabel}</span>
+                      {prod.customFields?.length > 0 && (
+                        <>
+                          <span>·</span>
+                          <span className="text-pink-400/70">{prod.customFields.length} opções</span>
+                        </>
+                      )}
                     </div>
-
-                    {prod.customFields?.length > 0 && (
-                      <div className="mt-3 pt-2 border-t border-slate-800/80">
-                        <span className="text-[11px] font-medium text-slate-400">
-                          {prod.customFields.length} pergunta(s) de personalização
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
 
-                <div className="p-4 pt-0 flex gap-2 border-t border-slate-800/80">
+                <div className="px-4 pb-4 pt-0 flex gap-2 border-t border-slate-800/80 mt-1 pt-3">
                   <button
                     onClick={() => {
                       setEditingProduct(prod)
@@ -987,6 +1087,73 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
         onUpdateStatus={handleUpdateOrderStatus}
         onUpdatePayment={handleUpdateOrderPayment}
       />
+
+      {/* ══════════════════════════════════════════════════════════ */}
+      {/* 🔔 Modal de Notificação WhatsApp — Aparece após mudança   */}
+      {/* de status. Um botão, o profissional clica e avisa o       */}
+      {/* cliente instantaneamente via WhatsApp pré-preenchido.     */}
+      {/* ══════════════════════════════════════════════════════════ */}
+      {whatsappModal?.open && (
+        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#131826] w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-700/80 animate-slide-up">
+
+            {/* Header */}
+            <div className="flex justify-between items-start mb-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-2xl">
+                  {whatsappModal.emoji}
+                </div>
+                <div>
+                  <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest">
+                    Pedido avançado!
+                  </p>
+                  <h3 className="text-base font-black text-white">
+                    {whatsappModal.statusLabel}
+                  </h3>
+                </div>
+              </div>
+              <button
+                onClick={closeWhatsappModal}
+                className="p-2 text-slate-500 hover:text-white rounded-xl hover:bg-slate-800 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Preview da mensagem */}
+            <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-4 mb-5 relative">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-2">
+                Mensagem para {whatsappModal.clientName}
+              </span>
+              <p className="text-xs text-slate-300 font-medium leading-relaxed whitespace-pre-line line-clamp-5">
+                {whatsappModal.message}
+              </p>
+              <div className="absolute -bottom-1 left-5 w-3 h-3 bg-slate-900/80 border-r border-b border-slate-800 rotate-45" />
+            </div>
+
+            {/* CTA Principal — O único botão que importa */}
+            <a
+              href={`https://wa.me/55${whatsappModal.clientPhone}?text=${encodeURIComponent(whatsappModal.message)}`}
+              target="_blank"
+              rel="noreferrer"
+              onClick={closeWhatsappModal}
+              className={`w-full py-5 rounded-2xl bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-black text-base shadow-2xl shadow-emerald-500/30 hover:shadow-emerald-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mb-3`}
+            >
+              <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              </svg>
+              Avisar {whatsappModal.clientName} agora
+            </a>
+
+            <button
+              onClick={closeWhatsappModal}
+              className="w-full py-3 text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors"
+            >
+              Pular por agora — avisar depois
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

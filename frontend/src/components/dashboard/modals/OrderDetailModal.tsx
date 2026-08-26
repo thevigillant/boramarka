@@ -5,7 +5,7 @@ import type { OrderData } from '../../../types/dashboard'
 interface OrderDetailModalProps {
   order: OrderData | null
   onClose: () => void
-  onUpdateStatus: (id: number, status: string, note?: string) => Promise<void>
+  onUpdateStatus: (id: number, status: string, note?: string, order?: OrderData) => Promise<void>
   onUpdatePayment: (id: number, depositPaid: boolean) => Promise<void>
 }
 
@@ -18,6 +18,8 @@ export function OrderDetailModal({
   if (!order) return null
 
   const cleanPhone = order.clientPhone.replace(/\D/g, '')
+  const num = order.orderNumber.replace('#', '')
+  const trackingUrl = `${window.location.origin}/pedido/${num}/rastrear`
 
   const statusColors: Record<string, string> = {
     NOVO: 'bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border-amber-300',
@@ -49,13 +51,13 @@ export function OrderDetailModal({
   function getWhatsAppUrl(msgType: 'confirm' | 'production' | 'ready' | 'delivered') {
     let msg = ''
     if (msgType === 'confirm') {
-      msg = `Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* foi *CONFIRMADO*! Estamos organizando os preparativos para o dia ${order?.deliveryDate}. Qualquer dúvida estamos à disposição!`
+      msg = `✅ Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* foi *CONFIRMADO*! Estamos organizando os preparativos para o dia ${order?.deliveryDate}.\n\nAcompanhe seu pedido em tempo real:\n${trackingUrl}`
     } else if (msgType === 'production') {
-      msg = `Olá ${order?.clientName}! O seu pedido *${order?.orderNumber}* já está *EM PRODUÇÃO*! Preparado com todo o cuidado e dedicação.`
+      msg = `👩‍🍳 Olá ${order?.clientName}! O seu pedido *${order?.orderNumber}* já está *EM PRODUÇÃO*! Preparado com todo o cuidado e dedicação.\n\nAcompanhe em tempo real:\n${trackingUrl}`
     } else if (msgType === 'ready') {
-      msg = `Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* está *PRONTO* para ${order?.deliveryType === 'DELIVERY' ? 'sair para entrega' : 'retirada'}!`
+      msg = `🎉 Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* está *PRONTO* para ${order?.deliveryType === 'DELIVERY' ? 'sair para entrega' : 'retirada'}!\n\nAcompanhe:\n${trackingUrl}`
     } else {
-      msg = `Olá ${order?.clientName}! Tudo bem? Gostaria de saber o que achou do seu pedido *${order?.orderNumber}*! Se puder nos avaliar, agradecemos muito!`
+      msg = `🙏 Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* foi entregue! Gostaria de saber o que achou! Se puder nos avaliar, agradecemos muito!`
     }
     return `https://wa.me/55${cleanPhone}?text=${encodeURIComponent(msg)}`
   }
@@ -246,30 +248,37 @@ export function OrderDetailModal({
               </div>
 
               {!order.depositPaid ? (
-                <div className="pt-2 border-t border-slate-700/60 flex flex-col sm:flex-row items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      await onUpdatePayment(order.id, true);
-                      if (order.status === 'NOVO') {
-                        await onUpdateStatus(order.id, 'CONFIRMADO', 'Pagamento do sinal confirmado pelo profissional');
-                      }
-                    }}
-                    className="w-full sm:flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
-                  >
-                    <CheckCircle className="w-4 h-4" /> Confirmar Recebimento do PIX & Liberar Pedido
-                  </button>
+                <div className="space-y-2 pt-2 border-t border-slate-700/60">
+                  <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                    <span><strong>Atenção contra golpes:</strong> Abra o app do seu banco e confirme se o dinheiro <u>realmente caiu</u> no extrato. Cuidado com comprovantes de <em>PIX Agendado</em> (que podem ser cancelados).</span>
+                  </div>
 
-                  <a
-                    href={`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(
-                      `Olá ${order.clientName}! Tudo bem? Estou conferindo os pedidos da ${order.orderNumber} e gostaria de confirmar se já conseguiu realizar o PIX de R$ ${order.depositAmount.toFixed(2)}. Aguardo seu comprovante! 😊`
-                    )}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full sm:w-auto py-3 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1"
-                  >
-                    <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> Cobrar PIX
-                  </a>
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await onUpdatePayment(order.id, true);
+                        if (order.status === 'NOVO') {
+                          await onUpdateStatus(order.id, 'CONFIRMADO', 'Pagamento do sinal confirmado pelo profissional', order);
+                        }
+                      }}
+                      className="w-full sm:flex-1 py-3 px-4 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-xs transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-1.5"
+                    >
+                      <CheckCircle className="w-4 h-4" /> Confirmar Recebimento do PIX & Liberar Pedido
+                    </button>
+
+                    <a
+                      href={`https://wa.me/55${cleanPhone}?text=${encodeURIComponent(
+                        `Olá ${order.clientName}! Tudo bem? Estou conferindo os pedidos da ${order.orderNumber} e gostaria de confirmar se já conseguiu realizar o PIX de R$ ${order.depositAmount.toFixed(2)}. Aguardo seu comprovante! 😊`
+                      )}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="w-full sm:w-auto py-3 px-3 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-1"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5 text-emerald-400" /> Cobrar PIX
+                    </a>
+                  </div>
                 </div>
               ) : (
                 <div className="pt-2 border-t border-slate-700/60 flex items-center justify-between text-xs text-slate-300">
@@ -340,7 +349,7 @@ export function OrderDetailModal({
           {nextAction && (
             <button
               onClick={async () => {
-                await onUpdateStatus(order.id, nextAction.next)
+                await onUpdateStatus(order.id, nextAction.next, undefined, order)
               }}
               className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-base shadow-xl shadow-pink-500/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
             >

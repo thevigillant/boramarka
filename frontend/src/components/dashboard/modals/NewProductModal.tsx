@@ -33,9 +33,10 @@ async function compressImage(file: File, maxWidth = 1400, maxHeight = 1400, qual
             height = Math.round((height * maxWidth) / width)
             width = maxWidth
           } else {
-            width = Math.round((width * maxHeight) / height)
-            maxHeight = Math.round((width * maxHeight) / height)
+            // Guarda o width original antes de alterar
+            const originalWidth = width
             height = maxHeight
+            width = Math.round((originalWidth * maxHeight) / img.height)
           }
         }
 
