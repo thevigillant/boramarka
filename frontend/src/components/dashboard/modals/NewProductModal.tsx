@@ -273,14 +273,18 @@ export function NewProductModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100 overflow-y-auto max-h-[90vh] border border-slate-200 dark:border-slate-800">
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-t-[28px] sm:rounded-3xl p-5 sm:p-8 shadow-2xl animate-slide-up sm:animate-scale-in text-slate-900 dark:text-slate-100 overflow-y-auto max-h-[92vh] sm:max-h-[90vh] border border-slate-200 dark:border-slate-800 pb-12 sm:pb-8">
+        
+        {/* Mobile Top Drag Indicator */}
+        <div className="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <span className="text-xs font-black text-pink-500 uppercase tracking-widest">
               BoraEncomenda · Cardápio
             </span>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white mt-0.5">
+            <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-0.5">
               {editingProduct ? 'Editar Produto de Encomenda' : 'Cadastrar Novo Produto'}
             </h3>
           </div>
@@ -349,7 +353,7 @@ export function NewProductModal({
                   handlePhotoFiles(e.dataTransfer.files)
                 }
               }}
-              className={`grid grid-cols-3 sm:grid-cols-4 gap-3 p-3 rounded-2xl transition-all border-2 ${
+              className={`grid grid-cols-2 sm:grid-cols-4 gap-3 p-2 sm:p-3 rounded-2xl transition-all border-2 ${
                 isDragOver
                   ? 'border-pink-500 bg-pink-50/30 dark:bg-pink-500/10 border-dashed'
                   : 'border-transparent'

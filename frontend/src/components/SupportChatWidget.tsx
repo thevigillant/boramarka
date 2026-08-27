@@ -193,7 +193,7 @@ export default function SupportChatWidget() {
       {/* Floating Widget Launcher Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed bottom-6 right-6 z-50 p-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center cursor-pointer group"
+        className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-30 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-violet-600 via-pink-600 to-orange-500 text-white shadow-2xl hover:scale-105 transition-all duration-300 flex items-center justify-center cursor-pointer group"
         title="Ajuda & Suporte BoraMarka"
       >
         {isOpen ? (

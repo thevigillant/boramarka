@@ -63,8 +63,12 @@ export function OrderDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100 overflow-y-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="bg-white dark:bg-[#131826] w-full max-w-2xl rounded-t-[28px] sm:rounded-3xl p-5 sm:p-8 shadow-2xl animate-slide-up sm:animate-scale-in text-slate-900 dark:text-slate-100 overflow-y-auto max-h-[92vh] sm:max-h-[90vh] pb-12 sm:pb-8 border border-slate-200 dark:border-slate-800">
+        
+        {/* Mobile Top Drag Indicator */}
+        <div className="w-12 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
+
         {/* ── Header ── */}
         <div className="flex justify-between items-start pb-5 border-b border-slate-100 dark:border-slate-800">
           <div>

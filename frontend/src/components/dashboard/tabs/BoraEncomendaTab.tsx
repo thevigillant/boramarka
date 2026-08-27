@@ -1094,8 +1094,10 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
       {/* cliente instantaneamente via WhatsApp pré-preenchido.     */}
       {/* ══════════════════════════════════════════════════════════ */}
       {whatsappModal?.open && (
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/80 backdrop-blur-md animate-fade-in">
-          <div className="bg-[#131826] w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-700/80 animate-slide-up">
+        <div className="fixed inset-0 z-[90] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+          <div className="bg-[#131826] w-full sm:max-w-md rounded-t-[28px] sm:rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-700/80 animate-slide-up pb-10 sm:pb-8">
+            {/* Mobile Top Drag Indicator */}
+            <div className="w-12 h-1 bg-slate-700 rounded-full mx-auto mb-4 sm:hidden shrink-0" />
 
             {/* Header */}
             <div className="flex justify-between items-start mb-5">

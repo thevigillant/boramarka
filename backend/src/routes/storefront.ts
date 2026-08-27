@@ -3,6 +3,9 @@ import { prisma } from '../db';
 import { v4 as uuidv4 } from 'uuid';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 
+// 🛡️ Regex de validação de e-mail simples e eficiente
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
+
 export default async function storefrontRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════════════════════
   // GET /api/store/:username — Public storefront data
@@ -25,7 +28,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
         accentColor: true,
         secondaryColor: true,
         publicTheme: true,
-        pixKey: true,
+        // 🛡️ Nunca expor pixKey na carga inicial — apenas após criação do pedido
+        // 🛡️ mpAccessToken é credencial sensível — usar flag booleana hasMercadoPago
+        mpAccessToken: true,
         orderSettings: true,
         productCategories: {
           orderBy: { position: 'asc' },
@@ -75,7 +80,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
         accentColor: admin.accentColor || '#f97316',
         secondaryColor: admin.secondaryColor || '#ec4899',
         publicTheme: admin.publicTheme || 'light',
-        pixKey: admin.pixKey || admin.phone || '',
+        // 🛡️ SEGURANÇA: pixKey e mpAccessToken NUNCA são expostos no GET da vitrine
+        // A pixKey só trafega dentro do payload de resposta do POST /order
+        hasMercadoPago: !!(admin.mpAccessToken),
       },
       settings: admin.orderSettings || {
         storeName: admin.businessName || admin.username,
@@ -96,8 +103,20 @@ export default async function storefrontRoutes(app: FastifyInstance) {
 
   // ═══════════════════════════════════════════════════════════
   // POST /api/store/:username/order — Create public order
+  // 🛡️ Rate limit específico: 10 req/min por IP (anti-bot / anti-spam)
   // ═══════════════════════════════════════════════════════════
-  app.post('/:username/order', async (request, reply) => {
+  app.post('/:username/order', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: '1 minute',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Muitas tentativas. Por favor, aguarde 1 minuto antes de enviar outro pedido.',
+        }),
+      },
+    },
+  }, async (request, reply) => {
     const { username } = request.params as { username: string };
     const {
       clientName,
@@ -108,7 +127,6 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       deliveryType,
       deliveryAddress,
       notes,
-      items,
       paymentOption = 'DEPOSIT', // 'DEPOSIT' | 'FULL'
       paymentMethod = 'PIX', // 'PIX' | 'MERCADOPAGO'
     } = request.body as {
@@ -130,12 +148,25 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       }>;
     };
 
+    const { items } = request.body as { items: Array<{ productId: number; quantity: number; customizations?: Record<string, any>; notes?: string }> };
+
+    // ── Validações obrigatórias ──
     if (!clientName || clientName.trim().length < 2) {
-      return reply.status(400).send({ error: 'Nome do cliente é obrigatório' });
+      return reply.status(400).send({ error: 'Nome do cliente é obrigatório (mín. 2 caracteres)' });
+    }
+    if (clientName.trim().length > 120) {
+      return reply.status(400).send({ error: 'Nome muito longo (máx. 120 caracteres)' });
     }
 
     if (!clientPhone || clientPhone.replace(/\D/g, '').length < 10) {
       return reply.status(400).send({ error: 'WhatsApp do cliente é obrigatório e deve ter DDD' });
+    }
+
+    // 🛡️ Validação de formato de e-mail (previne XSS/Injection via campo de texto livre)
+    if (clientEmail && clientEmail.trim()) {
+      if (!EMAIL_REGEX.test(clientEmail.trim())) {
+        return reply.status(400).send({ error: 'Formato de e-mail inválido' });
+      }
     }
 
     if (!deliveryDate) {
@@ -144,6 +175,14 @@ export default async function storefrontRoutes(app: FastifyInstance) {
 
     if (!Array.isArray(items) || items.length === 0) {
       return reply.status(400).send({ error: 'O pedido deve conter pelo menos 1 item' });
+    }
+
+    // 🛡️ Limite de tamanho dos campos livres (prevenção de payload stuffing / DoS)
+    if (deliveryAddress && deliveryAddress.trim().length > 300) {
+      return reply.status(400).send({ error: 'Endereço de entrega muito longo (máx. 300 caracteres)' });
+    }
+    if (notes && notes.trim().length > 500) {
+      return reply.status(400).send({ error: 'Observações muito longas (máx. 500 caracteres)' });
     }
 
     const admin = await prisma.admin.findUnique({
@@ -208,13 +247,23 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       const itemSubtotal = product.price * qty;
       subtotal += itemSubtotal;
 
+      // 🛡️ Limita o tamanho de cada campo de customização
+      const sanitizedCustomizations: Record<string, any> = {};
+      if (item.customizations) {
+        for (const [key, value] of Object.entries(item.customizations)) {
+          const safeKey = String(key).substring(0, 100);
+          const safeValue = typeof value === 'string' ? value.substring(0, 250) : value;
+          sanitizedCustomizations[safeKey] = safeValue;
+        }
+      }
+
       orderItemsToCreate.push({
         productName: product.name,
         quantity: qty,
         unitPrice: product.price,
         subtotal: itemSubtotal,
-        customizations: JSON.stringify(item.customizations || {}),
-        notes: item.notes || '',
+        customizations: JSON.stringify(sanitizedCustomizations),
+        notes: (item.notes || '').substring(0, 250),
         productId: product.id,
       });
     }
@@ -229,10 +278,10 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     const depositAmount = isFullPayment ? total : (total * depositPercentage) / 100;
     const remainingAmount = Math.max(0, total - depositAmount);
 
-    // Gera número único do pedido
+    // 🛡️ Código de rastreamento com 16 chars hexadecimais (mais resistente a enumeração)
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
     const orderNumber = `#ENK-${randomSuffix}`;
-    const cancellationCode = uuidv4().substring(0, 8).toUpperCase();
+    const cancellationCode = uuidv4().replace(/-/g, '').substring(0, 16).toUpperCase();
 
     // Cria o pedido no banco
     const order = await prisma.$transaction(async (tx) => {
@@ -391,8 +440,20 @@ export default async function storefrontRoutes(app: FastifyInstance) {
 
   // ═══════════════════════════════════════════════════════════
   // GET /api/store/order/:orderNumber/track — Public Order Tracking (Masked PII)
+  // 🛡️ Rate limit específico: 30 req/min por IP (anti-enumeração de pedidos)
   // ═══════════════════════════════════════════════════════════
-  app.get('/order/:orderNumber/track', async (request, reply) => {
+  app.get('/order/:orderNumber/track', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: '1 minute',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Muitas consultas. Por favor, aguarde antes de consultar novamente.',
+        }),
+      },
+    },
+  }, async (request, reply) => {
     const { orderNumber } = request.params as { orderNumber: string };
     const { code } = (request.query || {}) as { code?: string };
     const formattedNumber = orderNumber.startsWith('#') ? orderNumber : `#${orderNumber}`;

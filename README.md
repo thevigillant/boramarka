@@ -1,161 +1,179 @@
-# 🚀 BoraMarka — Enterprise SaaS Platform for Automated Scheduling & Custom Product Orders
+# BoraMarka — Enterprise Multi-Tenant SaaS Platform
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Status-Production_Ready-emerald?style=for-the-badge&logo=railway" alt="Status">
+  <img src="https://img.shields.io/badge/Status-Production_Ready-00C853?style=for-the-badge&logo=railway" alt="Status">
   <img src="https://img.shields.io/badge/Domain-boramarka.com.br-000000?style=for-the-badge&logo=googlechrome" alt="Domain">
   <img src="https://img.shields.io/badge/Frontend-React_18_%2B_Vite_5-61DAFB?style=for-the-badge&logo=react" alt="React">
   <img src="https://img.shields.io/badge/Backend-Fastify_v4_%2B_TypeScript_5-000000?style=for-the-badge&logo=fastify" alt="Fastify">
-  <img src="https://img.shields.io/badge/Pix-BR_Code_Bacen_EMVCo-32BCAD?style=for-the-badge&logo=pix" alt="PIX BR Code">
+  <img src="https://img.shields.io/badge/PIX_Protocol-Bacen_EMVCo_CRC16-32BCAD?style=for-the-badge&logo=pix" alt="PIX Protocol">
   <img src="https://img.shields.io/badge/Database-PostgreSQL_17_%2B_Prisma_5-336791?style=for-the-badge&logo=postgresql" alt="PostgreSQL">
-  <img src="https://img.shields.io/badge/BoraEncomenda-Custom_Orders_%2B_Live_Kanban-EC4899?style=for-the-badge&logo=shopify" alt="BoraEncomenda">
-  <img src="https://img.shields.io/badge/Security-RBAC_%2B_LGPD_%2B_Anti--Fraud-violet?style=for-the-badge&logo=shield" alt="Security">
+  <img src="https://img.shields.io/badge/Security-OWASP_Compliant_%2B_LGPD-6D28D9?style=for-the-badge&logo=auth0" alt="Security">
 </p>
 
 ---
 
-## 🌐 Official Production Infrastructure
+## 1. Production Topology & Cloud Infrastructure
 
-| Component | Endpoint | Provider / Architecture | SLA & Status |
+| Subsystem | Production Endpoint | Cloud Provider / Topology | SLA Target |
 | :--- | :--- | :--- | :---: |
-| 🌐 **Web Application** | [https://boramarka.com.br](https://boramarka.com.br) | Vercel Edge Global Anycast CDN | 99.99% |
-| ⚡ **API Server (REST Backend)** | [https://api.boramarka.com.br](https://api.boramarka.com.br) | Railway Isolated Linux Container | 99.95% |
-| 📸 **Media Storage Pipeline** | `res.cloudinary.com/boramarka` | Cloudinary High-Res CDN | 99.99% |
-| 📧 **Transactional Mailer** | `noreply@boramarka.com.br` | Resend API (DKIM / SPF Verified) | 99.90% |
-| 📦 **Codebase Repository** | [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka) | GitHub Enterprise CI/CD | Active |
+| **Web Frontend** | [https://boramarka.com.br](https://boramarka.com.br) | Vercel Edge Global Anycast CDN | 99.99% |
+| **Core API Gateway** | [https://api.boramarka.com.br](https://api.boramarka.com.br) | Railway Isolated Linux Node Container | 99.95% |
+| **Relational Database** | Managed PostgreSQL 17 Cluster | Railway High-Availability Dedicated Tier | 99.99% |
+| **Asset Pipeline** | `res.cloudinary.com/boramarka` | Cloudinary Multi-Region WebP/AVIF CDN | 99.99% |
+| **Transactional Mail** | `noreply@boramarka.com.br` | Resend API (DKIM / SPF / DMARC Verified) | 99.90% |
+| **Version Control** | [`thevigillant/boramarka`](https://github.com/thevigillant/boramarka) | GitHub Enterprise CI/CD Pipeline | Active |
 
 ---
 
-## 💡 System Architecture Overview
-
-**BoraMarka** is a multi-tenant SaaS engineered both for **service establishments** (barbershops, beauty salons, health clinics, tattoo studios, pet centers) and **custom-order makers & confectioneries** (cakes, pastries, gourmet gift boxes, buffets, artisanal crafts).
+## 2. System Architecture
 
 ```mermaid
 graph TD
-    Client["📱 Client Web Storefront & Admin Portal (React 18 + Vite 5)"] -->|HTTPS / REST API| Edge["🛡️ Vercel Edge Global Network"]
-    Edge -->|DNS / Reverse Proxy| Server["⚡ Fastify Backend (TypeScript 5)"]
+    Client["Client Web Storefront & Merchant Dashboard (React 18 + Vite 5 + Tailwind)"] -->|HTTPS / REST API| Edge["Vercel Global Edge Network"]
+    Edge -->|Reverse Proxy / SSL Termination| API["Fastify API Gateway (Node.js + TypeScript 5)"]
     
-    subgraph Security & Validation Layer
-        Server -->|Input Sanitization| Zod["🛡️ Zod Runtime Schema Validation"]
-        Server -->|Authentication & RBAC| JWT["🔒 JWT + Fastify Rate Limit + Helmet"]
-        Server -->|Anti-Tampering Guard| AntiFraud["🛡️ Server-Side Price & Date Guard"]
+    subgraph Security & Policy Enforcement Layer
+        API --> RateLimit["Per-Route Adaptive Rate Limiting (10 req/min Order, 30 req/min Track)"]
+        API --> InputSanitizer["Input Sanitization & CSS Injection Neutralizer"]
+        API --> AuthGuard["JWT Token & Merchant Scope Verification"]
+        API --> AntiTamper["Server-Side Pricing & Lead-Time Tamper Guard"]
     end
 
-    subgraph Core Engines
-        Zod --> Encomenda["🎂 BoraEncomenda Engine & Kanban v2.5"]
-        Zod --> PixEngine["⚡ Bacen BR Code / EMVCo Pix Payload Engine"]
-        Zod --> Tracking["📡 Live Order Tracking & Auto-Refresh (30s)"]
-        Zod --> WAEngine["💬 Zero-Friction 1-Click WhatsApp Router"]
-        Zod --> Scheduling["📅 Smart Slot Scheduling & Calendar Sync"]
-        Zod --> Upload["📸 Cloudinary Auto-Compression Media Pipeline"]
+    subgraph Domain Engine Services
+        RateLimit & InputSanitizer & AuthGuard & AntiTamper --> EncomendaEngine["BoraEncomenda Engine (Catalog, Custom Fields, Cart)"]
+        RateLimit & InputSanitizer & AuthGuard & AntiTamper --> PixEngine["Bacen EMVCo QRCPS-MPM PIX Engine (CRC16-CCITT)"]
+        RateLimit & InputSanitizer & AuthGuard & AntiTamper --> BookingEngine["Smart Slot Booking & Resource Calendar Engine"]
+        RateLimit & InputSanitizer & AuthGuard & AntiTamper --> OrderTracker["Live Order Tracking & 30s Polling State Machine"]
+        RateLimit & InputSanitizer & AuthGuard & AntiTamper --> WhatsAppDispatcher["Automated Stage WhatsApp Dispatcher (+55 DDI/DDD)"]
+        RateLimit & InputSanitizer & AuthGuard & AntiTamper --> MediaService["Cloudinary Dynamic Resizing Pipeline"]
     end
     
-    subgraph Persistence Layer
-        Encomenda & PixEngine & Tracking & WAEngine & Scheduling & Upload --> Prisma["💎 Prisma 5 ORM"]
-        Prisma -->|ACID Transactions & Connection Pooling| DB[("🐘 PostgreSQL 17 Database")]
+    subgraph Storage & Persistence Tier
+        EncomendaEngine & PixEngine & BookingEngine & OrderTracker & WhatsAppDispatcher & MediaService --> Prisma["Prisma 5 ORM (Connection Pooler)"]
+        Prisma --> DB[("PostgreSQL 17 Database Engine")]
     end
 ```
 
 ---
 
-## 💎 Core Capabilities & Engineering Highlights
+## 3. Core Modules & Engine Specifications
 
-### 🎂 BoraEncomenda Engine (v2.5)
-- **High-Converting Digital Storefront (`/:username/loja`)**: Modern responsive catalog with category filters, dynamic customization questions, high-res photos, and smart cart.
-- **⚡ Official Bacen BR Code / PIX Copia e Cola with Automatic Amount**:
-  - Implements standard EMVCo QRCPS-MPM with CRC16-CCITT checksum.
-  - Generates instant high-res QR Codes in SVG/Canvas.
-  - When the client copies and pastes the code into their banking app (Nubank, Itaú, Inter, Bradesco), **the exact deposit amount and store name are automatically filled**.
-  - **Zero technical barrier**: The merchant simply inputs their standard PIX key (CPF, phone, email, or random key). No merchant developer accounts or API keys required.
-- **💬 Zero-Friction WhatsApp Notification Workflow**:
-  - Automated pre-formatted message dispatch upon Kanban stage transitions (`CONFIRMADO`, `EM_PRODUCAO`, `PRONTO`, `ENTREGUE`).
-  - Strict segregation between merchant's WhatsApp customer service phone and bank PIX key.
-  - Smart Brazilian DDI/DDD normalization (+55).
-- **📡 Live Order Tracking Page (`/pedido/:orderNumber/rastrear`)**:
-  - Dynamic status-themed gradient heroes.
-  - Real-time animated vertical timeline with stage progress bars.
-  - **30-second background auto-refresh countdown**: updates status automatically without page reload.
-  - Pulsing *"Ao Vivo"* live badges when production starts.
-  - Integrated one-click WhatsApp help button.
-- **🛡️ Anti-Fraud & Scam Protection Guard**:
-  - Server-side date validation against past dates or violated lead times (`minAdvanceDays`).
-  - Server-side price recalculation directly from the database (anti-tampering).
-  - Explicit UI alert on Kanban preventing production startup without verified bank balance (protects against scheduled/fake PIX scams).
-  - LGPD-compliant PII masking for public tracking endpoints.
+### 3.1. BoraEncomenda Engine (v3.0)
+- **Cinematic Storefront Interface (`/:username/loja`)**:
+  - Dark Luxury design system with ambient mesh lighting and frosted glassmorphic containers.
+  - Automated 6-second rotating widescreen featured showcase (21:9 aspect ratio) with linear progress indicators.
+  - Real-time availability simulator (Scheduling HUD) verifying lead time (`minAdvanceDays`) dynamically before checkout.
+  - Recent Arrivals section highlighting products listed within the last 14 days.
+  - Client-side persistent Wishlist storing saved items via browser storage with dedicated filter chips.
+  - Integrated Bespoke VIP Concierge card directing custom orders directly to WhatsApp.
+- **Bacen EMVCo Standard PIX Payload Engine**:
+  - Implements official EMVCo QRCPS-MPM standard payload generation with CRC16-CCITT checksum calculation.
+  - Auto-fills exact deposit amount (`depositAmount` or 100% full payment) and merchant identity in consumer banking applications (Nubank, Itaú, Bradesco, Inter).
+  - No merchant developer credentials required; operates seamlessly with standard PIX keys.
+- **Zero-Friction WhatsApp Notification Pipeline**:
+  - Automatic dispatch of structured message templates across Kanban lifecycle transitions (`CONFIRMADO`, `EM_PRODUCAO`, `PRONTO`, `ENTREGUE`).
+  - Separation between merchant contact WhatsApp numbers and banking PIX keys.
+  - Brazilian phone normalization (+55 with DDD sanitization).
+- **Live Real-Time Order Tracking (`/pedido/:orderNumber/rastrear`)**:
+  - Dynamic status timeline with stage completion bars.
+  - 30-second background polling cycle updating order state without full page refreshes.
+  - PII masking enforcing LGPD compliance for public URL sharing.
 
-### 📅 Smart Appointment Booking Engine
-- **Service Showcase**: Visual merchandising with duration badges, multi-photo carousels, and upsell combo add-ons.
-- **Automated Slot Computation**: Real-time calendar availability calculation taking into account break times, operating hours, and concurrent staff limits.
-- **Social Proof & Verified Reviews**: Star ratings, client testimonials, and automated review moderation.
+### 3.2. Automated Service Scheduling Engine
+- **Calendar & Slot Computing**:
+  - Concurrent resource calculation incorporating lunch breaks, individual buffer times, and operating windows.
+  - Multi-service cart checkout allowing combined procedures in single booking slots.
+- **Client Rating & Feedback Lifecycle**:
+  - Post-appointment customer satisfaction tracking with automated review aggregation.
 
 ---
 
-## 🏗️ Technology Stack
+## 4. Security Architecture & Threat Mitigation
 
-| Layer | Technology | Key Specifications |
+| Threat Vector | Mitigation Strategy | Implementation Detail |
 | :--- | :--- | :--- |
-| **Frontend UI** | React 18, Vite 5, Tailwind CSS | SPA architecture, Lucide Icons, Glassmorphism, Theme Engine |
-| **QR & Pix Engine** | `qrcode`, Custom Bacen EMVCo Generator | CRC16 CCITT, SVG/Canvas DataURL rendering |
-| **Backend API** | Fastify v4, TypeScript 5, Node.js | Low-overhead routing, Schema serialization, JWT, Rate Limiter, Helmet |
-| **Validation** | Zod v3 | Runtime payload validation, Type inference, Sanitization |
-| **Database & ORM** | PostgreSQL 17, Prisma 5 | High-concurrency ACID transactions, Schema migrations, Connection pooling |
-| **Unit Testing** | Vitest | 100% test pass rate across critical validators and PIX generators |
-| **Media Pipeline** | Cloudinary REST API | High-res image storage, auto-scaling and format optimization |
-| **Email Infrastructure** | Resend API HTTP | Transactional DKIM/SPF authenticated email delivery (`boramarka.com.br`) |
-| **Deployment & CI/CD** | Vercel (FE) + Railway (BE) | Global CDN edge network and containerized microservice deployments |
+| **CSS / DOM Injection** | Regular expression color sanitizer | Rejects malicious style strings; enforces strict `#RGB`, `#RRGGBB`, and bounded functional color expressions. |
+| **Cart Price Tampering** | Server-side pricing recalculation | Ignores client-provided subtotals; queries database product records inside transactional boundary. |
+| **Lead-Time Violation** | Server-side calendar delta check | Verifies `deliveryDate - today >= minAdvanceDays` before persisting order entity. |
+| **Credential Leakage** | API response payload filtering | Completely removes sensitive API tokens (`mpAccessToken`) and PIX keys from public storefront GET payloads. |
+| **PII Scraping / Enumeration** | Deterministic token authorization & PII masking | Masks customer names, phones, emails, and street addresses unless accessed with 16-character cancellation/security token. |
+| **DoS / Brute Force** | Per-route tiered rate limiting | 10 requests/minute on order creation (`POST /api/store/:username/order`); 30 requests/minute on tracking lookup. |
 
 ---
 
-## 🔌 REST API Directory
+## 5. Technology Stack
 
-```
-/api
-├── /storefront
-│   ├── GET    /:username               # Public store profile, products & order settings
-│   ├── POST   /:username/order         # Place public custom order with Bacen Pix deposit
-│   └── GET    /tracking/:trackingCode  # Public real-time order status tracking with LGPD masking
-├── /products                           # Custom-order product catalog & categories
-│   ├── GET    /                        # List store products & customization questions
-│   ├── POST   /                        # Create product with lead time, photos & options
-│   ├── PUT    /:id                     # Update product details
-│   └── DELETE /:id                     # Remove product
-├── /orders                             # BoraEncomenda production management
-│   ├── GET    /                        # Store orders with status filters
-│   ├── GET    /stats                   # Order KPIs, revenue & pending counts
-│   └── PATCH  /:id/status              # Kanban stage transition (NOVO -> ENTREGUE)
-├── /upload                             # Cloudinary high-res image pipeline
-├── /auth                               # Multi-tenant admin & operator authentication
-├── /services                           # Services & upsell combos
-├── /schedule                           # Time-slot appointment bookings
-├── /reviews                            # Verified social proof reviews
-├── /finance                            # Cash flow ledger & transaction metrics
-└── /support                            # Helpdesk tickets & CSAT engine
-```
+### Frontend Application
+- **Runtime & Tooling**: Node.js 20+, React 18, Vite 5, TypeScript 5
+- **Styling & Design System**: Tailwind CSS v3, Custom Keyframe Animations, Glassmorphism
+- **Iconography**: Lucide Icons
+- **QR Code Generation**: `qrcode` DataURL Generator, Custom EMVCo Generator
+
+### Backend API
+- **Framework**: Fastify v4 (High-Throughput Node.js REST API)
+- **ORM & Data Layer**: Prisma 5, PostgreSQL 17
+- **Security & Middleware**: `@fastify/rate-limit`, `@fastify/helmet`, `@fastify/jwt`, `bcryptjs`
+- **Validation**: Zod Runtime Schema Validation
 
 ---
 
-## 🛠️ Local Development & Testing
+## 6. Local Development & Installation
 
-### 1. Backend Service
+### Prerequisites
+- Node.js >= 18.0.0
+- PostgreSQL >= 15.0
+- npm >= 9.0.0
+
+### Setup Repository
+
 ```bash
+# Clone the repository
+git clone https://github.com/thevigillant/boramarka.git
+cd boramarka
+
+# Install Backend Dependencies
 cd backend
 npm install
-npx prisma generate
-npm test               # Runs Vitest test suite (22 unit tests)
-npm run dev            # Starts Fastify on http://localhost:3001
+
+# Setup Environment Variables
+cp .env.example .env
+
+# Run Database Migrations
+npx prisma migrate dev
+
+# Install Frontend Dependencies
+cd ../frontend
+npm install
 ```
 
-### 2. Frontend Application
+### Starting Development Servers
+
 ```bash
+# Terminal 1 - Backend (Port 3333)
+cd backend
+npm run dev
+
+# Terminal 2 - Frontend (Port 5173)
 cd frontend
-npm install
-npm test               # Runs Vitest test suite (10 unit tests)
-npm run build          # Validates TypeScript compilation & Vite bundle
-npm run dev            # Starts Vite on http://localhost:5173
+npm run dev
 ```
 
 ---
 
-## 📄 License & Proprietary Notice
+## 7. Production Build & Deployment
 
-Copyright © 2026 BoraMarka S.A. All rights reserved.
-Developed with Big Tech engineering standards for high reliability and exceptional user experience.
+```bash
+# Build Frontend Bundle
+cd frontend
+npm run build
+
+# Build Backend Distribution
+cd ../backend
+npm run build
+```
+
+---
+
+## 8. License & Intellectual Property
+
+Proprietary Software. All rights reserved. BoraMarka Platform — 2026.
