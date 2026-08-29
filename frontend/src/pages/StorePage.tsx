@@ -169,25 +169,116 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
   )
 }
 
-// ─── Date input adaptativo: select no Instagram, nativo nos demais ─────────
-// No Instagram IAB o input[type=date] fecha modais — usa selects nativos.
-// Em qualquer outro browser mantém o input nativo.
-function SmartDateInput(props: CustomDatePickerProps & { nativeClassName?: string }) {
-  const { nativeClassName, ...rest } = props
-  if (isInstagramBrowser()) {
-    return <CustomDatePicker {...rest} />
+// ─── Custom Time Picker (100% à prova de crash no Instagram, WhatsApp e Mobile) ───
+interface CustomTimePickerProps {
+  value: string // 'HH:mm'
+  onChange: (val: string) => void
+  className?: string
+  id?: string
+}
+
+function CustomTimePicker({ value, onChange, className = '', id }: CustomTimePickerProps) {
+  // Deriva hora e minuto do valor atual
+  const [hStr, mStr] = (value || '14:00').split(':')
+  const selHour = hStr !== undefined && hStr !== '' ? parseInt(hStr) : 14
+  const selMinute = mStr !== undefined && mStr !== '' ? parseInt(mStr) : 0
+
+  const hours = Array.from({ length: 17 }, (_, i) => i + 6) // 06:00 até 22:00
+  const minutes = ['00', '15', '30', '45']
+
+  function handleHourChange(newHour: string) {
+    const h = String(parseInt(newHour) || 14).padStart(2, '0')
+    const m = String(selMinute).padStart(2, '0')
+    onChange(`${h}:${m}`)
   }
+
+  function handleMinuteChange(newMin: string) {
+    const h = String(selHour).padStart(2, '0')
+    const m = (newMin || '00').padStart(2, '0')
+    onChange(`${h}:${m}`)
+  }
+
+  const quickPresets = [
+    { label: '09:00 (Manhã)', val: '09:00' },
+    { label: '12:00 (Almoço)', val: '12:00' },
+    { label: '14:00 (Tarde)', val: '14:00' },
+    { label: '17:00 (Fim de Tarde)', val: '17:00' },
+    { label: '19:00 (Noite)', val: '19:00' },
+  ]
+
+  const selectBase = `bg-slate-950 border border-white/15 text-slate-200 font-bold rounded-xl focus:outline-none focus:border-pink-500 transition-all cursor-pointer appearance-none text-center`
+
   return (
-    <input
-      type="date"
-      id={props.id}
-      min={props.min}
-      value={props.value}
-      onChange={e => props.onChange(e.target.value)}
-      className={nativeClassName || props.className || ''}
-      style={{ colorScheme: 'dark' }}
-    />
+    <div className={`space-y-2.5 ${className}`} id={id}>
+      <div className="flex items-center gap-2">
+        {/* Hora */}
+        <div className="flex-1">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Hora
+          </label>
+          <select
+            value={selHour}
+            onChange={e => handleHourChange(e.target.value)}
+            className={`${selectBase} w-full px-3 py-3 text-sm`}
+            aria-label="Hora"
+          >
+            {hours.map(h => (
+              <option key={h} value={h}>
+                {String(h).padStart(2, '0')}h
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <span className="text-pink-400 font-black text-base self-end pb-3">:</span>
+
+        {/* Minuto */}
+        <div className="flex-1">
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+            Minuto
+          </label>
+          <select
+            value={String(selMinute).padStart(2, '0')}
+            onChange={e => handleMinuteChange(e.target.value)}
+            className={`${selectBase} w-full px-3 py-3 text-sm`}
+            aria-label="Minuto"
+          >
+            {minutes.map(m => (
+              <option key={m} value={m}>
+                {m} min
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Atalhos Rápidos */}
+      <div className="flex flex-wrap gap-1.5 pt-0.5">
+        {quickPresets.map(preset => {
+          const isSelected = value === preset.val
+          return (
+            <button
+              key={preset.val}
+              type="button"
+              onClick={() => onChange(preset.val)}
+              className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${
+                isSelected
+                  ? 'bg-pink-500 text-white shadow-sm'
+                  : 'bg-slate-950/80 border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+              }`}
+            >
+              {preset.label}
+            </button>
+          )
+        })}
+      </div>
+    </div>
   )
+}
+
+// ─── Date input universal: usa selects que nunca fecham modais nem travam ───
+function SmartDateInput(props: CustomDatePickerProps & { nativeClassName?: string }) {
+  return <CustomDatePicker {...props} />
 }
 
 interface CartItem {
@@ -1416,18 +1507,16 @@ export function StorePage() {
                   />
                 </div>
 
-                {/* HORÁRIO — linha separada, ocupa metade no mobile */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <div className="col-span-1">
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">Horário Previsto</label>
-                    <input
-                      type="time"
-                      value={deliveryTime}
-                      onChange={e => setDeliveryTime(e.target.value)}
-                      className="w-full bg-slate-950 border border-white/15 text-slate-200 text-sm font-semibold px-3 py-3 rounded-xl focus:outline-none focus:border-pink-500"
-                      style={{ colorScheme: 'dark' }}
-                    />
-                  </div>
+                {/* HORÁRIO — CustomTimePicker à prova de crash e fechamento */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">
+                    Horário Previsto para Retirada / Entrega *
+                  </label>
+                  <CustomTimePicker
+                    value={deliveryTime}
+                    onChange={setDeliveryTime}
+                    className="w-full"
+                  />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-1">
