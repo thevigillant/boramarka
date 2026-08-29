@@ -289,13 +289,113 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
     setOrders(updatedOrders || [])
   }
 
-  // ── Drag and Drop & Navegação Lateral do Kanban ──────────────────────────────
+  // ── Drag and Drop de Pedidos & Arraste do Tabuleiro (Board Drag-to-Scroll) ──
   const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null)
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  const [isBoardDragging, setIsBoardDragging] = useState(false)
   const kanbanScrollRef = useRef<HTMLDivElement | null>(null)
+
+  // Referências para física suave de arraste de tela com o mouse (Mouse Drag-to-Scroll)
+  const isMouseDownRef = useRef(false)
+  const startXRef = useRef(0)
+  const scrollLeftRef = useRef(0)
+  const velocityRef = useRef(0)
+  const lastXRef = useRef(0)
+  const lastTimeRef = useRef(0)
+  const animationFrameRef = useRef<number | null>(null)
+
+  function stopMomentum() {
+    if (animationFrameRef.current !== null) {
+      cancelAnimationFrame(animationFrameRef.current)
+      animationFrameRef.current = null
+    }
+  }
+
+  function applyMomentum() {
+    stopMomentum()
+    if (Math.abs(velocityRef.current) < 0.2 || !kanbanScrollRef.current) return
+
+    const friction = 0.94 // Desaceleração suave e natural
+    velocityRef.current *= friction
+
+    if (kanbanScrollRef.current) {
+      kanbanScrollRef.current.scrollLeft -= velocityRef.current
+    }
+
+    if (Math.abs(velocityRef.current) > 0.2) {
+      animationFrameRef.current = requestAnimationFrame(applyMomentum)
+    }
+  }
+
+  function handleBoardMouseDown(e: React.MouseEvent<HTMLDivElement>) {
+    // Se o clique foi em um botão, input, link ou card de pedido draggable, não arrasta o tabuleiro
+    const target = e.target as HTMLElement
+    if (
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('a') ||
+      target.closest('[data-order-card]')
+    ) {
+      return
+    }
+
+    if (e.button !== 0 || !kanbanScrollRef.current) return
+
+    stopMomentum()
+    isMouseDownRef.current = true
+    startXRef.current = e.pageX - kanbanScrollRef.current.offsetLeft
+    scrollLeftRef.current = kanbanScrollRef.current.scrollLeft
+    lastXRef.current = e.pageX
+    lastTimeRef.current = performance.now()
+    velocityRef.current = 0
+    setIsBoardDragging(true)
+  }
+
+  function handleBoardMouseMove(e: React.MouseEvent<HTMLDivElement>) {
+    if (!isMouseDownRef.current || !kanbanScrollRef.current) return
+    e.preventDefault()
+
+    const now = performance.now()
+    const dt = Math.max(1, now - lastTimeRef.current)
+    const dx = e.pageX - lastXRef.current
+
+    // Calcula velocidade para inércia pós-soltura
+    velocityRef.current = (dx / dt) * 16
+
+    lastXRef.current = e.pageX
+    lastTimeRef.current = now
+
+    const currentX = e.pageX - kanbanScrollRef.current.offsetLeft
+    const walk = (currentX - startXRef.current) * 1.3
+    kanbanScrollRef.current.scrollLeft = scrollLeftRef.current - walk
+  }
+
+  function handleBoardMouseUp() {
+    if (isMouseDownRef.current) {
+      isMouseDownRef.current = false
+      setIsBoardDragging(false)
+      applyMomentum()
+    }
+  }
+
+  function handleBoardMouseLeave() {
+    if (isMouseDownRef.current) {
+      isMouseDownRef.current = false
+      setIsBoardDragging(false)
+      applyMomentum()
+    }
+  }
+
+  function handleBoardWheel(e: React.WheelEvent<HTMLDivElement>) {
+    if (!kanbanScrollRef.current) return
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      kanbanScrollRef.current.scrollLeft += e.deltaY * 0.9
+    }
+  }
 
   function scrollKanban(direction: 'left' | 'right') {
     if (kanbanScrollRef.current) {
+      stopMomentum()
       const scrollAmount = direction === 'left' ? -340 : 340
       kanbanScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
     }
@@ -642,10 +742,21 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
             </div>
           </div>
 
-          {/* Container horizontal com scroll suave e ref para navegação lateral */}
+          {/* Container horizontal com Mouse Drag-to-Scroll ultra suave + Wheel */}
           <div
             ref={kanbanScrollRef}
-            className="flex gap-4 overflow-x-auto pb-6 pt-1 no-scrollbar items-start scroll-smooth"
+            onMouseDown={handleBoardMouseDown}
+            onMouseMove={handleBoardMouseMove}
+            onMouseUp={handleBoardMouseUp}
+            onMouseLeave={handleBoardMouseLeave}
+            onWheel={handleBoardWheel}
+            className={`flex gap-4 overflow-x-auto pb-6 pt-1 items-start select-none ${
+              isBoardDragging ? 'cursor-grabbing' : 'cursor-grab'
+            }`}
+            style={{
+              scrollbarWidth: 'thin',
+              WebkitOverflowScrolling: 'touch',
+            }}
           >
             {kanbanColumns.map(col => {
               const colOrders = orders.filter(o => o.status === col.key)
@@ -705,6 +816,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                       return (
                         <div
                           key={order.id}
+                          data-order-card="true"
                           draggable={true}
                           onDragStart={(e) => {
                             e.dataTransfer.setData('text/plain', String(order.id))
@@ -715,7 +827,11 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                             setDraggedOrderId(null)
                             setDragOverColumn(null)
                           }}
-                          onClick={() => setSelectedOrder(order)}
+                          onClick={() => {
+                            if (!isBoardDragging) {
+                              setSelectedOrder(order)
+                            }
+                          }}
                           className={`bg-[#1A2235] hover:bg-[#202b42] p-4 rounded-xl cursor-grab active:cursor-grabbing transition-all border border-slate-800 hover:border-slate-700 border-l-4 ${col.borderLeft} shadow-sm hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between group ${
                             isBeingDragged ? 'opacity-30 border-dashed border-pink-500 scale-95' : ''
                           }`}
