@@ -28,9 +28,8 @@ export default async function storefrontRoutes(app: FastifyInstance) {
         accentColor: true,
         secondaryColor: true,
         publicTheme: true,
-        // 🛡️ Nunca expor pixKey na carga inicial — apenas após criação do pedido
-        // 🛡️ mpAccessToken é credencial sensível — usar flag booleana hasMercadoPago
         mpAccessToken: true,
+        pixKey: true,
         orderSettings: true,
         productCategories: {
           orderBy: { position: 'asc' },
@@ -55,6 +54,19 @@ export default async function storefrontRoutes(app: FastifyInstance) {
 
     if (!admin) {
       return reply.status(404).send({ error: 'Loja não encontrada' });
+    }
+
+    // Sincronização e auto-reparo de Chave PIX proativo na consulta da loja
+    if (admin.pixKey && admin.orderSettings && admin.orderSettings.pixKey !== admin.pixKey.trim()) {
+      prisma.orderSettings.update({
+        where: { id: admin.orderSettings.id },
+        data: { pixKey: admin.pixKey.trim() },
+      }).catch(() => {});
+    } else if (!admin.pixKey && admin.orderSettings?.pixKey) {
+      prisma.admin.update({
+        where: { id: admin.id },
+        data: { pixKey: admin.orderSettings.pixKey.trim() },
+      }).catch(() => {});
     }
 
     if (admin.orderSettings && !admin.orderSettings.enabled) {
