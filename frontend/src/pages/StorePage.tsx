@@ -85,6 +85,10 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
   const years = Array.from({ length: 3 }, (_, i) => currentYear + i)
 
   const months = [
+    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
+    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+  ]
+  const monthsFull = [
     'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
     'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
   ]
@@ -116,15 +120,18 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
     onChange(dateStr)
   }
 
-  const selectBase = `bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-2 py-3 rounded-xl focus:outline-none focus:border-pink-500 transition-all cursor-pointer appearance-none text-center`
+  // Nomes exibidos para o mês selecionado (nome completo)
+  const selectedMonthLabel = selMonth ? monthsFull[selMonth - 1] : 'Mês'
+
+  const selectBase = `bg-slate-950 border border-white/15 text-slate-200 font-semibold rounded-xl focus:outline-none focus:border-pink-500 transition-all cursor-pointer appearance-none text-center`
 
   return (
-    <div className={`flex gap-1.5 ${className}`} id={id}>
-      {/* Dia */}
+    <div className={`flex gap-2 ${className}`} id={id}>
+      {/* Dia — largura fixa estreita */}
       <select
         value={selDay || ''}
         onChange={e => handleChange('day', e.target.value)}
-        className={`${selectBase} flex-1`}
+        className={`${selectBase} w-14 min-w-[3.25rem] px-1 py-3 text-sm shrink-0`}
         aria-label="Dia"
       >
         <option value="">Dia</option>
@@ -133,24 +140,24 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
         ))}
       </select>
 
-      {/* Mês */}
+      {/* Mês — ocupa o espaço restante */}
       <select
         value={selMonth || ''}
         onChange={e => handleChange('month', e.target.value)}
-        className={`${selectBase} flex-[2]`}
+        className={`${selectBase} flex-1 min-w-0 px-1 py-3 text-sm`}
         aria-label="Mês"
       >
         <option value="">Mês</option>
-        {months.map((name, idx) => (
+        {monthsFull.map((name, idx) => (
           <option key={idx + 1} value={idx + 1}>{name}</option>
         ))}
       </select>
 
-      {/* Ano */}
+      {/* Ano — largura fixa para caber 4 dígitos */}
       <select
         value={selYear || ''}
         onChange={e => handleChange('year', e.target.value)}
-        className={`${selectBase} flex-1`}
+        className={`${selectBase} w-20 min-w-[5rem] px-1 py-3 text-sm shrink-0`}
         aria-label="Ano"
       >
         <option value="">Ano</option>
@@ -163,6 +170,8 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
 }
 
 // ─── Date input adaptativo: select no Instagram, nativo nos demais ─────────
+// No Instagram IAB o input[type=date] fecha modais — usa selects nativos.
+// Em qualquer outro browser mantém o input nativo.
 function SmartDateInput(props: CustomDatePickerProps & { nativeClassName?: string }) {
   const { nativeClassName, ...rest } = props
   if (isInstagramBrowser()) {
@@ -176,6 +185,7 @@ function SmartDateInput(props: CustomDatePickerProps & { nativeClassName?: strin
       value={props.value}
       onChange={e => props.onChange(e.target.value)}
       className={nativeClassName || props.className || ''}
+      style={{ colorScheme: 'dark' }}
     />
   )
 }
@@ -230,6 +240,7 @@ export function StorePage() {
   const [modalCustomizations, setModalCustomizations] = useState<Record<string, any>>({})
   const [modalNotes, setModalNotes] = useState('')
   const [activePhotoIndex, setActivePhotoIndex] = useState(0)
+  const [modalError, setModalError] = useState('')
 
   // Cart & Checkout
   const [cart, setCart] = useState<CartItem[]>([])
@@ -318,6 +329,7 @@ export function StorePage() {
     setSelectedProduct(product)
     setModalQuantity(1)
     setModalNotes('')
+    setModalError('')
     setActivePhotoIndex(0)
     const initialCustoms: Record<string, any> = {}
     product.customFields?.forEach(cf => {
@@ -330,9 +342,11 @@ export function StorePage() {
 
   function handleAddToCart() {
     if (!selectedProduct) return
+    setModalError('')
     for (const cf of selectedProduct.customFields || []) {
+      const fieldLabel = cf.label?.trim() || `campo obrigatório`
       if (cf.required && !modalCustomizations[cf.label]?.trim()) {
-        alert(`O campo "${cf.label}" é obrigatório.`)
+        setModalError(`⚠️ O campo "${fieldLabel}" é obrigatório antes de adicionar.`)
         return
       }
     }
@@ -344,6 +358,7 @@ export function StorePage() {
       subtotal: selectedProduct.price * modalQuantity,
     }])
     setSelectedProduct(null)
+    setModalError('')
   }
 
   function handleRemoveFromCart(index: number) {
@@ -1220,34 +1235,55 @@ export function StorePage() {
                 />
               </div>
 
-              {/* Quantity + Add Button */}
-              <div className="pt-4 border-t border-white/10 flex items-center gap-4">
-                <div className="flex items-center gap-3 bg-slate-950 p-2 rounded-2xl border border-white/10">
-                  <button
-                    type="button"
-                    onClick={() => setModalQuantity(q => Math.max(1, q - 1))}
-                    className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all"
-                  >
-                    <Minus className="w-3.5 h-3.5" />
-                  </button>
-                  <span className="font-bold text-sm text-white px-2">{modalQuantity}</span>
-                  <button
-                    type="button"
-                    onClick={() => setModalQuantity(q => Math.min(selectedProduct.maxQuantityPerOrder || 99, q + 1))}
-                    className="w-8 h-8 rounded-xl bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                  </button>
+              {/* Inline validation error — shown instead of alert() */}
+              {modalError && (
+                <div className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold animate-fade-in">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{modalError}</span>
+                </div>
+              )}
+
+              {/* Quantidade + Botão Adicionar */}
+              <div className="pt-4 border-t border-white/10 space-y-3">
+                {/* Linha 1: Preço total */}
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">Total do item</span>
+                  <span className="text-lg font-black text-pink-400">
+                    {formatCurrency(selectedProduct.price * modalQuantity)}
+                  </span>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleAddToCart}
-                  className="flex-1 py-3.5 rounded-2xl luxury-gradient text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Adicionar ao Pedido · {formatCurrency(selectedProduct.price * modalQuantity)}</span>
-                </button>
+                {/* Linha 2: Stepper + Botão */}
+                <div className="flex items-center gap-3">
+                  {/* Stepper */}
+                  <div className="flex items-center gap-0 bg-slate-950 rounded-2xl border border-white/10 shrink-0 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setModalQuantity(q => Math.max(1, q - 1))}
+                      className="w-10 h-11 bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all"
+                    >
+                      <Minus className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="font-black text-sm text-white px-3 select-none">{modalQuantity}</span>
+                    <button
+                      type="button"
+                      onClick={() => setModalQuantity(q => Math.min(selectedProduct.maxQuantityPerOrder || 99, q + 1))}
+                      className="w-10 h-11 bg-white/5 hover:bg-white/10 text-white flex items-center justify-center transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Botão Adicionar */}
+                  <button
+                    type="button"
+                    onClick={handleAddToCart}
+                    className="flex-1 min-w-0 py-3 rounded-2xl luxury-gradient text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl hover:scale-[1.02] active:scale-95 transition-all"
+                  >
+                    <ShoppingBag className="w-4 h-4 shrink-0" />
+                    <span className="truncate">Adicionar ao Pedido</span>
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -1352,7 +1388,7 @@ export function StorePage() {
                   <label className="block text-[11px] font-semibold text-slate-300 mb-1">Seu Nome Completo *</label>
                   <input type="text" value={clientName} onChange={e => setClientName(e.target.value)} placeholder="Ex: Maria da Silva" className="w-full bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500" required maxLength={120} />
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 gap-3">
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">WhatsApp com DDD *</label>
                     <input type="tel" value={clientPhone} onChange={e => setClientPhone(e.target.value)} placeholder="(11) 99999-9999" className="w-full bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500" required />
@@ -1368,21 +1404,29 @@ export function StorePage() {
               <div className="space-y-3 pt-2">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Agendamento de Entrega</span>
 
-                <div className="grid grid-cols-2 gap-3">
-                  {/* DATA — usa SmartDateInput para ser compatível com Instagram */}
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">Data *</label>
-                    <SmartDateInput
-                      value={deliveryDate}
-                      min={minDeliveryDate}
-                      onChange={setDeliveryDate}
-                      nativeClassName="w-full bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500"
-                      className="w-full"
+                {/* DATA — ocupa a linha inteira para o SmartDateInput ter espaço */}
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">Data *</label>
+                  <SmartDateInput
+                    value={deliveryDate}
+                    min={minDeliveryDate}
+                    onChange={setDeliveryDate}
+                    nativeClassName="w-full bg-slate-950 border border-white/15 text-slate-200 text-sm font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500"
+                    className="w-full"
+                  />
+                </div>
+
+                {/* HORÁRIO — linha separada, ocupa metade no mobile */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  <div className="col-span-1">
+                    <label className="block text-[11px] font-semibold text-slate-300 mb-1.5">Horário Previsto</label>
+                    <input
+                      type="time"
+                      value={deliveryTime}
+                      onChange={e => setDeliveryTime(e.target.value)}
+                      className="w-full bg-slate-950 border border-white/15 text-slate-200 text-sm font-semibold px-3 py-3 rounded-xl focus:outline-none focus:border-pink-500"
+                      style={{ colorScheme: 'dark' }}
                     />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-semibold text-slate-300 mb-1">Horário Previsto</label>
-                    <input type="time" value={deliveryTime} onChange={e => setDeliveryTime(e.target.value)} className="w-full bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500" />
                   </div>
                 </div>
 
