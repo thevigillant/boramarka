@@ -1,4 +1,4 @@
-import { Camera, Store, Instagram, Copy, Calendar, ShoppingBag, Layers, CheckCircle2 } from 'lucide-react'
+import { Camera, Store, Instagram, Copy, Calendar, ShoppingBag, Layers, CheckCircle2, Loader2, Save, Check } from 'lucide-react'
 
 interface PersonalizarTabProps {
   handleBrandingSubmit: (e: any) => void
@@ -11,6 +11,8 @@ interface PersonalizarTabProps {
   adminInfo: any
   subscription: any
   showToast: (msg: string, type?: 'success' | 'error') => void
+  savingBranding?: boolean
+  brandingSuccess?: boolean
 }
 
 export function PersonalizarTab({
@@ -24,14 +26,22 @@ export function PersonalizarTab({
   adminInfo,
   subscription,
   showToast,
+  savingBranding = false,
+  brandingSuccess = false,
 }: PersonalizarTabProps) {
   return (
     <div className="animate-slide-up space-y-6">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
         <div>
           <h2 className="text-2xl font-black text-slate-900 dark:text-white">Personalizar Página & Perfil</h2>
           <p className="text-sm text-slate-500 dark:text-slate-400">Configure o modelo de atuação, identidade visual e banner do seu negócio</p>
         </div>
+        {brandingSuccess && (
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-black uppercase tracking-wider animate-slide-up">
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+            Alterações Salvas!
+          </div>
+        )}
       </div>
 
       {/* Grid layout: Left = Form, Right = Mobile Simulator Preview */}
@@ -406,8 +416,46 @@ export function PersonalizarTab({
             </div>
           </div>
 
-          <button type="submit" className="w-full py-5 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-lg transition-all shadow-xl shadow-pink-500/20 mt-4">
-            Salvar Identidade Visual
+          {/* Feedback banner right above the button when saved */}
+          {brandingSuccess && (
+            <div className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-200 rounded-2xl text-sm font-semibold shadow-sm animate-slide-up">
+              <div className="w-9 h-9 rounded-xl bg-emerald-500 text-white flex items-center justify-center flex-shrink-0 shadow-md">
+                <Check className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <p className="font-extrabold text-sm text-slate-900 dark:text-white">Identidade visual salva com sucesso!</p>
+                <p className="text-xs text-slate-600 dark:text-slate-400">As configurações da sua loja foram atualizadas e já estão visíveis.</p>
+              </div>
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={savingBranding}
+            className={`w-full py-5 rounded-2xl text-white font-black text-lg transition-all shadow-xl flex items-center justify-center gap-3 mt-4 relative overflow-hidden ${
+              savingBranding
+                ? 'bg-gradient-to-r from-orange-400 to-pink-400 cursor-wait opacity-90'
+                : brandingSuccess
+                ? 'bg-gradient-to-r from-emerald-500 to-teal-500 shadow-emerald-500/25 hover:opacity-95'
+                : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 shadow-pink-500/20 active:scale-[0.99] cursor-pointer'
+            }`}
+          >
+            {savingBranding ? (
+              <>
+                <Loader2 className="w-6 h-6 animate-spin text-white" />
+                <span>Salvando alterações...</span>
+              </>
+            ) : brandingSuccess ? (
+              <>
+                <CheckCircle2 className="w-6 h-6 text-white" />
+                <span>Salvo com Sucesso!</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-5 h-5 text-white/90" />
+                <span>Salvar Identidade Visual</span>
+              </>
+            )}
           </button>
         </form>
 

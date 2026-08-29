@@ -807,14 +807,26 @@ export default function Dashboard() {
     e.target.value = ''
   }
 
+  const [savingBranding, setSavingBranding] = useState(false)
+  const [brandingSuccess, setBrandingSuccess] = useState(false)
+
   const handleBrandingSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (savingBranding) return
+    setSavingBranding(true)
+    setBrandingSuccess(false)
     try {
       await api.updateProfile(brandingForm)
       setAdminInfo(prev => prev ? { ...prev, ...brandingForm } : prev)
-      showToast('Identidade visual salva com sucesso!')
+      showToast('Identidade visual salva com sucesso!', 'success')
+      setBrandingSuccess(true)
+      setTimeout(() => {
+        setBrandingSuccess(false)
+      }, 4000)
     } catch (err: any) {
-      showToast(err.message, 'error')
+      showToast(err.message || 'Erro ao salvar identidade visual', 'error')
+    } finally {
+      setSavingBranding(false)
     }
   }
 
@@ -3290,6 +3302,8 @@ export default function Dashboard() {
             adminInfo={adminInfo}
             subscription={subscription}
             showToast={showToast}
+            savingBranding={savingBranding}
+            brandingSuccess={brandingSuccess}
           />
         )}
         {activeTab === 'faturamento' && (
@@ -5151,6 +5165,14 @@ export default function Dashboard() {
           <span className="text-[10px] tracking-tight">Mais</span>
         </button>
       </nav>
+
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
 
     </div>
   )
