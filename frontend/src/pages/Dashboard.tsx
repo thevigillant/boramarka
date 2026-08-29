@@ -179,7 +179,7 @@ export default function Dashboard() {
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
-    type TabIdType = 'overview' | 'boraia' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
+    type TabIdType = 'overview' | 'boraia' | 'boraencomenda' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
     interface NavItem {
       id: TabIdType
       label: string
@@ -263,21 +263,19 @@ export default function Dashboard() {
         tabId: 'overview' as TabIdType,
       },
       {
+        id: 'boraencomenda',
+        label: 'BoraEncomenda',
+        icon: ShoppingBag,
+        type: 'single' as const,
+        tabId: 'boraencomenda' as TabIdType,
+      },
+      {
         id: 'boraia',
         label: 'BoraIA',
         icon: Sparkles,
         type: 'single' as const,
         tabId: 'boraia' as TabIdType,
       },
-      ...(bType === 'HYBRID' ? [
-        {
-          id: 'boraencomenda',
-          label: 'BoraEncomenda',
-          icon: ShoppingBag,
-          type: 'single' as const,
-          tabId: 'boraencomenda' as TabIdType,
-        }
-      ] : []),
       {
         id: 'operacional',
         label: 'Operacional',
@@ -301,9 +299,7 @@ export default function Dashboard() {
           { id: 'links', label: 'Links de Venda', icon: Link2, desc: 'Links para clientes agendarem online' },
           { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
           { id: 'memberships', label: 'Clube de Assinaturas', icon: Gift, desc: 'Planos e assinaturas recorrentes de clientes' },
-          ...(bType === 'SERVICES' ? [
-            { id: 'boraencomenda', label: 'BoraEncomenda', icon: ShoppingBag, desc: 'Módulo de vendas sob encomenda e cardápio' }
-          ] : [])
+          { id: 'boraencomenda', label: 'BoraEncomenda', icon: ShoppingBag, desc: 'Módulo de vendas sob encomenda e cardápio' },
         ] as NavItem[]
       },
       {
@@ -2769,6 +2765,35 @@ export default function Dashboard() {
               </button>
             </div>
 
+            {/* Card de Destaque BoraEncomenda no topo do Drawer */}
+            <button
+              onClick={() => {
+                setActiveTab('boraencomenda')
+                setMobileMenuOpen(false)
+              }}
+              className={`w-full p-4 rounded-2xl flex items-center justify-between font-bold text-sm transition-all mb-4 ${
+                activeTab === 'boraencomenda'
+                  ? 'bg-gradient-to-r from-pink-500 to-violet-600 text-white shadow-lg shadow-pink-500/25 ring-2 ring-pink-400'
+                  : 'bg-gradient-to-r from-pink-500/15 via-purple-500/10 to-violet-500/15 border border-pink-500/30 text-white hover:border-pink-500/60'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-pink-500 text-white shadow-md shadow-pink-500/30 shrink-0">
+                  <ShoppingBag className="w-5 h-5" />
+                </div>
+                <div className="text-left">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-sm text-slate-900 dark:text-white">BoraEncomenda</span>
+                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-pink-500 text-white uppercase tracking-wider">
+                      Vitrine & Pedidos
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-pink-400 dark:text-pink-300 font-medium">Cardápio, vitrine pública e Kanban</p>
+                </div>
+              </div>
+              <ChevronRight className="w-4 h-4 text-pink-400 shrink-0" />
+            </button>
+
             <div className="space-y-3 pb-6">
               {filteredNavCategories.map(cat => {
                 if (cat.type === 'single') {
@@ -5064,6 +5089,68 @@ export default function Dashboard() {
 
       {/* Floating Support Chat Widget */}
       <SupportChatWidget />
+
+      {/* Mobile Bottom Navigation Bar (Acesso Rápido Fixado no Rodapé) */}
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#0D111E]/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-white/10 px-2 py-2 flex items-center justify-around shadow-2xl safe-area-pb">
+        <button
+          onClick={() => setActiveTab('overview')}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'overview'
+              ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">Início</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('boraencomenda')}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all relative ${
+            activeTab === 'boraencomenda'
+              ? 'text-pink-500 font-extrabold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-pink-400'
+          }`}
+        >
+          <div className="relative">
+            <ShoppingBag className="w-5 h-5" />
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
+          </div>
+          <span className="text-[10px] tracking-tight font-bold">Encomendas</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('agendamentos')}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'agendamentos'
+              ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <Calendar className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">Agenda</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('financeiro')}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'financeiro'
+              ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+          }`}
+        >
+          <DollarSign className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">Financeiro</span>
+        </button>
+
+        <button
+          onClick={() => setMobileMenuOpen(true)}
+          className="flex flex-col items-center gap-1 py-1 px-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all"
+        >
+          <Menu className="w-5 h-5" />
+          <span className="text-[10px] tracking-tight">Mais</span>
+        </button>
+      </nav>
 
     </div>
   )

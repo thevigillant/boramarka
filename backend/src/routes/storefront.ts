@@ -369,8 +369,16 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       }
     }
 
-    // Informações para pagamento via PIX (exclusivo para pagamento)
-    const storePixKey = settings?.pixKey || admin.pixKey || '';
+    // Informações para pagamento via PIX (prioriza a chave Pix oficial cadastrada no perfil do profissional)
+    const storePixKey = admin.pixKey?.trim() || settings?.pixKey?.trim() || admin.phone || '';
+
+    // Garante sincronização em background caso o settings estivesse com chave antiga
+    if (admin.pixKey && settings && settings.pixKey !== admin.pixKey.trim()) {
+      prisma.orderSettings.update({
+        where: { id: settings.id },
+        data: { pixKey: admin.pixKey.trim() },
+      }).catch(() => {});
+    }
     
     // Telefone oficial do WhatsApp do profissional (SEMPRE o cadastrado no perfil)
     let rawAdminPhone = (admin.phone || '').replace(/\D/g, '');

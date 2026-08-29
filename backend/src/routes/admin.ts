@@ -231,6 +231,14 @@ export default async function adminRoutes(app: FastifyInstance) {
       },
     });
 
+    // Sincroniza a chave Pix com as configurações do BoraEncomenda automaticamente
+    if (pixKey !== undefined) {
+      await prisma.orderSettings.updateMany({
+        where: { adminId: user.id },
+        data: { pixKey: pixKey.trim() },
+      }).catch((err) => console.error('Erro ao sincronizar orderSettings.pixKey:', err));
+    }
+
     return {
       username: admin.username,
       businessName: admin.businessName,

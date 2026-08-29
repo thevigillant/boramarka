@@ -15,13 +15,13 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
       where: { adminId: user.id },
     });
 
+    const admin = await prisma.admin.findUnique({
+      where: { id: user.id },
+      select: { businessName: true, description: true, bannerUrl: true, pixKey: true, phone: true },
+    });
+
     if (!settings) {
       // Cria configurações padrão se ainda não existirem
-      const admin = await prisma.admin.findUnique({
-        where: { id: user.id },
-        select: { businessName: true, description: true, bannerUrl: true, pixKey: true, phone: true },
-      });
-
       settings = await prisma.orderSettings.create({
         data: {
           adminId: user.id,
@@ -36,6 +36,12 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
           minAdvanceDays: 2,
           pixKey: admin?.pixKey || admin?.phone || '',
         },
+      });
+    } else if (admin?.pixKey && admin.pixKey.trim() !== '' && admin.pixKey.trim() !== settings.pixKey) {
+      // Auto-reparo: se o profissional alterou a chave no perfil geral, sincroniza com orderSettings
+      settings = await prisma.orderSettings.update({
+        where: { adminId: user.id },
+        data: { pixKey: admin.pixKey.trim() },
       });
     }
 
@@ -110,6 +116,14 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
         ...(pixKey !== undefined && { pixKey: pixKey.trim() }),
       },
     });
+
+    // Sincroniza a chave Pix com o perfil do profissional (Admin.pixKey)
+    if (pixKey !== undefined && pixKey.trim() !== '') {
+      await prisma.admin.update({
+        where: { id: user.id },
+        data: { pixKey: pixKey.trim() },
+      }).catch((err) => console.error('Erro ao sincronizar admin.pixKey:', err));
+    }
 
     await createAuditLog(request, {
       action: 'UPDATE_ORDER_SETTINGS',
