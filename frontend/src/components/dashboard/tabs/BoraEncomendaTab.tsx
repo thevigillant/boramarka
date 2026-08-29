@@ -182,6 +182,9 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
       setOrders(ordersRes || [])
       setProducts(productsRes || [])
       setCategories(catsRes || [])
+      if (settingsRes && user?.pixKey && user.pixKey.trim()) {
+        settingsRes.pixKey = user.pixKey.trim()
+      }
       setSettings(settingsRes)
       setStats(statsRes)
     } catch (err) {
@@ -449,7 +452,11 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
     if (!settings) return
     setSavingSettings(true)
     try {
-      const updated = await api.updateOrderSettings(settings)
+      const cleanPixKey = settings.pixKey ? settings.pixKey.trim() : ''
+      const updated = await api.updateOrderSettings({ ...settings, pixKey: cleanPixKey })
+      if (cleanPixKey) {
+        await api.updateProfile({ pixKey: cleanPixKey }).catch(() => {})
+      }
       setSettings(updated)
       alert('Configurações da loja salvas com sucesso!')
     } catch (err: any) {

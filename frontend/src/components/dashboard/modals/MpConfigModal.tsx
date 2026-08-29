@@ -165,15 +165,19 @@ export function MpConfigModal({
             onClick={async () => {
               try {
                 setSavingMpToken(true)
+                const cleanPixKey = pixInputKey.trim()
                 const payload: any = {
-                  pixKey: pixInputKey.trim(),
+                  pixKey: cleanPixKey,
                 }
                 if (mpInputToken.trim() && mpInputToken.trim() !== 'SIMULADOR') {
                   payload.mpAccessToken = mpInputToken.trim()
-                } else if (pixInputKey.trim() && pixInputKey.trim() !== 'SIMULADOR') {
+                } else if (cleanPixKey && cleanPixKey !== 'SIMULADOR') {
                   payload.mpAccessToken = ''
                 }
                 await api.updateProfile(payload)
+                if (cleanPixKey && cleanPixKey !== 'SIMULADOR') {
+                  await api.updateOrderSettings({ pixKey: cleanPixKey }).catch(() => {})
+                }
                 setAdminInfo((prev: any) => prev ? { ...prev, ...payload } : prev)
                 showToast('Configuração de Recebimento por Pix salva!')
                 setShowMpConfigModal(false)

@@ -85,12 +85,18 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
   const years = Array.from({ length: 3 }, (_, i) => currentYear + i)
 
   const months = [
-    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun',
-    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
-  ]
-  const monthsFull = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    { num: 1, label: '01 - Jan' },
+    { num: 2, label: '02 - Fev' },
+    { num: 3, label: '03 - Mar' },
+    { num: 4, label: '04 - Abr' },
+    { num: 5, label: '05 - Mai' },
+    { num: 6, label: '06 - Jun' },
+    { num: 7, label: '07 - Jul' },
+    { num: 8, label: '08 - Ago' },
+    { num: 9, label: '09 - Set' },
+    { num: 10, label: '10 - Out' },
+    { num: 11, label: '11 - Nov' },
+    { num: 12, label: '12 - Dez' },
   ]
 
   // Calcula quantos dias o mês tem
@@ -106,7 +112,7 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
 
     let y = selYear || currentYear
     let m = selMonth || (minDate.getMonth() + 1)
-    let d = selDay || 1
+    let d = selDay || minDate.getDate()
 
     if (field === 'year') y = num
     if (field === 'month') m = num
@@ -120,51 +126,64 @@ function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDa
     onChange(dateStr)
   }
 
-  // Nomes exibidos para o mês selecionado (nome completo)
-  const selectedMonthLabel = selMonth ? monthsFull[selMonth - 1] : 'Mês'
-
-  const selectBase = `bg-slate-950 border border-white/15 text-slate-200 font-semibold rounded-xl focus:outline-none focus:border-pink-500 transition-all cursor-pointer appearance-none text-center`
-
   return (
-    <div className={`flex gap-2 ${className}`} id={id}>
-      {/* Dia — largura fixa estreita */}
-      <select
-        value={selDay || ''}
-        onChange={e => handleChange('day', e.target.value)}
-        className={`${selectBase} w-14 min-w-[3.25rem] px-1 py-3 text-sm shrink-0`}
-        aria-label="Dia"
-      >
-        <option value="">Dia</option>
-        {Array.from({ length: totalDays }, (_, i) => i + 1).map(d => (
-          <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
-        ))}
-      </select>
+    <div className={`grid grid-cols-3 gap-2 ${className}`} id={id}>
+      {/* Dia */}
+      <div className="relative">
+        <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1 text-center">Dia</span>
+        <div className="relative">
+          <select
+            value={selDay || ''}
+            onChange={e => handleChange('day', e.target.value)}
+            className="w-full bg-slate-950/90 hover:bg-slate-900 border border-white/15 focus:border-pink-500 text-slate-100 font-extrabold text-xs py-2.5 pl-2 pr-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all cursor-pointer text-center appearance-none shadow-inner"
+            aria-label="Dia"
+          >
+            <option value="">Dia</option>
+            {Array.from({ length: totalDays }, (_, i) => i + 1).map(d => (
+              <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
+            ))}
+          </select>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />
+        </div>
+      </div>
 
-      {/* Mês — ocupa o espaço restante */}
-      <select
-        value={selMonth || ''}
-        onChange={e => handleChange('month', e.target.value)}
-        className={`${selectBase} flex-1 min-w-0 px-1 py-3 text-sm`}
-        aria-label="Mês"
-      >
-        <option value="">Mês</option>
-        {monthsFull.map((name, idx) => (
-          <option key={idx + 1} value={idx + 1}>{name}</option>
-        ))}
-      </select>
+      {/* Mês */}
+      <div className="relative">
+        <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1 text-center">Mês</span>
+        <div className="relative">
+          <select
+            value={selMonth || ''}
+            onChange={e => handleChange('month', e.target.value)}
+            className="w-full bg-slate-950/90 hover:bg-slate-900 border border-white/15 focus:border-pink-500 text-slate-100 font-extrabold text-xs py-2.5 pl-2 pr-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all cursor-pointer text-center appearance-none shadow-inner"
+            aria-label="Mês"
+          >
+            <option value="">Mês</option>
+            {months.map(m => (
+              <option key={m.num} value={m.num}>{m.label}</option>
+            ))}
+          </select>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />
+        </div>
+      </div>
 
-      {/* Ano — largura fixa para caber 4 dígitos */}
-      <select
-        value={selYear || ''}
-        onChange={e => handleChange('year', e.target.value)}
-        className={`${selectBase} w-20 min-w-[5rem] px-1 py-3 text-sm shrink-0`}
-        aria-label="Ano"
-      >
-        <option value="">Ano</option>
-        {years.map(y => (
-          <option key={y} value={y}>{y}</option>
-        ))}
-      </select>
+      {/* Ano */}
+      <div className="relative">
+        <span className="block text-[9px] font-extrabold uppercase tracking-wider text-slate-400 mb-1 text-center">Ano</span>
+        <div className="relative">
+          <select
+            value={selYear || ''}
+            onChange={e => handleChange('year', e.target.value)}
+            className="w-full bg-slate-950/90 hover:bg-slate-900 border border-white/15 focus:border-pink-500 text-slate-100 font-extrabold text-xs py-2.5 pl-2 pr-6 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all cursor-pointer text-center appearance-none shadow-inner"
+            aria-label="Ano"
+          >
+            <option value="">Ano</option>
+            {years.map(y => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
+          <ChevronRight className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 rotate-90 pointer-events-none" />
+        </div>
+      </div>
     </div>
   )
 }
@@ -743,43 +762,46 @@ export function StorePage() {
       {/* ─────────────────────────────────────────────────────────
           SCHEDULING ESTIMATOR & BOOKING HUD
       ───────────────────────────────────────────────────────── */}
-      <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-8 relative z-10">
-        <div className="bg-slate-900/90 border border-white/[0.08] rounded-2xl p-5 shadow-xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
-          <div className="flex items-center gap-3.5">
-            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center shrink-0 shadow-inner">
-              <Calendar className="w-5 h-5 text-pink-400" />
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-6 relative z-10">
+        <div className="bg-slate-900/85 border border-white/10 rounded-2xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center shrink-0 shadow-inner text-pink-400">
+              <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white tracking-tight flex items-center gap-2">
-                Simulador de Data de Entrega
-              </h3>
-              <p className="text-xs text-slate-400">
-                Selecione quando você precisa e verifique a disponibilidade em tempo real
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-black uppercase tracking-wider text-white">
+                  Simulador de Entrega / Retirada
+                </h3>
+                <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 border border-pink-500/30 uppercase">
+                  Tempo Real
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400">
+                Consulte se a data desejada está disponível na agenda
               </p>
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 sm:w-72">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <div className="w-full sm:w-64">
               <SmartDateInput
                 value={calcDate}
                 min={minDeliveryDate}
                 onChange={handleCalcDate}
-                nativeClassName="w-full bg-slate-950/80 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all cursor-pointer"
-                className="w-full"
               />
             </div>
 
             {calcFeedback === 'ok' && (
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold shadow-lg">
-                <CheckCircle2 className="w-4 h-4 shrink-0" />
-                <span>Data disponível para encomenda</span>
+              <div className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs font-black shadow-lg">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>Data Disponível!</span>
               </div>
             )}
             {calcFeedback === 'too-soon' && (
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-lg">
-                <AlertCircle className="w-4 h-4 shrink-0" />
-                <span>Antecedência insuficiente (a partir de {calcSuggestedDate})</span>
+              <div className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[11px] font-bold shadow-lg">
+                <AlertCircle className="w-4 h-4 text-amber-400 shrink-0" />
+                <span>Mínimo a partir de {calcSuggestedDate}</span>
               </div>
             )}
           </div>
@@ -1681,10 +1703,24 @@ export function StorePage() {
                   >
                     {copiedPixPayload ? <><Check className="w-4 h-4 stroke-[3]" /> Código PIX Copiado</> : <><Copy className="w-4 h-4" /> Copiar Código PIX Copia e Cola</>}
                   </button>
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 px-1">
-                    <span>Ou copie a chave direta:</span>
-                    <button type="button" onClick={() => handleCopyPix(submittedOrderData.pixInfo?.pixKey)} className="text-pink-400 hover:underline font-bold">
-                      {copiedPixKey ? 'Chave copiada' : submittedOrderData.pixInfo?.pixKey}
+                  {/* Card de Chave PIX Direta */}
+                  <div className="p-3 bg-slate-950/80 rounded-2xl border border-white/10 flex items-center justify-between gap-3 shadow-inner">
+                    <div className="text-left overflow-hidden min-w-0">
+                      <span className="text-[9px] font-extrabold uppercase tracking-widest text-slate-400 block">Chave PIX Direta</span>
+                      <span className="text-xs font-mono font-bold text-pink-400 truncate block">
+                        {submittedOrderData.pixInfo?.pixKey}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleCopyPix(submittedOrderData.pixInfo?.pixKey)}
+                      className={`px-3 py-1.5 rounded-xl font-extrabold text-[11px] flex items-center gap-1.5 shrink-0 transition-all active:scale-95 border ${
+                        copiedPixKey
+                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                          : 'bg-pink-500/15 text-pink-300 border-pink-500/30 hover:bg-pink-500/25'
+                      }`}
+                    >
+                      {copiedPixKey ? <><Check className="w-3.5 h-3.5 text-emerald-400" /> Copiada!</> : <><Copy className="w-3.5 h-3.5" /> Copiar Chave</>}
                     </button>
                   </div>
                 </div>
