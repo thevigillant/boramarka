@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   Store,
@@ -53,6 +53,131 @@ function isRecentProduct(product: ProductData): boolean {
   const created = (product as any).createdAt
   if (!created) return false
   return Date.now() - new Date(created).getTime() < 14 * 24 * 60 * 60 * 1000
+}
+
+// ─── Detecta Instagram In-App Browser ────────────────────────────────────────
+function isInstagramBrowser(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /Instagram/i.test(navigator.userAgent)
+}
+
+// ─── Custom Date Picker (compatível com Instagram WebView) ───────────────────
+// O <input type="date"> fecha modais no Instagram IAB. Usamos selects em vez disso.
+interface CustomDatePickerProps {
+  value: string        // YYYY-MM-DD ou ''
+  min?: string         // YYYY-MM-DD
+  onChange: (val: string) => void
+  className?: string
+  id?: string
+}
+
+function CustomDatePicker({ value, min, onChange, className = '', id }: CustomDatePickerProps) {
+  const today = new Date()
+  const minDate = min ? new Date(`${min}T00:00:00`) : today
+
+  // Deriva o ano/mês/dia do value atual
+  const parts = value ? value.split('-') : []
+  const selYear = parts[0] ? parseInt(parts[0]) : 0
+  const selMonth = parts[1] ? parseInt(parts[1]) : 0
+  const selDay = parts[2] ? parseInt(parts[2]) : 0
+
+  const currentYear = today.getFullYear()
+  const years = Array.from({ length: 3 }, (_, i) => currentYear + i)
+
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ]
+
+  // Calcula quantos dias o mês tem
+  function daysInMonth(year: number, month: number) {
+    return new Date(year, month, 0).getDate()
+  }
+
+  const totalDays = selYear && selMonth ? daysInMonth(selYear, selMonth) : 31
+
+  function handleChange(field: 'year' | 'month' | 'day', rawVal: string) {
+    const num = parseInt(rawVal)
+    if (!num) return
+
+    let y = selYear || currentYear
+    let m = selMonth || (minDate.getMonth() + 1)
+    let d = selDay || 1
+
+    if (field === 'year') y = num
+    if (field === 'month') m = num
+    if (field === 'day') d = num
+
+    // Garante que o dia não ultrapasse o máximo do mês
+    const maxDay = daysInMonth(y, m)
+    if (d > maxDay) d = maxDay
+
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    onChange(dateStr)
+  }
+
+  const selectBase = `bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-2 py-3 rounded-xl focus:outline-none focus:border-pink-500 transition-all cursor-pointer appearance-none text-center`
+
+  return (
+    <div className={`flex gap-1.5 ${className}`} id={id}>
+      {/* Dia */}
+      <select
+        value={selDay || ''}
+        onChange={e => handleChange('day', e.target.value)}
+        className={`${selectBase} flex-1`}
+        aria-label="Dia"
+      >
+        <option value="">Dia</option>
+        {Array.from({ length: totalDays }, (_, i) => i + 1).map(d => (
+          <option key={d} value={d}>{String(d).padStart(2, '0')}</option>
+        ))}
+      </select>
+
+      {/* Mês */}
+      <select
+        value={selMonth || ''}
+        onChange={e => handleChange('month', e.target.value)}
+        className={`${selectBase} flex-[2]`}
+        aria-label="Mês"
+      >
+        <option value="">Mês</option>
+        {months.map((name, idx) => (
+          <option key={idx + 1} value={idx + 1}>{name}</option>
+        ))}
+      </select>
+
+      {/* Ano */}
+      <select
+        value={selYear || ''}
+        onChange={e => handleChange('year', e.target.value)}
+        className={`${selectBase} flex-1`}
+        aria-label="Ano"
+      >
+        <option value="">Ano</option>
+        {years.map(y => (
+          <option key={y} value={y}>{y}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
+// ─── Date input adaptativo: select no Instagram, nativo nos demais ─────────
+function SmartDateInput(props: CustomDatePickerProps & { nativeClassName?: string }) {
+  const { nativeClassName, ...rest } = props
+  if (isInstagramBrowser()) {
+    return <CustomDatePicker {...rest} />
+  }
+  return (
+    <input
+      type="date"
+      id={props.id}
+      min={props.min}
+      value={props.value}
+      onChange={e => props.onChange(e.target.value)}
+      className={nativeClassName || props.className || ''}
+    />
+  )
 }
 
 interface CartItem {
@@ -166,7 +291,8 @@ export function StorePage() {
   }, [username])
 
   // Destaques auto-rotate
-  const featuredProducts = products.filter(p => p.featured)
+  const featuredProducts = useMemo(() => products.filter(p => p.featured), [products])
+
   useEffect(() => {
     if (featuredProducts.length <= 1) return
     featuredTimerRef.current = setInterval(() => {
@@ -176,9 +302,19 @@ export function StorePage() {
   }, [featuredProducts.length])
 
   // Novidades
-  const novidades = products.filter(isRecentProduct)
+  const novidades = useMemo(() => products.filter(isRecentProduct), [products])
 
-  function handleOpenProduct(product: ProductData) {
+  // Filter products — memoizado para não recalcular em todo render
+  const filteredProducts = useMemo(() => products.filter(p => {
+    if (selectedCategory === 'FAVORITES') return wishlist.includes(p.id)
+    const matchesCategory = selectedCategory === 'ALL' || p.categoryId === selectedCategory
+    const matchesSearch = !searchQuery.trim() ||
+      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
+    return matchesCategory && matchesSearch
+  }), [products, selectedCategory, searchQuery, wishlist])
+
+  const handleOpenProduct = useCallback((product: ProductData) => {
     setSelectedProduct(product)
     setModalQuantity(1)
     setModalNotes('')
@@ -190,7 +326,7 @@ export function StorePage() {
       initialCustoms[cf.label] = cf.fieldType === 'SELECT' && options.length > 0 ? options[0] : ''
     })
     setModalCustomizations(initialCustoms)
-  }
+  }, [])
 
   function handleAddToCart() {
     if (!selectedProduct) return
@@ -214,7 +350,7 @@ export function StorePage() {
     setCart(prev => prev.filter((_, i) => i !== index))
   }
 
-  function toggleWishlist(e: React.MouseEvent, productId: number) {
+  const toggleWishlist = useCallback((e: React.MouseEvent, productId: number) => {
     e.stopPropagation()
     setWishlist(prev => {
       const next = prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
@@ -233,7 +369,7 @@ export function StorePage() {
         return next
       })
     }, 600)
-  }
+  }, [wishlistKey])
 
   function handleCalcDate(date: string) {
     setCalcDate(date)
@@ -339,23 +475,13 @@ export function StorePage() {
   ]
   const currentStep = checkoutProgress.filter(s => s.done).length + 1
 
-  // Filter products
-  const filteredProducts = products.filter(p => {
-    if (selectedCategory === 'FAVORITES') return wishlist.includes(p.id)
-    const matchesCategory = selectedCategory === 'ALL' || p.categoryId === selectedCategory
-    const matchesSearch = !searchQuery.trim() ||
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (p.description || '').toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesCategory && matchesSearch
-  })
-
   // Skeleton loading
   if (loading) {
     return (
       <div className="min-h-screen bg-[#07090E] text-slate-200 pb-32 flex flex-col justify-start">
         <div className="w-full h-80 bg-gradient-to-b from-slate-800/40 via-slate-900/60 to-[#07090E] animate-pulse" />
         <div className="max-w-6xl mx-auto px-4 sm:px-8 -mt-24 w-full">
-          <div className="bg-slate-900/60 border border-white/[0.08] backdrop-blur-2xl rounded-3xl p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-6 shadow-2xl">
+          <div className="bg-slate-900/60 border border-white/[0.08] rounded-3xl p-6 sm:p-10 flex flex-col sm:flex-row items-center gap-6 shadow-2xl">
             <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl bg-slate-800/80 animate-pulse shrink-0" />
             <div className="flex-1 space-y-3 w-full">
               <div className="h-4 bg-slate-800 rounded-full w-32 animate-pulse" />
@@ -371,7 +497,7 @@ export function StorePage() {
   if (error || !admin) {
     return (
       <div className="min-h-screen bg-[#07090E] flex items-center justify-center p-6 text-white text-center font-sans">
-        <div className="bg-slate-900/80 border border-white/10 backdrop-blur-2xl p-10 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
+        <div className="bg-slate-900/80 border border-white/10 p-10 rounded-3xl max-w-md w-full shadow-2xl space-y-4">
           <div className="w-16 h-16 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 flex items-center justify-center mx-auto">
             <AlertCircle className="w-8 h-8" />
           </div>
@@ -387,14 +513,14 @@ export function StorePage() {
 
   return (
     <div className="min-h-screen bg-[#07090E] text-slate-100 pb-44 font-sans selection:bg-pink-500 selection:text-white relative overflow-x-hidden">
-      {/* Background ambient mesh lighting */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
+      {/* Background ambient mesh lighting — pointer-events-none para não travar interações */}
+      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
         <div
-          className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[140px] opacity-25"
+          className="absolute -top-[20%] left-1/2 -translate-x-1/2 w-[800px] h-[500px] rounded-full blur-[140px] opacity-20"
           style={{ background: `radial-gradient(circle, ${accentColor} 0%, ${secondaryColor} 100%)` }}
         />
-        <div className="absolute top-[40%] -left-[10%] w-[500px] h-[500px] rounded-full blur-[160px] opacity-15 bg-purple-600/30" />
-        <div className="absolute bottom-[10%] -right-[10%] w-[600px] h-[600px] rounded-full blur-[180px] opacity-15 bg-blue-600/20" />
+        <div className="absolute top-[40%] -left-[10%] w-[500px] h-[500px] rounded-full blur-[160px] opacity-10 bg-purple-600/30" />
+        <div className="absolute bottom-[10%] -right-[10%] w-[600px] h-[600px] rounded-full blur-[180px] opacity-10 bg-blue-600/20" />
       </div>
 
       <style>{`
@@ -422,7 +548,10 @@ export function StorePage() {
             <img
               src={admin.bannerUrl}
               alt="Banner"
-              className="w-full h-full object-cover object-center transform scale-105 filter brightness-90 transition-transform duration-1000"
+              loading="eager"
+              decoding="async"
+              fetchPriority="high"
+              className="w-full h-full object-cover object-center transform scale-105 filter brightness-90"
             />
           ) : (
             <div className="w-full h-full relative" style={{ background: `linear-gradient(135deg, #0f172a 0%, ${accentColor}33 50%, #07090E 100%)` }}>
@@ -437,7 +566,7 @@ export function StorePage() {
           <div className="max-w-6xl mx-auto px-4 sm:px-8 absolute top-6 inset-x-0 flex justify-end">
             <button
               onClick={handleShareStore}
-              className="px-4 py-2.5 rounded-full bg-slate-900/60 hover:bg-slate-900/90 text-slate-200 border border-white/15 backdrop-blur-xl transition-all duration-300 flex items-center gap-2 text-xs font-semibold shadow-2xl hover:scale-105 active:scale-95"
+              className="px-4 py-2.5 rounded-full bg-slate-900/60 hover:bg-slate-900/90 text-slate-200 border border-white/15 text-xs font-semibold shadow-2xl hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
             >
               <Share2 className="w-3.5 h-3.5 text-pink-400" />
               <span>Compartilhar Vitrine</span>
@@ -447,7 +576,7 @@ export function StorePage() {
 
         {/* Store Profile Floating Glass Card */}
         <div className="max-w-6xl mx-auto px-4 sm:px-8 -mt-28 sm:-mt-32 relative">
-          <div className="bg-slate-900/70 border border-white/[0.12] backdrop-blur-2xl rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
+          <div className="bg-slate-900/70 border border-white/[0.12] rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)] flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8">
             {/* Avatar Profile */}
             <div className="relative shrink-0 group">
               <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-3xl overflow-hidden p-1 bg-gradient-to-br from-white/30 to-white/5 border border-white/20 shadow-2xl">
@@ -455,6 +584,9 @@ export function StorePage() {
                   <img
                     src={admin.photoUrl}
                     alt={admin.businessName}
+                    loading="eager"
+                    decoding="async"
+                    fetchPriority="high"
                     className="w-full h-full object-cover rounded-[20px]"
                   />
                 ) : (
@@ -506,7 +638,7 @@ export function StorePage() {
           SCHEDULING ESTIMATOR & BOOKING HUD
       ───────────────────────────────────────────────────────── */}
       <div className="max-w-6xl mx-auto px-4 sm:px-8 mt-8 relative z-10">
-        <div className="bg-gradient-to-r from-slate-900/90 via-slate-900/60 to-slate-900/90 border border-white/[0.08] backdrop-blur-2xl rounded-2xl p-5 shadow-xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+        <div className="bg-slate-900/90 border border-white/[0.08] rounded-2xl p-5 shadow-xl flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3.5">
             <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 flex items-center justify-center shrink-0 shadow-inner">
               <Calendar className="w-5 h-5 text-pink-400" />
@@ -522,24 +654,24 @@ export function StorePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1 sm:w-56">
-              <input
-                type="date"
-                min={minDeliveryDate}
+            <div className="relative flex-1 sm:w-72">
+              <SmartDateInput
                 value={calcDate}
-                onChange={e => handleCalcDate(e.target.value)}
-                className="w-full bg-slate-950/80 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all cursor-pointer"
+                min={minDeliveryDate}
+                onChange={handleCalcDate}
+                nativeClassName="w-full bg-slate-950/80 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-2.5 rounded-xl focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all cursor-pointer"
+                className="w-full"
               />
             </div>
 
             {calcFeedback === 'ok' && (
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold animate-fade-in shadow-lg">
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold shadow-lg">
                 <CheckCircle2 className="w-4 h-4 shrink-0" />
                 <span>Data disponível para encomenda</span>
               </div>
             )}
             {calcFeedback === 'too-soon' && (
-              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold animate-fade-in shadow-lg">
+              <div className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-bold shadow-lg">
                 <AlertCircle className="w-4 h-4 shrink-0" />
                 <span>Antecedência insuficiente (a partir de {calcSuggestedDate})</span>
               </div>
@@ -573,76 +705,86 @@ export function StorePage() {
             style={{ aspectRatio: '21 / 9', minHeight: 240, maxHeight: 420 }}
             onClick={() => handleOpenProduct(featuredProducts[featuredIndex])}
           >
-            {featuredProducts.map((prod, idx) => (
-              <div
-                key={prod.id}
-                className="absolute inset-0 transition-opacity duration-700"
-                style={{ opacity: idx === featuredIndex ? 1 : 0, pointerEvents: idx === featuredIndex ? 'auto' : 'none' }}
-              >
-                {prod.photos?.[0]?.url ? (
-                  <img
-                    src={formatImageUrl(prod.photos[0].url)}
-                    alt={prod.name}
-                    className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000"
-                  />
-                ) : (
-                  <div className="w-full h-full luxury-gradient flex items-center justify-center">
-                    <Package className="w-16 h-16 text-white/20" />
-                  </div>
-                )}
-
-                {/* Dark Luxury Vignette Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#07090E] via-[#07090E]/60 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#07090E]/90 via-[#07090E]/40 to-transparent" />
-
-                {/* Content Overlay */}
-                <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 z-10">
-                  <div className="max-w-xl space-y-2">
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-400/10 text-amber-300 border border-amber-400/30 backdrop-blur-md">
-                      <Star className="w-3 h-3 fill-amber-300" />
-                      Destaque Especial
+            {/* Renderiza apenas o slide atual + adjacentes para performance */}
+            {featuredProducts.map((prod, idx) => {
+              // Só carrega lazy as imagens dos slides não-ativos
+              const isActive = idx === featuredIndex
+              const isAdjacent = Math.abs(idx - featuredIndex) <= 1
+              return (
+                <div
+                  key={prod.id}
+                  className="absolute inset-0 transition-opacity duration-700"
+                  style={{ opacity: isActive ? 1 : 0, pointerEvents: isActive ? 'auto' : 'none' }}
+                  aria-hidden={!isActive}
+                >
+                  {prod.photos?.[0]?.url ? (
+                    <img
+                      src={isActive || isAdjacent ? formatImageUrl(prod.photos[0].url) : undefined}
+                      data-src={formatImageUrl(prod.photos[0].url)}
+                      alt={prod.name}
+                      loading={isActive ? 'eager' : 'lazy'}
+                      decoding="async"
+                      className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-1000"
+                    />
+                  ) : (
+                    <div className="w-full h-full luxury-gradient flex items-center justify-center">
+                      <Package className="w-16 h-16 text-white/20" />
                     </div>
+                  )}
 
-                    <h3 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
-                      {prod.name}
-                    </h3>
+                  {/* Dark Luxury Vignette Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#07090E] via-[#07090E]/60 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-r from-[#07090E]/90 via-[#07090E]/40 to-transparent" />
 
-                    {prod.description && (
-                      <p className="text-xs sm:text-sm text-slate-300/80 font-normal line-clamp-2 leading-relaxed">
-                        {prod.description}
-                      </p>
-                    )}
+                  {/* Content Overlay */}
+                  <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-10 z-10">
+                    <div className="max-w-xl space-y-2">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-amber-400/10 text-amber-300 border border-amber-400/30">
+                        <Star className="w-3 h-3 fill-amber-300" />
+                        Destaque Especial
+                      </div>
 
-                    <div className="flex items-center gap-4 pt-2">
-                      <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                        {formatCurrency(prod.price)}
-                      </span>
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); handleOpenProduct(prod) }}
-                        className="px-5 py-2.5 rounded-xl luxury-gradient text-white text-xs font-bold tracking-wide flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all"
-                      >
-                        <ShoppingBag className="w-4 h-4" />
-                        <span>Ver Detalhes</span>
-                      </button>
+                      <h3 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight leading-tight">
+                        {prod.name}
+                      </h3>
+
+                      {prod.description && (
+                        <p className="text-xs sm:text-sm text-slate-300/80 font-normal line-clamp-2 leading-relaxed">
+                          {prod.description}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-4 pt-2">
+                        <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                          {formatCurrency(prod.price)}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={(e) => { e.stopPropagation(); handleOpenProduct(prod) }}
+                          className="px-5 py-2.5 rounded-xl luxury-gradient text-white text-xs font-bold tracking-wide flex items-center gap-2 shadow-lg hover:scale-105 active:scale-95 transition-all"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                          <span>Ver Detalhes</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
 
             {/* Navigation Arrows */}
             {featuredProducts.length > 1 && (
               <>
                 <button
                   onClick={(e) => { e.stopPropagation(); setFeaturedIndex(i => (i - 1 + featuredProducts.length) % featuredProducts.length) }}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md flex items-center justify-center transition-all z-20 hover:scale-110"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white border border-white/10 flex items-center justify-center transition-all z-20 hover:scale-110"
                 >
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); setFeaturedIndex(i => (i + 1) % featuredProducts.length) }}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white border border-white/10 backdrop-blur-md flex items-center justify-center transition-all z-20 hover:scale-110"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white border border-white/10 flex items-center justify-center transition-all z-20 hover:scale-110"
                 >
                   <ChevronRight className="w-5 h-5" />
                 </button>
@@ -686,13 +828,15 @@ export function StorePage() {
               <div
                 key={prod.id}
                 onClick={() => handleOpenProduct(prod)}
-                className="w-48 sm:w-56 shrink-0 bg-slate-900/60 hover:bg-slate-900/90 border border-white/[0.08] hover:border-white/20 backdrop-blur-xl rounded-2xl overflow-hidden p-3 transition-all duration-300 cursor-pointer group shadow-lg flex flex-col justify-between"
+                className="w-48 sm:w-56 shrink-0 bg-slate-900/60 hover:bg-slate-900/90 border border-white/[0.08] hover:border-white/20 rounded-2xl overflow-hidden p-3 transition-all duration-300 cursor-pointer group shadow-lg flex flex-col justify-between"
               >
                 <div className="relative aspect-square rounded-xl overflow-hidden bg-slate-950">
                   {prod.photos?.[0]?.url ? (
                     <img
                       src={formatImageUrl(prod.photos[0].url)}
                       alt={prod.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                     />
                   ) : (
@@ -703,7 +847,7 @@ export function StorePage() {
 
                   <button
                     onClick={(e) => toggleWishlist(e, prod.id)}
-                    className="absolute top-2 right-2 p-2 rounded-full bg-black/40 hover:bg-black/70 backdrop-blur-md text-white transition-all shadow-md z-10"
+                    className="absolute top-2 right-2 p-2 rounded-full bg-black/40 hover:bg-black/70 text-white transition-all shadow-md z-10"
                   >
                     <Heart className={`w-3.5 h-3.5 ${wishlist.includes(prod.id) ? 'fill-red-500 text-red-500' : 'text-white'}`} />
                   </button>
@@ -744,7 +888,7 @@ export function StorePage() {
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
             placeholder={`Buscar em ${products.length} itens do catálogo...`}
-            className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-slate-900/60 border border-white/[0.08] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 backdrop-blur-xl transition-all shadow-inner"
+            className="w-full pl-11 pr-10 py-3.5 rounded-2xl bg-slate-900/60 border border-white/[0.08] text-sm text-white placeholder-slate-500 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 transition-all shadow-inner"
           />
           {searchQuery && (
             <button
@@ -813,7 +957,7 @@ export function StorePage() {
               <div
                 key={prod.id}
                 onClick={() => handleOpenProduct(prod)}
-                className="bg-slate-900/50 hover:bg-slate-900/90 border border-white/[0.08] hover:border-white/20 backdrop-blur-2xl rounded-3xl p-3 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 shadow-xl group cursor-pointer"
+                className="bg-slate-900/50 hover:bg-slate-900/90 border border-white/[0.08] hover:border-white/20 rounded-3xl p-3 sm:p-4 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1.5 shadow-xl group cursor-pointer"
               >
                 <div>
                   {/* Photo Container */}
@@ -822,6 +966,8 @@ export function StorePage() {
                       <img
                         src={formatImageUrl(prod.photos[0].url)}
                         alt={prod.name}
+                        loading={idx < 8 ? 'eager' : 'lazy'}
+                        decoding="async"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
                       />
                     ) : (
@@ -833,7 +979,7 @@ export function StorePage() {
                     {/* Wishlist Button */}
                     <button
                       onClick={(e) => toggleWishlist(e, prod.id)}
-                      className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/40 hover:bg-black/75 backdrop-blur-md text-white transition-all shadow-md z-10"
+                      className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/40 hover:bg-black/75 text-white transition-all shadow-md z-10"
                     >
                       <Heart
                         className={`w-3.5 h-3.5 transition-transform ${heartAnimIds.has(prod.id) ? 'scale-125' : ''} ${
@@ -857,7 +1003,7 @@ export function StorePage() {
                     </div>
 
                     {prod.photos.length > 1 && (
-                      <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/60 backdrop-blur-md text-[10px] font-mono text-white">
+                      <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-black/60 text-[10px] font-mono text-white">
                         +{prod.photos.length - 1} fotos
                       </div>
                     )}
@@ -892,6 +1038,8 @@ export function StorePage() {
                   <button
                     type="button"
                     className="p-2.5 rounded-xl luxury-gradient text-white shadow-md hover:scale-105 active:scale-95 transition-all"
+                    tabIndex={-1}
+                    aria-hidden="true"
                   >
                     <Plus className="w-4 h-4" />
                   </button>
@@ -904,7 +1052,7 @@ export function StorePage() {
           {selectedCategory === 'ALL' && !searchQuery && (
             <div
               onClick={handleCustomOrderWhatsapp}
-              className="bg-gradient-to-br from-purple-950/40 via-slate-900/60 to-pink-950/40 border border-purple-500/30 backdrop-blur-2xl rounded-3xl p-6 flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 hover:-translate-y-1.5 shadow-xl group cursor-pointer"
+              className="bg-gradient-to-br from-purple-950/40 via-slate-900/60 to-pink-950/40 border border-purple-500/30 rounded-3xl p-6 flex flex-col items-center justify-center text-center gap-4 transition-all duration-300 hover:-translate-y-1.5 shadow-xl group cursor-pointer"
             >
               <div className="w-14 h-14 rounded-2xl luxury-gradient flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform">
                 <Sparkles className="w-6 h-6" />
@@ -927,7 +1075,7 @@ export function StorePage() {
 
         {/* Empty state */}
         {filteredProducts.length === 0 && (
-          <div className="text-center py-20 bg-slate-900/40 border border-white/[0.06] rounded-3xl backdrop-blur-xl p-8 max-w-md mx-auto space-y-4">
+          <div className="text-center py-20 bg-slate-900/40 border border-white/[0.06] rounded-3xl p-8 max-w-md mx-auto space-y-4">
             <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto text-slate-400">
               <Package className="w-6 h-6" />
             </div>
@@ -947,7 +1095,7 @@ export function StorePage() {
           PRODUCT DETAIL MODAL
       ───────────────────────────────────────────────────────── */}
       {selectedProduct && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 animate-fade-in" style={{ backdropFilter: 'blur(8px)' }}>
           <div className="bg-slate-900 border border-white/15 text-slate-100 w-full max-w-xl rounded-t-[28px] sm:rounded-3xl shadow-2xl overflow-y-auto max-h-[92vh] sm:max-h-[90vh] flex flex-col pb-8 sm:pb-0 animate-slide-up sm:animate-scale-in">
             {/* Mobile Top Drag Indicator */}
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto my-3 sm:hidden shrink-0" />
@@ -958,6 +1106,8 @@ export function StorePage() {
                 <img
                   src={formatImageUrl(selectedProduct.photos[activePhotoIndex]?.url || selectedProduct.photos[0].url)}
                   alt={selectedProduct.name}
+                  loading="eager"
+                  decoding="async"
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -968,7 +1118,7 @@ export function StorePage() {
 
               <button
                 onClick={() => setSelectedProduct(null)}
-                className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white backdrop-blur-md border border-white/10 transition-all z-20"
+                className="absolute top-4 right-4 p-2 rounded-full bg-black/50 hover:bg-black/80 text-white border border-white/10 transition-all z-20"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -977,13 +1127,13 @@ export function StorePage() {
                 <>
                   <button
                     onClick={() => setActivePhotoIndex(i => (i - 1 + selectedProduct.photos.length) % selectedProduct.photos.length)}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white backdrop-blur-md"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => setActivePhotoIndex(i => (i + 1) % selectedProduct.photos.length)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white backdrop-blur-md"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -1114,7 +1264,7 @@ export function StorePage() {
             className="luxury-gradient p-4 rounded-3xl text-white shadow-2xl luxury-glow flex items-center justify-between cursor-pointer hover:scale-[1.02] transition-all border border-white/20"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-black/30 backdrop-blur-md flex items-center justify-center font-black text-sm shadow-inner">
+              <div className="w-10 h-10 rounded-2xl bg-black/30 flex items-center justify-center font-black text-sm shadow-inner">
                 {totalCartCount}
               </div>
               <div>
@@ -1134,7 +1284,7 @@ export function StorePage() {
           CHECKOUT MODAL
       ───────────────────────────────────────────────────────── */}
       {showCheckout && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 animate-fade-in" style={{ backdropFilter: 'blur(8px)' }}>
           <div className="bg-slate-900 border border-white/15 text-slate-100 w-full max-w-xl rounded-t-[28px] sm:rounded-3xl shadow-2xl overflow-y-auto max-h-[92vh] sm:max-h-[90vh] p-5 sm:p-8 pb-12 sm:pb-8 animate-slide-up sm:animate-scale-in">
             {/* Mobile Top Drag Indicator */}
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-3 sm:hidden shrink-0" />
@@ -1217,10 +1367,18 @@ export function StorePage() {
               {/* Delivery Date and Mode */}
               <div className="space-y-3 pt-2">
                 <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block">Agendamento de Entrega</span>
+
                 <div className="grid grid-cols-2 gap-3">
+                  {/* DATA — usa SmartDateInput para ser compatível com Instagram */}
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">Data *</label>
-                    <input type="date" min={minDeliveryDate} value={deliveryDate} onChange={e => setDeliveryDate(e.target.value)} className="w-full bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500" required />
+                    <SmartDateInput
+                      value={deliveryDate}
+                      min={minDeliveryDate}
+                      onChange={setDeliveryDate}
+                      nativeClassName="w-full bg-slate-950 border border-white/15 text-slate-200 text-xs font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500"
+                      className="w-full"
+                    />
                   </div>
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-300 mb-1">Horário Previsto</label>
@@ -1332,7 +1490,7 @@ export function StorePage() {
           PIX PAYMENT & ORDER SUCCESS MODAL
       ───────────────────────────────────────────────────────── */}
       {showPixSuccessModal && submittedOrderData && (
-        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+        <div className="fixed inset-0 z-[80] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/85 animate-fade-in" style={{ backdropFilter: 'blur(8px)' }}>
           <div className="bg-slate-900 border border-white/15 text-slate-100 w-full max-w-lg rounded-t-[28px] sm:rounded-3xl p-5 sm:p-8 shadow-2xl space-y-6 max-h-[92vh] sm:max-h-[95vh] overflow-y-auto pb-12 sm:pb-8 animate-slide-up sm:animate-scale-in">
             {/* Mobile Top Drag Indicator */}
             <div className="w-12 h-1 bg-white/20 rounded-full mx-auto mb-2 sm:hidden shrink-0" />
@@ -1374,7 +1532,7 @@ export function StorePage() {
 
               {pixQrCodeDataUrl && (
                 <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-white/20 shadow-md">
-                  <img src={pixQrCodeDataUrl} alt="QR Code PIX" className="w-48 h-48 object-contain" />
+                  <img src={pixQrCodeDataUrl} alt="QR Code PIX" loading="lazy" className="w-48 h-48 object-contain" />
                   <span className="text-[10px] font-bold text-slate-800 mt-2 uppercase tracking-wider">Aponte a câmera do aplicativo do seu banco</span>
                 </div>
               )}
