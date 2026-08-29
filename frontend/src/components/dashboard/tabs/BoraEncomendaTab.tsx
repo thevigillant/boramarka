@@ -30,8 +30,9 @@ import {
   MessageCircle,
   Link2,
   Send,
-  Bell,
   RotateCcw,
+  GripVertical,
+  ChevronLeft,
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
@@ -288,6 +289,60 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
     setOrders(updatedOrders || [])
   }
 
+  // ── Drag and Drop & Navegação Lateral do Kanban ──────────────────────────────
+  const [draggedOrderId, setDraggedOrderId] = useState<number | null>(null)
+  const [dragOverColumn, setDragOverColumn] = useState<string | null>(null)
+  const kanbanScrollRef = useRef<HTMLDivElement | null>(null)
+
+  function scrollKanban(direction: 'left' | 'right') {
+    if (kanbanScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -340 : 340
+      kanbanScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' })
+    }
+  }
+
+  async function handleDropOrder(targetStatus: string) {
+    if (!draggedOrderId) return
+    const order = orders.find(o => o.id === draggedOrderId)
+    if (!order) {
+      setDraggedOrderId(null)
+      setDragOverColumn(null)
+      return
+    }
+
+    if (order.status === targetStatus) {
+      setDraggedOrderId(null)
+      setDragOverColumn(null)
+      return
+    }
+
+    // Se for mover para lixeira
+    if (targetStatus === 'CANCELADO') {
+      setDraggedOrderId(null)
+      setDragOverColumn(null)
+      await handleMoveToTrash(order.id, order.orderNumber, order)
+      return
+    }
+
+    // Alerta de segurança se for mover para EM_PRODUCAO sem entrada paga
+    if (targetStatus === 'EM_PRODUCAO' && !order.depositPaid) {
+      const proceed = confirm(
+        '⚠️ ALERTA DE SEGURANÇA:\n\nA entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?'
+      )
+      if (!proceed) {
+        setDraggedOrderId(null)
+        setDragOverColumn(null)
+        return
+      }
+    }
+
+    setDraggedOrderId(null)
+    setDragOverColumn(null)
+
+    // Atualiza status e dispara notificação WhatsApp
+    await handleUpdateOrderStatus(order.id, targetStatus, `Movido via Kanban para ${targetStatus}`, order)
+  }
+
   // Handlers para Configurações da Loja
   async function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault()
@@ -540,36 +595,87 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
       </div>
 
       {/* ═══════════════════════════════════════════════════════ */}
-      {/* 1. Kanban de Produção (Layout Limpo sem Sobreposição) */}
+      {/* 1. Kanban de Produção (Drag & Drop + Scroll Lateral)    */}
       {/* ═══════════════════════════════════════════════════════ */}
       {activeSubTab === 'kanban' && (
         <div className="space-y-4">
-          <div className="flex justify-between items-center px-1">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 px-1">
             <div>
-              <h3 className="text-base font-black text-white">
-                Fluxo de Produção
-              </h3>
-              <p className="text-xs text-slate-400">
-                Acompanhe e avance os pedidos conforme as etapas de preparo
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-black text-white">
+                  Fluxo de Produção
+                </h3>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/10 text-pink-400 border border-pink-500/20">
+                  Arrastável
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                💡 Arraste os cards entre as colunas para avançar etapas ou mover para a lixeira
               </p>
             </div>
-            <button
-              onClick={loadData}
-              className="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-xl border border-slate-700/80 transition-all"
-              title="Atualizar Pedidos"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-            </button>
+
+            {/* Controles de Navegação Lateral & Refresh */}
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <button
+                type="button"
+                onClick={() => scrollKanban('left')}
+                className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700 transition-all shadow-sm active:scale-95"
+                title="Rolar Kanban para a Esquerda"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollKanban('right')}
+                className="p-2 text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded-xl border border-slate-700 transition-all shadow-sm active:scale-95"
+                title="Rolar Kanban para a Direita"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+              <button
+                onClick={loadData}
+                className="p-2 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 rounded-xl border border-slate-700/80 transition-all active:scale-95"
+                title="Atualizar Pedidos"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
           </div>
 
-          {/* Container horizontal com scroll sem overflow/overlap */}
-          <div className="flex gap-4 overflow-x-auto pb-6 pt-1 no-scrollbar items-start">
+          {/* Container horizontal com scroll suave e ref para navegação lateral */}
+          <div
+            ref={kanbanScrollRef}
+            className="flex gap-4 overflow-x-auto pb-6 pt-1 no-scrollbar items-start scroll-smooth"
+          >
             {kanbanColumns.map(col => {
               const colOrders = orders.filter(o => o.status === col.key)
+              const isOver = dragOverColumn === col.key
+
               return (
                 <div
                   key={col.key}
-                  className="w-[280px] sm:w-[310px] flex-shrink-0 bg-[#131826] rounded-2xl p-4 border border-slate-800/90 flex flex-col min-h-[480px] shadow-sm"
+                  onDragOver={(e) => {
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                    if (dragOverColumn !== col.key) setDragOverColumn(col.key)
+                  }}
+                  onDragEnter={(e) => {
+                    e.preventDefault()
+                    setDragOverColumn(col.key)
+                  }}
+                  onDragLeave={(e) => {
+                    if (e.currentTarget.contains(e.relatedTarget as Node)) return
+                    if (dragOverColumn === col.key) setDragOverColumn(null)
+                  }}
+                  onDrop={async (e) => {
+                    e.preventDefault()
+                    await handleDropOrder(col.key)
+                  }}
+                  className={`w-[290px] sm:w-[320px] flex-shrink-0 rounded-2xl p-4 border transition-all flex flex-col min-h-[520px] shadow-sm ${
+                    isOver
+                      ? 'bg-[#18233a] border-pink-500/80 ring-2 ring-pink-500/30 scale-[1.01]'
+                      : 'bg-[#131826] border-slate-800/90'
+                  }`}
                 >
                   {/* Column Header */}
                   <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-800">
@@ -584,169 +690,193 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                     </span>
                   </div>
 
+                  {/* Dropzone visual quando arrastando sobre a coluna */}
+                  {isOver && draggedOrderId && (
+                    <div className="py-3 px-2 border-2 border-dashed border-pink-500/50 bg-pink-500/10 rounded-xl text-center text-xs font-black text-pink-300 animate-pulse mb-3">
+                      Solte aqui para mover para {col.title}
+                    </div>
+                  )}
+
                   {/* Orders Cards Container */}
                   <div className="space-y-3 flex-1">
-                    {colOrders.map(order => (
-                      <div
-                        key={order.id}
-                        onClick={() => setSelectedOrder(order)}
-                        className={`bg-[#1A2235] hover:bg-[#202b42] p-4 rounded-xl cursor-pointer transition-all border border-slate-800 hover:border-slate-700 border-l-4 ${col.borderLeft} shadow-sm hover:shadow-md flex flex-col justify-between group`}
-                      >
-                        <div>
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                              <span className="text-xs font-black text-white font-mono">
-                                {order.orderNumber}
-                              </span>
-                              {order.status === 'CANCELADO' && (
-                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
-                                  Lixeira
+                    {colOrders.map(order => {
+                      const isBeingDragged = draggedOrderId === order.id
+
+                      return (
+                        <div
+                          key={order.id}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', String(order.id))
+                            e.dataTransfer.effectAllowed = 'move'
+                            setDraggedOrderId(order.id)
+                          }}
+                          onDragEnd={() => {
+                            setDraggedOrderId(null)
+                            setDragOverColumn(null)
+                          }}
+                          onClick={() => setSelectedOrder(order)}
+                          className={`bg-[#1A2235] hover:bg-[#202b42] p-4 rounded-xl cursor-grab active:cursor-grabbing transition-all border border-slate-800 hover:border-slate-700 border-l-4 ${col.borderLeft} shadow-sm hover:shadow-md hover:-translate-y-0.5 flex flex-col justify-between group ${
+                            isBeingDragged ? 'opacity-30 border-dashed border-pink-500 scale-95' : ''
+                          }`}
+                        >
+                          <div>
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="flex items-center gap-1 flex-1 min-w-0">
+                                <GripVertical className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300 shrink-0 cursor-grab" />
+                                <span className="text-xs font-black text-white font-mono truncate">
+                                  {order.orderNumber}
                                 </span>
-                              )}
+                                {order.status === 'CANCELADO' && (
+                                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
+                                    Lixeira
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="text-xs font-black text-pink-400 font-mono">
+                                  {formatCurrency(order.total)}
+                                </span>
+                                {order.status !== 'CANCELADO' && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      handleMoveToTrash(order.id, order.orderNumber, order)
+                                    }}
+                                    className="p-1 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 transition-colors"
+                                    title="Mover para Lixeira / Cancelar"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span className="text-xs font-black text-pink-400 font-mono">
-                                {formatCurrency(order.total)}
-                              </span>
-                              {order.status !== 'CANCELADO' && (
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleMoveToTrash(order.id, order.orderNumber);
-                                  }}
-                                  className="p-1 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 transition-colors"
-                                  title="Mover para Lixeira / Cancelar"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
-                              )}
+
+                            <p className="text-xs font-bold text-slate-200 truncate mb-2">
+                              {order.clientName}
+                            </p>
+
+                            <div className="flex items-center gap-1.5 text-[11px] text-pink-400/90 font-semibold bg-pink-500/10 px-2.5 py-1 rounded-lg border border-pink-500/15">
+                              <Calendar className="w-3 h-3" />
+                              <span>{order.deliveryDate} às {order.deliveryTime}</span>
+                            </div>
+
+                            <div className="text-[11px] text-slate-400 font-medium mt-2 line-clamp-2">
+                              {order.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}
                             </div>
                           </div>
 
-                          <p className="text-xs font-bold text-slate-200 truncate mb-2">
-                            {order.clientName}
-                          </p>
-
-                          <div className="flex items-center gap-1.5 text-[11px] text-pink-400/90 font-semibold bg-pink-500/10 px-2.5 py-1 rounded-lg border border-pink-500/15">
-                            <Calendar className="w-3 h-3" />
-                            <span>{order.deliveryDate} às {order.deliveryTime}</span>
+                          <div className="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-[10px]">
+                            <span className={`font-bold ${order.status === 'CANCELADO' ? 'text-red-400' : order.depositPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
+                              {order.status === 'CANCELADO' ? '🗑️ Cancelado / Lixeira' : order.depositPaid ? '✓ Entrada Paga' : '⚠️ Entrada Pendente'}
+                            </span>
+                            <span className="text-slate-400 group-hover:text-white flex items-center gap-0.5 transition-colors">
+                              Detalhes <ChevronRight className="w-3 h-3" />
+                            </span>
                           </div>
 
-                          <div className="text-[11px] text-slate-400 font-medium mt-2 line-clamp-2">
-                            {order.items.map(i => `${i.quantity}x ${i.productName}`).join(', ')}
-                          </div>
-                        </div>
+                          {/* Botões de Ação Rápida no Card */}
+                          {order.status === 'CANCELADO' && (
+                            <div className="flex gap-1.5 mt-2.5">
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  await handleRestoreOrder(order.id, order.orderNumber)
+                                }}
+                                className="flex-1 py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95"
+                              >
+                                <RotateCcw className="w-3 h-3" /> Restaurar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async (e) => {
+                                  e.stopPropagation()
+                                  await handlePermanentDeleteOrder(order.id, order.orderNumber)
+                                }}
+                                className="py-1.5 px-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95"
+                                title="Excluir Definitivamente"
+                              >
+                                <Trash2 className="w-3 h-3" /> Excluir
+                              </button>
+                            </div>
+                          )}
 
-                        <div className="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-[10px]">
-                          <span className={`font-bold ${order.status === 'CANCELADO' ? 'text-red-400' : order.depositPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {order.status === 'CANCELADO' ? '🗑️ Cancelado / Lixeira' : order.depositPaid ? '✓ Entrada Paga' : '⚠️ Entrada Pendente'}
-                          </span>
-                          <span className="text-slate-400 group-hover:text-white flex items-center gap-0.5 transition-colors">
-                            Detalhes <ChevronRight className="w-3 h-3" />
-                          </span>
-                        </div>
-
-                        {/* Botões de Ação Rápida no Card */}
-                        {order.status === 'CANCELADO' && (
-                          <div className="flex gap-1.5 mt-2.5">
+                          {order.status === 'NOVO' && !order.depositPaid && (
                             <button
                               type="button"
                               onClick={async (e) => {
-                                e.stopPropagation();
-                                await handleRestoreOrder(order.id, order.orderNumber);
+                                e.stopPropagation()
+                                await handleUpdateOrderPayment(order.id, true)
+                                await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'PIX confirmado pelo painel', order)
                               }}
-                              className="flex-1 py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95"
+                              className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
                             >
-                              <RotateCcw className="w-3 h-3" /> Restaurar
+                              <CheckCircle className="w-3.5 h-3.5" /> Confirmar PIX & Avançar
                             </button>
+                          )}
+
+                          {order.status === 'NOVO' && order.depositPaid && (
                             <button
                               type="button"
                               onClick={async (e) => {
-                                e.stopPropagation();
-                                await handlePermanentDeleteOrder(order.id, order.orderNumber);
+                                e.stopPropagation()
+                                await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'Aprovado para produção', order)
                               }}
-                              className="py-1.5 px-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95"
-                              title="Excluir Definitivamente"
+                              className="w-full mt-2.5 py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
                             >
-                              <Trash2 className="w-3 h-3" /> Excluir
+                              <CheckCircle className="w-3.5 h-3.5" /> Confirmar Pedido
                             </button>
-                          </div>
-                        )}
+                          )}
 
-                        {order.status === 'NOVO' && !order.depositPaid && (
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              await handleUpdateOrderPayment(order.id, true);
-                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'PIX confirmado pelo painel', order);
-                            }}
-                            className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Confirmar PIX & Avançar
-                          </button>
-                        )}
+                          {order.status === 'CONFIRMADO' && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                if (!order.depositPaid) {
+                                  const proceed = confirm(
+                                    '⚠️ ALERTA DE SEGURANÇA:\n\nA entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?'
+                                  )
+                                  if (!proceed) return
+                                }
+                                await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo', order)
+                              }}
+                              className="w-full mt-2.5 py-2 px-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 active:scale-95"
+                            >
+                              <Clock className="w-3.5 h-3.5" /> Iniciar Produção
+                            </button>
+                          )}
 
-                        {order.status === 'NOVO' && order.depositPaid && (
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'CONFIRMADO', 'Aprovado para produção', order);
-                            }}
-                            className="w-full mt-2.5 py-2 px-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Confirmar Pedido
-                          </button>
-                        )}
+                          {order.status === 'EM_PRODUCAO' && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                await handleUpdateOrderStatus(order.id, 'PRONTO', 'Pedido finalizado e pronto', order)
+                              }}
+                              className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
+                            >
+                              <CheckCircle className="w-3.5 h-3.5" /> Marcar como Pronto
+                            </button>
+                          )}
 
-                        {order.status === 'CONFIRMADO' && (
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (!order.depositPaid) {
-                                const proceed = confirm(
-                                  '⚠️ ALERTA DE SEGURANÇA:\n\nA entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?'
-                                );
-                                if (!proceed) return;
-                              }
-                              await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo', order);
-                            }}
-                            className="w-full mt-2.5 py-2 px-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 active:scale-95"
-                          >
-                            <Clock className="w-3.5 h-3.5" /> Iniciar Produção
-                          </button>
-                        )}
-
-                        {order.status === 'EM_PRODUCAO' && (
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'PRONTO', 'Pedido finalizado e pronto', order);
-                            }}
-                            className="w-full mt-2.5 py-2 px-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-emerald-500/20 active:scale-95"
-                          >
-                            <CheckCircle className="w-3.5 h-3.5" /> Marcar como Pronto
-                          </button>
-                        )}
-
-                        {order.status === 'PRONTO' && (
-                          <button
-                            type="button"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              await handleUpdateOrderStatus(order.id, 'ENTREGUE', 'Entregue ao cliente', order);
-                            }}
-                            className="w-full mt-2.5 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
-                          >
-                            <Truck className="w-3.5 h-3.5" /> Concluir Entrega
-                          </button>
-                        )}
-                      </div>
-                    ))}
+                          {order.status === 'PRONTO' && (
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation()
+                                await handleUpdateOrderStatus(order.id, 'ENTREGUE', 'Entregue ao cliente', order)
+                              }}
+                              className="w-full mt-2.5 py-2 px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md active:scale-95"
+                            >
+                              <Truck className="w-3.5 h-3.5" /> Concluir Entrega
+                            </button>
+                          )}
+                        </div>
+                      )
+                    })}
 
                     {colOrders.length === 0 && (
                       <div className="py-12 text-center border-2 border-dashed border-slate-800/80 rounded-xl text-slate-500 text-xs font-semibold">
