@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle } from 'lucide-react'
+import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle, Trash2, RotateCcw } from 'lucide-react'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import type { OrderData } from '../../../types/dashboard'
 
@@ -7,6 +7,9 @@ interface OrderDetailModalProps {
   onClose: () => void
   onUpdateStatus: (id: number, status: string, note?: string, order?: OrderData) => Promise<void>
   onUpdatePayment: (id: number, depositPaid: boolean) => Promise<void>
+  onMoveToTrash?: (id: number, orderNumber?: string, directOrder?: OrderData) => Promise<void>
+  onRestoreOrder?: (id: number, orderNumber?: string) => Promise<void>
+  onPermanentDelete?: (id: number, orderNumber?: string) => Promise<void>
 }
 
 export function OrderDetailModal({
@@ -14,6 +17,9 @@ export function OrderDetailModal({
   onClose,
   onUpdateStatus,
   onUpdatePayment,
+  onMoveToTrash,
+  onRestoreOrder,
+  onPermanentDelete,
 }: OrderDetailModalProps) {
   if (!order) return null
 
@@ -36,7 +42,7 @@ export function OrderDetailModal({
     EM_PRODUCAO: 'Em Produção',
     PRONTO: 'Pronto p/ Entrega',
     ENTREGUE: 'Entregue',
-    CANCELADO: 'Cancelado',
+    CANCELADO: 'Cancelado / Lixeira',
   }
 
   const nextStatusOptions: Record<string, { label: string; next: string }> = {
@@ -48,7 +54,7 @@ export function OrderDetailModal({
 
   const nextAction = nextStatusOptions[order.status]
 
-  function getWhatsAppUrl(msgType: 'confirm' | 'production' | 'ready' | 'delivered') {
+  function getWhatsAppUrl(msgType: 'confirm' | 'production' | 'ready' | 'delivered' | 'cancel') {
     let msg = ''
     if (msgType === 'confirm') {
       msg = `✅ Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* foi *CONFIRMADO*! Estamos organizando os preparativos para o dia ${order?.deliveryDate}.\n\nAcompanhe seu pedido em tempo real:\n${trackingUrl}`
@@ -56,6 +62,8 @@ export function OrderDetailModal({
       msg = `👩‍🍳 Olá ${order?.clientName}! O seu pedido *${order?.orderNumber}* já está *EM PRODUÇÃO*! Preparado com todo o cuidado e dedicação.\n\nAcompanhe em tempo real:\n${trackingUrl}`
     } else if (msgType === 'ready') {
       msg = `🎉 Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* está *PRONTO* para ${order?.deliveryType === 'DELIVERY' ? 'sair para entrega' : 'retirada'}!\n\nAcompanhe:\n${trackingUrl}`
+    } else if (msgType === 'cancel') {
+      msg = `⚠️ Olá ${order?.clientName}! Informamos que o seu pedido *${order?.orderNumber}* foi *PAUSADO/CANCELADO*. Caso queira esclarecer dúvidas ou reagendar sua encomenda, nos responda por aqui!`
     } else {
       msg = `🙏 Olá ${order?.clientName}! Seu pedido *${order?.orderNumber}* foi entregue! Gostaria de saber o que achou! Se puder nos avaliar, agradecemos muito!`
     }
@@ -313,54 +321,118 @@ export function OrderDetailModal({
             <span className="text-xs font-black text-slate-400 uppercase tracking-widest block mb-2">
               Mensagens Rápidas WhatsApp
             </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
               <a
                 href={getWhatsAppUrl('confirm')}
                 target="_blank"
                 rel="noreferrer"
-                className="py-2.5 px-3 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
+                className="py-2.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
               >
-                <MessageSquare className="w-3.5 h-3.5" /> Confirmado
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" /> Confirmado
               </a>
               <a
                 href={getWhatsAppUrl('production')}
                 target="_blank"
                 rel="noreferrer"
-                className="py-2.5 px-3 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
+                className="py-2.5 px-2 bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
               >
-                <MessageSquare className="w-3.5 h-3.5" /> Produção
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" /> Produção
               </a>
               <a
                 href={getWhatsAppUrl('ready')}
                 target="_blank"
                 rel="noreferrer"
-                className="py-2.5 px-3 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
+                className="py-2.5 px-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
               >
-                <MessageSquare className="w-3.5 h-3.5" /> Pronto!
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" /> Pronto!
               </a>
               <a
                 href={getWhatsAppUrl('delivered')}
                 target="_blank"
                 rel="noreferrer"
-                className="py-2.5 px-3 bg-slate-500/10 hover:bg-slate-500/20 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
+                className="py-2.5 px-2 bg-slate-500/10 hover:bg-slate-500/20 text-slate-600 dark:text-slate-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center"
               >
-                <MessageSquare className="w-3.5 h-3.5" /> Feedback
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" /> Feedback
+              </a>
+              <a
+                href={getWhatsAppUrl('cancel')}
+                target="_blank"
+                rel="noreferrer"
+                className="py-2.5 px-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 rounded-xl text-xs font-black flex items-center justify-center gap-1 transition-all text-center col-span-2 sm:col-span-1"
+                title="Avisar cliente que o pedido foi pausado/cancelado"
+              >
+                <MessageSquare className="w-3.5 h-3.5 shrink-0" /> Pausado
               </a>
             </div>
           </div>
 
-          {/* ── Próximo Passo do Kanban ── */}
-          {nextAction && (
-            <button
-              onClick={async () => {
-                await onUpdateStatus(order.id, nextAction.next, undefined, order)
-              }}
-              className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-base shadow-xl shadow-pink-500/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
-            >
-              <CheckCircle className="w-5 h-5" />
-              Avançar Pedido: {nextAction.label}
-            </button>
-          )}
+          {/* ── Gestão de Status & Lixeira ── */}
+          <div className="space-y-2.5 pt-2">
+            {order.status === 'CANCELADO' ? (
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-medium flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>Este pedido está atualmente na <strong>Lixeira / Cancelados</strong>.</span>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {onRestoreOrder && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await onRestoreOrder(order.id, order.orderNumber);
+                        onClose();
+                      }}
+                      className="flex-1 py-3.5 px-4 bg-emerald-500 hover:bg-emerald-600 rounded-2xl text-white font-black text-sm shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Restaurar Pedido para Novos
+                    </button>
+                  )}
+                  {onPermanentDelete && (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await onPermanentDelete(order.id, order.orderNumber);
+                        onClose();
+                      }}
+                      className="py-3.5 px-4 bg-red-500/15 hover:bg-red-500 text-red-400 hover:text-white border border-red-500/30 rounded-2xl font-black text-sm transition-all flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      Excluir Definitivamente
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <>
+                {nextAction && (
+                  <button
+                    onClick={async () => {
+                      await onUpdateStatus(order.id, nextAction.next, undefined, order)
+                    }}
+                    className="w-full py-4 bg-gradient-to-r from-orange-500 to-pink-500 rounded-2xl text-white font-black text-base shadow-xl shadow-pink-500/20 hover:scale-[1.01] transition-all flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    Avançar Pedido: {nextAction.label}
+                  </button>
+                )}
+
+                {onMoveToTrash && (
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await onMoveToTrash(order.id, order.orderNumber, order);
+                      onClose();
+                    }}
+                    className="w-full py-3 px-4 bg-slate-100 hover:bg-red-500/10 text-slate-500 hover:text-red-500 dark:bg-slate-800/40 dark:hover:bg-red-500/10 dark:text-slate-400 dark:hover:text-red-400 border border-slate-200 dark:border-slate-800 hover:border-red-500/30 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    Mover Pedido para a Lixeira / Cancelar
+                  </button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>

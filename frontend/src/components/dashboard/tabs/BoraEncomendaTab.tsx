@@ -31,6 +31,7 @@ import {
   Link2,
   Send,
   Bell,
+  RotateCcw,
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
@@ -132,6 +133,14 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
         msg:
           `🙏 Olá, *${order.clientName}*! Sua encomenda *${order.orderNumber}* foi *ENTREGUE*! Obrigado pela preferência!\n\n` +
           `Se puder nos avaliar, ficamos muito felizes! 💕`,
+      },
+      CANCELADO: {
+        label: 'Pedido Pausado / Lixeira',
+        emoji: '⏸️',
+        color: 'from-red-500 to-red-600',
+        msg:
+          `⚠️ Olá, *${order.clientName}*! Informamos que o seu pedido *${order.orderNumber}* foi *PAUSADO/CANCELADO* por ${storeName}.\n\n` +
+          `Caso tenha alguma dúvida, queira reagendar ou retomar a sua encomenda, favor nos responder diretamente por aqui! 🙏`,
       },
     }
 
@@ -242,6 +251,43 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
     }
   }
 
+  async function handleMoveToTrash(id: number, orderNumber?: string, directOrder?: OrderData) {
+    const targetOrder = directOrder || orders.find(o => o.id === id) || (selectedOrder?.id === id ? selectedOrder : null)
+    const proceed = confirm(`Mover o pedido ${orderNumber || targetOrder?.orderNumber || `#${id}`} para a Lixeira / Cancelados?\n\nVocê poderá avisar o cliente no WhatsApp que o pedido foi pausado.`)
+    if (!proceed) return
+    await api.updateOrderStatus(id, 'CANCELADO', 'Movido para a lixeira pelo profissional')
+    const updatedOrders = await api.getOrders()
+    setOrders(updatedOrders || [])
+    if (selectedOrder && selectedOrder.id === id) {
+      const single = await api.getOrder(id)
+      setSelectedOrder(single)
+    }
+    if (targetOrder) {
+      triggerWhatsAppNotification(targetOrder, 'CANCELADO')
+    }
+  }
+
+  async function handleRestoreOrder(id: number, orderNumber?: string) {
+    await api.updateOrderStatus(id, 'NOVO', 'Restaurado da lixeira pelo profissional')
+    const updatedOrders = await api.getOrders()
+    setOrders(updatedOrders || [])
+    if (selectedOrder && selectedOrder.id === id) {
+      const single = await api.getOrder(id)
+      setSelectedOrder(single)
+    }
+  }
+
+  async function handlePermanentDeleteOrder(id: number, orderNumber?: string) {
+    const proceed = confirm(`⚠️ EXCLUSÃO PERMANENTE:\n\nTem certeza que deseja excluir o pedido ${orderNumber || `#${id}`} definitivamente do sistema? Esta ação não pode ser desfeita.`)
+    if (!proceed) return
+    await api.deleteOrder(id)
+    if (selectedOrder && selectedOrder.id === id) {
+      setSelectedOrder(null)
+    }
+    const updatedOrders = await api.getOrders()
+    setOrders(updatedOrders || [])
+  }
+
   // Handlers para Configurações da Loja
   async function handleSaveSettings(e: React.FormEvent) {
     e.preventDefault()
@@ -299,6 +345,13 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
       dotColor: 'bg-slate-400',
       badgeClass: 'bg-slate-500/10 text-slate-400 border border-slate-500/20',
       borderLeft: 'border-l-slate-500',
+    },
+    {
+      key: 'CANCELADO',
+      title: 'Lixeira / Cancelados',
+      dotColor: 'bg-red-400',
+      badgeClass: 'bg-red-500/10 text-red-400 border border-red-500/20',
+      borderLeft: 'border-l-red-500',
     },
   ]
 
@@ -541,12 +594,34 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                       >
                         <div>
                           <div className="flex justify-between items-start mb-2">
-                            <span className="text-xs font-black text-white font-mono">
-                              {order.orderNumber}
-                            </span>
-                            <span className="text-xs font-black text-pink-400 font-mono">
-                              {formatCurrency(order.total)}
-                            </span>
+                            <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                              <span className="text-xs font-black text-white font-mono">
+                                {order.orderNumber}
+                              </span>
+                              {order.status === 'CANCELADO' && (
+                                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 shrink-0">
+                                  Lixeira
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span className="text-xs font-black text-pink-400 font-mono">
+                                {formatCurrency(order.total)}
+                              </span>
+                              {order.status !== 'CANCELADO' && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleMoveToTrash(order.id, order.orderNumber);
+                                  }}
+                                  className="p-1 text-slate-500 hover:text-red-400 rounded-lg hover:bg-slate-800 transition-colors"
+                                  title="Mover para Lixeira / Cancelar"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           </div>
 
                           <p className="text-xs font-bold text-slate-200 truncate mb-2">
@@ -564,8 +639,8 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                         </div>
 
                         <div className="mt-3 pt-2.5 border-t border-slate-800 flex justify-between items-center text-[10px]">
-                          <span className={`font-bold ${order.depositPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
-                            {order.depositPaid ? '✓ Entrada Paga' : '⚠️ Entrada Pendente'}
+                          <span className={`font-bold ${order.status === 'CANCELADO' ? 'text-red-400' : order.depositPaid ? 'text-emerald-400' : 'text-amber-400'}`}>
+                            {order.status === 'CANCELADO' ? '🗑️ Cancelado / Lixeira' : order.depositPaid ? '✓ Entrada Paga' : '⚠️ Entrada Pendente'}
                           </span>
                           <span className="text-slate-400 group-hover:text-white flex items-center gap-0.5 transition-colors">
                             Detalhes <ChevronRight className="w-3 h-3" />
@@ -573,6 +648,32 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
                         </div>
 
                         {/* Botões de Ação Rápida no Card */}
+                        {order.status === 'CANCELADO' && (
+                          <div className="flex gap-1.5 mt-2.5">
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handleRestoreOrder(order.id, order.orderNumber);
+                              }}
+                              className="flex-1 py-1.5 px-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-xl font-bold text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95"
+                            >
+                              <RotateCcw className="w-3 h-3" /> Restaurar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                await handlePermanentDeleteOrder(order.id, order.orderNumber);
+                              }}
+                              className="py-1.5 px-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl font-bold text-[10px] transition-all flex items-center justify-center gap-1 active:scale-95"
+                              title="Excluir Definitivamente"
+                            >
+                              <Trash2 className="w-3 h-3" /> Excluir
+                            </button>
+                          </div>
+                        )}
+
                         {order.status === 'NOVO' && !order.depositPaid && (
                           <button
                             type="button"
@@ -1086,6 +1187,9 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateOrderStatus}
         onUpdatePayment={handleUpdateOrderPayment}
+        onMoveToTrash={handleMoveToTrash}
+        onRestoreOrder={handleRestoreOrder}
+        onPermanentDelete={handlePermanentDeleteOrder}
       />
 
       {/* ══════════════════════════════════════════════════════════ */}
