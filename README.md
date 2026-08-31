@@ -128,14 +128,18 @@ graph TB
 
 ## 3. Core Engines & Platform Modules
 
-### 3.1. BoraEncomenda Engine (v3.0)
+### 3.1. BoraEncomenda Engine (v3.0) & Financial Reconciliation
 Specialized order-to-production workflow for customized products, artisanal gastronomy, and bespoke commissions:
 - **Cinematic Storefront Experience**:
   - Dark Luxury aesthetic with ambient mesh lighting, glassmorphism, and responsive CSS keyframe animations.
   - Automated 6-second rotating widescreen featured showcase (21:9 aspect ratio) with linear progress indicators.
-  - Interactive Scheduling HUD verifying merchant lead time (`minAdvanceDays`) dynamically before allowing checkout.
+  - Interactive Scheduling HUD verifying merchant lead time (`minAdvanceDays`) dynamically using Brazilian timezone (`America/Sao_Paulo`, UTC-3) before checkout.
   - Client-side persistent Wishlist storing saved items via browser storage with dedicated filter chips.
   - Integrated Bespoke VIP Concierge card directing custom commissions straight to WhatsApp.
+- **Automated Financial Reconciliation (`/api/finance/stats`)**:
+  - Automatic cash flow reconciliation of paid deposits (*"Entrada de Encomenda"* via PIX or Mercado Pago).
+  - Delivery balance scheduled as accounts receivable (*"Restante de Encomenda"*) tied to the promised delivery date (`deliveryDate`).
+  - Completed orders (*"ENTREGUE"*) recognized as fulfilled store revenue.
 - **Kanban State-Machine**:
   - Structured lifecycle transitions: `RECEBIDO` → `CONFIRMADO` → `EM_PRODUCAO` → `PRONTO` → `ENTREGUE` (or `CANCELADO`).
   - Ultra-smooth drag-to-scroll Kanban view with mouse momentum physics for high-volume order management.
@@ -162,16 +166,24 @@ Specialized order-to-production workflow for customized products, artisanal gast
   - Proactive key auto-repair cross-synchronized between admin profile and storefront checkout.
 
 ### 3.4. Hyper-Customization & Real-Time Simulator
-- **Live Mobile Device Simulator**:
-  - 310px viewport simulator mirroring customer mobile views in real time as settings are toggled.
+- **Reactive Mobile Device Simulator**:
+  - 310px viewport simulator mirroring customer mobile views in real time as settings and operational modes are toggled.
+  - Real-time adaptive catalog preview reflecting **Services Only**, **On-Demand Products Only (BoraEncomenda)**, or **Hybrid Mode**.
 - **Visual Identity Management**:
-  - Support for business operational mode: Services Only, On-Demand Products Only, or Hybrid.
   - Dynamic color palette generator (Primary/Secondary accents, presets, and light/dark theme toggle).
   - High-resolution Avatar and Banner upload with client-side canvas aspect ratio auto-cropping (1200x400).
 - **Interactive State Feedback**:
   - Asynchronous form submission with animated button states (`Saving...`, `Success ✓`), banner alerts, and global floating toast notifications.
 
-### 3.5. Omnichannel Notification & Integrations Hub
+### 3.5. Mobile Experience & Native Safe-Area Posture
+- **Hardware Safe-Area Insets**:
+  - Toast and notification widgets leverage `env(safe-area-inset-top)` for full compatibility with iPhone Dynamic Island, top notches, and Android system status bars.
+- **Virtual Keyboard Viewport Containment**:
+  - Modals across the platform incorporate `max-h-[90vh]` and bounded `overflow-y-auto` rules to prevent buttons or inputs from being pushed off-screen when software keyboards expand on mobile devices.
+
+### 3.6. Omnichannel Notification & Integrations Hub
+- **Dynamic Multi-Environment Routing**:
+  - Automatic resolution of frontend URLs across local development (`localhost:5173`), custom domains (`CNAME`), and production edge deployments.
 - **WhatsApp Notification Pipeline**:
   - Automatic dispatch of structured message templates across order lifecycle milestones.
   - Phone normalization with Brazilian standard (+55 DDI, 2-digit DDD, 9-digit mobile sanitization).
@@ -188,7 +200,9 @@ BoraMarka enforces an OWASP Top 10 aligned defense-in-depth posture:
 | :--- | :--- | :--- |
 | **CSS / DOM Injection** | Regular expression color sanitizer | Rejects malicious style strings; enforces strict `#RGB`, `#RRGGBB`, and bounded functional color expressions. |
 | **Cart Price Tampering** | Server-side pricing recalculation | Ignores client-provided subtotals; queries database product records inside transactional boundary. |
-| **Lead-Time Violation** | Server-side calendar delta check | Verifies `deliveryDate - today >= minAdvanceDays` before persisting order entity. |
+| **Lead-Time Violation** | Server-side calendar delta check | Verifies `diffDaysBrazilian(deliveryDate, today) >= minAdvanceDays` before persisting order entity. |
+| **Timezone Drift (UTC/BRT)**| Brazilian Timezone (`America/Sao_Paulo`) normalization | Dedicated date calculation engine preventing early-day cutoff anomalies between 21:00 and 00:00 BRT. |
+| **Database Query Contention**| Multi-column PostgreSQL relational indexing | Indexed lookups on `adminId`, foreign keys, and filter states across `Order`, `Product`, `Booking`, `Transaction`, and `TimeSlot`. |
 | **Credential Leakage** | API response payload filtering | Completely strips sensitive tokens (`mpAccessToken`) and private keys from public storefront payloads. |
 | **PII Scraping / Enumeration** | Deterministic token authorization & PII masking | Masks customer names, phones, emails, and street addresses unless accessed with 16-character cancellation/security token. |
 | **DoS / Brute Force** | Per-route tiered rate limiting | 10 requests/minute on order creation (`POST /api/store/:username/order`); 30 requests/minute on tracking lookup. |

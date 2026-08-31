@@ -520,33 +520,58 @@ export function PersonalizarTab({
               {/* Mock Catalog Items */}
               <div className="px-3 mt-4">
                 <div className="flex items-center justify-between mb-3">
-                  <h5 className="text-[9px] font-black uppercase tracking-wider text-slate-950 dark:text-white">Nosso Catálogo</h5>
+                  <h5 className="text-[9px] font-black uppercase tracking-wider text-slate-950 dark:text-white">
+                    {brandingForm.businessType === 'PRODUCTS' ? 'Cardápio / Encomendas' : 'Nosso Catálogo'}
+                  </h5>
                   <div className="h-[1.5px] flex-1 bg-slate-200 dark:bg-slate-800 ml-2 rounded-full"></div>
                 </div>
 
                 <div className="space-y-2">
-                  {[
-                    { name: 'Corte Social Masculino', price: 45.0, duration: '30 min' },
-                    { name: 'Barba Terapia Completa', price: 35.0, duration: '20 min' },
-                  ].map((item, idx) => (
+                  {(
+                    brandingForm.businessType === 'PRODUCTS'
+                      ? [
+                          { name: 'Bolo Vulcão Ninho & Nutella', price: 85.0, detail: 'Prazo: 2 dias • Encomenda', badge: 'Sob Encomenda' },
+                          { name: 'Kit Doces Finos Gourmet (50 un)', price: 120.0, detail: 'Prazo: 3 dias • Encomenda', badge: 'Mais Pedido' },
+                        ]
+                      : brandingForm.businessType === 'HYBRID'
+                      ? [
+                          { name: 'Sessão / Atendimento Individual', price: 90.0, detail: '45 min • Horário Marcado', badge: 'Serviço' },
+                          { name: 'Kit Artesanal Personalizado', price: 110.0, detail: 'Prazo: 2 dias • Produção', badge: 'Encomenda' },
+                        ]
+                      : [
+                          { name: 'Corte Social Masculino', price: 45.0, detail: '30 min • Agendamento', badge: 'Serviço' },
+                          { name: 'Barba Terapia Completa', price: 35.0, detail: '20 min • Agendamento', badge: 'Serviço' },
+                        ]
+                  ).map((item, idx) => (
                     <div 
                       key={idx} 
-                      className="bg-white dark:bg-[#131826] p-2.5 rounded-lg border border-slate-200 dark:border-slate-800 transition-all flex flex-col justify-between"
+                      className="bg-white dark:bg-[#131826] p-2.5 rounded-xl border border-slate-200 dark:border-slate-800 transition-all flex flex-col justify-between shadow-sm"
                     >
-                      <div className="flex justify-between items-start mb-1">
+                      <div className="flex justify-between items-start mb-1 gap-1">
                         <span className="font-black text-[10px] text-slate-950 dark:text-white leading-tight">
                           {item.name}
                         </span>
                         <span 
-                          className="font-black text-[10px] whitespace-nowrap"
-                          style={{ color: brandingForm.accentColor }}
+                          className="font-black text-[10px] whitespace-nowrap shrink-0"
+                          style={{ color: brandingForm.accentColor || '#f97316' }}
                         >
                           {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(item.price)}
                         </span>
                       </div>
-                      <span className="text-[8px] text-slate-400 font-bold uppercase tracking-wider">
-                        {item.duration}
-                      </span>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-[8px] text-slate-400 font-bold tracking-tight">
+                          {item.detail}
+                        </span>
+                        <span 
+                          className="text-[7px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-md"
+                          style={{ 
+                            backgroundColor: `${brandingForm.accentColor || '#f97316'}15`,
+                            color: brandingForm.accentColor || '#f97316'
+                          }}
+                        >
+                          {item.badge}
+                        </span>
+                      </div>
                     </div>
                   ))}
                 </div>

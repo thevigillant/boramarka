@@ -165,6 +165,7 @@ model SchedulingLink {
   
   timeSlots TimeSlot[]
 
+  @@index([adminId])
   @@map("scheduling_links")
 }
 
@@ -177,6 +178,8 @@ model TimeSlot {
   link        SchedulingLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   booking     Booking?
 
+  @@index([linkId])
+  @@index([date])
   @@map("time_slots")
 }
 
@@ -201,6 +204,8 @@ model Booking {
   totalAmount      Float    @default(0) @map("total_amount")
   createdAt        DateTime @default(now()) @map("created_at")
 
+  @@index([status])
+  @@index([clientPhone])
   @@map("bookings")
 }
 
@@ -220,6 +225,9 @@ model Transaction {
   adminId     Int      @map("admin_id")
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
+  @@index([adminId])
+  @@index([dueDate])
+  @@index([type])
   @@map("transactions")
 }
 
@@ -501,6 +509,8 @@ model AuditLog {
   adminId     Int      @map("admin_id")
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
+  @@index([adminId])
+  @@index([createdAt])
   @@map("audit_logs")
 }
 
@@ -777,6 +787,7 @@ model ProductCategory {
   admin     Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
   products  Product[]
 
+  @@index([adminId])
   @@map("product_categories")
 }
 
@@ -804,6 +815,8 @@ model Product {
   customFields        ProductCustomField[]
   orderItems          OrderItem[]
 
+  @@index([adminId])
+  @@index([categoryId])
   @@map("products")
 }
 
@@ -816,6 +829,7 @@ model ProductPhoto {
   productId Int      @map("product_id")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
   @@map("product_photos")
 }
 
@@ -831,6 +845,7 @@ model ProductCustomField {
   productId Int      @map("product_id")
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
 
+  @@index([productId])
   @@map("product_custom_fields")
 }
 
@@ -865,6 +880,9 @@ model Order {
   items            OrderItem[]
   statusLogs       OrderStatusLog[]
 
+  @@index([adminId])
+  @@index([deliveryDate])
+  @@index([status])
   @@map("orders")
 }
 
@@ -884,6 +902,8 @@ model OrderItem {
   productId      Int?     @map("product_id")
   product        Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
 
+  @@index([orderId])
+  @@index([productId])
   @@map("order_items")
 }
 
@@ -897,6 +917,7 @@ model OrderStatusLog {
   orderId   Int      @map("order_id")
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 
+  @@index([orderId])
   @@map("order_status_logs")
 }
 

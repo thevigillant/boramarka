@@ -2391,8 +2391,8 @@ export default function Dashboard() {
 
       {/* PDF Export Modal */}
       {showPdfModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center p-6 text-center animate-fade-in" style={{ position: 'fixed' }}>
-          <div className="bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 p-6 sm:p-8 rounded-3xl max-w-md w-full shadow-2xl relative text-left animate-scale-up">
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[100] flex flex-col items-center justify-center p-3 sm:p-6 text-center animate-fade-in" style={{ position: 'fixed' }}>
+          <div className="bg-white dark:bg-[#131826] border border-slate-200 dark:border-slate-800 p-5 sm:p-8 max-h-[90vh] overflow-y-auto rounded-3xl max-w-md w-full shadow-2xl relative text-left animate-scale-up">
             <button 
               onClick={() => setShowPdfModal(false)} 
               className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-white text-xl font-bold bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 w-8 h-8 rounded-full flex items-center justify-center transition-all"

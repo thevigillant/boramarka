@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { v4 as uuidv4 } from 'uuid';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
+import { getBrazilianToday, addDaysBrazilian, diffDaysBrazilian } from '../utils/dateUtils';
 
 // 🛡️ Regex de validação de e-mail simples e eficiente
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
@@ -73,11 +74,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       return reply.status(403).send({ error: 'Esta loja não está aceitando encomendas no momento' });
     }
 
-    // Calcula a data mínima de entrega com base nas configurações
+    // Calcula a data mínima de entrega com base nas configurações e fuso de Brasília
     const minAdvanceDays = admin.orderSettings?.minAdvanceDays || 2;
-    const minDate = new Date();
-    minDate.setDate(minDate.getDate() + minAdvanceDays);
-    const minDeliveryDate = minDate.toISOString().split('T')[0];
+    const minDeliveryDate = addDaysBrazilian(minAdvanceDays);
 
     return {
       admin: {
@@ -215,20 +214,14 @@ export default async function storefrontRoutes(app: FastifyInstance) {
 
     // 🛡️ Validação de Segurança: Impede datas no passado ou que violem a antecedência mínima
     const minAdvanceDays = settings?.minAdvanceDays !== undefined ? settings.minAdvanceDays : 1;
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const chosenDate = new Date(`${deliveryDate}T00:00:00`);
-    
-    if (isNaN(chosenDate.getTime())) {
-      return reply.status(400).send({ error: 'Formato de data inválido' });
-    }
-
-    const diffTime = chosenDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const todayStr = getBrazilianToday();
+    const diffDays = diffDaysBrazilian(deliveryDate, todayStr);
 
     if (diffDays < minAdvanceDays) {
+      const minDateFormatted = addDaysBrazilian(minAdvanceDays);
+      const [y, m, d] = minDateFormatted.split('-');
       return reply.status(400).send({
-        error: `Esta loja exige pelo menos ${minAdvanceDays} dia(s) de antecedência para encomendas. Data mais próxima: ${new Date(Date.now() + minAdvanceDays * 86400000).toLocaleDateString('pt-BR')}`,
+        error: `Esta loja exige pelo menos ${minAdvanceDays} dia(s) de antecedência para encomendas. Data mais próxima: ${d}/${m}/${y}`,
       });
     }
 
@@ -338,6 +331,10 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       return o;
     });
 
+    // ═══ Resolução dinâmica de Frontend URL para Links & Webhooks ═══
+    const originHeader = (request.headers.origin as string) || (request.headers.referer ? new URL(request.headers.referer as string).origin : '');
+    const frontendBaseUrl = originHeader || process.env.FRONTEND_URL || (process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',')[0] : 'http://localhost:5173');
+
     // ═══ Integração de Pagamento de Entrada (Mercado Pago se configurado e solicitado) ═══
     let paymentUrl: string | undefined;
     const mpToken = admin.mpAccessToken || process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -367,9 +364,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
             },
             external_reference: `ORDER_${order.id}_${order.orderNumber}`,
             back_urls: {
-              success: `https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear?status=success`,
-              failure: `https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear?status=failure`,
-              pending: `https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear?status=pending`,
+              success: `${frontendBaseUrl}/pedido/${order.orderNumber.replace('#', '')}/rastrear?status=success`,
+              failure: `${frontendBaseUrl}/pedido/${order.orderNumber.replace('#', '')}/rastrear?status=failure`,
+              pending: `${frontendBaseUrl}/pedido/${order.orderNumber.replace('#', '')}/rastrear?status=pending`,
             },
             auto_return: 'approved',
           },
@@ -420,7 +417,7 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       `💳 *${paymentLabel} para pagar via PIX:* R$ ${depositAmount.toFixed(2)}\n` +
       (remainingAmount > 0 ? `💵 *Restante na entrega:* R$ ${remainingAmount.toFixed(2)}\n\n` : `🎉 *Pagamento integral antecipado!*\n\n`) +
       `Segue o comprovante em anexo! 👇\n\n` +
-      `Link do pedido: https://boramarka.com.br/pedido/${order.orderNumber.replace('#', '')}/rastrear`
+      `Link do pedido: ${frontendBaseUrl}/pedido/${order.orderNumber.replace('#', '')}/rastrear`
     );
 
     const whatsappUrl = formattedWhatsAppPhone

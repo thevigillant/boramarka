@@ -8,11 +8,14 @@ export function Toast({ message, type, onClose }: { message: string; type: 'succ
   }, [onClose])
 
   return (
-    <div className={`fixed top-6 right-6 left-6 sm:left-auto sm:w-96 z-[9999] animate-slide-up transition-all ${
-      type === 'success' 
-        ? 'bg-emerald-600/95 dark:bg-emerald-700/95 text-white shadow-emerald-500/25 border-emerald-400/30' 
-        : 'bg-rose-600/95 dark:bg-rose-700/95 text-white shadow-rose-500/25 border-rose-400/30'
-    } backdrop-blur-xl px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3.5 text-sm border`}>
+    <div 
+      style={{ top: 'max(1.5rem, calc(env(safe-area-inset-top, 0px) + 0.75rem))' }}
+      className={`fixed right-4 left-4 sm:right-6 sm:left-auto sm:w-96 z-[9999] animate-slide-up transition-all ${
+        type === 'success' 
+          ? 'bg-emerald-600/95 dark:bg-emerald-700/95 text-white shadow-emerald-500/25 border-emerald-400/30' 
+          : 'bg-rose-600/95 dark:bg-rose-700/95 text-white shadow-rose-500/25 border-rose-400/30'
+      } backdrop-blur-xl px-4 sm:px-5 py-3.5 sm:py-4 rounded-2xl shadow-2xl flex items-center gap-3.5 text-sm border`}
+    >
       <div className="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
         {type === 'success' ? <CheckCircle2 className="w-5 h-5 text-white" /> : <AlertCircle className="w-5 h-5 text-white" />}
       </div>

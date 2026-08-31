@@ -5,7 +5,7 @@ export function PaywallModal({ isOpen, onClose, onCheckout }: { isOpen: boolean;
 
   return (
     <div className="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-3 sm:p-6 text-center animate-fade-in">
-      <div className="bg-[#131826] border border-slate-800 p-5 sm:p-8 rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl relative animate-scale-up text-left">
+      <div className="bg-[#131826] border border-slate-800 p-5 sm:p-8 max-h-[90vh] overflow-y-auto rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl relative animate-scale-up text-left">
         <button 
           onClick={onClose} 
           className="absolute top-3.5 right-3.5 text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 w-8 h-8 rounded-xl flex items-center justify-center transition-all cursor-pointer border border-slate-700"

@@ -28,10 +28,19 @@ export default async function financeRoutes(app: FastifyInstance) {
       }
     });
 
+    // Auto-reconcile active & completed orders from BoraEncomenda
+    const activeOrders = await prisma.order.findMany({
+      where: {
+        adminId: user.id,
+        status: { in: ['NOVO', 'CONFIRMADO', 'EM_PRODUCAO', 'PRONTO', 'ENTREGUE'] }
+      }
+    });
+
     const existingTransactions = await prisma.transaction.findMany({
       where: { adminId: user.id }
     });
 
+    // 1. Reconciliação de Agendamentos
     for (const b of activeBookings) {
       const servicePrice = b.timeSlot.link.service?.price || 0;
       const fullPrice = b.totalAmount > 0 ? b.totalAmount : servicePrice;
@@ -56,10 +65,116 @@ export default async function financeRoutes(app: FastifyInstance) {
               paid: false,
               clientName: b.clientName,
               category: 'Restante de Agendamento',
-              notes: `Valor restante a ser pago no dia do atendimento (${b.timeSlot.date})`,
+              notes: `Valor restante a ser pago no dia do atendimento (${b.timeSlot.date}) [Booking #${b.id}]`,
               adminId: user.id
             }
           });
+        }
+      }
+    }
+
+    // 2. Reconciliação de Encomendas (BoraEncomenda)
+    for (const ord of activeOrders) {
+      const isDelivered = ord.status === 'ENTREGUE';
+
+      if (isDelivered) {
+        // Pedido entregue: garante que o valor total esteja contabilizado como pago
+        const hasPaidTx = existingTransactions.some(t =>
+          t.type === 'receivable' &&
+          t.paid &&
+          (t.notes.includes(ord.orderNumber) || (t.clientName === ord.clientName && Math.abs(t.amount - ord.total) < 0.01))
+        );
+
+        if (!hasPaidTx) {
+          await prisma.transaction.create({
+            data: {
+              type: 'receivable',
+              description: `Encomenda Concluída ${ord.orderNumber} - ${ord.clientName}`,
+              amount: ord.total,
+              dueDate: ord.deliveryDate,
+              paid: true,
+              paidAt: ord.deliveryDate,
+              clientName: ord.clientName,
+              category: 'Venda de Encomenda',
+              notes: `Pedido entregue com sucesso [${ord.orderNumber}]`,
+              adminId: user.id
+            }
+          });
+        }
+      } else {
+        // Pedido ativo em produção / confirmado:
+        // A. Se entrada/sinal foi pago, registra entrada como recebida
+        if (ord.depositPaid && ord.depositAmount > 0) {
+          const hasDepositPaidTx = existingTransactions.some(t =>
+            t.type === 'receivable' &&
+            t.paid &&
+            t.notes.includes(`[${ord.orderNumber}-DEP]`)
+          );
+
+          if (!hasDepositPaidTx) {
+            await prisma.transaction.create({
+              data: {
+                type: 'receivable',
+                description: `Entrada PIX (${ord.depositPercentage}%) ${ord.orderNumber} - ${ord.clientName}`,
+                amount: ord.depositAmount,
+                dueDate: ord.deliveryDate,
+                paid: true,
+                paidAt: ord.deliveryDate,
+                clientName: ord.clientName,
+                category: 'Entrada de Encomenda',
+                notes: `Entrada recebida para encomenda [${ord.orderNumber}-DEP]`,
+                adminId: user.id
+              }
+            });
+          }
+        } else if (!ord.depositPaid && ord.depositAmount > 0) {
+          // Sinal pendente
+          const hasPendingDepositTx = existingTransactions.some(t =>
+            t.type === 'receivable' &&
+            !t.paid &&
+            t.notes.includes(`[${ord.orderNumber}-DEP]`)
+          );
+
+          if (!hasPendingDepositTx) {
+            await prisma.transaction.create({
+              data: {
+                type: 'receivable',
+                description: `Entrada Pendente (${ord.depositPercentage}%) ${ord.orderNumber} - ${ord.clientName}`,
+                amount: ord.depositAmount,
+                dueDate: ord.deliveryDate,
+                paid: false,
+                clientName: ord.clientName,
+                category: 'Entrada de Encomenda',
+                notes: `Sinal a receber da encomenda [${ord.orderNumber}-DEP]`,
+                adminId: user.id
+              }
+            });
+          }
+        }
+
+        // B. Restante na entrega (se houver)
+        if (ord.remainingAmount > 0) {
+          const hasPendingRemainingTx = existingTransactions.some(t =>
+            t.type === 'receivable' &&
+            !t.paid &&
+            t.notes.includes(`[${ord.orderNumber}-REM]`)
+          );
+
+          if (!hasPendingRemainingTx) {
+            await prisma.transaction.create({
+              data: {
+                type: 'receivable',
+                description: `Restante na Entrega ${ord.orderNumber} - ${ord.clientName}`,
+                amount: ord.remainingAmount,
+                dueDate: ord.deliveryDate,
+                paid: false,
+                clientName: ord.clientName,
+                category: 'Restante de Encomenda',
+                notes: `Saldo a receber na entrega em ${ord.deliveryDate} [${ord.orderNumber}-REM]`,
+                adminId: user.id
+              }
+            });
+          }
         }
       }
     }

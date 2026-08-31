@@ -27,8 +27,8 @@ export function NewBookingModal({
   if (!showNewBookingModal) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white dark:bg-[#131826] w-full max-w-md rounded-3xl p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white dark:bg-[#131826] w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl p-5 sm:p-8 shadow-2xl animate-scale-in text-slate-900 dark:text-slate-100">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-black text-slate-900 dark:text-white">Bora Agendar Novo!</h3>
           <button onClick={() => setShowNewBookingModal(false)} className="p-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-400"><X className="w-6 h-6" /></button>
