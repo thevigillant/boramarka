@@ -76,6 +76,10 @@ model Admin {
   productCategories ProductCategory[]
   products          Product[]
   orders            Order[]
+  walkInQueue       WalkInQueue[]
+  inventoryItems    InventoryItem[]
+  saleTransactions  SaleTransaction[]
+  marketingCampaigns MarketingCampaign[]
 
   @@map("admin")
 }
@@ -920,5 +924,138 @@ model OrderStatusLog {
   @@index([orderId])
   @@map("order_status_logs")
 }
+
+// ═══════════════════════════════════════════════════════════════
+// FILA DE ESPERA / WALK-IN
+// ═══════════════════════════════════════════════════════════════
+model WalkInQueue {
+  id            Int       @id @default(autoincrement())
+  clientName    String    @map("client_name")
+  clientPhone   String    @map("client_phone")
+  serviceName   String    @default("") @map("service_name")
+  employeeId    Int?      @map("employee_id")
+  status        String    @default("WAITING") // WAITING | CALLED | IN_SERVICE | DONE | CANCELLED
+  position      Int       @default(0)
+  estimatedWait Int       @default(0) @map("estimated_wait") // minutos
+  notified      Boolean   @default(false)
+  notes         String    @default("")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  adminId       Int       @map("admin_id")
+  admin         Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([status])
+  @@map("walk_in_queue")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTROLE DE ESTOQUE
+// ═══════════════════════════════════════════════════════════════
+model InventoryItem {
+  id           Int             @id @default(autoincrement())
+  name         String
+  description  String          @default("")
+  category     String          @default("PRODUTO") // PRODUTO | INSUMO
+  unit         String          @default("unidade")
+  costPrice    Float           @default(0.0) @map("cost_price")
+  salePrice    Float           @default(0.0) @map("sale_price")
+  quantity     Int             @default(0)
+  minQuantity  Int             @default(5) @map("min_quantity")
+  photoUrl     String          @default("") @map("photo_url")
+  active       Boolean         @default(true)
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+
+  adminId      Int             @map("admin_id")
+  admin        Admin           @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  movements    StockMovement[]
+  saleItems    SaleItem[]
+
+  @@index([adminId])
+  @@map("inventory_items")
+}
+
+model StockMovement {
+  id          Int           @id @default(autoincrement())
+  type        String        // ENTRADA | SAIDA | AJUSTE
+  quantity    Int
+  reason      String        @default("")
+  createdAt   DateTime      @default(now()) @map("created_at")
+
+  itemId      Int           @map("item_id")
+  item        InventoryItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@index([itemId])
+  @@map("stock_movements")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PDV — PONTO DE VENDA
+// ═══════════════════════════════════════════════════════════════
+model SaleTransaction {
+  id            Int        @id @default(autoincrement())
+  bookingId     Int?       @unique @map("booking_id")
+  employeeId    Int?       @map("employee_id")
+  total         Float      @default(0.0)
+  discount      Float      @default(0.0)
+  paymentMethod String     @default("PIX") @map("payment_method") // PIX | DINHEIRO | DEBITO | CREDITO
+  status        String     @default("PAID") // PAID | CANCELLED
+  receiptSent   Boolean    @default(false) @map("receipt_sent")
+  notes         String     @default("")
+  createdAt     DateTime   @default(now()) @map("created_at")
+
+  adminId       Int        @map("admin_id")
+  admin         Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  items         SaleItem[]
+
+  @@index([adminId])
+  @@index([createdAt])
+  @@map("sale_transactions")
+}
+
+model SaleItem {
+  id              Int              @id @default(autoincrement())
+  name            String
+  quantity        Int              @default(1)
+  unitPrice       Float            @map("unit_price")
+  subtotal        Float
+  itemType        String           @default("SERVICE") @map("item_type") // SERVICE | PRODUCT | CUSTOM
+  inventoryItemId Int?             @map("inventory_item_id")
+  inventoryItem   InventoryItem?   @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+
+  saleId          Int              @map("sale_id")
+  sale            SaleTransaction  @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([saleId])
+  @@map("sale_items")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CAMPANHAS DE MARKETING
+// ═══════════════════════════════════════════════════════════════
+model MarketingCampaign {
+  id              Int       @id @default(autoincrement())
+  name            String
+  type            String    // REATIVACAO | ANIVERSARIO | INDICACAO | PROMOCAO
+  trigger         String    @default("MANUAL") // MANUAL | AUTO
+  messageTemplate String    @map("message_template")
+  segmentFilter   String    @default("{}") @map("segment_filter") // JSON critérios
+  status          String    @default("DRAFT") // DRAFT | ACTIVE | PAUSED | COMPLETED
+  sentCount       Int       @default(0) @map("sent_count")
+  scheduledAt     DateTime? @map("scheduled_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  adminId         Int       @map("admin_id")
+  admin           Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@map("marketing_campaigns")
+}
+
 
 

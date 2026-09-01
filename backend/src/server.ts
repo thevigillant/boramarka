@@ -28,6 +28,10 @@ import productRoutes from './routes/products';
 import orderRoutes from './routes/orders';
 import orderSettingsRoutes from './routes/orderSettings';
 import storefrontRoutes from './routes/storefront';
+import queueRoutes from './routes/queue';
+import inventoryRoutes from './routes/inventory';
+import pdvRoutes from './routes/pdv';
+import marketingRoutes from './routes/marketing';
 import { startReminderService } from './services/reminder';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
@@ -237,6 +241,18 @@ app.register(orderSettingsRoutes, { prefix: '/api/order-settings' });
 app.register(orderSettingsRoutes, { prefix: '/api/v1/order-settings' });
 app.register(storefrontRoutes, { prefix: '/api/store' });
 app.register(storefrontRoutes, { prefix: '/api/v1/store' });
+// 🚶 Fila de Espera Walk-in
+app.register(queueRoutes, { prefix: '/api/queue' });
+app.register(queueRoutes, { prefix: '/api/v1/queue' });
+// 📦 Controle de Estoque
+app.register(inventoryRoutes, { prefix: '/api/inventory' });
+app.register(inventoryRoutes, { prefix: '/api/v1/inventory' });
+// 🧾 PDV — Ponto de Venda
+app.register(pdvRoutes, { prefix: '/api/pdv' });
+app.register(pdvRoutes, { prefix: '/api/v1/pdv' });
+// 📣 Campanhas de Marketing
+app.register(marketingRoutes, { prefix: '/api/marketing' });
+app.register(marketingRoutes, { prefix: '/api/v1/marketing' });
 
 const healthCheckHandler = async (request: any, reply: any) => {
   try {

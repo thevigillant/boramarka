@@ -110,6 +110,9 @@ async function request<T = any>(path: string, options: RequestInit = {}): Promis
 }
 
 export const api = {
+  // Generic Request Helper
+  request: <T = any>(path: string, options: RequestInit = {}) => request<T>(path, options),
+
   // ═══ Auth ═══
   checkAccount: () =>
     request<{ hasAccount: boolean }>('/auth/check'),

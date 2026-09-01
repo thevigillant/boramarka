@@ -380,6 +380,15 @@ export function StorePage() {
   // Wishlist heart animation
   const [heartAnimIds, setHeartAnimIds] = useState<Set<number>>(new Set())
 
+  // ─── Reviews ───────────────────────────────────────────────────────────────
+  const [reviews, setReviews] = useState<{
+    averageRating: number | null
+    totalReviews: number
+    distribution: Record<number, number>
+    reviews: Array<{ id: number; rating: number; comment: string; clientName: string; serviceName: string; createdAt: string }>
+  } | null>(null)
+  const [reviewsLoading, setReviewsLoading] = useState(false)
+
   // Effects
   useEffect(() => {
     if (!submittedOrderData?.pixInfo?.pixKey) return
@@ -406,6 +415,15 @@ export function StorePage() {
         setProducts(data.products || [])
         setMinDeliveryDate(data.minDeliveryDate)
         setDeliveryDate(data.minDeliveryDate)
+        // Fetch reviews when store loads
+        if (data.admin?.id) {
+          setReviewsLoading(true)
+          fetch(`${(import.meta.env.VITE_API_URL || 'http://localhost:3001/api').replace(/\/+$/, '')}/reviews/public/${data.admin.id}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(d => { if (d) setReviews(d) })
+            .catch(() => {})
+            .finally(() => setReviewsLoading(false))
+        }
       })
       .catch(err => setError(err.message || 'Loja não encontrada'))
       .finally(() => setLoading(false))
@@ -1755,8 +1773,88 @@ export function StorePage() {
       )}
 
       {/* ─────────────────────────────────────────────────────────
+          ⭐ SEÇÃO DE AVALIAÇÕES — só exibe se houver reviews
+      ───────────────────────────────────────────────────────── */}
+      {!reviewsLoading && reviews && reviews.totalReviews > 0 && (
+        <section className="max-w-6xl mx-auto px-4 sm:px-8 py-10 relative z-10">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-0.5">
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className={`w-5 h-5 ${s <= Math.round(reviews.averageRating || 0) ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                  ))}
+                </div>
+                <span className="text-2xl font-black text-white ml-1">{reviews.averageRating?.toFixed(1)}</span>
+              </div>
+              <h2 className="text-xl font-black text-white">O que nossos clientes falam</h2>
+              <p className="text-xs text-slate-400 mt-0.5">{reviews.totalReviews} avaliação{reviews.totalReviews !== 1 ? 'ões' : ''} verificada{reviews.totalReviews !== 1 ? 's' : ''}</p>
+            </div>
+
+            {/* Distribuição de estrelas */}
+            <div className="space-y-1.5 min-w-[200px]">
+              {[5,4,3,2,1].map(star => {
+                const count = reviews.distribution[star] || 0
+                const pct = reviews.totalReviews > 0 ? (count / reviews.totalReviews) * 100 : 0
+                return (
+                  <div key={star} className="flex items-center gap-2">
+                    <span className="text-[11px] font-bold text-slate-400 w-4 text-right">{star}</span>
+                    <Star className="w-3 h-3 text-amber-400 fill-amber-400 shrink-0" />
+                    <div className="flex-1 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-amber-500 to-amber-400 rounded-full transition-all duration-700"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-slate-500 w-6">{count}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Cards de Reviews */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {reviews.reviews.slice(0, 6).map(r => (
+              <div
+                key={r.id}
+                className="bg-white/[0.03] border border-white/[0.07] rounded-2xl p-4 hover:border-white/15 transition-all duration-300 group"
+              >
+                {/* Stars */}
+                <div className="flex items-center gap-0.5 mb-3">
+                  {[1,2,3,4,5].map(s => (
+                    <Star key={s} className={`w-3.5 h-3.5 ${s <= r.rating ? 'text-amber-400 fill-amber-400' : 'text-slate-700'}`} />
+                  ))}
+                </div>
+
+                {/* Comment */}
+                {r.comment && (
+                  <p className="text-xs text-slate-300 leading-relaxed mb-3 line-clamp-3">
+                    "{r.comment}"
+                  </p>
+                )}
+
+                {/* Footer */}
+                <div className="flex items-center justify-between pt-3 border-t border-white/[0.06]">
+                  <div>
+                    <p className="text-xs font-bold text-white">{r.clientName}</p>
+                    <p className="text-[10px] text-slate-500">{r.serviceName}</p>
+                  </div>
+                  <span className="text-[10px] text-slate-600">
+                    {new Date(r.createdAt).toLocaleDateString('pt-BR', { month: 'short', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ─────────────────────────────────────────────────────────
           LUXURY FOOTER
       ───────────────────────────────────────────────────────── */}
+
       <footer className="max-w-6xl mx-auto px-4 sm:px-8 py-10 mt-12 border-t border-white/[0.06] text-center relative z-10">
         <a href="https://boramarka.com.br" target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors">
           <span>Vitrine exclusiva por</span>

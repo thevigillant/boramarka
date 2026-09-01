@@ -50,7 +50,12 @@ import { TrashTab } from '../components/dashboard/tabs/TrashTab'
 import { EstornosTab } from '../components/dashboard/tabs/EstornosTab'
 import { OverviewTab } from '../components/dashboard/tabs/OverviewTab'
 import { BoraEncomendaTab } from '../components/dashboard/tabs/BoraEncomendaTab'
-import { Package } from 'lucide-react'
+import { CalendarioTab } from '../components/dashboard/tabs/CalendarioTab'
+import { FilaEsperaTab } from '../components/dashboard/tabs/FilaEsperaTab'
+import { EstoqueTab } from '../components/dashboard/tabs/EstoqueTab'
+import { PDVTab } from '../components/dashboard/tabs/PDVTab'
+import { MarketingTab } from '../components/dashboard/tabs/MarketingTab'
+import { Package, CalendarDays, Receipt, Megaphone } from 'lucide-react'
 import { NewTransactionModal } from '../components/dashboard/modals/NewTransactionModal'
 import { NewServiceModal } from '../components/dashboard/modals/NewServiceModal'
 import { NewBookingModal } from '../components/dashboard/modals/NewBookingModal'
@@ -68,7 +73,7 @@ import { MpTutorialModal } from '../components/dashboard/modals/MpTutorialModal'
 // ════════════════════════════════════════════
 export default function Dashboard() {
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'boraencomenda' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'boraia' | 'boraencomenda' | 'links' | 'horarios' | 'agendamentos' | 'calendario' | 'fila' | 'pdv' | 'estoque' | 'marketing' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'>('overview')
   const [usageData, setUsageData] = useState<SubscriptionUsageData | null>(null)
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null)
@@ -179,7 +184,7 @@ export default function Dashboard() {
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
-    type TabIdType = 'overview' | 'boraia' | 'boraencomenda' | 'links' | 'horarios' | 'agendamentos' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
+    type TabIdType = 'overview' | 'boraia' | 'boraencomenda' | 'links' | 'horarios' | 'agendamentos' | 'calendario' | 'fila' | 'pdv' | 'estoque' | 'marketing' | 'financeiro' | 'recebimentos' | 'servicos' | 'trash' | 'personalizar' | 'faturamento' | 'clientes' | 'cupons' | 'memberships' | 'social' | 'rh' | 'audit' | 'estornos' | 'seguranca'
     interface NavItem {
       id: TabIdType
       label: string
@@ -283,7 +288,9 @@ export default function Dashboard() {
         type: 'dropdown' as const,
         badge: (bookings.length + pendingRefundsCount) > 0 ? (bookings.length + pendingRefundsCount) : undefined,
         items: [
-          { id: 'agendamentos', label: 'Agendamentos', icon: Calendar, desc: 'Lista e confirmação de horários agendados', badge: bookings.length },
+          { id: 'agendamentos', label: 'Agendamentos (Lista)', icon: Calendar, desc: 'Lista e confirmação de horários agendados', badge: bookings.length },
+          { id: 'calendario', label: 'Calendário Visual', icon: CalendarDays, desc: 'Visão semanal e diária da agenda' },
+          { id: 'fila', label: 'Fila de Espera (Walk-in)', icon: Users, desc: 'Gestão de fila e avisos no WhatsApp' },
           { id: 'estornos', label: 'Solicitações de Estorno', icon: RotateCcw, desc: 'Gerenciar cancelamentos com reembolso pendente', badge: pendingRefundsCount > 0 ? pendingRefundsCount : undefined },
           { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Base completa e histórico de clientes' },
           { id: 'horarios', label: 'Gerenciar Agenda', icon: Clock, desc: 'Configuração da grade de horários disponíveis' },
@@ -295,6 +302,8 @@ export default function Dashboard() {
         icon: Briefcase,
         type: 'dropdown' as const,
         items: [
+          { id: 'pdv', label: 'PDV / Frente de Caixa', icon: Receipt, desc: 'Ponto de venda rápido e emissão de recibos' },
+          { id: 'marketing', label: 'Campanhas de Marketing', icon: Megaphone, desc: 'Reativação de clientes e promoções WhatsApp' },
           { id: 'servicos', label: 'Serviços', icon: Briefcase, desc: 'Catálogo de serviços, preços e durações' },
           { id: 'links', label: 'Links de Venda', icon: Link2, desc: 'Links para clientes agendarem online' },
           { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
@@ -309,6 +318,7 @@ export default function Dashboard() {
         type: 'dropdown' as const,
         items: [
           { id: 'financeiro', label: 'Financeiro', icon: DollarSign, desc: 'Fluxo de caixa, recebíveis e despesas' },
+          { id: 'estoque', label: 'Controle de Estoque', icon: Package, desc: 'Produtos de revenda, insumos e reposição' },
           { id: 'recebimentos', label: 'Dados Bancários / Pix', icon: Wallet, desc: 'Gerenciar chave Pix e recebimentos' },
           { id: 'rh', label: 'RH / Equipe', icon: UserCheck, desc: 'Gestão de funcionários, funções e comissões' },
           { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano e faturas no BoraMarka' },
@@ -3204,6 +3214,36 @@ export default function Dashboard() {
             handleCancelBooking={handleCancelBooking}
             handleSaveBookingNotes={handleSaveBookingNotes}
           />
+        )}
+
+        {activeTab === 'calendario' && (
+          <CalendarioTab
+            bookings={bookings}
+            setShowNewBookingModal={setShowNewBookingModal}
+            handleToggleBookingDone={handleToggleBookingDone}
+            handleConfirmBooking={handleConfirmBooking}
+            handleCancelBooking={handleCancelBooking}
+            showToast={showToast}
+          />
+        )}
+
+        {activeTab === 'fila' && (
+          <FilaEsperaTab showToast={showToast} />
+        )}
+
+        {activeTab === 'pdv' && (
+          <PDVTab
+            services={services}
+            showToast={showToast}
+          />
+        )}
+
+        {activeTab === 'estoque' && (
+          <EstoqueTab showToast={showToast} />
+        )}
+
+        {activeTab === 'marketing' && (
+          <MarketingTab showToast={showToast} />
         )}
 
         {activeTab === 'horarios' && (

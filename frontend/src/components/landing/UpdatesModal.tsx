@@ -9,6 +9,10 @@ import {
   Bot,
   CheckCircle2,
   ArrowRight,
+  Receipt,
+  Package,
+  CalendarDays,
+  Megaphone,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
@@ -37,6 +41,84 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
   if (!isOpen) return null
 
   const updates: UpdateItem[] = [
+    {
+      id: 'pdv',
+      version: 'v2.8',
+      date: 'Setembro 2026',
+      title: 'Ponto de Venda (PDV) & Frente de Caixa Integrado',
+      tag: 'Novo Módulo',
+      badgeClass: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
+      iconBg: 'bg-emerald-500/10 border border-emerald-500/20',
+      iconColor: 'text-emerald-400',
+      icon: Receipt,
+      description:
+        'Frente de caixa rápida e intuitiva para finalizar atendimentos, vender produtos extras no balcão, registrar pagamentos e emitir recibos digitais via WhatsApp.',
+      highlights: [
+        'Checkout rápido com suporte a Pix, Dinheiro, Débito e Crédito',
+        'Venda combinada de serviços + produtos com cálculo de troco e descontos',
+        'Emissão de recibo digital formatado enviado direto para o WhatsApp do cliente',
+        'Lançamento automático de receitas no módulo Financeiro e baixa no Estoque',
+        'Comissão automática vinculada ao profissional responsável pelo atendimento',
+      ],
+    },
+    {
+      id: 'estoque',
+      version: 'v2.7',
+      date: 'Setembro 2026',
+      title: 'Controle de Estoque, Insumos & Reposição Inteligente',
+      tag: 'Gestão de Estoque',
+      badgeClass: 'bg-pink-500/10 text-pink-400 border border-pink-500/20',
+      iconBg: 'bg-pink-500/10 border border-pink-500/20',
+      iconColor: 'text-pink-400',
+      icon: Package,
+      description:
+        'Controle completo do inventário para produtos de revenda e insumos de uso interno, com histórico de movimentações e alertas automáticos de estoque mínimo.',
+      highlights: [
+        'Cadastro de itens com preço de custo, preço de venda e margem de lucro',
+        'Baixa automática do estoque a cada venda realizada no PDV',
+        'Alertas visuais de estoque baixo para prevenir falta de produtos críticos',
+        'Registro de entradas, saídas e ajustes manuais com justificativa',
+        'Relatórios de capital investido e potencial de faturamento do acervo',
+      ],
+    },
+    {
+      id: 'calendario',
+      version: 'v2.6',
+      date: 'Setembro 2026',
+      title: 'Calendário Visual de Agenda (Semanal & Diário)',
+      tag: 'Visual & Produtividade',
+      badgeClass: 'bg-violet-500/10 text-violet-400 border border-violet-500/20',
+      iconBg: 'bg-violet-500/10 border border-violet-500/20',
+      iconColor: 'text-violet-400',
+      icon: CalendarDays,
+      description:
+        'Nova interface estilo Google Calendar para visualizar todos os agendamentos da semana de forma panorâmica, com filtros por dia e confirmações rápidas.',
+      highlights: [
+        'Visão em grade de 7 colunas com cores intuitivas por status de agendamento',
+        'Navegação semanal e diária ágil com indicador de hoje em tempo real',
+        'Modal de detalhes rápidos para confirmar, cancelar ou concluir atendimentos',
+        'Visualização clara de horários vagos vs ocupados para otimizar a equipe',
+      ],
+    },
+    {
+      id: 'fila-marketing',
+      version: 'v2.5',
+      date: 'Setembro 2026',
+      title: 'Fila de Espera Walk-in & Marketing Automático',
+      tag: 'Crescimento & Operação',
+      badgeClass: 'bg-amber-500/10 text-amber-400 border border-amber-500/20',
+      iconBg: 'bg-amber-500/10 border border-amber-500/20',
+      iconColor: 'text-amber-400',
+      icon: Megaphone,
+      description:
+        'Gerencie clientes sem hora marcada com estimativa de espera e chamadas no WhatsApp. Dispare campanhas automáticas para reativar clientes sumidos há mais de 30 dias.',
+      highlights: [
+        'Painel em tempo real de clientes na fila com tempo estimado de atendimento',
+        'Botão "Chamar Próximo" com abertura instantânea de mensagem no WhatsApp',
+        'Segmentação inteligente de contatos: sumidos (+30d), VIPs e frequentes',
+        'Modelos prontos de mensagem com tags dinâmicas {nome} e {loja}',
+      ],
+    },
     {
       id: 'encomendas',
       version: 'v2.4',

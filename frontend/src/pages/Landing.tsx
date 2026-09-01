@@ -206,13 +206,18 @@ export default function Landing() {
           ═════════════════════════════════════════════════════════════════ */}
       <section className="relative z-10 pt-20 sm:pt-36 pb-14 sm:pb-20 px-3 sm:px-6 max-w-6xl mx-auto text-center">
         
-        {/* Floating Top Badge */}
-        <div className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/10 backdrop-blur-xl mb-4 sm:mb-6 shadow-sm max-w-full">
-          <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-          <span className="text-[11px] sm:text-xs font-semibold text-slate-300 truncate">
-            A Plataforma #1 de Agendamento Autônomo & Venda no Piloto Automático
+        {/* Floating Interactive Announcement Badge */}
+        <button
+          type="button"
+          onClick={() => setUpdatesModalOpen(true)}
+          className="inline-flex items-center gap-2 px-3.5 sm:px-4 py-1.5 rounded-full bg-gradient-to-r from-violet-500/15 via-pink-500/15 to-amber-500/10 border border-pink-500/30 backdrop-blur-xl mb-4 sm:mb-6 shadow-sm hover:border-pink-500/60 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer group max-w-full"
+        >
+          <span className="flex h-2 w-2 rounded-full bg-pink-500 animate-ping shrink-0" />
+          <span className="text-[11px] sm:text-xs font-bold text-pink-300 flex items-center gap-1.5 truncate">
+            <span>✨ Novidade: PDV Frente de Caixa, Controle de Estoque & Calendário Visual</span>
+            <span className="underline group-hover:text-white transition-colors shrink-0">Ver novidades →</span>
           </span>
-        </div>
+        </button>
 
         {/* High-Impact Headline */}
         <h1 className="text-2xl sm:text-4xl md:text-6xl font-extrabold text-white tracking-tight leading-[1.18] sm:leading-[1.12] mb-3.5 sm:mb-5 max-w-4xl mx-auto px-1">
