@@ -1,22 +1,117 @@
-import { CheckCircle2, Sparkles, Clock, AlertCircle, Database, Target, Check, CreditCard, Star, Building2, ShieldCheck, Globe, Crown, Zap } from 'lucide-react'
+import { CheckCircle2, Sparkles, Clock, AlertCircle, Database, Target, Check, CreditCard, Star, Building2, ShieldCheck, Globe, Crown, Zap, Calendar, ShoppingBag, Repeat, ArrowRight } from 'lucide-react'
 
 interface FaturamentoTabProps {
   subscription: any
   usageData: any
   handleCheckout: (plan: any) => void
+  businessType?: 'SERVICES' | 'PRODUCTS'
+  onToggleBusinessType?: (type?: 'SERVICES' | 'PRODUCTS') => void
 }
 
 export function FaturamentoTab({
   subscription,
   usageData,
   handleCheckout,
+  businessType = 'SERVICES',
+  onToggleBusinessType,
 }: FaturamentoTabProps) {
+  const isProducts = businessType === 'PRODUCTS'
+
   return (
     <div className="animate-slide-up space-y-6 text-left">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gerenciar Assinatura</h2>
-          <p className="text-sm text-slate-500 dark:text-slate-400">Gerencie seu plano, faturamento e acesso à plataforma</p>
+          <h2 className="text-2xl font-black text-slate-900 dark:text-white">Gerenciar Assinatura & Vertical</h2>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            Gerencie seu plano, faturamento e alterne entre BoraMarka e BoraEnkomenda
+          </p>
+        </div>
+      </div>
+
+      {/* ═══ VERTICAL SELECTOR / PRODUCT SWITCH CARD ═══ */}
+      <div className="card-simple p-5 sm:p-6 border-slate-200 dark:border-slate-800 shadow-xl bg-white dark:bg-[#131826] rounded-3xl space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div>
+            <span className="text-[10px] sm:text-xs font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest block">
+              Vertical de Operação Ativa
+            </span>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mt-0.5">
+              {isProducts ? (
+                <>
+                  <span className="p-1.5 rounded-lg bg-pink-500/15 text-pink-500">
+                    <ShoppingBag className="w-4 h-4" />
+                  </span>
+                  <span>BoraEnkomenda — Modo Produção & Cardápio</span>
+                </>
+              ) : (
+                <>
+                  <span className="p-1.5 rounded-lg bg-violet-500/15 text-violet-500">
+                    <Calendar className="w-4 h-4" />
+                  </span>
+                  <span>BoraMarka — Modo Serviços & Agendamentos</span>
+                </>
+              )}
+            </h3>
+          </div>
+
+          {onToggleBusinessType && (
+            <button
+              type="button"
+              onClick={() => onToggleBusinessType(isProducts ? 'SERVICES' : 'PRODUCTS')}
+              className={`px-4 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all flex items-center gap-2 shadow-md cursor-pointer ${
+                isProducts
+                  ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-violet-500/20'
+                  : 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-pink-500/20'
+              }`}
+            >
+              <Repeat className="w-3.5 h-3.5" />
+              <span>
+                Alternar para {isProducts ? '📅 BoraMarka (Serviços)' : '🧁 BoraEnkomenda (Produção)'}
+              </span>
+            </button>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+          <div className={`p-4 rounded-2xl border transition-all ${
+            !isProducts
+              ? 'bg-violet-500/10 border-violet-500 text-violet-900 dark:text-violet-200 ring-1 ring-violet-500/30'
+              : 'bg-slate-50 dark:bg-[#1A2235]/40 border-slate-200 dark:border-slate-800 text-slate-500'
+          }`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-black text-xs flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-violet-500" /> BoraMarka (Serviços)
+              </span>
+              {!isProducts && (
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-violet-500 text-white uppercase tracking-wider">
+                  Ativo
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] leading-relaxed">
+              Barbearias, salões, clínicas e estética. Agendamento com sinal Pix anti-falta e controle de horários.
+            </p>
+          </div>
+
+          <div className={`p-4 rounded-2xl border transition-all ${
+            isProducts
+              ? 'bg-pink-500/10 border-pink-500 text-pink-900 dark:text-pink-200 ring-1 ring-pink-500/30'
+              : 'bg-slate-50 dark:bg-[#1A2235]/40 border-slate-200 dark:border-slate-800 text-slate-500'
+          }`}>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="font-black text-xs flex items-center gap-1.5">
+                <ShoppingBag className="w-3.5 h-3.5 text-pink-500" /> BoraEnkomenda (Produção)
+              </span>
+              {isProducts && (
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-pink-500 text-white uppercase tracking-wider">
+                  Ativo
+                </span>
+              )}
+            </div>
+            <p className="text-[11px] leading-relaxed">
+              Confeitarias, bolos decorados, salgados e ateliês. Cardápio na bio, sinal 50% Pix e Kanban de produção.
+            </p>
+          </div>
         </div>
       </div>
 
@@ -226,43 +321,69 @@ export function FaturamentoTab({
 
         {/* Plan Options */}
         <div>
-          <h3 id="plans-section" className="text-md font-black text-slate-900 dark:text-white mb-6">Planos Disponíveis</h3>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 id="plans-section" className="text-md font-black text-slate-900 dark:text-white">
+                Planos Oficiais — {isProducts ? 'BoraEnkomenda (Produção)' : 'BoraMarka (Serviços)'}
+              </h3>
+              <p className="text-xs text-slate-500 font-semibold">
+                {isProducts 
+                  ? 'Planos desenhados para confeitarias, ateliês e encomendas sob medida.' 
+                  : 'Planos desenhados para barbeiros, salões, clínicas e serviços com agendamento.'}
+              </p>
+            </div>
+            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${
+              isProducts ? 'bg-pink-500/10 text-pink-500 border border-pink-500/20' : 'bg-violet-500/10 text-violet-500 border border-violet-500/20'
+            }`}>
+              {isProducts ? '🧁 Cardápio & Produção' : '📅 Agenda & Serviços'}
+            </span>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            {/* Monthly Card */}
+            {/* Card 1: Solo (Essencial / Ateliê) */}
             <div className={`border p-4 sm:p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left ${
-              subscription?.plan === 'mensal' && subscription?.status === 'active'
-                ? 'border-orange-500 bg-orange-500/5 dark:bg-orange-500/10'
+              (subscription?.plan === 'mensal' || subscription?.plan === 'essencial' || subscription?.plan === 'atelie') && subscription?.status === 'active'
+                ? (isProducts ? 'border-pink-500 bg-pink-500/5 dark:bg-pink-500/10' : 'border-violet-500 bg-violet-500/5 dark:bg-violet-500/10')
                 : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#1A2235]/40 hover:border-slate-300 dark:hover:border-slate-700'
             }`}>
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Básico Mensal</h4>
-                    <p className="text-xs text-slate-400 font-semibold mt-1">Ideal para começar e testar</p>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                      {isProducts ? 'Plano Ateliê' : 'Plano Essencial'}
+                    </h4>
+                    <p className="text-xs text-slate-400 font-semibold mt-1">
+                      {isProducts ? 'Para quem produz em casa ou solo' : 'Ideal para autônomos e atendimento solo'}
+                    </p>
                   </div>
-                  {subscription?.plan === 'mensal' && subscription?.status === 'active' && (
-                    <span className="text-[9px] font-black uppercase tracking-widest bg-orange-500 text-white px-2.5 py-1 rounded-full">Plano Atual</span>
+                  {((subscription?.plan === 'mensal' || subscription?.plan === 'essencial' || subscription?.plan === 'atelie') && subscription?.status === 'active') && (
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white px-2.5 py-1 rounded-full">Plano Atual</span>
                   )}
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 29,90</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 39,90</span>
                   <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 border border-blue-500/20 px-2.5 py-1.5 rounded-xl">
                   <Target className="w-3.5 h-3.5 shrink-0" />
-                  <span>Para autônomos e estúdios (1 a 5 pessoas)</span>
+                  <span>{isProducts ? '1 confeiteiro / artesão solo' : '1 profissional autônomo'}</span>
                 </div>
 
                 <ul className="space-y-2.5 pt-1">
-                  {[
+                  {(isProducts ? [
+                    'Cardápio digital na bio do Instagram',
+                    'Sinal Pix de 50% antecipado (Zero calote)',
+                    'Kanban de produção visual e prazos',
+                    'Até 100 pedidos por mês',
+                    'Relatórios básicos de faturamento',
+                  ] : [
+                    'Agenda online por horário para clientes',
+                    'Sinal Pix no agendamento (Zero No-Show)',
                     'Até 500 agendamentos por mês',
                     'Até 1.500 clientes salvos na base',
-                    'Até 30 serviços e 10 links ativos',
-                    'Até 5 colaboradores na equipe',
-                    'Cobrança de Sinal via Mercado Pago (Zero No-Show)',
-                    'Fluxo de Caixa e Relatórios em PDF/CSV'
-                  ].map((feat, i) => (
+                    'Lembretes via WhatsApp',
+                  ]).map((feat, i) => (
                     <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
                       <Check className="w-4 h-4 text-emerald-500 shrink-0" />
                       <span>{feat}</span>
@@ -272,142 +393,161 @@ export function FaturamentoTab({
               </div>
               
               <button 
-                onClick={() => handleCheckout('mensal')}
+                onClick={() => handleCheckout(isProducts ? 'atelie' : 'essencial')}
                 className={`w-full py-4 rounded-2xl font-black text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-2 ${
-                  subscription?.plan === 'mensal' && subscription?.status === 'active'
+                  (subscription?.plan === 'mensal' || subscription?.plan === 'essencial' || subscription?.plan === 'atelie') && subscription?.status === 'active'
                     ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
                     : 'bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white shadow-md'
                 }`}
-                disabled={subscription?.plan === 'mensal' && subscription?.status === 'active'}
+                disabled={(subscription?.plan === 'mensal' || subscription?.plan === 'essencial' || subscription?.plan === 'atelie') && subscription?.status === 'active'}
               >
                 <CreditCard className="w-4 h-4" />
-                {subscription?.plan === 'mensal' && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar Mensal'}
+                {(subscription?.plan === 'mensal' || subscription?.plan === 'essencial' || subscription?.plan === 'atelie') && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar'}
               </button>
             </div>
 
-            {/* Annual Card */}
+            {/* Card 2: Pro (Confeitaria Pro / BoraMarka Pro) */}
             <div className={`border p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left relative overflow-hidden ${
-              subscription?.plan === 'anual' && subscription?.status === 'active'
-                ? 'border-pink-500 bg-pink-500/5 dark:bg-pink-500/10'
-                : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#1A2235]/40 hover:border-slate-300 dark:hover:border-slate-700'
+              (subscription?.plan === 'pro' || subscription?.plan === 'confeitaria_pro') && subscription?.status === 'active'
+                ? (isProducts ? 'border-pink-500 bg-pink-500/10 ring-2 ring-pink-500/30' : 'border-violet-500 bg-violet-500/10 ring-2 ring-violet-500/30')
+                : (isProducts ? 'border-pink-500/40 bg-pink-500/5' : 'border-violet-500/40 bg-violet-500/5')
             }`}>
-              <div className="absolute top-3 right-3 bg-gradient-to-r from-orange-500 to-pink-500 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm z-10">
-                Economize R$ 100
+              <div className={`absolute top-3 right-3 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm z-10 ${
+                isProducts ? 'bg-gradient-to-r from-pink-500 to-rose-600' : 'bg-gradient-to-r from-violet-600 to-pink-600'
+              }`}>
+                Mais Escolhido
               </div>
 
               <div className="space-y-4">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Básico Anual</h4>
-                    <p className="text-xs text-slate-400 font-semibold mt-1">O melhor custo-benefício</p>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                      {isProducts ? 'Confeitaria Pro' : 'BoraMarka Pro'}
+                    </h4>
+                    <p className="text-xs text-slate-400 font-semibold mt-1">
+                      {isProducts ? 'Gestão completa de produção e compras' : 'Para salões, clínicas e estúdios com equipe'}
+                    </p>
                   </div>
-                  {subscription?.plan === 'anual' && subscription?.status === 'active' && (
-                    <span className="text-[9px] font-black uppercase tracking-widest bg-pink-500 text-white px-2.5 py-1 rounded-full">Plano Atual</span>
+                  {((subscription?.plan === 'pro' || subscription?.plan === 'confeitaria_pro') && subscription?.status === 'active') && (
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-emerald-500 text-white px-2.5 py-1 rounded-full">Plano Atual</span>
                   )}
                 </div>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 260</span>
-                  <span className="text-xs text-slate-400 font-bold uppercase">/ ano</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-orange-600 dark:text-orange-400 bg-orange-500/10 border border-orange-500/20 px-2.5 py-1.5 rounded-xl">
-                  <Target className="w-3.5 h-3.5 shrink-0" />
-                  <span>Para negócios em expansão (até 20 pessoas)</span>
-                </div>
-
-                <ul className="space-y-2.5 pt-1">
-                  {[
-                    { text: 'Até 2.500 agendamentos/mês & 8.000 clientes', icon: Check },
-                    { text: 'Até 20 colaboradores na equipe', icon: Check },
-                    { text: 'Venda Casada (Upsell Automatizado)', icon: Sparkles, highlight: true },
-                    { text: 'Cartão Fidelidade Digital & Cupons', icon: Star, highlight: true },
-                    { text: 'Até 100 serviços e 30 links ativos', icon: Check },
-                    { text: 'Economia de R$ 100/ano (~R$ 21,66/mês)', icon: Check }
-                  ].map((feat, i) => {
-                    const IconComp = feat.icon;
-                    return (
-                      <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-                        <IconComp className={`w-4 h-4 shrink-0 ${feat.highlight ? 'text-orange-500' : 'text-emerald-500'}`} />
-                        <span className={feat.highlight ? 'text-slate-900 dark:text-white font-extrabold' : ''}>{feat.text}</span>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-
-              <button 
-                onClick={() => handleCheckout('anual')}
-                className={`w-full py-4 rounded-2xl font-black text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-2 ${
-                  subscription?.plan === 'anual' && subscription?.status === 'active'
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-orange-500 to-pink-500 text-white shadow-xl shadow-pink-500/20 hover:opacity-95'
-                }`}
-                disabled={subscription?.plan === 'anual' && subscription?.status === 'active'}
-              >
-                <CreditCard className="w-4 h-4" />
-                {subscription?.plan === 'anual' && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar Anual'}
-              </button>
-            </div>
-
-            {/* Premium Card */}
-            <div className={`border p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left relative overflow-hidden ${
-              subscription?.plan === 'premium' && subscription?.status === 'active'
-                ? 'border-violet-500 bg-violet-500/5 dark:bg-violet-500/10 shadow-lg shadow-violet-500/10'
-                : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#1A2235]/40 hover:border-slate-300 dark:hover:border-slate-700'
-            }`}>
-              <div className="absolute top-3 right-3 bg-gradient-to-r from-violet-600 to-indigo-600 text-white text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm z-10">
-                Mais Completo
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h4 className="text-lg font-black text-slate-900 dark:text-white">Plano Premium</h4>
-                    <p className="text-xs text-slate-400 font-semibold mt-1">Domínio próprio e exclusividade</p>
-                  </div>
-                  {subscription?.plan === 'premium' && subscription?.status === 'active' && (
-                    <span className="text-[9px] font-black uppercase tracking-widest bg-violet-600 text-white px-2.5 py-1 rounded-full">Plano Atual</span>
-                  )}
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-black text-slate-900 dark:text-white">R$ 79,90</span>
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">
+                    {isProducts ? 'R$ 69,90' : 'R$ 59,90'}
+                  </span>
                   <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[10px] font-bold text-violet-600 dark:text-violet-300 bg-violet-500/10 border border-violet-500/20 px-2.5 py-1.5 rounded-xl">
-                  <Building2 className="w-3.5 h-3.5 shrink-0 text-violet-500" />
-                  <span>Para empresas e clínicas com equipe & RH</span>
+                <div className={`flex items-center gap-1.5 text-[10px] font-bold px-2.5 py-1.5 rounded-xl border ${
+                  isProducts ? 'text-pink-600 dark:text-pink-400 bg-pink-500/10 border-pink-500/20' : 'text-violet-600 dark:text-violet-400 bg-violet-500/10 border-violet-500/20'
+                }`}>
+                  <Sparkles className="w-3.5 h-3.5 shrink-0" />
+                  <span>{isProducts ? 'Lista de compras + Kanban avançado' : 'Até 10 colaboradores + comissões'}</span>
                 </div>
 
                 <ul className="space-y-2.5 pt-1">
-                  {[
-                    { text: 'Módulo Exclusivo de RH & Gestão de Equipe', icon: ShieldCheck, highlight: true },
-                    { text: 'Domínio Próprio (agendar.suaempresa.com.br)', icon: Globe, highlight: true },
-                    { text: 'Página 100% Whitelabel sem marca BoraMarka', icon: Crown, highlight: true },
-                    { text: 'Recursos TOTALMENTE ILIMITADOS (∞)', icon: Zap, highlight: true },
-                    { text: 'Notificações Push e Google Calendar', icon: Check },
-                    { text: 'Suporte VIP Prioritário 24/7', icon: Check }
-                  ].map((feat, i) => {
-                    const IconComp = feat.icon;
-                    return (
-                      <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
-                        <IconComp className={`w-4 h-4 shrink-0 ${feat.highlight ? 'text-violet-500' : 'text-emerald-500'}`} />
-                        <span className={feat.highlight ? 'text-slate-900 dark:text-white font-extrabold' : ''}>{feat.text}</span>
-                      </li>
-                    );
-                  })}
+                  {(isProducts ? [
+                    'Lista automática de compras para supermercado',
+                    'Kanban com alertas de atraso e etapas',
+                    'Controle de estoque de insumos e embalagens',
+                    'Equipe de ajudantes de confeitaria',
+                    'Pedidos ilimitados & cupons promocionais',
+                    'Fluxo de caixa e faturamento detalhado',
+                  ] : [
+                    'Até 10 colaboradores na equipe com comissões',
+                    'Agendamentos e clientes ilimitados',
+                    'Controle de estoque e produtos de revenda',
+                    'Venda Casada (Upsell Automatizado)',
+                    'Fila de espera walk-in no WhatsApp',
+                    'Fluxo de Caixa e Relatórios em PDF/CSV',
+                  ]).map((feat, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <Check className="w-4 h-4 text-emerald-500 shrink-0" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
                 </ul>
               </div>
 
               <button 
-                onClick={() => handleCheckout('premium')}
+                onClick={() => handleCheckout(isProducts ? 'confeitaria_pro' : 'pro')}
                 className={`w-full py-4 rounded-2xl font-black text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-2 ${
-                  subscription?.plan === 'premium' && subscription?.status === 'active'
+                  (subscription?.plan === 'pro' || subscription?.plan === 'confeitaria_pro') && subscription?.status === 'active'
                     ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-violet-600 to-indigo-600 text-white shadow-xl shadow-indigo-500/20 hover:opacity-95'
+                    : isProducts
+                    ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-xl shadow-pink-500/25 hover:opacity-95'
+                    : 'bg-gradient-to-r from-violet-600 to-pink-600 text-white shadow-xl shadow-violet-500/25 hover:opacity-95'
                 }`}
-                disabled={subscription?.plan === 'premium' && subscription?.status === 'active'}
+                disabled={(subscription?.plan === 'pro' || subscription?.plan === 'confeitaria_pro') && subscription?.status === 'active'}
               >
-                <Sparkles className="w-4 h-4 text-yellow-300 animate-pulse" />
-                {subscription?.plan === 'premium' && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar Premium'}
+                <CreditCard className="w-4 h-4" />
+                {(subscription?.plan === 'pro' || subscription?.plan === 'confeitaria_pro') && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar Plano Pro'}
+              </button>
+            </div>
+
+            {/* Card 3: VIP (Gourmet VIP / Studio VIP) */}
+            <div className={`border p-6 rounded-3xl space-y-6 flex flex-col justify-between transition-all text-left relative overflow-hidden ${
+              (subscription?.plan === 'vip' || subscription?.plan === 'gourmet_vip' || subscription?.plan === 'premium') && subscription?.status === 'active'
+                ? 'border-amber-500 bg-amber-500/10 shadow-lg shadow-amber-500/10'
+                : 'border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-[#1A2235]/40 hover:border-slate-300 dark:hover:border-slate-700'
+            }`}>
+              <div className="absolute top-3 right-3 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-sm z-10 flex items-center gap-1">
+                <Crown className="w-3 h-3 text-slate-950" /> VIP Ilimitado
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h4 className="text-lg font-black text-slate-900 dark:text-white">
+                      {isProducts ? 'Gourmet VIP' : 'Studio VIP'}
+                    </h4>
+                    <p className="text-xs text-slate-400 font-semibold mt-1">
+                      Domínio próprio, whitelabel e suporte prioritário
+                    </p>
+                  </div>
+                  {((subscription?.plan === 'vip' || subscription?.plan === 'gourmet_vip' || subscription?.plan === 'premium') && subscription?.status === 'active') && (
+                    <span className="text-[9px] font-black uppercase tracking-widest bg-amber-500 text-slate-950 px-2.5 py-1 rounded-full font-black">VIP Ativo</span>
+                  )}
+                </div>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-black text-slate-900 dark:text-white">
+                    {isProducts ? 'R$ 99,90' : 'R$ 89,90'}
+                  </span>
+                  <span className="text-xs text-slate-400 font-bold uppercase">/ mês</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2.5 py-1.5 rounded-xl">
+                  <Crown className="w-3.5 h-3.5 shrink-0 text-amber-500" />
+                  <span>Para ateliês e clínicas com alta demanda</span>
+                </div>
+
+                <ul className="space-y-2.5 pt-1">
+                  {[
+                    'Domínio Próprio mapeado na sua página',
+                    'Página 100% Whitelabel sem menção externa',
+                    'Recursos e limites TOTALMENTE ILIMITADOS (∞)',
+                    'Módulo de RH e Controle de Acesso por Operador',
+                    'Notificações Push e Relatórios Executivos',
+                    'Atendimento Direto e Suporte VIP 24/7',
+                  ].map((feat, i) => (
+                    <li key={i} className="flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                      <Check className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <button 
+                onClick={() => handleCheckout(isProducts ? 'gourmet_vip' : 'vip')}
+                className={`w-full py-4 rounded-2xl font-black text-sm transition-all uppercase tracking-wider flex items-center justify-center gap-2 ${
+                  (subscription?.plan === 'vip' || subscription?.plan === 'gourmet_vip' || subscription?.plan === 'premium') && subscription?.status === 'active'
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black shadow-xl shadow-amber-500/20 hover:opacity-95'
+                }`}
+                disabled={(subscription?.plan === 'vip' || subscription?.plan === 'gourmet_vip' || subscription?.plan === 'premium') && subscription?.status === 'active'}
+              >
+                <Crown className="w-4 h-4" />
+                {(subscription?.plan === 'vip' || subscription?.plan === 'gourmet_vip' || subscription?.plan === 'premium') && subscription?.status === 'active' ? 'Plano Ativo' : 'Assinar VIP'}
               </button>
             </div>
 

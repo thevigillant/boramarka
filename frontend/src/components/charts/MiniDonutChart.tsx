@@ -67,10 +67,10 @@ export default function MiniDonutChart({ data, size = 160 }: MiniDonutChartProps
     ctx.fillText(String(total), cx, cy + 10)
   }, [data, size])
 
-  if (!data || data.length === 0) {
+  if (!data || data.length === 0 || data.every(d => d.count === 0)) {
     return (
       <div className="flex items-center justify-center" style={{ height: size }}>
-        <p className="text-xs text-slate-400 dark:text-white/30 italic">Sem serviços registrados</p>
+        <p className="text-xs text-slate-400 dark:text-white/30 italic">Sem vendas ou serviços registrados</p>
       </div>
     )
   }

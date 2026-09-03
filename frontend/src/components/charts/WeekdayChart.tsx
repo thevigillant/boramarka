@@ -38,11 +38,12 @@ export default function WeekdayChart({ data, height = 180 }: WeekdayChartProps) 
 
     ctx.clearRect(0, 0, w, h)
 
-    if (!data || data.length === 0) {
-      ctx.fillStyle = 'rgba(148, 163, 184, 0.5)'
+    const isAllZero = !data || data.length === 0 || data.every(d => d.count === 0)
+    if (isAllZero) {
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.4)'
       ctx.font = '600 12px "Plus Jakarta Sans", system-ui, sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText('Sem dados de agendamentos', w / 2, h / 2)
+      ctx.fillText('Nenhum movimento registrado na semana', w / 2, h / 2)
       return
     }
 

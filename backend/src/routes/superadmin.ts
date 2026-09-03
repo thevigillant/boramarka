@@ -53,6 +53,7 @@ export default async function superadminRoutes(app: FastifyInstance) {
         businessName: true,
         cnpj: true,
         phone: true,
+        businessType: true,
         createdAt: true,
         subscription: {
           select: {
@@ -95,14 +96,15 @@ export default async function superadminRoutes(app: FastifyInstance) {
   });
 
   // ═══════════════════════════════════════════
-  //  UPDATE USER SUBSCRIPTION (PLAN / STATUS)
+  //  UPDATE USER SUBSCRIPTION & BUSINESS TYPE (PLAN / STATUS / PRODUCT)
   // ═══════════════════════════════════════════
   app.put('/users/:id/subscription', async (request, reply) => {
     const { id } = request.params as { id: string };
-    const { plan, status, expiresAt } = request.body as {
+    const { plan, status, expiresAt, businessType } = request.body as {
       plan?: string;
       status?: string;
-      expiresAt?: string;
+      expiresAt?: string | null;
+      businessType?: 'SERVICES' | 'PRODUCTS';
     };
 
     const adminId = parseInt(id);
@@ -110,24 +112,65 @@ export default async function superadminRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'ID inválido' });
     }
 
-    const sub = await prisma.subscription.findUnique({
-      where: { adminId }
+    const admin = await prisma.admin.findUnique({
+      where: { id: adminId },
     });
 
-    if (!sub) {
-      return reply.status(404).send({ error: 'Assinatura não encontrada' });
+    if (!admin) {
+      return reply.status(404).send({ error: 'Profissional não encontrado' });
     }
 
-    const updatedSub = await prisma.subscription.update({
+    // 1. Atualiza ou cria a assinatura correspondente
+    const updatedSub = await prisma.subscription.upsert({
       where: { adminId },
-      data: {
-        plan: plan || sub.plan,
-        status: status || sub.status,
-        expiresAt: expiresAt ? new Date(expiresAt) : sub.expiresAt,
-      }
+      create: {
+        adminId,
+        plan: plan || (businessType === 'PRODUCTS' ? 'confeitaria_pro' : 'pro'),
+        status: status || 'active',
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+      },
+      update: {
+        ...(plan ? { plan } : {}),
+        ...(status ? { status } : {}),
+        expiresAt: expiresAt !== undefined ? (expiresAt ? new Date(expiresAt) : null) : undefined,
+      },
     });
 
-    return updatedSub;
+    // 2. Atualiza o tipo de negócio (BoraMarka vs BoraEnkomenda) se informado
+    if (businessType && (businessType === 'SERVICES' || businessType === 'PRODUCTS')) {
+      await prisma.admin.update({
+        where: { id: adminId },
+        data: { businessType },
+      });
+
+      // Se mudou para BoraEnkomenda, garante inicialização do OrderSettings
+      if (businessType === 'PRODUCTS') {
+        const existingSettings = await prisma.orderSettings.findUnique({
+          where: { adminId },
+        });
+        if (!existingSettings) {
+          await prisma.orderSettings.create({
+            data: {
+              adminId,
+              storeName: admin.businessName || 'Ateliê & Confeitaria',
+              storeDescription: 'Encomendas artesanais e produtos sob medida.',
+              minOrderAmount: 0.0,
+              depositPercentage: 50.0,
+              allowScheduledPickup: true,
+              allowDelivery: true,
+              deliveryFee: 10.0,
+              minAdvanceDays: 2,
+              pixKey: admin.pixKey || '',
+            },
+          });
+        }
+      }
+    }
+
+    return {
+      ...updatedSub,
+      businessType: businessType || admin.businessType,
+    };
   });
 
   // ═══════════════════════════════════════════
@@ -354,13 +397,14 @@ export default async function superadminRoutes(app: FastifyInstance) {
   //  CREATE NEW PROFESSIONAL USER (BY SUPERADMIN)
   // ═══════════════════════════════════════════
   app.post('/create-user', async (request: FastifyRequest, reply: FastifyReply) => {
-    const { username, password, businessName, phone, email, plan } = request.body as {
+    const { username, password, businessName, phone, email, plan, businessType } = request.body as {
       username: string;
       password: string;
       businessName: string;
       phone?: string;
       email?: string;
       plan?: string;
+      businessType?: 'SERVICES' | 'PRODUCTS';
     };
 
     if (!username?.trim() || !password?.trim() || !businessName?.trim()) {
@@ -383,6 +427,7 @@ export default async function superadminRoutes(app: FastifyInstance) {
     trialEndsAt.setDate(trialEndsAt.getDate() + 30);
 
     const isFullAccess = (request.body as any)?.isFullAccess || (request.body as any)?.grantFullAccess;
+    const chosenType: 'SERVICES' | 'PRODUCTS' = businessType === 'PRODUCTS' ? 'PRODUCTS' : 'SERVICES';
 
     const newUser = await prisma.admin.create({
       data: {
@@ -391,17 +436,18 @@ export default async function superadminRoutes(app: FastifyInstance) {
         businessName: businessName.trim(),
         phone: phone?.trim() || '',
         email: email?.trim() || '',
+        businessType: chosenType,
         role: 'user',
         subscription: {
           create: isFullAccess
             ? {
-                plan: 'premium',
+                plan: plan || 'premium',
                 status: 'active',
                 trialEndsAt: null,
                 expiresAt: null,
               }
             : {
-                plan: plan || 'mensal',
+                plan: plan || (chosenType === 'PRODUCTS' ? 'confeitaria_pro' : 'pro'),
                 status: 'trialing',
                 trialEndsAt,
                 expiresAt: trialEndsAt,
@@ -412,11 +458,30 @@ export default async function superadminRoutes(app: FastifyInstance) {
         id: true,
         username: true,
         businessName: true,
+        businessType: true,
         phone: true,
         email: true,
         createdAt: true,
       },
     });
+
+    // Se for BoraEnkomenda, inicializa as configurações da loja
+    if (chosenType === 'PRODUCTS') {
+      await prisma.orderSettings.create({
+        data: {
+          adminId: newUser.id,
+          storeName: businessName.trim(),
+          storeDescription: 'Encomendas artesanais e produtos sob medida.',
+          minOrderAmount: 0.0,
+          depositPercentage: 50.0,
+          allowScheduledPickup: true,
+          allowDelivery: true,
+          deliveryFee: 10.0,
+          minAdvanceDays: 2,
+          pixKey: '',
+        },
+      });
+    }
 
     return reply.status(201).send(newUser);
   });

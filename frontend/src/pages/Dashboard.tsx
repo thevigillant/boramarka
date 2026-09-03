@@ -13,7 +13,7 @@ import {
   Briefcase, ArrowUpRight, ArrowDownRight, Search,
   Filter, Download, MoreVertical, LayoutDashboard, Phone, User, Moon, Sun,
   ChevronLeft, ChevronRight, Camera, Pencil, Store, MapPin, Palette, CheckCircle2, Sparkles, Globe, MessageCircle, ShieldAlert, UserCheck,
-  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors, Instagram, BarChart3, ShoppingBag
+  FileText, Upload, Paperclip, AlertTriangle, Archive, UserX, FileCheck, Eye, EyeOff, Laptop, Mail, Menu, ChevronUp, Layers, Shield, ShieldCheck, Lock, UserPlus, Key, Building2, Database, Target, Crown, Zap, Star, Scissors, Instagram, BarChart3, ShoppingBag, Repeat
 } from 'lucide-react'
 import { exportBookingsToPDF, exportFinanceToPDF } from '../utils/pdfExport'
 import { exportBookingsToCSV, exportFinanceToCSV } from '../utils/csvExport'
@@ -62,6 +62,7 @@ import { NewBookingModal } from '../components/dashboard/modals/NewBookingModal'
 import { DeleteSlotModal } from '../components/dashboard/modals/DeleteSlotModal'
 import { MpConfigModal } from '../components/dashboard/modals/MpConfigModal'
 import { MpTutorialModal } from '../components/dashboard/modals/MpTutorialModal'
+import { ProductAndSubscriptionModal } from '../components/dashboard/modals/ProductAndSubscriptionModal'
 
 
 
@@ -177,10 +178,12 @@ export default function Dashboard() {
     bannerUrl?: string;
     customDomain?: string;
     category?: string;
-    businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+    businessType?: 'SERVICES' | 'PRODUCTS';
     isOperator?: boolean;
     currentOperator?: any;
   } | null>(null)
+
+  const currentBusinessType = adminInfo?.businessType || 'SERVICES'
 
   // ═══ Categorias da Navbar (Dropdowns) ═══
   const navCategories = useMemo(() => {
@@ -197,6 +200,7 @@ export default function Dashboard() {
 
     const bType = adminInfo?.businessType || 'SERVICES'
 
+    // ═══ BORAENCOMENDA: EXCLUSIVO PARA VENDAS SOB ENCOMENDA & PRODUÇÃO ═══
     if (bType === 'PRODUCTS') {
       return [
         {
@@ -208,7 +212,7 @@ export default function Dashboard() {
         },
         {
           id: 'boraencomenda',
-          label: 'BoraEncomenda',
+          label: 'BoraEnkomenda',
           icon: ShoppingBag,
           type: 'single' as const,
           tabId: 'boraencomenda' as TabIdType,
@@ -222,11 +226,11 @@ export default function Dashboard() {
         },
         {
           id: 'comercial',
-          label: 'Vendas & Cardápio',
-          icon: Briefcase,
+          label: 'Cardápio & Pedidos',
+          icon: ShoppingBag,
           type: 'dropdown' as const,
           items: [
-            { id: 'boraencomenda', label: 'Cardápio & Pedidos', icon: ShoppingBag, desc: 'Kanban de produção e produtos sob encomenda' },
+            { id: 'boraencomenda', label: 'Kanban & Encomendas', icon: ShoppingBag, desc: 'Kanban de produção e produtos sob encomenda' },
             { id: 'clientes', label: 'Clientes', icon: Users, desc: 'Base completa de clientes' },
             { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
           ] as NavItem[]
@@ -237,10 +241,11 @@ export default function Dashboard() {
           icon: DollarSign,
           type: 'dropdown' as const,
           items: [
-            { id: 'financeiro', label: 'Financeiro', icon: DollarSign, desc: 'Fluxo de caixa, recebíveis e despesas' },
+            { id: 'financeiro', label: 'Financeiro & Caixa', icon: DollarSign, desc: 'Fluxo de caixa, recebíveis e despesas' },
+            { id: 'estoque', label: 'Estoque de Insumos', icon: Package, desc: 'Ingredientes, matérias-primas e embalagens' },
             { id: 'recebimentos', label: 'Dados Bancários / Pix', icon: Wallet, desc: 'Gerenciar chave Pix e recebimentos' },
-            { id: 'rh', label: 'RH / Equipe', icon: UserCheck, desc: 'Gestão de funcionários, funções e comissões' },
-            { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano e faturas no BoraMarka' },
+            { id: 'rh', label: 'Equipe / Produção', icon: UserCheck, desc: 'Gestão de ajudantes e funções' },
+            { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano no BoraEnkomenda' },
           ] as NavItem[]
         },
         {
@@ -259,6 +264,7 @@ export default function Dashboard() {
       ]
     }
 
+    // ═══ BORAMARKA: EXCLUSIVO PARA AGENDAMENTOS & SERVIÇOS ═══
     return [
       {
         id: 'overview',
@@ -266,13 +272,6 @@ export default function Dashboard() {
         icon: LayoutDashboard,
         type: 'single' as const,
         tabId: 'overview' as TabIdType,
-      },
-      {
-        id: 'boraencomenda',
-        label: 'BoraEncomenda',
-        icon: ShoppingBag,
-        type: 'single' as const,
-        tabId: 'boraencomenda' as TabIdType,
       },
       {
         id: 'boraia',
@@ -308,7 +307,6 @@ export default function Dashboard() {
           { id: 'links', label: 'Links de Venda', icon: Link2, desc: 'Links para clientes agendarem online' },
           { id: 'cupons', label: 'Cupons de Desconto', icon: Tag, desc: 'Crie códigos promocionais para clientes' },
           { id: 'memberships', label: 'Clube de Assinaturas', icon: Gift, desc: 'Planos e assinaturas recorrentes de clientes' },
-          { id: 'boraencomenda', label: 'BoraEncomenda', icon: ShoppingBag, desc: 'Módulo de vendas sob encomenda e cardápio' },
         ] as NavItem[]
       },
       {
@@ -321,7 +319,7 @@ export default function Dashboard() {
           { id: 'estoque', label: 'Controle de Estoque', icon: Package, desc: 'Produtos de revenda, insumos e reposição' },
           { id: 'recebimentos', label: 'Dados Bancários / Pix', icon: Wallet, desc: 'Gerenciar chave Pix e recebimentos' },
           { id: 'rh', label: 'RH / Equipe', icon: UserCheck, desc: 'Gestão de funcionários, funções e comissões' },
-          { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano e faturas no BoraMarka' },
+          { id: 'faturamento', label: 'Plano & Assinatura', icon: CreditCard, desc: 'Gerenciar seu plano no BoraMarka' },
         ] as NavItem[]
       },
       {
@@ -738,7 +736,7 @@ export default function Dashboard() {
     secondaryColor: '#ec4899',
     publicTheme: 'light',
     customDomain: '',
-    businessType: 'SERVICES' as 'SERVICES' | 'PRODUCTS' | 'HYBRID',
+    businessType: 'SERVICES' as 'SERVICES' | 'PRODUCTS',
   })
 
   useEffect(() => {
@@ -752,7 +750,7 @@ export default function Dashboard() {
         secondaryColor: adminInfo.secondaryColor || '#ec4899',
         publicTheme: adminInfo.publicTheme || 'light',
         customDomain: adminInfo.customDomain || '',
-        businessType: (adminInfo.businessType || 'SERVICES') as 'SERVICES' | 'PRODUCTS' | 'HYBRID',
+        businessType: (adminInfo.businessType === 'PRODUCTS' ? 'PRODUCTS' : 'SERVICES') as 'SERVICES' | 'PRODUCTS',
       })
     }
   }, [adminInfo])
@@ -1280,6 +1278,7 @@ export default function Dashboard() {
   const [slotToDelete, setSlotToDelete] = useState<number | null>(null)
   const [slotToDeleteTime, setSlotToDeleteTime] = useState('')
   const [deleteAllDayFreeSlots, setDeleteAllDayFreeSlots] = useState(false)
+  const [showProductModal, setShowProductModal] = useState(false)
   const [newBookingData, setNewBookingData] = useState({
     linkId: '',
     date: '',
@@ -1287,6 +1286,25 @@ export default function Dashboard() {
     clientName: '',
     clientPhone: ''
   })
+
+  const handleToggleBusinessType = async (targetType?: 'SERVICES' | 'PRODUCTS') => {
+    const currentType = adminInfo?.businessType === 'PRODUCTS' ? 'PRODUCTS' : 'SERVICES'
+    const newType = targetType || (currentType === 'PRODUCTS' ? 'SERVICES' : 'PRODUCTS')
+    try {
+      await api.updateProfile({ businessType: newType })
+      setAdminInfo(prev => prev ? { ...prev, businessType: newType } : null)
+      showToast(
+        newType === 'PRODUCTS'
+          ? '🧁 Modo BoraEnkomenda (Produção & Encomendas) ativado com sucesso!'
+          : '📅 Modo BoraMarka (Serviços & Agendamentos) ativado com sucesso!',
+        'success'
+      )
+      setActiveTab('overview')
+      fetchData(true)
+    } catch (err: any) {
+      showToast(err.message || 'Erro ao alternar modelo de negócio', 'error')
+    }
+  }
 
   // Scheduler Form
   const [slotDate, setSlotDate] = useState('')
@@ -2397,7 +2415,24 @@ export default function Dashboard() {
       )}
 
       {/* Paywall Modal */}
-      <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} onCheckout={handleCheckout} />
+      <PaywallModal
+        isOpen={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onCheckout={handleCheckout}
+        businessType={adminInfo?.businessType === 'PRODUCTS' ? 'PRODUCTS' : 'SERVICES'}
+      />
+
+      {/* Gerenciador de Vertical & Assinatura (BoraMarka vs BoraEnkomenda) */}
+      <ProductAndSubscriptionModal
+        isOpen={showProductModal}
+        onClose={() => setShowProductModal(false)}
+        adminInfo={adminInfo}
+        subscription={subscription}
+        isSuperAdmin={isMaster}
+        onUpdateSuccess={() => fetchData(true)}
+        showToast={showToast}
+        onOpenPaywall={() => setShowPaywall(true)}
+      />
 
       {/* PDF Export Modal */}
       {showPdfModal && (
@@ -2540,18 +2575,42 @@ export default function Dashboard() {
 
       {/* SuperAdmin Impersonation Banner */}
       {(localStorage.getItem('superadminToken') || sessionStorage.getItem('superadmin_token') || localStorage.getItem('superadmin_token')) && (
-        <div className="bg-gradient-to-r from-amber-500 via-pink-600 to-violet-600 text-white px-4 py-2 flex items-center justify-between text-xs font-bold shadow-md relative z-50">
+        <div className="bg-gradient-to-r from-amber-500 via-pink-600 to-violet-600 text-white px-3 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2.5 text-xs font-bold shadow-md relative z-50">
           <div className="flex items-center gap-2">
-            <Crown className="w-4 h-4 text-amber-200" />
-            <span>Modo de Teste (SuperAdmin Impersonando)</span>
+            <Crown className="w-4 h-4 text-amber-200 shrink-0" />
+            <span className="font-black uppercase tracking-wider text-[11px] sm:text-xs">Modo de Teste (SuperAdmin Impersonando)</span>
           </div>
-          <button
-            onClick={handleRestoreSuperAdmin}
-            className="bg-white text-slate-900 hover:bg-slate-100 px-3 py-1 rounded-lg font-black text-[11px] uppercase tracking-wider shadow transition-all cursor-pointer flex items-center gap-1.5"
-          >
-            <Crown className="w-3.5 h-3.5 text-amber-600" />
-            <span>Voltar ao SuperAdmin</span>
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Quick Switch Button for SuperAdmin */}
+            <button
+              onClick={() => handleToggleBusinessType()}
+              className="bg-black/30 hover:bg-black/45 text-white border border-white/30 px-3 py-1.5 rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+              title="Trocar modelo da conta entre BoraMarka e BoraEnkomenda"
+            >
+              <Repeat className="w-3.5 h-3.5 text-amber-300" />
+              <span>
+                Mudar para: {adminInfo?.businessType === 'PRODUCTS' ? '📅 BoraMarka (Serviços)' : '🧁 BoraEnkomenda (Produção)'}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setShowProductModal(true)}
+              className="bg-black/20 hover:bg-black/35 text-white border border-white/20 px-2.5 py-1.5 rounded-xl font-bold text-[10px] sm:text-[11px] uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1"
+              title="Gerenciar plano e detalhes de assinatura"
+            >
+              <CreditCard className="w-3.5 h-3.5" />
+              <span>Assinatura</span>
+            </button>
+
+            <button
+              onClick={handleRestoreSuperAdmin}
+              className="bg-white text-slate-900 hover:bg-slate-100 px-3 py-1.5 rounded-xl font-black text-[10px] sm:text-[11px] uppercase tracking-wider shadow transition-all cursor-pointer flex items-center gap-1.5"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-600" />
+              <span>Voltar ao SuperAdmin</span>
+            </button>
+          </div>
         </div>
       )}
 
@@ -2570,14 +2629,48 @@ export default function Dashboard() {
               <Menu className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-2 sm:gap-2.5">
-              <BoraMarkaLogo size="md" showText={false} />
-              <div className="hidden sm:block">
-                <h1 className="font-extrabold text-[15px] text-slate-800 dark:text-white/90 leading-tight tracking-tight">
-                  Bora<span className="bg-gradient-to-r from-violet-500 to-pink-500 bg-clip-text text-transparent">Marka</span>
-                </h1>
-                <p className="text-[9px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-[0.12em] mt-0.5">Sua agenda cheia, sem complicação</p>
-              </div>
+            <div 
+              onClick={() => setShowProductModal(true)}
+              className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group/brand select-none"
+              title="Clique para gerenciar sua assinatura e modelo de negócio (BoraMarka vs BoraEnkomenda)"
+            >
+              {adminInfo?.businessType === 'PRODUCTS' ? (
+                <>
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white shadow-md shadow-pink-500/25 shrink-0 group-hover/brand:scale-105 transition-transform">
+                    <ShoppingBag className="w-4.5 h-4.5" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <div className="flex items-center gap-1.5">
+                      <h1 className="font-extrabold text-[15px] text-slate-800 dark:text-white/90 leading-tight tracking-tight">
+                        Bora<span className="bg-gradient-to-r from-pink-500 to-rose-500 bg-clip-text text-transparent">Enkomenda</span>
+                      </h1>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-pink-500/15 text-pink-500 dark:text-pink-400 border border-pink-500/25 px-1.5 py-0.2 rounded group-hover/brand:bg-pink-500 group-hover/brand:text-white transition-colors">
+                        Produção ▾
+                      </span>
+                    </div>
+                    <p className="text-[9px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-[0.12em] mt-0.5">
+                      Cardápio digital, pedidos & produção
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <BoraMarkaLogo size="md" showText={false} />
+                  <div className="hidden sm:block">
+                    <div className="flex items-center gap-1.5">
+                      <h1 className="font-extrabold text-[15px] text-slate-800 dark:text-white/90 leading-tight tracking-tight">
+                        Bora<span className="bg-gradient-to-r from-violet-500 to-pink-500 bg-clip-text text-transparent">Marka</span>
+                      </h1>
+                      <span className="text-[9px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-500 dark:text-violet-400 border border-violet-500/25 px-1.5 py-0.2 rounded group-hover/brand:bg-violet-500 group-hover/brand:text-white transition-colors">
+                        Serviços ▾
+                      </span>
+                    </div>
+                    <p className="text-[9px] text-slate-400 dark:text-white/30 font-bold uppercase tracking-[0.12em] mt-0.5">
+                      Sua agenda cheia, sem complicação
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -2591,7 +2684,7 @@ export default function Dashboard() {
                   type="text"
                   value={globalSearchQuery}
                   onChange={(e) => setGlobalSearchQuery(e.target.value)}
-                  placeholder="Buscar cliente, serviço ou agendamento..."
+                  placeholder={adminInfo?.businessType === 'PRODUCTS' ? "Buscar cliente, produto ou encomenda..." : "Buscar cliente, serviço ou agendamento..."}
                   className="bg-transparent text-xs text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-white/35 focus:outline-none w-full font-medium"
                 />
                 {globalSearchQuery ? (
@@ -2706,9 +2799,22 @@ export default function Dashboard() {
                      <div className="flex items-center justify-end gap-2">
                        <p className="text-[13px] font-bold text-slate-700 dark:text-white/80 leading-none">{adminInfo.businessName || adminInfo.username}</p>
                        {!operatorSession && (
-                         <button onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} className="text-slate-400 dark:text-white/25 hover:text-violet-650 dark:hover:text-violet-400 transition-colors" title="Editar Perfil">
-                           <Pencil className="w-3 h-3" />
-                         </button>
+                         <div className="flex items-center gap-1.5">
+                           <button 
+                             onClick={() => setShowProductModal(true)} 
+                             className="text-slate-400 dark:text-white/25 hover:text-pink-500 transition-colors" 
+                             title="Gerenciar Modelo & Assinatura (BoraMarka vs BoraEnkomenda)"
+                           >
+                             <Repeat className="w-3 h-3" />
+                           </button>
+                           <button 
+                             onClick={() => subscription?.status === 'inactive' ? setShowPaywall(true) : openEditProfile()} 
+                             className="text-slate-400 dark:text-white/25 hover:text-violet-650 dark:hover:text-violet-400 transition-colors" 
+                             title="Editar Perfil"
+                           >
+                             <Pencil className="w-3 h-3" />
+                           </button>
+                         </div>
                        )}
                      </div>
                      <p className="text-[10px] text-violet-400 font-bold mt-0.5">
@@ -2787,34 +2893,36 @@ export default function Dashboard() {
               </button>
             </div>
 
-            {/* Card de Destaque BoraEncomenda no topo do Drawer */}
-            <button
-              onClick={() => {
-                setActiveTab('boraencomenda')
-                setMobileMenuOpen(false)
-              }}
-              className={`w-full p-4 rounded-2xl flex items-center justify-between font-bold text-sm transition-all mb-4 ${
-                activeTab === 'boraencomenda'
-                  ? 'bg-gradient-to-r from-pink-500 to-violet-600 text-white shadow-lg shadow-pink-500/25 ring-2 ring-pink-400'
-                  : 'bg-gradient-to-r from-pink-500/15 via-purple-500/10 to-violet-500/15 border border-pink-500/30 text-white hover:border-pink-500/60'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 rounded-xl bg-pink-500 text-white shadow-md shadow-pink-500/30 shrink-0">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
-                <div className="text-left">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-sm text-slate-900 dark:text-white">BoraEncomenda</span>
-                    <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-pink-500 text-white uppercase tracking-wider">
-                      Vitrine & Pedidos
-                    </span>
+            {/* Card de Destaque BoraEnkomenda APENAS para profissionais de Encomendas */}
+            {currentBusinessType === 'PRODUCTS' && (
+              <button
+                onClick={() => {
+                  setActiveTab('boraencomenda')
+                  setMobileMenuOpen(false)
+                }}
+                className={`w-full p-4 rounded-2xl flex items-center justify-between font-bold text-sm transition-all mb-4 ${
+                  activeTab === 'boraencomenda'
+                    ? 'bg-gradient-to-r from-pink-500 to-rose-600 text-white shadow-lg shadow-pink-500/25 ring-2 ring-pink-400'
+                    : 'bg-gradient-to-r from-pink-500/15 via-rose-500/10 to-pink-500/15 border border-pink-500/30 text-white hover:border-pink-500/60'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-pink-500 text-white shadow-md shadow-pink-500/30 shrink-0">
+                    <ShoppingBag className="w-5 h-5" />
                   </div>
-                  <p className="text-[11px] text-pink-400 dark:text-pink-300 font-medium">Cardápio, vitrine pública e Kanban</p>
+                  <div className="text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-sm text-slate-900 dark:text-white">BoraEnkomenda</span>
+                      <span className="text-[9px] font-black px-2 py-0.5 rounded-full bg-pink-500 text-white uppercase tracking-wider">
+                        Vitrine & Pedidos
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-pink-400 dark:text-pink-300 font-medium">Cardápio, vitrine pública e Kanban</p>
+                  </div>
                 </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-pink-400 shrink-0" />
-            </button>
+                <ChevronRight className="w-4 h-4 text-pink-400 shrink-0" />
+              </button>
+            )}
 
             <div className="space-y-3 pb-6">
               {filteredNavCategories.map(cat => {
@@ -3025,13 +3133,15 @@ export default function Dashboard() {
         )}
 
         {/* ═══════════════════════════════════════════ */}
-        {/* TAB: BoraEncomenda */}
+        {/* TAB: BoraEnkomenda */}
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'boraencomenda' && (
           <BoraEncomendaTab
             user={adminInfo}
             subscription={subscription}
             setShowPaywall={setShowPaywall}
+            onNavigateTab={setActiveTab}
+            showToast={showToast}
           />
         )}
 
@@ -3059,6 +3169,10 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════ */}
         {activeTab === 'financeiro' && (
           <FinanceiroTab
+            adminInfo={adminInfo}
+            onUpdateAdminInfo={(newInfo) => {
+              setAdminInfo((prev) => (prev ? { ...prev, ...newInfo } : newInfo))
+            }}
             exportRevenueCSV={exportRevenueCSV}
             openPdfExportModal={openPdfExportModal}
             revenuePeriod={revenuePeriod}
@@ -3092,6 +3206,7 @@ export default function Dashboard() {
             setFinanceFilter={setFinanceFilter}
             handleToggleTx={handleToggleTx}
             handleDeleteTx={handleDeleteTx}
+            onRefreshData={() => fetchData(false)}
           />
         )}
 
@@ -3239,7 +3354,7 @@ export default function Dashboard() {
         )}
 
         {activeTab === 'estoque' && (
-          <EstoqueTab showToast={showToast} />
+          <EstoqueTab showToast={showToast} companyCnpj={adminInfo?.cnpj} />
         )}
 
         {activeTab === 'marketing' && (
@@ -3351,6 +3466,8 @@ export default function Dashboard() {
             subscription={subscription}
             usageData={usageData}
             handleCheckout={handleCheckout}
+            businessType={adminInfo?.businessType === 'PRODUCTS' ? 'PRODUCTS' : 'SERVICES'}
+            onToggleBusinessType={handleToggleBusinessType}
           />
         )}
         {activeTab === 'cupons' && (
@@ -5158,32 +5275,62 @@ export default function Dashboard() {
           <span className="text-[10px] tracking-tight">Início</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('boraencomenda')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all relative ${
-            activeTab === 'boraencomenda'
-              ? 'text-pink-500 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-pink-400'
-          }`}
-        >
-          <div className="relative">
-            <ShoppingBag className="w-5 h-5" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
-          </div>
-          <span className="text-[10px] tracking-tight font-bold">Encomendas</span>
-        </button>
+        {currentBusinessType === 'PRODUCTS' ? (
+          <>
+            <button
+              onClick={() => setActiveTab('boraencomenda')}
+              className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all relative ${
+                activeTab === 'boraencomenda'
+                  ? 'text-pink-500 font-extrabold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-pink-400'
+              }`}
+            >
+              <div className="relative">
+                <ShoppingBag className="w-5 h-5" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-pink-500 rounded-full animate-pulse"></span>
+              </div>
+              <span className="text-[10px] tracking-tight font-bold">Encomendas</span>
+            </button>
 
-        <button
-          onClick={() => setActiveTab('agendamentos')}
-          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
-            activeTab === 'agendamentos'
-              ? 'text-violet-600 dark:text-violet-400 font-extrabold'
-              : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-          }`}
-        >
-          <Calendar className="w-5 h-5" />
-          <span className="text-[10px] tracking-tight">Agenda</span>
-        </button>
+            <button
+              onClick={() => setActiveTab('clientes')}
+              className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+                activeTab === 'clientes'
+                  ? 'text-pink-500 font-extrabold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Users className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight">Clientes</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <button
+              onClick={() => setActiveTab('agendamentos')}
+              className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+                activeTab === 'agendamentos'
+                  ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Calendar className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight">Agenda</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('calendario')}
+              className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+                activeTab === 'calendario'
+                  ? 'text-violet-600 dark:text-violet-400 font-extrabold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <CalendarDays className="w-5 h-5" />
+              <span className="text-[10px] tracking-tight">Calendário</span>
+            </button>
+          </>
+        )}
 
         <button
           onClick={() => setActiveTab('financeiro')}

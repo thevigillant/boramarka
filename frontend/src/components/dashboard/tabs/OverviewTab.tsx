@@ -9,7 +9,7 @@ import type { ServiceData, LinkData, BookingData, FinanceStats } from '../../../
 import type { AnalyticsData } from '../../../services/api'
 
 interface OverviewTabProps {
-  stats: { totalBookings: number }
+  stats: { totalBookings: number; totalClients?: number }
   financeStats: FinanceStats
   services: ServiceData[]
   links: LinkData[]
@@ -41,7 +41,7 @@ export function OverviewTab({
   return (
     <div className="animate-slide-up space-y-8">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3.5">
-        <StatCard title="Total de Clientes" value={stats.totalBookings} icon={Users} color="#8b5cf6" />
+        <StatCard title="Total de Clientes" value={stats.totalClients ?? stats.totalBookings} icon={Users} color="#8b5cf6" />
         <StatCard title="Saldo Financeiro" value={formatCurrency(financeStats.balance)} icon={Wallet} color="#10b981" />
         <StatCard title="A Receber" value={formatCurrency(financeStats.pendingReceivable)} icon={TrendingUp} color="#06b6d4" />
         <StatCard title="A Pagar" value={formatCurrency(financeStats.pendingPayable)} icon={TrendingDown} color="#ef4444" />

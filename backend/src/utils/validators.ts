@@ -68,7 +68,10 @@ export const createTransactionSchema = z.object({
   clientName: z.string().optional(),
   category: z.string().optional(),
   notes: z.string().optional(),
-  paid: z.boolean().optional()
+  paid: z.boolean().optional(),
+  supplierId: z.number().int().optional().nullable(),
+  invoiceId: z.number().int().optional().nullable(),
+  purchaseId: z.number().int().optional().nullable()
 })
 
 // ═══ Employees ═══

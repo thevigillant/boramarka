@@ -54,67 +54,64 @@ export function PersonalizarTab({
           <div className="space-y-4">
             <h3 className="text-sm font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest pb-2 border-b border-slate-100 dark:border-slate-800">Modelo de Atuação</h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <button
                 type="button"
                 onClick={() => setBrandingForm({ ...brandingForm, businessType: 'SERVICES' })}
-                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
+                className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all cursor-pointer ${
                   (brandingForm.businessType || 'SERVICES') === 'SERVICES'
-                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-md'
+                    ? 'bg-violet-500/10 border-violet-500 text-white shadow-lg ring-1 ring-violet-500/30'
                     : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-white'
                 }`}
               >
                 <div className="flex justify-between items-center w-full">
-                  <Calendar className="w-5 h-5 text-pink-400" />
-                  {(brandingForm.businessType || 'SERVICES') === 'SERVICES' && (
-                    <CheckCircle2 className="w-4 h-4 text-pink-400" />
-                  )}
+                  <div className="w-8 h-8 rounded-lg bg-violet-500/20 text-violet-400 flex items-center justify-center">
+                    <Calendar className="w-4 h-4" />
+                  </div>
+                  {(brandingForm.businessType || 'SERVICES') === 'SERVICES' ? (
+                    <span className="flex items-center gap-1 text-[11px] font-black text-violet-400 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Ativo
+                    </span>
+                  ) : null}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">Serviços Autônomos</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Agendamentos por horário</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-black text-slate-900 dark:text-white">BoraMarka</p>
+                    <span className="text-[9px] font-bold text-violet-400 bg-violet-500/10 px-1 rounded">Serviços</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Agendamentos por horário, calendário, fila de espera e profissionais.
+                  </p>
                 </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setBrandingForm({ ...brandingForm, businessType: 'PRODUCTS' })}
-                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
+                className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all cursor-pointer ${
                   brandingForm.businessType === 'PRODUCTS'
-                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-md'
+                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-lg ring-1 ring-pink-500/30'
                     : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-white'
                 }`}
               >
                 <div className="flex justify-between items-center w-full">
-                  <ShoppingBag className="w-5 h-5 text-pink-400" />
-                  {brandingForm.businessType === 'PRODUCTS' && (
-                    <CheckCircle2 className="w-4 h-4 text-pink-400" />
-                  )}
+                  <div className="w-8 h-8 rounded-lg bg-pink-500/20 text-pink-400 flex items-center justify-center">
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                  {brandingForm.businessType === 'PRODUCTS' ? (
+                    <span className="flex items-center gap-1 text-[11px] font-black text-pink-400 bg-pink-500/10 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> Ativo
+                    </span>
+                  ) : null}
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">Venda sob Encomenda</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Cardápio & Produção</p>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setBrandingForm({ ...brandingForm, businessType: 'HYBRID' })}
-                className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all ${
-                  brandingForm.businessType === 'HYBRID'
-                    ? 'bg-pink-500/10 border-pink-500 text-white shadow-md'
-                    : 'bg-slate-50 dark:bg-[#1A2235] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-white'
-                }`}
-              >
-                <div className="flex justify-between items-center w-full">
-                  <Layers className="w-5 h-5 text-emerald-400" />
-                  {brandingForm.businessType === 'HYBRID' && (
-                    <CheckCircle2 className="w-4 h-4 text-pink-400" />
-                  )}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900 dark:text-white">Ambos / Híbrido</p>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Serviços e Encomendas</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-xs font-black text-slate-900 dark:text-white">BoraEnkomenda</p>
+                    <span className="text-[9px] font-bold text-pink-400 bg-pink-500/10 px-1 rounded">Produção</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    Cardápio digital, gestão de encomendas, Kanban de produção e compras.
+                  </p>
                 </div>
               </button>
             </div>
@@ -532,11 +529,6 @@ export function PersonalizarTab({
                       ? [
                           { name: 'Bolo Vulcão Ninho & Nutella', price: 85.0, detail: 'Prazo: 2 dias • Encomenda', badge: 'Sob Encomenda' },
                           { name: 'Kit Doces Finos Gourmet (50 un)', price: 120.0, detail: 'Prazo: 3 dias • Encomenda', badge: 'Mais Pedido' },
-                        ]
-                      : brandingForm.businessType === 'HYBRID'
-                      ? [
-                          { name: 'Sessão / Atendimento Individual', price: 90.0, detail: '45 min • Horário Marcado', badge: 'Serviço' },
-                          { name: 'Kit Artesanal Personalizado', price: 110.0, detail: 'Prazo: 2 dias • Produção', badge: 'Encomenda' },
                         ]
                       : [
                           { name: 'Corte Social Masculino', price: 45.0, detail: '30 min • Agendamento', badge: 'Serviço' },

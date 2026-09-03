@@ -95,6 +95,14 @@ export default function StatusPieChart({ data, size = 140 }: StatusPieChartProps
     ctx.fillText(String(total), cx, cy + 10)
   }, [data, size, entries, total])
 
+  if (entries.length === 0 || total === 0) {
+    return (
+      <div className="flex items-center justify-center" style={{ height: size }}>
+        <p className="text-xs text-slate-400 dark:text-white/30 italic">Sem atendimentos ou pedidos registrados</p>
+      </div>
+    )
+  }
+
   return (
     <div className="flex items-center gap-5">
       <canvas ref={canvasRef} className="shrink-0" />

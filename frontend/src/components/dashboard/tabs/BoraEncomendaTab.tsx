@@ -33,11 +33,14 @@ import {
   RotateCcw,
   GripVertical,
   ChevronLeft,
+  ShoppingCart,
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import { NewProductModal } from '../modals/NewProductModal'
 import { OrderDetailModal } from '../modals/OrderDetailModal'
+import { BoraEncomendaComprasSubTab } from './BoraEncomendaComprasSubTab'
+import { EmitSalesInvoiceModal } from '../modals/EmitSalesInvoiceModal'
 import type {
   ProductData,
   ProductCategoryData,
@@ -50,10 +53,12 @@ interface BoraEncomendaTabProps {
   user: any
   subscription: any
   setShowPaywall: (open: boolean) => void
+  onNavigateTab?: (tab: any) => void
+  showToast?: (msg: string, type?: 'success' | 'error') => void
 }
 
-export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEncomendaTabProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'products' | 'store' | 'reports'>('kanban')
+export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigateTab, showToast }: BoraEncomendaTabProps) {
+  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'products' | 'compras' | 'store' | 'reports'>('kanban')
   const [loading, setLoading] = useState(true)
 
   // Data states
@@ -62,6 +67,10 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
   const [categories, setCategories] = useState<ProductCategoryData[]>([])
   const [settings, setSettings] = useState<OrderSettingsData | null>(null)
   const [stats, setStats] = useState<OrderStatsData | null>(null)
+
+  // Invoice emission for orders
+  const [showEmitSalesModal, setShowEmitSalesModal] = useState(false)
+  const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<OrderData | null>(null)
 
   // Modals & UI states
   const [showProductModal, setShowProductModal] = useState(false)
@@ -534,7 +543,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
               </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              BoraEncomenda
+              BoraEnkomenda
             </h2>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl font-medium leading-relaxed">
               Gestão completa de pedidos sob encomenda com cardápio digital, recebimento de entrada online e acompanhamento de produção.
@@ -677,6 +686,21 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
         </button>
 
         <button
+          onClick={() => setActiveSubTab('compras')}
+          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+            activeSubTab === 'compras'
+              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
+        >
+          <ShoppingCart className="w-3.5 h-3.5 text-pink-400" />
+          <span>Lista de Compras</span>
+          <span className="ml-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
+            Mercado
+          </span>
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('store')}
           className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
             activeSubTab === 'store'
@@ -699,6 +723,17 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
           <BarChart3 className="w-3.5 h-3.5 text-pink-400" />
           <span>Relatórios</span>
         </button>
+
+        {onNavigateTab && (
+          <button
+            onClick={() => onNavigateTab('financeiro')}
+            className="py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap text-emerald-400 hover:text-white hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer ml-auto"
+            title="Ir para o Financeiro Completo (Notas Fiscais, Compras, Fluxo de Caixa)"
+          >
+            <DollarSign className="w-3.5 h-3.5" />
+            <span>Financeiro & Compras ➜</span>
+          </button>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════ */}
@@ -1197,6 +1232,17 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
       )}
 
       {/* ═══════════════════════════════════════════════════════ */}
+      {/* 2.5. Lista de Compras (Checklist Interativo de Insumos) */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {activeSubTab === 'compras' && (
+        <BoraEncomendaComprasSubTab
+          orders={orders}
+          showToast={showToast || ((msg) => alert(msg))}
+          onNavigateTab={onNavigateTab}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════ */}
       {/* 3. Configurações da Loja */}
       {/* ═══════════════════════════════════════════════════════ */}
       {activeSubTab === 'store' && settings && (
@@ -1443,6 +1489,25 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall }: BoraEnc
         onMoveToTrash={handleMoveToTrash}
         onRestoreOrder={handleRestoreOrder}
         onPermanentDelete={handlePermanentDeleteOrder}
+        onEmitInvoice={(order) => {
+          setSelectedOrderForInvoice(order)
+          setShowEmitSalesModal(true)
+        }}
+      />
+
+      <EmitSalesInvoiceModal
+        isOpen={showEmitSalesModal}
+        onClose={() => {
+          setShowEmitSalesModal(false)
+          setSelectedOrderForInvoice(null)
+        }}
+        onInvoiceEmitted={() => {
+          if (showToast) showToast('Nota Fiscal emitida com sucesso para a encomenda!', 'success')
+        }}
+        showToast={showToast || ((m) => alert(m))}
+        orders={orders}
+        initialOrder={selectedOrderForInvoice}
+        companyCnpj={user?.cnpj}
       />
 
       {/* ══════════════════════════════════════════════════════════ */}

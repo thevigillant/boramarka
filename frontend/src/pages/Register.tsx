@@ -137,7 +137,7 @@ export default function Register() {
   }, [showVerifyModal])
 
   // Step 2 — Negócio
-  const [businessType, setBusinessType] = useState<'SERVICES' | 'PRODUCTS' | 'HYBRID'>('SERVICES')
+  const [businessType, setBusinessType] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES')
   const [businessName, setBusinessName] = useState('')
   const [category, setCategory] = useState('barber')
   const [photoUrl, setPhotoUrl] = useState('')
@@ -163,12 +163,7 @@ export default function Register() {
     { id: 'gourmet', icon: Store, name: 'Gastronomia & Marmitas', desc: 'Pratos Artesanais & Kits' },
   ]
 
-  const activeCategories =
-    businessType === 'SERVICES'
-      ? serviceCategories
-      : businessType === 'PRODUCTS'
-      ? productCategories
-      : [...serviceCategories, ...productCategories]
+  const activeCategories = businessType === 'SERVICES' ? serviceCategories : productCategories
 
   // Step 3 — Perfil
   const [description, setDescription] = useState('')
@@ -588,28 +583,49 @@ export default function Register() {
                 {/* Seletor de Modelo de Atuação */}
                 <div>
                   <label className={labelClass}>
-                    Modelo de Atuação do seu Negócio <span className="text-red-400">*</span>
+                    Escolha o Produto Ideal para o seu Negócio <span className="text-red-400">*</span>
                   </label>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 mt-1">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 mt-1.5">
                     <button
                       type="button"
                       onClick={() => {
                         setBusinessType('SERVICES')
                         setCategory('barber')
                       }}
-                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all duration-300 ${
+                      className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all duration-300 relative group cursor-pointer ${
                         businessType === 'SERVICES'
-                          ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
-                          : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
+                          ? 'bg-gradient-to-br from-violet-600/20 via-indigo-600/10 to-transparent border-violet-500 text-white shadow-xl shadow-violet-500/15 ring-2 ring-violet-500/30'
+                          : 'bg-white/[0.02] border-white/[0.08] text-white/60 hover:bg-white/[0.04] hover:border-white/20'
                       }`}
                     >
-                      <div className="flex justify-between items-center w-full">
-                        <Calendar className="w-5 h-5 text-violet-400" />
-                        {businessType === 'SERVICES' && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
+                      <div className="flex justify-between items-start w-full">
+                        <div className="w-10 h-10 rounded-xl bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-violet-400">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        {businessType === 'SERVICES' ? (
+                          <span className="flex items-center gap-1 text-[11px] font-black text-violet-400 bg-violet-500/10 border border-violet-500/30 px-2.5 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Selecionado
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
+                            Agendamento
+                          </span>
+                        )}
                       </div>
                       <div>
-                        <p className="text-[12px] font-bold text-white leading-tight">Serviços Autônomos</p>
-                        <p className="text-[10px] text-white/40 mt-0.5">Agendamentos & Horários</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-black text-white">BoraMarka</p>
+                          <span className="text-[9px] font-black uppercase tracking-wider bg-violet-500/20 text-violet-300 px-1.5 py-0.2 rounded">Serviços</span>
+                        </div>
+                        <p className="text-[11px] text-white/70 mt-1 leading-snug">
+                          Para profissionais de serviços que vivem de agenda. Grade de horários 24/7, agendamentos online e equipe.
+                        </p>
+                        <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap gap-1">
+                          <span className="text-[9px] text-violet-300/80 bg-violet-500/10 px-1.5 py-0.5 rounded">Barbearias</span>
+                          <span className="text-[9px] text-violet-300/80 bg-violet-500/10 px-1.5 py-0.5 rounded">Salões</span>
+                          <span className="text-[9px] text-violet-300/80 bg-violet-500/10 px-1.5 py-0.5 rounded">Clínicas</span>
+                          <span className="text-[9px] text-violet-300/80 bg-violet-500/10 px-1.5 py-0.5 rounded">Estúdios</span>
+                        </div>
                       </div>
                     </button>
 
@@ -619,41 +635,40 @@ export default function Register() {
                         setBusinessType('PRODUCTS')
                         setCategory('confectionery')
                       }}
-                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all duration-300 ${
+                      className={`p-4 rounded-2xl border text-left flex flex-col justify-between gap-3 transition-all duration-300 relative group cursor-pointer ${
                         businessType === 'PRODUCTS'
-                          ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
-                          : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
+                          ? 'bg-gradient-to-br from-pink-600/20 via-rose-600/10 to-transparent border-pink-500 text-white shadow-xl shadow-pink-500/15 ring-2 ring-pink-500/30'
+                          : 'bg-white/[0.02] border-white/[0.08] text-white/60 hover:bg-white/[0.04] hover:border-white/20'
                       }`}
                     >
-                      <div className="flex justify-between items-center w-full">
-                        <ShoppingBag className="w-5 h-5 text-pink-400" />
-                        {businessType === 'PRODUCTS' && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
+                      <div className="flex justify-between items-start w-full">
+                        <div className="w-10 h-10 rounded-xl bg-pink-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400">
+                          <ShoppingBag className="w-5 h-5" />
+                        </div>
+                        {businessType === 'PRODUCTS' ? (
+                          <span className="flex items-center gap-1 text-[11px] font-black text-pink-400 bg-pink-500/10 border border-pink-500/30 px-2.5 py-0.5 rounded-full">
+                            <CheckCircle2 className="w-3.5 h-3.5" /> Selecionado
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-bold text-slate-400 bg-white/5 px-2 py-0.5 rounded-full">
+                            Encomendas
+                          </span>
+                        )}
                       </div>
                       <div>
-                        <p className="text-[12px] font-bold text-white leading-tight">Venda por Encomenda</p>
-                        <p className="text-[10px] text-white/40 mt-0.5">Bolos, Doces & Cardápio</p>
-                      </div>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setBusinessType('HYBRID')
-                        setCategory('confectionery')
-                      }}
-                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between gap-2 transition-all duration-300 ${
-                        businessType === 'HYBRID'
-                          ? 'bg-gradient-to-r from-violet-600/20 to-pink-600/20 border-violet-500 text-white shadow-lg shadow-violet-500/10'
-                          : 'bg-white/[0.02] border-white/[0.06] text-white/50 hover:bg-white/[0.04] hover:text-white/80'
-                      }`}
-                    >
-                      <div className="flex justify-between items-center w-full">
-                        <Layers className="w-5 h-5 text-emerald-400" />
-                        {businessType === 'HYBRID' && <CheckCircle2 className="w-4 h-4 text-pink-400" />}
-                      </div>
-                      <div>
-                        <p className="text-[12px] font-bold text-white leading-tight">Ambos / Híbrido</p>
-                        <p className="text-[10px] text-white/40 mt-0.5">Serviços e Encomendas</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-black text-white">BoraEnkomenda</p>
+                          <span className="text-[9px] font-black uppercase tracking-wider bg-pink-500/20 text-pink-300 px-1.5 py-0.2 rounded">Produção</span>
+                        </div>
+                        <p className="text-[11px] text-white/70 mt-1 leading-snug">
+                          Para produtores e artesãos. Cardápio digital, gestão de encomendas, Kanban de produção e listas de compras.
+                        </p>
+                        <div className="mt-2.5 pt-2 border-t border-white/5 flex flex-wrap gap-1">
+                          <span className="text-[9px] text-pink-300/80 bg-pink-500/10 px-1.5 py-0.5 rounded">Confeitarias</span>
+                          <span className="text-[9px] text-pink-300/80 bg-pink-500/10 px-1.5 py-0.5 rounded">Docerias</span>
+                          <span className="text-[9px] text-pink-300/80 bg-pink-500/10 px-1.5 py-0.5 rounded">Artesanatos</span>
+                          <span className="text-[9px] text-pink-300/80 bg-pink-500/10 px-1.5 py-0.5 rounded">Buffet</span>
+                        </div>
                       </div>
                     </button>
                   </div>

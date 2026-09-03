@@ -1,4 +1,4 @@
-import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle, Trash2, RotateCcw } from 'lucide-react'
+import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle, Trash2, RotateCcw, Receipt } from 'lucide-react'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import type { OrderData } from '../../../types/dashboard'
 
@@ -10,6 +10,7 @@ interface OrderDetailModalProps {
   onMoveToTrash?: (id: number, orderNumber?: string, directOrder?: OrderData) => Promise<void>
   onRestoreOrder?: (id: number, orderNumber?: string) => Promise<void>
   onPermanentDelete?: (id: number, orderNumber?: string) => Promise<void>
+  onEmitInvoice?: (order: OrderData) => void
 }
 
 export function OrderDetailModal({
@@ -20,6 +21,7 @@ export function OrderDetailModal({
   onMoveToTrash,
   onRestoreOrder,
   onPermanentDelete,
+  onEmitInvoice,
 }: OrderDetailModalProps) {
   if (!order) return null
 
@@ -314,6 +316,19 @@ export function OrderDetailModal({
                 {formatCurrency(order.remainingAmount)}
               </span>
             </div>
+
+            {onEmitInvoice && (
+              <div className="pt-3 border-t border-slate-700/60">
+                <button
+                  type="button"
+                  onClick={() => onEmitInvoice(order)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-pink-500/15 to-rose-500/15 hover:from-pink-500/25 hover:to-rose-500/25 text-pink-400 hover:text-pink-300 border border-pink-500/30 text-xs font-black flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
+                >
+                  <Receipt className="w-4 h-4" />
+                  <span>Emitir Nota Fiscal (NFC-e / NF-e) desta Encomenda</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── Ações Rápidas de WhatsApp ── */}

@@ -123,7 +123,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
       id: 'encomendas',
       version: 'v2.4',
       date: 'Agosto 2026',
-      title: 'Módulo BoraEncomenda: Gestão de Encomendas',
+      title: 'Módulo BoraEnkomenda: Gestão de Encomendas',
       tag: 'Novo Módulo',
       badgeClass: 'bg-pink-500/10 text-pink-400 border border-pink-500/20',
       iconBg: 'bg-pink-500/10 border border-pink-500/20',

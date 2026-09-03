@@ -32,6 +32,10 @@ import queueRoutes from './routes/queue';
 import inventoryRoutes from './routes/inventory';
 import pdvRoutes from './routes/pdv';
 import marketingRoutes from './routes/marketing';
+import supplierRoutes from './routes/suppliers';
+import purchaseRoutes from './routes/purchases';
+import invoiceRoutes from './routes/invoices';
+import shoppingListRoutes from './routes/shoppingLists';
 import { startReminderService } from './services/reminder';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
@@ -232,7 +236,7 @@ app.register(reviewRoutes, { prefix: '/api/reviews' });
 app.register(reviewRoutes, { prefix: '/api/v1/reviews' });
 app.register(uploadRoutes, { prefix: '/api/upload' });
 app.register(uploadRoutes, { prefix: '/api/v1/upload' });
-// 🍰 Módulo BoraEncomenda
+// 🍰 Módulo BoraEnkomenda
 app.register(productRoutes, { prefix: '/api/products' });
 app.register(productRoutes, { prefix: '/api/v1/products' });
 app.register(orderRoutes, { prefix: '/api/orders' });
@@ -241,6 +245,9 @@ app.register(orderSettingsRoutes, { prefix: '/api/order-settings' });
 app.register(orderSettingsRoutes, { prefix: '/api/v1/order-settings' });
 app.register(storefrontRoutes, { prefix: '/api/store' });
 app.register(storefrontRoutes, { prefix: '/api/v1/store' });
+// 🛒 Listas de Compras de Produção (BoraEnkomenda)
+app.register(shoppingListRoutes, { prefix: '/api/shopping-lists' });
+app.register(shoppingListRoutes, { prefix: '/api/v1/shopping-lists' });
 // 🚶 Fila de Espera Walk-in
 app.register(queueRoutes, { prefix: '/api/queue' });
 app.register(queueRoutes, { prefix: '/api/v1/queue' });
@@ -253,6 +260,13 @@ app.register(pdvRoutes, { prefix: '/api/v1/pdv' });
 // 📣 Campanhas de Marketing
 app.register(marketingRoutes, { prefix: '/api/marketing' });
 app.register(marketingRoutes, { prefix: '/api/v1/marketing' });
+// 🏭 Fornecedores (por CNPJ), Compras & Notas Fiscais (Destrinchadas)
+app.register(supplierRoutes, { prefix: '/api/suppliers' });
+app.register(supplierRoutes, { prefix: '/api/v1/suppliers' });
+app.register(purchaseRoutes, { prefix: '/api/purchases' });
+app.register(purchaseRoutes, { prefix: '/api/v1/purchases' });
+app.register(invoiceRoutes, { prefix: '/api/invoices' });
+app.register(invoiceRoutes, { prefix: '/api/v1/invoices' });
 
 const healthCheckHandler = async (request: any, reply: any) => {
   try {

@@ -1,3 +1,13 @@
+import type {
+  SupplierData,
+  PurchaseData,
+  InvoiceData,
+  DreReportData,
+  FiscalSettingsData,
+  EmitSalesInvoicePayload,
+  InboundInvoicePayload,
+} from '../types/dashboard';
+
 const rawApiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 const API_URL = rawApiUrl.replace(/\/+$/, '');
 
@@ -141,7 +151,7 @@ export const api = {
     address?: string;
     operatingHours?: string;
     category?: string;
-    businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+    businessType?: 'SERVICES' | 'PRODUCTS';
   }) =>
     request<{ token: string; refreshToken?: string; username: string; businessName: string; role?: string }>('/auth/register', {
       method: 'POST',
@@ -192,7 +202,7 @@ export const api = {
       address: string;
       operatingHours: string;
       category?: string;
-      businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+      businessType?: 'SERVICES' | 'PRODUCTS';
       mpAccessToken?: string;
       pixKey?: string;
       accentColor?: string;
@@ -218,7 +228,7 @@ export const api = {
     address?: string;
     operatingHours?: string;
     category?: string;
-    businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+    businessType?: 'SERVICES' | 'PRODUCTS';
     mpAccessToken?: string;
     pixKey?: string;
     accentColor?: string;
@@ -497,6 +507,158 @@ export const api = {
     }>(`/finance/revenue-report?${query.toString()}`);
   },
 
+  getDreReport: (startDate?: string, endDate?: string) => {
+    const query = new URLSearchParams();
+    if (startDate) query.append('startDate', startDate);
+    if (endDate) query.append('endDate', endDate);
+    return request<DreReportData>(`/finance/dre?${query.toString()}`);
+  },
+
+  // ═══ 🏭 Fornecedores (Suppliers) ═══
+  getSuppliers: (params?: { search?: string; category?: string; active?: boolean }) => {
+    const query = new URLSearchParams();
+    if (params?.search) query.append('search', params.search);
+    if (params?.category) query.append('category', params.category);
+    if (params?.active !== undefined) query.append('active', String(params.active));
+    return request<SupplierData[]>(`/suppliers?${query.toString()}`);
+  },
+
+  getSupplierById: (id: number) =>
+    request<SupplierData & { purchases: PurchaseData[]; invoices: InvoiceData[] }>(`/suppliers/${id}`),
+
+  createSupplier: (data: Partial<SupplierData>) =>
+    request<SupplierData>('/suppliers', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateSupplier: (id: number, data: Partial<SupplierData>) =>
+    request<SupplierData>(`/suppliers/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+
+  deleteSupplier: (id: number) =>
+    request(`/suppliers/${id}`, { method: 'DELETE' }),
+
+  // ═══ 🛒 Compras (Purchases) ═══
+  getPurchases: (params?: { status?: string; supplierId?: number; search?: string; startDate?: string; endDate?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.supplierId) query.append('supplierId', String(params.supplierId));
+    if (params?.search) query.append('search', params.search);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    return request<{
+      summary: { count: number; totalPurchased: number; pendingDelivery: number };
+      purchases: PurchaseData[];
+    }>(`/purchases?${query.toString()}`);
+  },
+
+  getPurchaseById: (id: number) =>
+    request<PurchaseData>(`/purchases/${id}`),
+
+  createPurchase: (data: any) =>
+    request<PurchaseData>('/purchases', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updatePurchaseStatus: (id: number, status: string, updateStock?: boolean) =>
+    request<PurchaseData>(`/purchases/${id}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status, updateStock }),
+    }),
+
+  deletePurchase: (id: number) =>
+    request(`/purchases/${id}`, { method: 'DELETE' }),
+
+  // ═══ 🧾 Notas Fiscais (Invoices - Entrada & Saída) ═══
+  getInvoices: (params?: {
+    supplierId?: number;
+    paid?: boolean;
+    search?: string;
+    startDate?: string;
+    endDate?: string;
+    direction?: 'ENTRADA' | 'SAIDA' | 'ALL';
+  }) => {
+    const query = new URLSearchParams();
+    if (params?.supplierId) query.append('supplierId', String(params.supplierId));
+    if (params?.paid !== undefined) query.append('paid', String(params.paid));
+    if (params?.search) query.append('search', params.search);
+    if (params?.startDate) query.append('startDate', params.startDate);
+    if (params?.endDate) query.append('endDate', params.endDate);
+    if (params?.direction) query.append('direction', params.direction);
+    return request<{
+      summary: {
+        count: number;
+        inboundCount?: number;
+        outboundCount?: number;
+        totalAmount: number;
+        totalPaid: number;
+        totalPending: number;
+      };
+      invoices: InvoiceData[];
+    }>(`/invoices?${query.toString()}`);
+  },
+
+  getInvoiceById: (id: number) =>
+    request<{ invoice: InvoiceData }>(`/invoices/${id}`),
+
+  createInvoice: (data: any) =>
+    request<{ invoice: InvoiceData }>('/invoices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  inboundInvoice: (data: InboundInvoicePayload) =>
+    request<{ invoice: InvoiceData }>('/invoices/inbound', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  consultInvoiceKey: (accessKey: string, qrUrl?: string) =>
+    request<any>('/invoices/consult-key', {
+      method: 'POST',
+      body: JSON.stringify({ accessKey, qrUrl }),
+    }),
+
+  emitSalesInvoice: (data: EmitSalesInvoicePayload) =>
+    request<{ invoice: InvoiceData }>('/invoices/outbound', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  checkAdminCnpj: () =>
+    request<{
+      hasValidCnpj: boolean;
+      cnpj: string;
+      formattedCnpj: string;
+      businessName: string;
+      ie: string;
+      taxRegime: string;
+      nfeSeries: string;
+      nfeNextNumber: number;
+    }>('/invoices/check-cnpj'),
+
+  getFiscalSettings: () =>
+    request<FiscalSettingsData>('/invoices/fiscal-settings'),
+
+  updateFiscalSettings: (data: Partial<FiscalSettingsData>) =>
+    request<{ settings: FiscalSettingsData }>('/invoices/fiscal-settings', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  toggleInvoicePaid: (id: number) =>
+    request<{ invoice: InvoiceData }>(`/invoices/${id}/toggle-paid`, { method: 'PATCH' }),
+
+  deleteInvoice: (id: number) =>
+    request(`/invoices/${id}`, { method: 'DELETE' }),
+
+  // ═══ 📦 Estoque (Inventory) ═══
+  getInventoryItems: () => request<any[]>('/inventory'),
+
   // ═══ Schedule (Public) ═══
   getPublicProfile: (username: string) =>
     request<{
@@ -670,6 +832,7 @@ export const api = {
       businessName: string;
       cnpj: string;
       phone: string;
+      businessType?: 'SERVICES' | 'PRODUCTS';
       createdAt: string;
       bookingsCount: number;
       subscription: {
@@ -684,7 +847,7 @@ export const api = {
       }
     }>>('/superadmin/users'),
 
-  updateUserSubscription: (id: number, data: { plan?: string; status?: string; expiresAt?: string | null }) =>
+  updateUserSubscription: (id: number, data: { plan?: string; status?: string; expiresAt?: string | null; businessType?: 'SERVICES' | 'PRODUCTS' }) =>
     request(`/superadmin/users/${id}/subscription`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -753,7 +916,7 @@ export const api = {
       body: JSON.stringify({ permissions }),
     }),
 
-  createProfessionalUser: (data: { username: string; password: string; businessName: string; phone?: string; email?: string; plan?: string; isFullAccess?: boolean }) =>
+  createProfessionalUser: (data: { username: string; password: string; businessName: string; phone?: string; email?: string; plan?: string; isFullAccess?: boolean; businessType?: 'SERVICES' | 'PRODUCTS' }) =>
     request<{ id: number; username: string; businessName: string }>('/superadmin/create-user', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -1531,7 +1694,7 @@ export const api = {
     });
   },
 
-  // ═══ 🍰 BoraEncomenda API ═══
+  // ═══ 🍰 BoraEnkomenda API ═══
   getOrderSettings: () =>
     request<any>('/order-settings'),
 
@@ -1600,6 +1763,61 @@ export const api = {
 
   deleteOrder: (id: number) =>
     request(`/orders/${id}`, { method: 'DELETE' }),
+
+  // ═══ 🛒 Listas de Compras de Produção (BoraEnkomenda) ═══
+  getShoppingLists: (params?: { status?: string; search?: string }) => {
+    const query = new URLSearchParams();
+    if (params?.status) query.append('status', params.status);
+    if (params?.search) query.append('search', params.search);
+    const qs = query.toString();
+    return request<{ lists: any[] }>(`/shopping-lists${qs ? `?${qs}` : ''}`);
+  },
+
+  getShoppingList: (id: number) =>
+    request<{ list: any }>(`/shopping-lists/${id}`),
+
+  createShoppingList: (data: any) =>
+    request<{ list: any }>('/shopping-lists', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  updateShoppingList: (id: number, data: any) =>
+    request<{ list: any }>(`/shopping-lists/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteShoppingList: (id: number) =>
+    request<{ success: boolean }>(`/shopping-lists/${id}`, { method: 'DELETE' }),
+
+  addShoppingListItem: (listId: number, item: any) =>
+    request<{ item: any }>(`/shopping-lists/${listId}/items`, {
+      method: 'POST',
+      body: JSON.stringify(item),
+    }),
+
+  toggleShoppingListItem: (listId: number, itemId: number) =>
+    request<{ item: any; allChecked: boolean }>(`/shopping-lists/${listId}/items/${itemId}/toggle`, {
+      method: 'PATCH',
+    }),
+
+  updateShoppingListItem: (listId: number, itemId: number, data: any) =>
+    request<{ item: any }>(`/shopping-lists/${listId}/items/${itemId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+
+  deleteShoppingListItem: (listId: number, itemId: number) =>
+    request<{ success: boolean }>(`/shopping-lists/${listId}/items/${itemId}`, {
+      method: 'DELETE',
+    }),
+
+  generateShoppingListFromOrders: (orderIds?: number[], title?: string) =>
+    request<{ list: any }>('/shopping-lists/from-orders', {
+      method: 'POST',
+      body: JSON.stringify({ orderIds, title }),
+    }),
 
   // ═══ Vitrine Pública & Rastreamento ═══
   getPublicStore: (username: string) =>

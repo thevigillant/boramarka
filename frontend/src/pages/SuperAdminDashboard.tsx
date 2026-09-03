@@ -6,7 +6,7 @@ import {
   Moon, Sun, Search, Filter, Trash2, Edit, X, Check,
   AlertCircle, Loader2, CheckCircle2, AlertTriangle, ShieldCheck, UserCheck,
   LifeBuoy, MessageSquare, Send, Plus, Crown, Shield, Zap, UserPlus, Sparkles,
-  Phone, Mail, ExternalLink, Clock, Settings, Lock
+  Phone, Mail, ExternalLink, Clock, Settings, Lock, ShoppingBag, Repeat
 } from 'lucide-react'
 
 interface UserSubscription {
@@ -22,6 +22,7 @@ interface UserData {
   businessName: string
   cnpj: string
   phone: string
+  businessType?: 'SERVICES' | 'PRODUCTS'
   createdAt: string
   bookingsCount: number
   subscription: UserSubscription | null
@@ -113,9 +114,11 @@ export default function SuperAdminDashboard() {
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all') // all, active, trialing, inactive, pending
+  const [productFilter, setProductFilter] = useState<'all' | 'SERVICES' | 'PRODUCTS'>('all')
   
   // Modals state
   const [editingUser, setEditingUser] = useState<UserData | null>(null)
+  const [subBusinessType, setSubBusinessType] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES')
   const [subPlan, setSubPlan] = useState('mensal')
   const [subStatus, setSubStatus] = useState('active')
   const [subExpiresAt, setSubExpiresAt] = useState('')
@@ -154,6 +157,7 @@ export default function SuperAdminDashboard() {
   const [proPassword, setProPassword] = useState('')
   const [proPhone, setProPhone] = useState('')
   const [proEmail, setProEmail] = useState('')
+  const [proBusinessType, setProBusinessType] = useState<'SERVICES' | 'PRODUCTS'>('SERVICES')
   const [proPlan, setProPlan] = useState('mensal')
   const [proIsFullAccess, setProIsFullAccess] = useState(false)
 
@@ -335,7 +339,9 @@ export default function SuperAdminDashboard() {
       return
     }
     setEditingUser(user)
-    setSubPlan(user.subscription?.plan || 'mensal')
+    const isProd = user.businessType === 'PRODUCTS'
+    setSubBusinessType(isProd ? 'PRODUCTS' : 'SERVICES')
+    setSubPlan(user.subscription?.plan || (isProd ? 'confeitaria_pro' : 'pro'))
     setSubStatus(user.subscription?.status || 'active')
     
     if (user.subscription?.expiresAt) {
@@ -355,9 +361,10 @@ export default function SuperAdminDashboard() {
       await api.updateUserSubscription(editingUser.id, {
         plan: subPlan,
         status: subStatus,
-        expiresAt: subExpiresAt ? new Date(subExpiresAt).toISOString() : null
+        expiresAt: subExpiresAt ? new Date(subExpiresAt).toISOString() : null,
+        businessType: subBusinessType
       })
-      showToast('Assinatura atualizada com sucesso!')
+      showToast('Assinatura e Vertical atualizadas com sucesso!')
       setEditingUser(null)
       fetchData()
     } catch (err: any) {
@@ -447,6 +454,7 @@ export default function SuperAdminDashboard() {
         email: proEmail,
         plan: proPlan,
         isFullAccess: proIsFullAccess,
+        businessType: proBusinessType,
       })
       showToast(`Profissional "${proBusinessName}" cadastrado com sucesso!`, 'success')
       setShowNewProModal(false)
@@ -516,7 +524,14 @@ export default function SuperAdminDashboard() {
       matchesStatus = !u.subscription || (u.subscription.status !== 'active' && u.subscription.status !== 'trialing' && u.subscription.status !== 'pending')
     }
 
-    return matchesSearch && matchesStatus
+    let matchesProduct = true
+    if (productFilter === 'SERVICES') {
+      matchesProduct = u.businessType !== 'PRODUCTS'
+    } else if (productFilter === 'PRODUCTS') {
+      matchesProduct = u.businessType === 'PRODUCTS'
+    }
+
+    return matchesSearch && matchesStatus && matchesProduct
   })
 
   const formatCurrency = (val: number) => {
@@ -794,6 +809,19 @@ export default function SuperAdminDashboard() {
                     <option value="inactive" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Inativos</option>
                   </select>
                 </div>
+
+                {/* Vertical / Product filter dropdown */}
+                <div className="relative">
+                  <select
+                    value={productFilter}
+                    onChange={(e) => setProductFilter(e.target.value as any)}
+                    className="input-simple px-3 py-2.5 text-xs font-bold bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white border-slate-200 dark:border-slate-800 cursor-pointer w-full"
+                  >
+                    <option value="all">Todas as Verticais</option>
+                    <option value="SERVICES">📅 BoraMarka (Serviços)</option>
+                    <option value="PRODUCTS">🧁 BoraEnkomenda (Produção)</option>
+                  </select>
+                </div>
               </div>
             </div>
 
@@ -813,7 +841,18 @@ export default function SuperAdminDashboard() {
                         </div>
                         <div>
                           <div className="font-black text-slate-900 dark:text-white text-sm">{user.businessName}</div>
-                          <div className="text-xs font-bold text-pink-600 dark:text-pink-400">@{user.username}</div>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="text-xs font-bold text-pink-600 dark:text-pink-400">@{user.username}</span>
+                            {user.businessType === 'PRODUCTS' ? (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/30">
+                                🧁 BoraEnkomenda
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30">
+                                📅 BoraMarka
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div>
@@ -922,7 +961,18 @@ export default function SuperAdminDashboard() {
                             </div>
                             <div>
                               <div className="font-black text-slate-900 dark:text-white text-sm">{user.businessName}</div>
-                              <div className="text-xs font-bold text-pink-600 dark:text-pink-400">@{user.username}</div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                <span className="text-xs font-bold text-pink-600 dark:text-pink-400">@{user.username}</span>
+                                {user.businessType === 'PRODUCTS' ? (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-pink-500/15 text-pink-600 dark:text-pink-400 border border-pink-500/30">
+                                    🧁 BoraEnkomenda
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-violet-500/15 text-violet-600 dark:text-violet-400 border border-violet-500/30">
+                                    📅 BoraMarka
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -1328,15 +1378,70 @@ export default function SuperAdminDashboard() {
               </button>
 
               <div>
-                <label className="block text-xs font-black text-slate-400 uppercase mb-1">Plano de Assinatura</label>
+                <label className="block text-xs font-black text-slate-400 uppercase mb-1.5">
+                  Vertical de Atuação (Modelo de Negócio)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubBusinessType('SERVICES')
+                      if (['atelie', 'confeitaria_pro', 'gourmet_vip'].includes(subPlan)) {
+                        setSubPlan('pro')
+                      }
+                    }}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      subBusinessType === 'SERVICES'
+                        ? 'bg-violet-500/15 border-violet-500 text-violet-600 dark:text-violet-400 shadow-sm ring-1 ring-violet-500/30'
+                        : 'bg-slate-50 dark:bg-[#0D111E] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" /> BoraMarka
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubBusinessType('PRODUCTS')
+                      if (['essencial', 'pro', 'vip', 'mensal'].includes(subPlan)) {
+                        setSubPlan('confeitaria_pro')
+                      }
+                    }}
+                    className={`py-2.5 px-3 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      subBusinessType === 'PRODUCTS'
+                        ? 'bg-pink-500/15 border-pink-500 text-pink-600 dark:text-pink-400 shadow-sm ring-1 ring-pink-500/30'
+                        : 'bg-slate-50 dark:bg-[#0D111E] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-slate-600'
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" /> BoraEnkomenda
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-black text-slate-400 uppercase mb-1">
+                  Plano de Assinatura ({subBusinessType === 'PRODUCTS' ? 'BoraEnkomenda' : 'BoraMarka'})
+                </label>
                 <select
                   value={subPlan}
                   onChange={(e) => setSubPlan(e.target.value)}
                   className="input-simple w-full text-xs font-bold bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white"
                 >
-                  <option value="mensal" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Plano Mensal (R$ 29,90/mês)</option>
-                  <option value="anual" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Plano Anual</option>
-                  <option value="premium" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Plano Premium VIP</option>
+                  {subBusinessType === 'SERVICES' ? (
+                    <>
+                      <option value="essencial">BoraMarka Essencial (R$ 39,90/mês)</option>
+                      <option value="pro">BoraMarka Pro (R$ 59,90/mês)</option>
+                      <option value="vip">BoraMarka Studio VIP (R$ 89,90/mês)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="atelie">BoraEnkomenda Ateliê (R$ 39,90/mês)</option>
+                      <option value="confeitaria_pro">BoraEnkomenda Confeitaria Pro (R$ 69,90/mês)</option>
+                      <option value="gourmet_vip">BoraEnkomenda Gourmet VIP (R$ 99,90/mês)</option>
+                    </>
+                  )}
+                  <option value="anual">Plano Anual</option>
+                  <option value="premium">Acesso Total VIP (Vitalício)</option>
+                  <option value="mensal">Legado / Mensal Padrão</option>
                 </select>
               </div>
 
@@ -1726,6 +1831,46 @@ export default function SuperAdminDashboard() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1.5">
+                  Vertical do Negócio (Modelo) *
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProBusinessType('SERVICES')
+                      if (['atelie', 'confeitaria_pro', 'gourmet_vip'].includes(proPlan)) {
+                        setProPlan('pro')
+                      }
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      proBusinessType === 'SERVICES'
+                        ? 'bg-violet-500/15 border-violet-500 text-violet-600 dark:text-violet-400 ring-1 ring-violet-500/30'
+                        : 'bg-slate-50 dark:bg-[#0D111E] border-slate-200 dark:border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <Calendar className="w-3.5 h-3.5" /> BoraMarka (Serviços)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProBusinessType('PRODUCTS')
+                      if (['essencial', 'pro', 'vip', 'mensal'].includes(proPlan)) {
+                        setProPlan('confeitaria_pro')
+                      }
+                    }}
+                    className={`py-2 px-3 rounded-xl border text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                      proBusinessType === 'PRODUCTS'
+                        ? 'bg-pink-500/15 border-pink-500 text-pink-600 dark:text-pink-400 ring-1 ring-pink-500/30'
+                        : 'bg-slate-50 dark:bg-[#0D111E] border-slate-200 dark:border-slate-800 text-slate-400'
+                    }`}
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" /> BoraEnkomenda (Produção)
+                  </button>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-black text-slate-500 dark:text-slate-400 uppercase mb-1">Telefone / WhatsApp</label>
@@ -1744,9 +1889,22 @@ export default function SuperAdminDashboard() {
                     onChange={e => setProPlan(e.target.value)}
                     className="input-simple w-full text-xs font-bold bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white border-slate-200 dark:border-slate-800"
                   >
-                    <option value="mensal" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Mensal (30d Teste)</option>
-                    <option value="anual" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Anual</option>
-                    <option value="premium" className="bg-white text-slate-900 dark:bg-[#0D111E] dark:text-white">Premium VIP</option>
+                    {proBusinessType === 'SERVICES' ? (
+                      <>
+                        <option value="essencial">BoraMarka Essencial</option>
+                        <option value="pro">BoraMarka Pro (Recomendado)</option>
+                        <option value="vip">BoraMarka Studio VIP</option>
+                      </>
+                    ) : (
+                      <>
+                        <option value="atelie">BoraEnkomenda Ateliê</option>
+                        <option value="confeitaria_pro">BoraEnkomenda Confeitaria Pro</option>
+                        <option value="gourmet_vip">BoraEnkomenda Gourmet VIP</option>
+                      </>
+                    )}
+                    <option value="mensal">Mensal (30d Teste Padrão)</option>
+                    <option value="anual">Anual</option>
+                    <option value="premium">Premium VIP</option>
                   </select>
                 </div>
               </div>

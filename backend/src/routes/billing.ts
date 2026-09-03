@@ -22,7 +22,7 @@ export default async function billingRoutes(app: FastifyInstance) {
   // Rota para gerar checkout (compra avulsa ou assinatura recorrente)
   app.post('/checkout', { preHandler: [authenticate] }, async (request, reply) => {
     const user = request.user as { id: number };
-    const { plan, recurring = true } = request.body as { plan: 'mensal' | 'anual' | 'premium'; recurring?: boolean };
+    const { plan, recurring = true } = request.body as { plan: string; recurring?: boolean };
 
     const mpToken = process.env.MERCADOPAGO_ACCESS_TOKEN;
     if (!mpToken || mpToken.trim() === '') {
@@ -33,23 +33,37 @@ export default async function billingRoutes(app: FastifyInstance) {
 
     const admin = await prisma.admin.findUnique({
       where: { id: user.id },
-      select: { email: true, username: true }
+      select: { email: true, username: true, businessType: true }
     });
 
-    let price = 29.90;
-    let title = 'BoraMarka - Plano Mensal';
+    const isProducts = admin?.businessType === 'PRODUCTS';
+    let price = isProducts ? 39.90 : 39.90;
+    let title = isProducts ? 'BoraEnkomenda - Plano Ateliê' : 'BoraMarka - Plano Essencial';
     let frequency = 1;
     let frequencyType = 'months';
 
-    if (plan === 'anual') {
+    if (plan === 'essencial' || plan === 'mensal') {
+      price = 39.90;
+      title = 'BoraMarka - Plano Essencial';
+    } else if (plan === 'pro') {
+      price = 59.90;
+      title = 'BoraMarka - Plano Pro';
+    } else if (plan === 'vip' || plan === 'premium') {
+      price = isProducts ? 99.90 : 89.90;
+      title = isProducts ? 'BoraEnkomenda - Plano Gourmet VIP' : 'BoraMarka - Plano Studio VIP';
+    } else if (plan === 'atelie') {
+      price = 39.90;
+      title = 'BoraEnkomenda - Plano Ateliê';
+    } else if (plan === 'confeitaria_pro') {
+      price = 69.90;
+      title = 'BoraEnkomenda - Plano Confeitaria Pro';
+    } else if (plan === 'gourmet_vip') {
+      price = 99.90;
+      title = 'BoraEnkomenda - Plano Gourmet VIP';
+    } else if (plan === 'anual') {
       price = 260.00;
-      title = 'BoraMarka - Plano Anual';
+      title = isProducts ? 'BoraEnkomenda - Plano Anual Pro' : 'BoraMarka - Plano Anual Pro';
       frequency = 12;
-      frequencyType = 'months';
-    } else if (plan === 'premium') {
-      price = 79.90;
-      title = 'BoraMarka - Plano Premium';
-      frequency = 1;
       frequencyType = 'months';
     }
 

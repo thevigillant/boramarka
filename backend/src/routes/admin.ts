@@ -15,13 +15,17 @@ export default async function adminRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════
   app.get('/stats', async (request) => {
     const user = request.user as { id: number };
-    const [totalLinks, totalSlots, totalBookings, availableSlots] = await Promise.all([
+    const [totalLinks, totalSlots, totalBookings, availableSlots, clientsCount, ordersCount, transactionsWithClient] = await Promise.all([
       prisma.schedulingLink.count({ where: { adminId: user.id } }),
       prisma.timeSlot.count({ where: { link: { adminId: user.id } } }),
       prisma.booking.count({ where: { timeSlot: { link: { adminId: user.id } } } }),
       prisma.timeSlot.count({ where: { isAvailable: true, link: { adminId: user.id } } }),
+      (prisma as any).client?.count({ where: { adminId: user.id } }).catch(() => 0) ?? 0,
+      prisma.order.count({ where: { adminId: user.id } }).catch(() => 0),
+      prisma.transaction.count({ where: { adminId: user.id, clientName: { not: '' } } }).catch(() => 0),
     ]);
-    return { totalLinks, totalSlots, totalBookings, availableSlots };
+    const totalClients = Math.max(clientsCount, totalBookings, ordersCount, transactionsWithClient > 0 ? transactionsWithClient : 0);
+    return { totalLinks, totalSlots, totalBookings: totalClients, totalClients, totalOrders: ordersCount, availableSlots };
   });
 
   // ═══════════════════════════════════════════
@@ -153,7 +157,7 @@ export default async function adminRoutes(app: FastifyInstance) {
       bannerUrl?: string;
       customDomain?: string | null;
       category?: string;
-      businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+      businessType?: 'SERVICES' | 'PRODUCTS';
       reminderEnabled?: boolean;
       reminderHours?: string;
       reminderChannels?: string;
@@ -224,19 +228,44 @@ export default async function adminRoutes(app: FastifyInstance) {
         ...(bannerUrl !== undefined && { bannerUrl: bannerUrl.trim() }),
         ...(finalCustomDomain !== undefined && { customDomain: finalCustomDomain }),
         ...(category !== undefined && { category: category.trim() }),
-        ...(businessType !== undefined && { businessType }),
+        ...(businessType !== undefined && {
+          businessType: businessType === 'PRODUCTS' ? 'PRODUCTS' : 'SERVICES',
+        }),
         ...(reminderEnabled !== undefined && { reminderEnabled }),
         ...(reminderHours !== undefined && { reminderHours: reminderHours.trim() }),
         ...(reminderChannels !== undefined && { reminderChannels: reminderChannels.trim().toLowerCase() }),
       },
     });
 
-    // Sincroniza a chave Pix com as configurações do BoraEncomenda automaticamente
+    // Sincroniza a chave Pix com as configurações do BoraEnkomenda automaticamente
     if (pixKey !== undefined) {
       await prisma.orderSettings.updateMany({
         where: { adminId: user.id },
         data: { pixKey: pixKey.trim() },
       }).catch((err) => console.error('Erro ao sincronizar orderSettings.pixKey:', err));
+    }
+
+    // Se o tipo de negócio for alterado para BoraEnkomenda, garante inicialização do orderSettings
+    if (businessType === 'PRODUCTS') {
+      const existingSettings = await prisma.orderSettings.findUnique({
+        where: { adminId: user.id },
+      });
+      if (!existingSettings) {
+        await prisma.orderSettings.create({
+          data: {
+            adminId: user.id,
+            storeName: admin.businessName || 'Ateliê & Confeitaria',
+            storeDescription: 'Encomendas artesanais e produtos sob medida.',
+            minOrderAmount: 0.0,
+            depositPercentage: 50.0,
+            allowScheduledPickup: true,
+            allowDelivery: true,
+            deliveryFee: 10.0,
+            minAdvanceDays: 2,
+            pixKey: admin.pixKey || '',
+          },
+        }).catch((err) => console.error('Erro ao inicializar orderSettings:', err));
+      }
     }
 
     return {

@@ -129,7 +129,7 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
       action: 'UPDATE_ORDER_SETTINGS',
       entity: 'ORDER_SETTINGS',
       entityId: updated.id,
-      details: 'Atualizou as configurações da loja BoraEncomenda',
+      details: 'Atualizou as configurações da loja BoraEnkomenda',
       adminId: user.id,
     });
 

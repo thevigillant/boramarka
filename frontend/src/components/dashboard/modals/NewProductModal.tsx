@@ -282,7 +282,7 @@ export function NewProductModal({
         <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <span className="text-xs font-black text-pink-500 uppercase tracking-widest">
-              BoraEncomenda · Cardápio
+              BoraEnkomenda · Cardápio
             </span>
             <h3 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white mt-0.5">
               {editingProduct ? 'Editar Produto de Encomenda' : 'Cadastrar Novo Produto'}

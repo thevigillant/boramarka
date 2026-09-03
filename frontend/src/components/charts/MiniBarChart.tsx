@@ -39,11 +39,12 @@ export default function MiniBarChart({ data, height = 200 }: MiniBarChartProps) 
 
     ctx.clearRect(0, 0, w, h)
 
-    if (!data || data.length === 0) {
-      ctx.fillStyle = 'rgba(148, 163, 184, 0.5)'
+    const isAllZero = !data || data.length === 0 || data.every(d => d.total === 0)
+    if (isAllZero) {
+      ctx.fillStyle = 'rgba(148, 163, 184, 0.4)'
       ctx.font = '600 12px "Plus Jakarta Sans", system-ui, sans-serif'
       ctx.textAlign = 'center'
-      ctx.fillText('Sem dados de receita ainda', w / 2, h / 2)
+      ctx.fillText('Nenhuma receita registrada no período', w / 2, h / 2)
       return
     }
 

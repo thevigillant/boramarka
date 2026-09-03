@@ -18,9 +18,15 @@ model Admin {
   description    String @default("")
   photoUrl       String @default("") @map("photo_url")
   address        String @default("")
+  ie             String @default("") // Inscrição Estadual
+  taxRegime      String @default("MEI") @map("tax_regime") // "MEI" | "SIMPLES_NACIONAL" | "LUCRO_PRESUMIDO"
+  nfeSeries      String @default("1") @map("nfe_series")
+  nfeNextNumber  Int    @default(1) @map("nfe_next_number")
+  nfceSeries     String @default("1") @map("nfce_series")
+  nfceNextNumber Int    @default(1) @map("nfce_next_number")
   operatingHours String @default("") @map("operating_hours")
   category       String @default("barber")
-  businessType   String @default("SERVICES") @map("business_type") // "SERVICES" | "PRODUCTS" | "HYBRID"
+  businessType   String @default("SERVICES") @map("business_type") // "SERVICES" (BoraMarka) | "PRODUCTS" (BoraEnkomenda)
   mpAccessToken  String @default("") @map("mp_access_token")
   pixKey         String @default("") @map("pix_key")
   accentColor    String @default("#f97316") @map("accent_color")
@@ -80,6 +86,10 @@ model Admin {
   inventoryItems    InventoryItem[]
   saleTransactions  SaleTransaction[]
   marketingCampaigns MarketingCampaign[]
+  suppliers         Supplier[]
+  purchases         Purchase[]
+  invoices          Invoice[]
+  shoppingLists     ShoppingList[]
 
   @@map("admin")
 }
@@ -224,6 +234,9 @@ model Transaction {
   clientName  String   @default("") @map("client_name")
   category    String   @default("")
   notes       String   @default("")
+  supplierId  Int?     @map("supplier_id")
+  invoiceId   Int?     @map("invoice_id")
+  purchaseId  Int?     @map("purchase_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
   adminId     Int      @map("admin_id")
@@ -755,7 +768,7 @@ model ServiceReview {
 }
 
 // ═══════════════════════════════════════════════════════════
-// 🍰 Módulo BoraEncomenda (Sistema de Encomendas & Cardápio)
+// 🍰 Módulo BoraEnkomenda (Sistema de Encomendas & Cardápio)
 // ═══════════════════════════════════════════════════════════
 
 model OrderSettings {
@@ -883,6 +896,7 @@ model Order {
 
   items            OrderItem[]
   statusLogs       OrderStatusLog[]
+  shoppingLists    ShoppingList[]
 
   @@index([adminId])
   @@index([deliveryDate])
@@ -971,8 +985,10 @@ model InventoryItem {
   adminId      Int             @map("admin_id")
   admin        Admin           @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
-  movements    StockMovement[]
-  saleItems    SaleItem[]
+  movements     StockMovement[]
+  saleItems     SaleItem[]
+  purchaseItems PurchaseItem[]
+  invoiceItems  InvoiceItem[]
 
   @@index([adminId])
   @@map("inventory_items")
@@ -1057,5 +1073,221 @@ model MarketingCampaign {
   @@map("marketing_campaigns")
 }
 
+// ═══════════════════════════════════════════════════════════════
+// 🏭 FORNECEDORES (CADASTRO POR CNPJ)
+// ═══════════════════════════════════════════════════════════════
+model Supplier {
+  id                Int        @id @default(autoincrement())
+  cnpj              String
+  corporateName     String     @map("corporate_name") // Razão Social
+  tradeName         String     @default("") @map("trade_name") // Nome Fantasia
+  stateRegistration String     @default("") @map("state_registration") // Inscrição Estadual
+  phone             String     @default("")
+  email             String     @default("")
+  address           String     @default("")
+  category          String     @default("INSUMOS") // INSUMOS | EMBALAGENS | EQUIPAMENTOS | SERVICOS | OUTROS
+  paymentTerms      String     @default("") @map("payment_terms") // Ex: "Boleto 30 dias", "Pix à vista"
+  pixKey            String     @default("") @map("pix_key")
+  bankInfo          String     @default("") @map("bank_info")
+  notes             String     @default("")
+  active            Boolean    @default(true)
+  createdAt         DateTime   @default(now()) @map("created_at")
+  updatedAt         DateTime   @updatedAt @default(now()) @map("updated_at")
 
+  adminId           Int        @map("admin_id")
+  admin             Admin      @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
+  purchases         Purchase[]
+  invoices          Invoice[]
+
+  @@index([adminId])
+  @@index([cnpj])
+  @@map("suppliers")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🛒 COMPRAS (PEDIDOS E GESTÃO DE FORNECIMENTO)
+// ═══════════════════════════════════════════════════════════════
+model Purchase {
+  id                   Int            @id @default(autoincrement())
+  purchaseNumber       String         @map("purchase_number") // Ex: "#CMP-1001"
+  purchaseDate         String         @map("purchase_date") // "YYYY-MM-DD"
+  expectedDeliveryDate String?        @map("expected_delivery_date") // "YYYY-MM-DD"
+  receivedDate         String?        @map("received_date") // "YYYY-MM-DD"
+  status               String         @default("PENDING") // PENDING | APPROVED | RECEIVED | CANCELLED
+  paymentMethod        String         @default("BOLETO") @map("payment_method") // PIX | BOLETO | CARTAO | DINHEIRO | PRAZO
+  paymentStatus        String         @default("PENDING") @map("payment_status") // PENDING | PAID | CANCELLED
+  dueDate              String?        @map("due_date")
+  totalAmount          Float          @default(0.0) @map("total_amount")
+  notes                String         @default("")
+  createdAt            DateTime       @default(now()) @map("created_at")
+  updatedAt            DateTime       @updatedAt @default(now()) @map("updated_at")
+
+  adminId              Int            @map("admin_id")
+  admin                Admin          @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  supplierId           Int?           @map("supplier_id")
+  supplier             Supplier?      @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  invoiceId            Int?           @map("invoice_id")
+  invoice              Invoice?       @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+
+  items                PurchaseItem[]
+
+  @@index([adminId])
+  @@index([supplierId])
+  @@index([status])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id              Int            @id @default(autoincrement())
+  name            String
+  category        String         @default("INSUMO")
+  quantity        Float          @default(1.0)
+  unit            String         @default("un") // un, kg, g, l, ml, pct, cx
+  unitPrice       Float          @default(0.0) @map("unit_price")
+  subtotal        Float          @default(0.0)
+  notes           String         @default("")
+  inventoryItemId Int?           @map("inventory_item_id")
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  purchaseId      Int            @map("purchase_id")
+  purchase        Purchase       @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+
+  @@index([purchaseId])
+  @@map("purchase_items")
+}
+
+// ═══════════════════════════════════════════════════════════════
+// 🧾 NOTAS FISCAIS (1 VALOR DE ENTRADA CONSOLIDADO + GASTOS DESTRINCHADOS)
+// ═══════════════════════════════════════════════════════════════
+model Invoice {
+  id               Int           @id @default(autoincrement())
+  invoiceNumber    String        @map("invoice_number") // Número da NF (ex: "123456")
+  series           String        @default("")
+  accessKey        String        @default("") @map("access_key") // Chave de 44 dígitos da NF-e (opcional)
+  issueDate        String        @map("issue_date") // "YYYY-MM-DD"
+  dueDate          String        @map("due_date") // "YYYY-MM-DD"
+  totalAmount      Float         @default(0.0) @map("total_amount") // "apenas 1 valor de entrada" consolidado da NF
+  paymentMethod    String        @default("BOLETO") @map("payment_method")
+  paid             Boolean       @default(false)
+  paidAt           String?       @map("paid_at")
+  status           String        @default("REGISTRADA") // REGISTRADA | PAGA | CANCELADA
+  attachmentUrl    String        @default("") @map("attachment_url")
+  notes            String        @default("")
+  transactionId    Int?          @map("transaction_id") // ID da transação vinculada no Financeiro
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @default(now()) @map("updated_at")
+
+  // Direção e tipo de operação fiscal:
+  direction        String        @default("ENTRADA") // "ENTRADA" (Compra/Insumos) | "SAIDA" (Venda para Cliente)
+  operationType    String        @default("COMPRA") @map("operation_type") // "COMPRA" | "VENDA" | "DEVOLUCAO" | "SERVICO"
+  clientName       String        @default("") @map("client_name")
+  clientDocument   String        @default("") @map("client_document") // CPF ou CNPJ do destinatário
+  clientEmail      String        @default("") @map("client_email")
+  authorizationProtocol String   @default("") @map("authorization_protocol")
+  qrCodeUrl        String        @default("") @map("qr_code_url")
+  saleTransactionId Int?         @map("sale_transaction_id")
+  orderId          Int?          @map("order_id")
+
+  // Campos fiscais padrão SEFAZ:
+  cfop             String        @default("")
+  naturezaOperacao String        @default("COMPRA") @map("natureza_operacao")
+  productsAmount   Float         @default(0.0) @map("products_amount")
+  freightAmount    Float         @default(0.0) @map("freight_amount")
+  discountAmount   Float         @default(0.0) @map("discount_amount")
+  otherExpenses    Float         @default(0.0) @map("other_expenses")
+  icmsAmount       Float         @default(0.0) @map("icms_amount")
+  ipiAmount        Float         @default(0.0) @map("ipi_amount")
+  pisAmount        Float         @default(0.0) @map("pis_amount")
+  cofinsAmount     Float         @default(0.0) @map("cofins_amount")
+  xmlContent       String        @default("") @map("xml_content")
+  installments     String        @default("[]") // JSON de duplicatas/parcelas
+
+  adminId          Int           @map("admin_id")
+  admin            Admin         @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  supplierId       Int?          @map("supplier_id")
+  supplier         Supplier?     @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+
+  items            InvoiceItem[]
+  purchases        Purchase[]
+
+  @@index([adminId])
+  @@index([adminId, direction])
+  @@index([supplierId])
+  @@index([invoiceNumber])
+  @@map("invoices")
+}
+
+model InvoiceItem {
+  id              Int            @id @default(autoincrement())
+  description     String         // Nome do insumo / despesa destrinchada
+  expenseCategory String         @default("INSUMOS") @map("expense_category") // INSUMOS | EMBALAGENS | FRETE | EQUIPAMENTOS | MANUTENCAO | CONSUMO | OUTROS
+  quantity        Float          @default(1.0)
+  unit            String         @default("un") // kg, g, l, un, pct, cx, etc.
+  unitPrice       Float          @default(0.0) @map("unit_price")
+  totalPrice      Float          @default(0.0) @map("total_price")
+  itemCode        String         @default("") @map("item_code") // Código do produto no fornecedor (cProd)
+  ncm             String         @default("")
+  cfop            String         @default("")
+  discount        Float          @default(0.0)
+  inventoryItemId Int?           @map("inventory_item_id")
+  inventoryItem   InventoryItem? @relation(fields: [inventoryItemId], references: [id], onDelete: SetNull)
+  createdAt       DateTime       @default(now()) @map("created_at")
+
+  invoiceId       Int            @map("invoice_id")
+  invoice         Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@map("invoice_items")
+}
+
+// ═══════════════════════════════════════════════════════════
+// 🛒 BoraEnkomenda: Listas de Compras de Produção
+// ═══════════════════════════════════════════════════════════
+
+model ShoppingList {
+  id          Int                @id @default(autoincrement())
+  title       String
+  description String             @default("")
+  status      String             @default("ABERTA") // "ABERTA" | "CONCLUIDA"
+  targetDate  DateTime?          @map("target_date") // data prevista da compra
+  orderId     Int?               @map("order_id") // encomenda vinculada (opcional)
+  order       Order?             @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  items       ShoppingListItem[]
+
+  adminId     Int                @map("admin_id")
+  admin       Admin              @relation(fields: [adminId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @default(now()) @map("updated_at")
+
+  @@index([adminId])
+  @@index([orderId])
+  @@map("shopping_lists")
+}
+
+model ShoppingListItem {
+  id             Int          @id @default(autoincrement())
+  shoppingListId Int          @map("shopping_list_id")
+  shoppingList   ShoppingList @relation(fields: [shoppingListId], references: [id], onDelete: Cascade)
+
+  name           String
+  quantity       Float        @default(1)
+  unit           String       @default("un") // "un", "kg", "g", "l", "ml", "pct", "cx", "lata"
+  category       String       @default("Geral") // "Laticínios & Ovos", "Secos & Farinhas", "Embalagens", "Hortifruti", "Doces & Chocolates", "Geral"
+  estimatedPrice Float        @default(0.0) @map("estimated_price")
+  actualPrice    Float        @default(0.0) @map("actual_price")
+  checked        Boolean      @default(false)
+  checkedAt      DateTime?    @map("checked_at")
+  notes          String       @default("")
+
+  createdAt      DateTime     @default(now()) @map("created_at")
+  updatedAt      DateTime     @updatedAt @default(now()) @map("updated_at")
+
+  @@index([shoppingListId])
+  @@map("shopping_list_items")
+}

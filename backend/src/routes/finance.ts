@@ -28,7 +28,7 @@ export default async function financeRoutes(app: FastifyInstance) {
       }
     });
 
-    // Auto-reconcile active & completed orders from BoraEncomenda
+    // Auto-reconcile active & completed orders from BoraEnkomenda
     const activeOrders = await prisma.order.findMany({
       where: {
         adminId: user.id,
@@ -73,7 +73,7 @@ export default async function financeRoutes(app: FastifyInstance) {
       }
     }
 
-    // 2. Reconciliação de Encomendas (BoraEncomenda)
+    // 2. Reconciliação de Encomendas (BoraEnkomenda)
     for (const ord of activeOrders) {
       const isDelivered = ord.status === 'ENTREGUE';
 
@@ -202,6 +202,17 @@ export default async function financeRoutes(app: FastifyInstance) {
     const pendingReceivable = totalReceivable - receivedAmount;
     const pendingPayable = totalPayable - paidAmount;
 
+    const todayStr = new Date().toISOString().split('T')[0];
+    const overduePayable = transactions
+      .filter(t => t.type === 'payable' && !t.paid && t.dueDate < todayStr)
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    const [invoicesCount, suppliersCount, purchasesCount] = await Promise.all([
+      prisma.invoice.count({ where: { adminId: user.id } }),
+      prisma.supplier.count({ where: { adminId: user.id, active: true } }),
+      prisma.purchase.count({ where: { adminId: user.id } }),
+    ]);
+
     return {
       totalReceivable,
       totalPayable,
@@ -209,7 +220,11 @@ export default async function financeRoutes(app: FastifyInstance) {
       paidAmount,
       pendingReceivable,
       pendingPayable,
+      overduePayable,
       balance: receivedAmount - paidAmount,
+      invoicesCount,
+      suppliersCount,
+      purchasesCount,
     };
   });
 
@@ -328,17 +343,35 @@ export default async function financeRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════
   //  LIST TRANSACTIONS
   // ═══════════════════════════════════════════
+  // ═══════════════════════════════════════════
+  //  LIST TRANSACTIONS
+  // ═══════════════════════════════════════════
   app.get('/transactions', async (request) => {
     const user = request.user as { id: number };
-    const { type, paid } = request.query as { type?: string; paid?: string };
+    const { type, paid, startDate, endDate, supplierId, invoiceId } = request.query as {
+      type?: string;
+      paid?: string;
+      startDate?: string;
+      endDate?: string;
+      supplierId?: string;
+      invoiceId?: string;
+    };
 
     const where: any = { adminId: user.id };
-    if (type) where.type = type;
-    if (paid !== undefined) where.paid = paid === 'true';
+    if (type && type !== 'all') where.type = type;
+    if (paid !== undefined && paid !== 'all') where.paid = paid === 'true';
+    if (supplierId) where.supplierId = parseInt(supplierId);
+    if (invoiceId) where.invoiceId = parseInt(invoiceId);
+
+    if (startDate || endDate) {
+      where.dueDate = {};
+      if (startDate) where.dueDate.gte = startDate;
+      if (endDate) where.dueDate.lte = endDate;
+    }
 
     return prisma.transaction.findMany({
       where,
-      orderBy: { dueDate: 'asc' },
+      orderBy: { dueDate: 'desc' },
     });
   });
 
@@ -351,7 +384,19 @@ export default async function financeRoutes(app: FastifyInstance) {
     if (!parsed.success) {
       return reply.status(400).send({ error: parsed.error.issues[0].message });
     }
-    const { type, description, amount, dueDate, clientName, category, notes, paid } = parsed.data;
+    const {
+      type,
+      description,
+      amount,
+      dueDate,
+      clientName,
+      category,
+      notes,
+      paid,
+      supplierId,
+      invoiceId,
+      purchaseId,
+    } = parsed.data;
 
     const transaction = await prisma.transaction.create({
       data: {
@@ -364,6 +409,9 @@ export default async function financeRoutes(app: FastifyInstance) {
         clientName: clientName?.trim() || '',
         category: category?.trim() || '',
         notes: notes?.trim() || '',
+        supplierId: supplierId || null,
+        invoiceId: invoiceId || null,
+        purchaseId: purchaseId || null,
         adminId: user.id,
       },
     });
@@ -377,21 +425,41 @@ export default async function financeRoutes(app: FastifyInstance) {
   app.put('/transactions/:id/toggle', async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
+    const txId = parseInt(id);
 
     const transaction = await prisma.transaction.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: txId, adminId: user.id },
     });
 
     if (!transaction) {
       return reply.status(404).send({ error: 'Transação não encontrada' });
     }
 
-    const updated = await prisma.transaction.update({
-      where: { id: parseInt(id), adminId: user.id },
-      data: {
-        paid: !transaction.paid,
-        paidAt: !transaction.paid ? new Date().toISOString().split('T')[0] : null,
-      },
+    const nextPaid = !transaction.paid;
+    const nextPaidAt = nextPaid ? new Date().toISOString().split('T')[0] : null;
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedTx = await tx.transaction.update({
+        where: { id: txId, adminId: user.id },
+        data: {
+          paid: nextPaid,
+          paidAt: nextPaidAt,
+        },
+      });
+
+      // Sincroniza com a Nota Fiscal vinculada, se houver
+      if (transaction.invoiceId) {
+        await tx.invoice.updateMany({
+          where: { id: transaction.invoiceId, adminId: user.id },
+          data: {
+            paid: nextPaid,
+            paidAt: nextPaidAt,
+            status: nextPaid ? 'PAGA' : 'REGISTRADA',
+          },
+        });
+      }
+
+      return updatedTx;
     });
 
     return updated;
@@ -403,14 +471,120 @@ export default async function financeRoutes(app: FastifyInstance) {
   app.delete('/transactions/:id', async (request, reply) => {
     const user = request.user as { id: number };
     const { id } = request.params as { id: string };
+    const txId = parseInt(id);
 
     try {
-      await prisma.transaction.delete({ 
-        where: { id: parseInt(id), adminId: user.id } 
+      await prisma.$transaction(async (tx) => {
+        // Se a transação estiver ligada a uma NF, remove a referência
+        await tx.invoice.updateMany({
+          where: { transactionId: txId, adminId: user.id },
+          data: { transactionId: null },
+        });
+
+        await tx.transaction.delete({
+          where: { id: txId, adminId: user.id },
+        });
       });
       return reply.status(204).send();
     } catch {
       return reply.status(404).send({ error: 'Transação não encontrada' });
     }
+  });
+
+  // ═══════════════════════════════════════════
+  //  DRE SIMPLIFICADO & ANÁLISE DE RENTABILIDADE
+  // ═══════════════════════════════════════════
+  app.get('/dre', async (request) => {
+    const user = request.user as { id: number };
+    const { startDate, endDate } = request.query as { startDate?: string; endDate?: string };
+
+    const whereTx: any = { adminId: user.id };
+    if (startDate || endDate) {
+      whereTx.dueDate = {};
+      if (startDate) whereTx.dueDate.gte = startDate;
+      if (endDate) whereTx.dueDate.lte = endDate;
+    }
+
+    const transactions = await prisma.transaction.findMany({
+      where: whereTx,
+      orderBy: { dueDate: 'asc' },
+    });
+
+    // 1. Receitas Realizadas (Entradas Pagas)
+    const receivablesPaid = transactions.filter(t => t.type === 'receivable' && t.paid);
+    const grossRevenue = receivablesPaid.reduce((acc, t) => acc + t.amount, 0);
+
+    // Detalhamento de Receitas por categoria/origem
+    const revenueCategories: Record<string, number> = {};
+    receivablesPaid.forEach(t => {
+      const cat = t.category || 'Outras Receitas';
+      revenueCategories[cat] = (revenueCategories[cat] || 0) + t.amount;
+    });
+
+    // 2. Custos de Mercadorias e Insumos (COGS / CMV)
+    // Categorias de insumos, matérias-primas e embalagens de NFs e compras
+    const payablesPaid = transactions.filter(t => t.type === 'payable' && t.paid);
+
+    const cogsKeywords = ['insumo', 'fornecedor', 'embalag', 'materia-prima', 'compra'];
+    let cogs = 0;
+    let operatingExpenses = 0;
+    const expenseCategories: Record<string, number> = {};
+
+    payablesPaid.forEach(t => {
+      const catLower = (t.category || '').toLowerCase();
+      const isCogs = cogsKeywords.some(kw => catLower.includes(kw));
+
+      const displayCategory = t.category || 'Outras Despesas';
+      expenseCategories[displayCategory] = (expenseCategories[displayCategory] || 0) + t.amount;
+
+      if (isCogs) {
+        cogs += t.amount;
+      } else {
+        operatingExpenses += t.amount;
+      }
+    });
+
+    const grossProfit = grossRevenue - cogs;
+    const grossMarginPercent = grossRevenue > 0 ? (grossProfit / grossRevenue) * 100 : 0;
+
+    const netIncome = grossProfit - operatingExpenses;
+    const netMarginPercent = grossRevenue > 0 ? (netIncome / grossRevenue) * 100 : 0;
+
+    // Projeção futura (pendentes)
+    const receivablesPending = transactions
+      .filter(t => t.type === 'receivable' && !t.paid)
+      .reduce((acc, t) => acc + t.amount, 0);
+
+    const payablesPending = transactions
+      .filter(t => t.type === 'payable' && !t.paid)
+      .reduce((acc, t) => acc + t.amount, 0);
+
+    return {
+      period: {
+        startDate: startDate || null,
+        endDate: endDate || null,
+      },
+      summary: {
+        grossRevenue: Number(grossRevenue.toFixed(2)),
+        cogs: Number(cogs.toFixed(2)),
+        grossProfit: Number(grossProfit.toFixed(2)),
+        grossMarginPercent: Number(grossMarginPercent.toFixed(1)),
+        operatingExpenses: Number(operatingExpenses.toFixed(2)),
+        netIncome: Number(netIncome.toFixed(2)),
+        netMarginPercent: Number(netMarginPercent.toFixed(1)),
+        receivablesPending: Number(receivablesPending.toFixed(2)),
+        payablesPending: Number(payablesPending.toFixed(2)),
+      },
+      revenueBreakdown: Object.entries(revenueCategories).map(([category, amount]) => ({
+        category,
+        amount: Number(amount.toFixed(2)),
+        percentage: grossRevenue > 0 ? Number(((amount / grossRevenue) * 100).toFixed(1)) : 0,
+      })),
+      expenseBreakdown: Object.entries(expenseCategories).map(([category, amount]) => ({
+        category,
+        amount: Number(amount.toFixed(2)),
+        percentage: (cogs + operatingExpenses) > 0 ? Number(((amount / (cogs + operatingExpenses)) * 100).toFixed(1)) : 0,
+      })),
+    };
   });
 }

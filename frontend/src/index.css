@@ -138,34 +138,39 @@
   }
 
   .dark .input-simple {
-    background: rgba(255, 255, 255, 0.03) !important;
-    border-color: rgba(255, 255, 255, 0.08) !important;
-    color: rgba(255, 255, 255, 0.9) !important;
+    background: #182032 !important;
+    border-color: #334155 !important;
+    color: #F8FAFC !important;
+  }
+
+  .dark select.input-simple option {
+    background: #131826;
+    color: #F8FAFC;
   }
 
   .input-simple:focus {
     background: #FFFFFF;
-    border-color: #8B5CF6;
-    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.18);
+    border-color: #EC4899;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.18);
     outline: none;
   }
 
   .dark .input-simple:focus {
-    background: rgba(255, 255, 255, 0.05) !important;
-    border-color: rgba(139, 92, 246, 0.6) !important;
-    box-shadow: 0 0 20px rgba(139, 92, 246, 0.15) !important;
+    background: #1E283E !important;
+    border-color: #EC4899 !important;
+    box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.25) !important;
   }
 }
 
 
 @keyframes slideUp {
   from { transform: translateY(12px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  to { transform: none; opacity: 1; }
 }
 
 @keyframes scaleIn {
   from { transform: scale(0.92); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  to { transform: none; opacity: 1; }
 }
 
 @keyframes fadeIn {
@@ -508,7 +513,7 @@ html { scroll-behavior: smooth; }
 .pt-safe { padding-top: max(1rem, env(safe-area-inset-top)); }
 
 /* ═══════════════════════════════════════════════════════
-   STOREFRONT ANIMATIONS (BoraEncomenda)
+   STOREFRONT ANIMATIONS (BoraEnkomenda)
    ═══════════════════════════════════════════════════════ */
 
 @keyframes fade-in {
@@ -518,12 +523,12 @@ html { scroll-behavior: smooth; }
 
 @keyframes scale-in {
   from { opacity: 0; transform: scale(0.93) translateY(8px); }
-  to   { opacity: 1; transform: scale(1) translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 @keyframes slide-up {
   from { opacity: 0; transform: translateY(28px); }
-  to   { opacity: 1; transform: translateY(0); }
+  to   { opacity: 1; transform: none; }
 }
 
 .animate-fade-in  { animation: fade-in  0.22s ease both; }

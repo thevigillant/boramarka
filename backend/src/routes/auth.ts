@@ -168,7 +168,7 @@ export default async function authRoutes(app: FastifyInstance) {
       address?: string;
       operatingHours?: string;
       category?: string;
-      businessType?: 'SERVICES' | 'PRODUCTS' | 'HYBRID';
+      businessType?: 'SERVICES' | 'PRODUCTS';
     };
 
     if (!username?.trim() || !password) {
@@ -182,7 +182,10 @@ export default async function authRoutes(app: FastifyInstance) {
     const passwordHash = await bcrypt.hash(password, 10);
 
     const chosenCategory = category?.trim() || 'barber';
-    const chosenBusinessType = businessType || (chosenCategory === 'confectionery' || chosenCategory === 'crafts' ? 'PRODUCTS' : 'SERVICES');
+    const chosenBusinessType: 'SERVICES' | 'PRODUCTS' =
+      businessType === 'PRODUCTS' || chosenCategory === 'confectionery' || chosenCategory === 'crafts'
+        ? 'PRODUCTS'
+        : 'SERVICES';
 
     let admin;
     try {
@@ -214,8 +217,8 @@ export default async function authRoutes(app: FastifyInstance) {
       { expiresIn: '24h' }
     );
 
-    // Se for PRODUTOS ou HÍBRIDO, cria configurações de loja BoraEncomenda e categorias padrão
-    if (chosenBusinessType === 'PRODUCTS' || chosenBusinessType === 'HYBRID') {
+    // Se for BoraEnkomenda (PRODUTOS), cria configurações de loja BoraEnkomenda e categorias padrão
+    if (chosenBusinessType === 'PRODUCTS') {
       try {
         await prisma.orderSettings.create({
           data: {
@@ -276,12 +279,12 @@ export default async function authRoutes(app: FastifyInstance) {
           },
         });
       } catch (err: any) {
-        console.error('Erro ao semear dados iniciais de BoraEncomenda:', err.message);
+        console.error('Erro ao semear dados iniciais de BoraEnkomenda:', err.message);
       }
     }
 
-    // Se for SERVIÇOS ou HÍBRIDO, semeia os serviços de autônomos por hora
-    if (chosenBusinessType === 'SERVICES' || chosenBusinessType === 'HYBRID') {
+    // Se for BoraMarka (SERVIÇOS), semeia os serviços de autônomos por hora
+    if (chosenBusinessType === 'SERVICES') {
       const defaultServices: Record<string, Array<{ name: string; price: number; durationMinutes: number; description: string }>> = {
         barber: [
           { name: 'Corte Social / Degradê', price: 35.0, durationMinutes: 30, description: 'Corte moderno com acabamento e alinhamento do pezinho' },

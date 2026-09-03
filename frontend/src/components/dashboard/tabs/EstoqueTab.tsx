@@ -2,10 +2,13 @@ import { useState, useEffect, useCallback } from 'react'
 import {
   Package, Plus, Search, Filter, AlertTriangle, ArrowUpRight, ArrowDownRight,
   RefreshCw, Edit2, Trash2, Check, X, Loader2, ArrowUpDown, DollarSign,
-  TrendingDown, Layers, Box, ShoppingCart
+  TrendingDown, Layers, Box, ShoppingCart, UploadCloud
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency } from '../../../utils/dashboardHelpers'
+import { ImportXmlModal } from '../modals/ImportXmlModal'
+import { NewInvoiceModal } from '../modals/NewInvoiceModal'
+import { ParsedNfeData } from '../../../utils/nfeXmlParser'
 
 export interface InventoryItemData {
   id: number
@@ -31,15 +34,22 @@ export interface InventoryItemData {
 
 interface EstoqueTabProps {
   showToast: (msg: string, type?: 'success' | 'error') => void
+  companyCnpj?: string
 }
 
-export function EstoqueTab({ showToast }: EstoqueTabProps) {
+export function EstoqueTab({ showToast, companyCnpj }: EstoqueTabProps) {
   const [items, setItems] = useState<InventoryItemData[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [categoryFilter, setCategoryFilter] = useState<'ALL' | 'PRODUTO' | 'INSUMO'>('ALL')
   const [onlyLowStock, setOnlyLowStock] = useState(false)
+
+  // Inbound NF modals
+  const [showInboundXmlModal, setShowInboundXmlModal] = useState(false)
+  const [showInboundInvoiceModal, setShowInboundInvoiceModal] = useState(false)
+  const [inboundXmlData, setInboundXmlData] = useState<ParsedNfeData | null>(null)
+  const [suppliers, setSuppliers] = useState<any[]>([])
 
   // Modals state
   const [showItemModal, setShowItemModal] = useState(false)
@@ -80,6 +90,7 @@ export function EstoqueTab({ showToast }: EstoqueTabProps) {
 
   useEffect(() => {
     fetchItems()
+    api.getSuppliers().then(setSuppliers).catch(() => {})
   }, [fetchItems])
 
   function handleOpenCreate() {
@@ -237,13 +248,51 @@ export function EstoqueTab({ showToast }: EstoqueTabProps) {
           </button>
           <button
             onClick={handleOpenCreate}
-            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-black py-2.5 px-5 rounded-xl transition-all shadow-md shadow-pink-500/20 text-sm whitespace-nowrap"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white font-black py-2.5 px-4 rounded-xl transition-all shadow-md shadow-pink-500/20 text-sm whitespace-nowrap"
           >
             <Plus className="w-4 h-4 stroke-[3]" />
             <span>Novo Produto / Insumo</span>
           </button>
+
+          <button
+            onClick={() => setShowInboundXmlModal(true)}
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:opacity-95 text-white font-black py-2.5 px-4 rounded-xl transition-all shadow-md shadow-emerald-600/20 text-sm whitespace-nowrap cursor-pointer"
+            title="Dar Entrada no Estoque via XML de Nota Fiscal (SEFAZ)"
+          >
+            <UploadCloud className="w-4 h-4 stroke-[2.5]" />
+            <span>Dar Entrada via NF (XML)</span>
+          </button>
         </div>
       </div>
+
+      {/* ── Modais de Entrada via Nota Fiscal no Estoque ── */}
+      <ImportXmlModal
+        isOpen={showInboundXmlModal}
+        onClose={() => setShowInboundXmlModal(false)}
+        companyCnpj={companyCnpj}
+        onXmlParsed={(data) => {
+          setInboundXmlData(data)
+          setShowInboundInvoiceModal(true)
+        }}
+        showToast={showToast}
+      />
+
+      <NewInvoiceModal
+        isOpen={showInboundInvoiceModal}
+        onClose={() => {
+          setShowInboundInvoiceModal(false)
+          setInboundXmlData(null)
+        }}
+        onInvoiceCreated={() => {
+          fetchItems(true)
+          showToast('Estoque atualizado a partir da Nota Fiscal!', 'success')
+        }}
+        showToast={showToast}
+        onOpenNewSupplier={() => {}}
+        suppliers={suppliers}
+        companyCnpj={companyCnpj}
+        initialXmlData={inboundXmlData}
+      />
 
       {/* ── KPI Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
