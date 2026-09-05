@@ -91,7 +91,32 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     delete (admin as any).mpAccessToken;
     delete (admin as any).pixKey;
 
-    return {
+    // Se houver limite diário de capacidade de produção configurado, calcula datas esgotadas
+    const blockedDates: string[] = [];
+    const maxOrdersPerDay = admin.orderSettings?.maxOrdersPerDay || 0;
+    if (maxOrdersPerDay > 0) {
+      const activeOrders = await prisma.order.findMany({
+        where: {
+          adminId: admin.id,
+          deliveryDate: { gte: minDeliveryDate },
+          status: { in: ['PENDENTE', 'CONFIRMADO', 'EM_PRODUCAO'] },
+        },
+        select: { deliveryDate: true },
+      });
+      const counts: Record<string, number> = {};
+      for (const ord of activeOrders) {
+        if (ord.deliveryDate) {
+          counts[ord.deliveryDate] = (counts[ord.deliveryDate] || 0) + 1;
+        }
+      }
+      for (const [d, count] of Object.entries(counts)) {
+        if (count >= maxOrdersPerDay) {
+          blockedDates.push(d);
+        }
+      }
+    }
+
+    const responseData = {
       admin: {
         username: admin.username,
         businessName: admin.businessName || admin.username,
@@ -118,8 +143,10 @@ export default async function storefrontRoutes(app: FastifyInstance) {
         allowDelivery: true,
         deliveryFee: 0,
         minAdvanceDays: 2,
+        maxOrdersPerDay: 0,
       },
       minDeliveryDate,
+      blockedDates,
       categories: admin.productCategories,
       products: admin.products,
     };
@@ -239,6 +266,22 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       return reply.status(400).send({
         error: `Esta loja exige pelo menos ${minAdvanceDays} dia(s) de antecedência para encomendas. Data mais próxima: ${d}/${m}/${y}`,
       });
+    }
+
+    // 🛡️ Validação de Capacidade Diária de Produção (anti-overbooking)
+    if (settings?.maxOrdersPerDay && settings.maxOrdersPerDay > 0) {
+      const activeOrdersOnDate = await prisma.order.count({
+        where: {
+          adminId: admin.id,
+          deliveryDate,
+          status: { in: ['PENDENTE', 'CONFIRMADO', 'EM_PRODUCAO'] },
+        },
+      });
+      if (activeOrdersOnDate >= settings.maxOrdersPerDay) {
+        return reply.status(400).send({
+          error: `A capacidade de produção da loja para a data selecionada (${deliveryDate}) já está esgotada. Por favor, selecione outra data.`,
+        });
+      }
     }
 
     const isFullPayment = paymentOption === 'FULL';

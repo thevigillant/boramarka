@@ -322,6 +322,7 @@ export function StorePage() {
   const [categories, setCategories] = useState<ProductCategoryData[]>([])
   const [products, setProducts] = useState<ProductData[]>([])
   const [minDeliveryDate, setMinDeliveryDate] = useState('')
+  const [blockedDates, setBlockedDates] = useState<string[]>([])
 
   // Filter + Search
   const [selectedCategory, setSelectedCategory] = useState<number | 'ALL' | 'FAVORITES'>('ALL')
@@ -414,7 +415,21 @@ export function StorePage() {
         setCategories(data.categories || [])
         setProducts(data.products || [])
         setMinDeliveryDate(data.minDeliveryDate)
-        setDeliveryDate(data.minDeliveryDate)
+        const blocked = data.blockedDates || []
+        setBlockedDates(blocked)
+        let initialDate = data.minDeliveryDate
+        if (blocked.includes(initialDate)) {
+          const d = new Date(initialDate + 'T12:00:00')
+          for (let i = 0; i < 30; i++) {
+            d.setDate(d.getDate() + 1)
+            const nextStr = d.toISOString().split('T')[0]
+            if (!blocked.includes(nextStr)) {
+              initialDate = nextStr
+              break
+            }
+          }
+        }
+        setDeliveryDate(initialDate)
         // Fetch reviews when store loads
         if (data.admin?.id) {
           setReviewsLoading(true)
@@ -560,6 +575,10 @@ export function StorePage() {
     const cleanPhone = clientPhone.replace(/\D/g, '')
     if (cleanPhone.length < 10) { setSubmitError('Informe um WhatsApp válido com DDD.'); return }
     if (!deliveryDate) { setSubmitError('Selecione a data de entrega desejada.'); return }
+    if (blockedDates.includes(deliveryDate)) {
+      setSubmitError('A capacidade de produção para a data selecionada está esgotada. Por favor, escolha outra data.')
+      return
+    }
     if (deliveryType === 'DELIVERY' && !deliveryAddress.trim()) { setSubmitError('Informe o endereço completo para entrega.'); return }
     setSubmittingOrder(true); setSubmitError('')
     try {
@@ -1545,6 +1564,12 @@ export function StorePage() {
                     nativeClassName="w-full bg-slate-950 border border-white/15 text-slate-200 text-sm font-semibold px-4 py-3 rounded-xl focus:outline-none focus:border-pink-500"
                     className="w-full"
                   />
+                  {deliveryDate && blockedDates.includes(deliveryDate) && (
+                    <div className="mt-2 text-xs text-rose-400 font-bold flex items-center gap-1.5 bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/30">
+                      <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                      <span>Capacidade de produção esgotada para esta data. Por favor, escolha outro dia.</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* HORÁRIO — CustomTimePicker à prova de crash e fechamento */}

@@ -800,6 +800,7 @@ model OrderSettings {
   allowDelivery        Boolean  @default(true) @map("allow_delivery")
   deliveryFee          Float    @default(0.0) @map("delivery_fee")
   minAdvanceDays       Int      @default(2) @map("min_advance_days") // antecedência mínima global em dias
+  maxOrdersPerDay      Int      @default(0) @map("max_orders_per_day") // limite diário de encomendas (0 = ilimitado)
   whatsappNotifications Boolean @default(true) @map("whatsapp_notifications")
   pixKey               String   @default("") @map("pix_key")
   createdAt            DateTime @default(now()) @map("created_at")

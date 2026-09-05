@@ -44,6 +44,7 @@ import { ImportXmlModal } from '../modals/ImportXmlModal'
 import { CompanyCnpjModal } from '../modals/CompanyCnpjModal'
 import { EmitSalesInvoiceModal } from '../modals/EmitSalesInvoiceModal'
 import { ParsedNfeData } from '../../../utils/nfeXmlParser'
+import { FluxoProjetadoSubTab } from './FluxoProjetadoSubTab'
 
 interface FinanceiroTabProps {
   adminInfo?: any
@@ -88,7 +89,7 @@ interface FinanceiroTabProps {
   onRefreshData?: () => void
 }
 
-type SubTabType = 'fluxo' | 'invoices' | 'compras' | 'fornecedores' | 'dre' | 'servicos'
+type SubTabType = 'fluxo' | 'projetado' | 'invoices' | 'compras' | 'fornecedores' | 'dre' | 'servicos'
 
 export function FinanceiroTab({
   adminInfo,
@@ -407,7 +408,8 @@ export function FinanceiroTab({
       {/* ═══════════════════════════════════════════ */}
       <div className="flex items-center gap-2 overflow-x-auto p-1.5 bg-slate-100 dark:bg-[#0E131F] rounded-2xl border border-slate-200 dark:border-slate-800 custom-scrollbar">
         {[
-          { id: 'fluxo', label: 'Fluxo de Caixa', icon: Wallet },
+          { id: 'fluxo', label: 'Fluxo Realizado', icon: Wallet },
+          { id: 'projetado', label: 'Fluxo Projetado (30d)', icon: TrendingUp },
           { id: 'invoices', label: 'Notas Fiscais (NF-e)', icon: Receipt, badge: invoices.length || undefined },
           { id: 'compras', label: 'Pedidos de Compras', icon: ShoppingCart, badge: purchases.length || undefined },
           { id: 'fornecedores', label: 'Fornecedores (CNPJ)', icon: Building2, badge: suppliers.length || undefined },
@@ -807,6 +809,18 @@ export function FinanceiroTab({
             </div>
           </div>
         </div>
+      )}
+
+      {/* ═══════════════════════════════════════════ */}
+      {/* ABA 1.5: FLUXO DE CAIXA PROJETADO (30/60D)  */}
+      {/* ═══════════════════════════════════════════ */}
+      {activeSubTab === 'projetado' && (
+        <FluxoProjetadoSubTab
+          currentBalance={filteredFinanceStats.balance}
+          transactions={transactions}
+          invoices={invoices}
+          showToast={showToast}
+        />
       )}
 
       {/* ═══════════════════════════════════════════ */}

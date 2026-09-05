@@ -62,6 +62,7 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
       allowDelivery,
       deliveryFee,
       minAdvanceDays,
+      maxOrdersPerDay,
       whatsappNotifications,
       pixKey,
     } = request.body as {
@@ -75,6 +76,7 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
       allowDelivery?: boolean;
       deliveryFee?: number;
       minAdvanceDays?: number;
+      maxOrdersPerDay?: number;
       whatsappNotifications?: boolean;
       pixKey?: string;
     };
@@ -98,6 +100,7 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
         allowDelivery: allowDelivery !== undefined ? allowDelivery : true,
         deliveryFee: deliveryFee !== undefined ? Number(deliveryFee) : 0,
         minAdvanceDays: minAdvanceDays !== undefined ? Number(minAdvanceDays) : 2,
+        maxOrdersPerDay: maxOrdersPerDay !== undefined ? Number(maxOrdersPerDay) : 0,
         whatsappNotifications: whatsappNotifications !== undefined ? whatsappNotifications : true,
         pixKey: pixKey?.trim() || '',
       },
@@ -112,6 +115,7 @@ export default async function orderSettingsRoutes(app: FastifyInstance) {
         ...(allowDelivery !== undefined && { allowDelivery }),
         ...(deliveryFee !== undefined && { deliveryFee: Number(deliveryFee) }),
         ...(minAdvanceDays !== undefined && { minAdvanceDays: Number(minAdvanceDays) }),
+        ...(maxOrdersPerDay !== undefined && { maxOrdersPerDay: Number(maxOrdersPerDay) }),
         ...(whatsappNotifications !== undefined && { whatsappNotifications }),
         ...(pixKey !== undefined && { pixKey: pixKey.trim() }),
       },

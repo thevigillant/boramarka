@@ -238,6 +238,7 @@ export interface OrderSettingsData {
   allowDelivery: boolean
   deliveryFee: number
   minAdvanceDays: number
+  maxOrdersPerDay?: number
   whatsappNotifications: boolean
   pixKey: string
 }

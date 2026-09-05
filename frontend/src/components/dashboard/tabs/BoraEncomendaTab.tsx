@@ -43,8 +43,10 @@ import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import { NewProductModal } from '../modals/NewProductModal'
 import { OrderDetailModal } from '../modals/OrderDetailModal'
 import { ProductRecipeModal } from '../modals/ProductRecipeModal'
+import { OrderPrintModal } from '../modals/OrderPrintModal'
 import { BoraEncomendaComprasSubTab } from './BoraEncomendaComprasSubTab'
 import { BoraEncomendaClientsSubTab } from './BoraEncomendaClientsSubTab'
+import { BoraEncomendaCalendarSubTab } from './BoraEncomendaCalendarSubTab'
 import { EmitSalesInvoiceModal } from '../modals/EmitSalesInvoiceModal'
 import type {
   ProductData,
@@ -63,7 +65,7 @@ interface BoraEncomendaTabProps {
 }
 
 export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigateTab, showToast }: BoraEncomendaTabProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'products' | 'compras' | 'clients' | 'store' | 'reports'>('kanban')
+  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'calendar' | 'products' | 'compras' | 'clients' | 'store' | 'reports'>('kanban')
   const [loading, setLoading] = useState(true)
 
   // Data states
@@ -91,6 +93,8 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
   const [selectedProductForRecipe, setSelectedProductForRecipe] = useState<ProductData | null>(null)
   const [showRecipeModal, setShowRecipeModal] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null)
+  const [orderToPrint, setOrderToPrint] = useState<OrderData | null>(null)
+  const [showPrintModal, setShowPrintModal] = useState(false)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [copiedLink, setCopiedLink] = useState(false)
   const [savingSettings, setSavingSettings] = useState(false)
@@ -727,6 +731,23 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
         </button>
 
         <button
+          onClick={() => setActiveSubTab('calendar')}
+          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+            activeSubTab === 'calendar'
+              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
+        >
+          <Calendar className="w-3.5 h-3.5 text-pink-400" />
+          <span>Calendário & Capacidade</span>
+          {settings?.maxOrdersPerDay && settings.maxOrdersPerDay > 0 ? (
+            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
+              {settings.maxOrdersPerDay}/dia
+            </span>
+          ) : null}
+        </button>
+
+        <button
           onClick={() => setActiveSubTab('products')}
           className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
             activeSubTab === 'products'
@@ -1123,6 +1144,23 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
       )}
 
       {/* ═══════════════════════════════════════════════════════ */}
+      {/* 1.5. Calendário & Capacidade de Produção */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {activeSubTab === 'calendar' && (
+        <BoraEncomendaCalendarSubTab
+          orders={orders}
+          settings={settings}
+          onUpdateSettings={(newSettings) => setSettings(newSettings)}
+          onSelectOrder={(ord) => setSelectedOrder(ord)}
+          onPrintOrder={(ord) => {
+            setOrderToPrint(ord)
+            setShowPrintModal(true)
+          }}
+          showToast={showToast || (() => {})}
+        />
+      )}
+
+      {/* ═══════════════════════════════════════════════════════ */}
       {/* 2. Cardápio & Produtos */}
       {/* ═══════════════════════════════════════════════════════ */}
       {activeSubTab === 'products' && (
@@ -1427,6 +1465,25 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
                     />
                     <span className="text-xs font-bold text-slate-400">dias</span>
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+                    Capacidade Diária Máx. (Vagas)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      max="999"
+                      value={settings.maxOrdersPerDay ?? 0}
+                      onChange={e => setSettings({ ...settings, maxOrdersPerDay: parseInt(e.target.value) || 0 })}
+                      className="input-simple font-bold text-center"
+                      placeholder="0 = ilimitado"
+                    />
+                    <span className="text-xs font-bold text-slate-400">encomendas/dia</span>
+                  </div>
+                  <span className="text-[10px] text-slate-500 mt-1 block">0 = ilimitado. Bloqueia datas cheias na vitrine e alerta sobrecarga no calendário.</span>
                 </div>
 
                 <div>
@@ -1751,6 +1808,17 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
           </div>
         </div>
       )}
+
+      {/* Modal de Impressão de Comanda / Ficha de Bancada */}
+      <OrderPrintModal
+        order={orderToPrint}
+        user={user}
+        isOpen={showPrintModal}
+        onClose={() => {
+          setShowPrintModal(false)
+          setOrderToPrint(null)
+        }}
+      />
     </div>
   )
 }
