@@ -3,19 +3,27 @@ import { prisma } from '../db';
 import { v4 as uuidv4 } from 'uuid';
 import { MercadoPagoConfig, Preference } from 'mercadopago';
 import { getBrazilianToday, addDaysBrazilian, diffDaysBrazilian } from '../utils/dateUtils';
+import { cache } from '../utils/cache';
 
 // 🛡️ Regex de validação de e-mail simples e eficiente
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/;
 
 export default async function storefrontRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════════════════════
-  // GET /api/store/:username — Public storefront data
+  // GET /api/store/:username — Public storefront data (com cache 60s)
   // ═══════════════════════════════════════════════════════════
   app.get('/:username', async (request, reply) => {
     const { username } = request.params as { username: string };
+    const cleanUsername = username?.toLowerCase().trim();
+    const cacheKey = `storefront:${cleanUsername}`;
+
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
 
     const admin = await prisma.admin.findUnique({
-      where: { username: username.toLowerCase() },
+      where: { username: cleanUsername },
       select: {
         id: true,
         username: true,
@@ -115,6 +123,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
       categories: admin.productCategories,
       products: admin.products,
     };
+
+    cache.set(cacheKey, responseData, 60);
+    return responseData;
   });
 
   // ═══════════════════════════════════════════════════════════
@@ -335,6 +346,9 @@ export default async function storefrontRoutes(app: FastifyInstance) {
 
       return o;
     });
+
+    // Invalida cache da vitrine da loja
+    cache.invalidate(`storefront:${cleanUsername}`);
 
     // ═══ Resolução dinâmica de Frontend URL para Links & Webhooks ═══
     const originHeader = (request.headers.origin as string) || (request.headers.referer ? new URL(request.headers.referer as string).origin : '');

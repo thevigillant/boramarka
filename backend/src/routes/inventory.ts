@@ -11,9 +11,39 @@ import {
 export default async function inventoryRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
 
-  // ── GET /api/inventory — Listar itens do estoque ──────────────────────
+  // ── GET /api/inventory — Listar itens do estoque (suporta paginação opcional) ──
   app.get('/', async (request: FastifyRequest) => {
     const user = request.user as { id: number };
+    const { page, limit } = request.query as any || {};
+
+    const pageNum = parseSafeInt(page);
+    const limitNum = parseSafeInt(limit);
+
+    if (pageNum || limitNum) {
+      const p = pageNum || 1;
+      const l = Math.min(limitNum || 20, 100);
+      const [items, total] = await Promise.all([
+        prisma.inventoryItem.findMany({
+          where: { adminId: user.id, active: true },
+          include: {
+            movements: { orderBy: { createdAt: 'desc' }, take: 5 },
+          },
+          orderBy: { name: 'asc' },
+          skip: (p - 1) * l,
+          take: l,
+        }),
+        prisma.inventoryItem.count({ where: { adminId: user.id, active: true } }),
+      ]);
+      return {
+        data: items.map(item => ({
+          ...item,
+          lowStock: item.quantity <= item.minQuantity,
+        })),
+        total,
+        page: p,
+        limit: l,
+      };
+    }
 
     const items = await prisma.inventoryItem.findMany({
       where: { adminId: user.id, active: true },
@@ -21,6 +51,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
         movements: { orderBy: { createdAt: 'desc' }, take: 5 },
       },
       orderBy: { name: 'asc' },
+      take: 200,
     });
 
     return items.map(item => ({

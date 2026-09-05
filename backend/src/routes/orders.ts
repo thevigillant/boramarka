@@ -7,13 +7,15 @@ import { parseSafeInt, updateOrderStatusSchema, updateOrderPaymentSchema } from 
 export default async function orderRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
 
-  // GET /api/orders — List orders for admin (with optional status and date filters)
+  // GET /api/orders — List orders for admin (with optional status, date and pagination filters)
   app.get('/', async (request) => {
     const user = request.user as { id: number };
-    const { status, startDate, endDate } = request.query as {
+    const { status, startDate, endDate, page, limit } = request.query as {
       status?: string;
       startDate?: string;
       endDate?: string;
+      page?: string;
+      limit?: string;
     };
 
     const whereClause: any = { adminId: user.id };
@@ -27,6 +29,38 @@ export default async function orderRoutes(app: FastifyInstance) {
         gte: startDate,
         lte: endDate,
       };
+    }
+
+    const pageNum = parseSafeInt(page);
+    const limitNum = parseSafeInt(limit);
+
+    if (pageNum || limitNum) {
+      const p = pageNum || 1;
+      const l = Math.min(limitNum || 20, 100);
+      const [orders, total] = await Promise.all([
+        prisma.order.findMany({
+          where: whereClause,
+          include: {
+            items: {
+              include: {
+                product: {
+                  include: {
+                    photos: { take: 1, orderBy: { position: 'asc' } },
+                  },
+                },
+              },
+            },
+            statusLogs: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+          orderBy: [{ deliveryDate: 'asc' }, { createdAt: 'desc' }],
+          skip: (p - 1) * l,
+          take: l,
+        }),
+        prisma.order.count({ where: whereClause }),
+      ]);
+      return { data: orders, total, page: p, limit: l };
     }
 
     const orders = await prisma.order.findMany({
@@ -46,6 +80,7 @@ export default async function orderRoutes(app: FastifyInstance) {
         },
       },
       orderBy: [{ deliveryDate: 'asc' }, { createdAt: 'desc' }],
+      take: 200,
     });
 
     return orders;

@@ -3,6 +3,7 @@ import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { createAuditLog } from '../utils/auditLogger';
 import { parseSafeInt, createCategorySchema, updateCategorySchema } from '../utils/validators';
+import { cache } from '../utils/cache';
 
 export default async function productRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -11,10 +12,14 @@ export default async function productRoutes(app: FastifyInstance) {
   // Categorias de Produtos
   // ═══════════════════════════════════════════════════════════
 
-  // GET /api/products/categories — List categories for admin
+  // GET /api/products/categories — List categories for admin (com cache 60s)
   app.get('/categories', async (request) => {
     const user = request.user as { id: number };
-    return prisma.productCategory.findMany({
+    const cacheKey = `categories:${user.id}`;
+    const cached = cache.get(cacheKey);
+    if (cached) return cached;
+
+    const categories = await prisma.productCategory.findMany({
       where: { adminId: user.id },
       orderBy: { position: 'asc' },
       include: {
@@ -23,6 +28,9 @@ export default async function productRoutes(app: FastifyInstance) {
         },
       },
     });
+
+    cache.set(cacheKey, categories, 60);
+    return categories;
   });
 
   // POST /api/products/categories — Create category
@@ -44,6 +52,9 @@ export default async function productRoutes(app: FastifyInstance) {
         adminId: user.id,
       },
     });
+
+    cache.invalidate(`categories:${user.id}`);
+    cache.invalidate('storefront');
 
     return reply.status(201).send(category);
   });
@@ -79,6 +90,9 @@ export default async function productRoutes(app: FastifyInstance) {
       },
     });
 
+    cache.invalidate(`categories:${user.id}`);
+    cache.invalidate('storefront');
+
     return updated;
   });
 
@@ -99,6 +113,8 @@ export default async function productRoutes(app: FastifyInstance) {
     }
 
     await prisma.productCategory.delete({ where: { id: categoryId } });
+    cache.invalidate(`categories:${user.id}`);
+    cache.invalidate('storefront');
     return reply.status(204).send();
   });
 
@@ -106,9 +122,34 @@ export default async function productRoutes(app: FastifyInstance) {
   // Produtos / Itens de Encomenda
   // ═══════════════════════════════════════════════════════════
 
-  // GET /api/products — List all products with photos and custom fields
+  // GET /api/products — List all products with photos and custom fields (suporta paginação opcional)
   app.get('/', async (request) => {
     const user = request.user as { id: number };
+    const { page, limit } = request.query as any || {};
+
+    const pageNum = parseSafeInt(page);
+    const limitNum = parseSafeInt(limit);
+
+    if (pageNum || limitNum) {
+      const p = pageNum || 1;
+      const l = Math.min(limitNum || 20, 100);
+      const [products, total] = await Promise.all([
+        prisma.product.findMany({
+          where: { adminId: user.id },
+          include: {
+            category: true,
+            photos: { orderBy: { position: 'asc' } },
+            customFields: { orderBy: { position: 'asc' } },
+          },
+          orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
+          skip: (p - 1) * l,
+          take: l,
+        }),
+        prisma.product.count({ where: { adminId: user.id } }),
+      ]);
+      return { data: products, total, page: p, limit: l };
+    }
+
     return prisma.product.findMany({
       where: { adminId: user.id },
       include: {
@@ -117,6 +158,7 @@ export default async function productRoutes(app: FastifyInstance) {
         customFields: { orderBy: { position: 'asc' } },
       },
       orderBy: [{ position: 'asc' }, { createdAt: 'desc' }],
+      take: 200,
     });
   });
 
@@ -254,6 +296,7 @@ export default async function productRoutes(app: FastifyInstance) {
       adminId: user.id,
     });
 
+    cache.invalidate('storefront');
     return reply.status(201).send(product);
   });
 
@@ -373,6 +416,7 @@ export default async function productRoutes(app: FastifyInstance) {
       adminId: user.id,
     });
 
+    cache.invalidate('storefront');
     return updated;
   });
 
@@ -402,6 +446,7 @@ export default async function productRoutes(app: FastifyInstance) {
       adminId: user.id,
     });
 
+    cache.invalidate('storefront');
     return reply.status(204).send();
   });
 
@@ -423,6 +468,7 @@ export default async function productRoutes(app: FastifyInstance) {
       )
     );
 
+    cache.invalidate('storefront');
     return { success: true };
   });
 }

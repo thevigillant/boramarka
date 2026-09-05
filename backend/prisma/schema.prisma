@@ -134,6 +134,7 @@ model Service {
   isUpsellable   Boolean  @default(true) @map("is_upsellable")
   upsellDiscount Float    @default(0.0) @map("upsell_discount")
   createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @default(now()) @map("updated_at")
 
   adminId     Int      @map("admin_id")
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
@@ -143,6 +144,7 @@ model Service {
   addonUpsells ServiceUpsell[] @relation("AddonService")
   reviews      ServiceReview[]
 
+  @@index([adminId])
   @@map("services")
 }
 
@@ -188,12 +190,16 @@ model TimeSlot {
   date        String
   time        String
   isAvailable Boolean        @default(true) @map("is_available")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @default(now()) @map("updated_at")
   linkId      Int            @map("link_id")
   link        SchedulingLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
   booking     Booking?
 
   @@index([linkId])
   @@index([date])
+  @@index([linkId, isAvailable])
+  @@index([linkId, date])
   @@map("time_slots")
 }
 
@@ -217,6 +223,7 @@ model Booking {
   selectedAddons   String   @default("[]") @map("selected_addons")
   totalAmount      Float    @default(0) @map("total_amount")
   createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @default(now()) @map("updated_at")
 
   @@index([status])
   @@index([clientPhone])
@@ -238,6 +245,7 @@ model Transaction {
   invoiceId   Int?     @map("invoice_id")
   purchaseId  Int?     @map("purchase_id")
   createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @default(now()) @map("updated_at")
 
   adminId     Int      @map("admin_id")
   admin       Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
@@ -245,6 +253,8 @@ model Transaction {
   @@index([adminId])
   @@index([dueDate])
   @@index([type])
+  @@index([adminId, type, paid])
+  @@index([adminId, dueDate])
   @@map("transactions")
 }
 
@@ -255,10 +265,13 @@ model Coupon {
   discountValue Float    @map("discount_value")
   active        Boolean  @default(true)
   createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @default(now()) @map("updated_at")
 
   adminId       Int      @map("admin_id")
   admin         Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
 
+  @@index([adminId])
+  @@index([code, active])
   @@map("coupons")
 }
 
@@ -270,12 +283,14 @@ model MembershipPlan {
   interval      String   // "monthly" or "yearly"
   active        Boolean  @default(true)
   createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @default(now()) @map("updated_at")
 
   adminId       Int      @map("admin_id")
   admin         Admin    @relation(fields: [adminId], references: [id], onDelete: Cascade)
   
   subscriptions ClientSubscription[]
 
+  @@index([adminId])
   @@map("membership_plans")
 }
 
@@ -805,6 +820,7 @@ model ProductCategory {
   products  Product[]
 
   @@index([adminId])
+  @@index([adminId, position])
   @@map("product_categories")
 }
 
@@ -834,6 +850,8 @@ model Product {
 
   @@index([adminId])
   @@index([categoryId])
+  @@index([adminId, available])
+  @@index([adminId, position])
   @@map("products")
 }
 
@@ -901,6 +919,8 @@ model Order {
   @@index([adminId])
   @@index([deliveryDate])
   @@index([status])
+  @@index([adminId, status])
+  @@index([adminId, deliveryDate])
   @@map("orders")
 }
 
@@ -991,6 +1011,7 @@ model InventoryItem {
   invoiceItems  InvoiceItem[]
 
   @@index([adminId])
+  @@index([adminId, active])
   @@map("inventory_items")
 }
 
