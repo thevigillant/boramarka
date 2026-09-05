@@ -172,10 +172,14 @@ app.register(cors, {
   credentials: true,
 });
 
-// 🛡️ Autenticação JWT com verificação de segredo
-const jwtSecret = process.env.JWT_SECRET || 'super-secret-key-change-in-production';
-if (!process.env.JWT_SECRET && process.env.NODE_ENV === 'production') {
-  console.warn('⚠️ [SEGURANÇA] JWT_SECRET padrão detectado em ambiente de produção!');
+// 🛡️ Autenticação JWT com verificação de segredo — SEM FALLBACK (obrigatório)
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  console.error('💀 [FATAL] JWT_SECRET não definido no .env — o servidor NÃO pode iniciar sem uma chave secreta.');
+  process.exit(1);
+}
+if (jwtSecret.length < 32) {
+  console.warn('⚠️ [SEGURANÇA] JWT_SECRET muito curta (< 32 chars). Use: node -e "console.log(require(\'crypto\').randomBytes(64).toString(\'hex\'))"');
 }
 
 app.register(jwt, {

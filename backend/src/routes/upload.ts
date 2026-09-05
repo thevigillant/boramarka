@@ -150,9 +150,24 @@ export default async function uploadRoutes(app: FastifyInstance) {
         return reply.status(400).send({ error: 'Data URI base64 inválido' });
       }
 
-      const mimeType = match[1];
+      const mimeType = match[1].toLowerCase();
       const base64Data = match[2];
+
+      // 🛡️ Validação de MIME type — mesma whitelist do upload multipart
+      if (!ALLOWED_MIME.includes(mimeType)) {
+        return reply.status(400).send({
+          error: 'Formato de imagem inválido. Use JPG, PNG, WebP ou GIF.',
+        });
+      }
+
       const buffer = Buffer.from(base64Data, 'base64');
+
+      // 🛡️ Validação de tamanho — previne payloads enormes via base64
+      if (buffer.length > MAX_FILE_SIZE) {
+        return reply.status(400).send({
+          error: `Imagem muito grande. Tamanho máximo: ${MAX_FILE_SIZE / (1024 * 1024)}MB`,
+        });
+      }
 
       const cloudConfigured =
         process.env.CLOUDINARY_CLOUD_NAME &&

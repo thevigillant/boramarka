@@ -73,14 +73,11 @@ export default async function authRoutes(app: FastifyInstance) {
       console.log('======================================================\n');
     }
 
-    const isProd = process.env.NODE_ENV === 'production';
-
     return {
       success: true,
       message: emailSent
         ? `Código de verificação de 4 dígitos enviado para ${cleanEmail}`
         : `Código de verificação enviado para ${cleanEmail}`,
-      devCode: isProd ? undefined : code,
     };
   });
 
@@ -175,8 +172,13 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Usuário e senha são obrigatórios' });
     }
 
-    if (password.length < 6) {
-      return reply.status(400).send({ error: 'A senha deve ter pelo menos 6 caracteres' });
+    if (password.length < 8) {
+      return reply.status(400).send({ error: 'A senha deve ter pelo menos 8 caracteres, com letras e números' });
+    }
+
+    // 🛡️ Exige ao menos 1 letra e 1 número para evitar senhas triviais
+    if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+      return reply.status(400).send({ error: 'A senha deve conter pelo menos 1 letra e 1 número' });
     }
 
     const passwordHash = await bcrypt.hash(password, 10);
@@ -369,7 +371,19 @@ export default async function authRoutes(app: FastifyInstance) {
   });
 
   // POST /api/auth/login — Autentica tanto Administradores quanto Operadores
-  app.post('/login', async (request, reply) => {
+  // 🛡️ Rate limit específico: 5 tentativas/min por IP (anti-brute-force)
+  app.post('/login', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: '1 minute',
+        errorResponseBuilder: () => ({
+          statusCode: 429,
+          error: 'Muitas tentativas de login. Aguarde 1 minuto antes de tentar novamente.',
+        }),
+      },
+    },
+  }, async (request, reply) => {
     const { username, password, companyUsername } = request.body as {
       username: string;
       password: string;
@@ -629,8 +643,12 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'Senha atual e nova senha são obrigatórias' });
     }
 
-    if (newPassword.length < 6) {
-      return reply.status(400).send({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+    if (newPassword.length < 8) {
+      return reply.status(400).send({ error: 'A nova senha deve ter pelo menos 8 caracteres, com letras e números' });
+    }
+
+    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return reply.status(400).send({ error: 'A nova senha deve conter pelo menos 1 letra e 1 número' });
     }
 
     const user = request.user as { id: number };
@@ -694,11 +712,8 @@ export default async function authRoutes(app: FastifyInstance) {
 
     await sendPasswordResetEmail(admin.email, admin.username, code);
 
-    const isProd = process.env.NODE_ENV === 'production';
-
     return { 
       message: successMessage,
-      devCode: isProd ? undefined : code,
     };
   });
 
@@ -714,8 +729,12 @@ export default async function authRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: 'E-mail, código e nova senha são obrigatórios' });
     }
 
-    if (newPassword.length < 6) {
-      return reply.status(400).send({ error: 'A nova senha deve ter pelo menos 6 caracteres' });
+    if (newPassword.length < 8) {
+      return reply.status(400).send({ error: 'A nova senha deve ter pelo menos 8 caracteres, com letras e números' });
+    }
+
+    if (!/[a-zA-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return reply.status(400).send({ error: 'A nova senha deve conter pelo menos 1 letra e 1 número' });
     }
 
     const cleanEmail = email.trim().toLowerCase();
