@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { createAuditLog } from '../utils/auditLogger';
+import { parseSafeInt, updateOrderStatusSchema, updateOrderPaymentSchema } from '../utils/validators';
 
 export default async function orderRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -130,10 +131,13 @@ export default async function orderRoutes(app: FastifyInstance) {
   // GET /api/orders/:id — Single order details
   app.get('/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
+    const orderId = parseSafeInt((request.params as any)?.id);
+    if (!orderId) {
+      return reply.status(400).send({ error: 'ID de pedido inválido' });
+    }
 
     const order = await prisma.order.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: orderId, adminId: user.id },
       include: {
         items: {
           include: {
@@ -160,16 +164,20 @@ export default async function orderRoutes(app: FastifyInstance) {
   // PATCH /api/orders/:id/status — Update order status (Kanban drag & drop)
   app.patch('/:id/status', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const { status, note } = request.body as { status: string; note?: string };
-
-    const validStatuses = ['NOVO', 'CONFIRMADO', 'EM_PRODUCAO', 'PRONTO', 'ENTREGUE', 'CANCELADO'];
-    if (!validStatuses.includes(status)) {
-      return reply.status(400).send({ error: 'Status inválido' });
+    const orderId = parseSafeInt((request.params as any)?.id);
+    if (!orderId) {
+      return reply.status(400).send({ error: 'ID de pedido inválido' });
     }
 
+    const validation = updateOrderStatusSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados de status inválidos' });
+    }
+
+    const { status, note } = validation.data;
+
     const order = await prisma.order.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: orderId, adminId: user.id },
     });
 
     if (!order) {
@@ -180,7 +188,7 @@ export default async function orderRoutes(app: FastifyInstance) {
 
     const updated = await prisma.$transaction(async (tx) => {
       const o = await tx.order.update({
-        where: { id: parseInt(id) },
+        where: { id: orderId },
         data: { status },
       });
 
@@ -210,11 +218,20 @@ export default async function orderRoutes(app: FastifyInstance) {
   // PATCH /api/orders/:id/payment — Mark deposit or full payment as paid
   app.patch('/:id/payment', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const { depositPaid } = request.body as { depositPaid: boolean };
+    const orderId = parseSafeInt((request.params as any)?.id);
+    if (!orderId) {
+      return reply.status(400).send({ error: 'ID de pedido inválido' });
+    }
+
+    const validation = updateOrderPaymentSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: 'Campo depositPaid inválido (deve ser boolean)' });
+    }
+
+    const { depositPaid } = validation.data;
 
     const order = await prisma.order.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: orderId, adminId: user.id },
     });
 
     if (!order) {
@@ -222,8 +239,8 @@ export default async function orderRoutes(app: FastifyInstance) {
     }
 
     const updated = await prisma.order.update({
-      where: { id: parseInt(id) },
-      data: { depositPaid: Boolean(depositPaid) },
+      where: { id: orderId },
+      data: { depositPaid },
     });
 
     return updated;
@@ -232,22 +249,25 @@ export default async function orderRoutes(app: FastifyInstance) {
   // DELETE /api/orders/:id — Delete order
   app.delete('/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
+    const orderId = parseSafeInt((request.params as any)?.id);
+    if (!orderId) {
+      return reply.status(400).send({ error: 'ID de pedido inválido' });
+    }
 
     const order = await prisma.order.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: orderId, adminId: user.id },
     });
 
     if (!order) {
       return reply.status(404).send({ error: 'Pedido não encontrado' });
     }
 
-    await prisma.order.delete({ where: { id: parseInt(id) } });
+    await prisma.order.delete({ where: { id: orderId } });
 
     await createAuditLog(request, {
       action: 'DELETE_ORDER',
       entity: 'ORDER',
-      entityId: parseInt(id),
+      entityId: orderId,
       details: `Excluiu o pedido "${order.orderNumber}" de ${order.clientName}`,
       adminId: user.id,
     });

@@ -47,3 +47,20 @@ export async function revokeRefreshToken(rawToken: string): Promise<void> {
     data: { revoked: true },
   });
 }
+
+/**
+ * Limpa todos os refresh tokens que expiraram ou foram revogados.
+ * Evita crescimento indefinido da tabela refresh_tokens.
+ */
+export async function cleanupExpiredRefreshTokens(): Promise<number> {
+  const result = await prisma.refreshToken.deleteMany({
+    where: {
+      OR: [
+        { expiresAt: { lt: new Date() } },
+        { revoked: true },
+      ],
+    },
+  });
+  return result.count;
+}
+

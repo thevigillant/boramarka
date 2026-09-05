@@ -195,3 +195,93 @@ export const employeeVacationRequestSchema = z.object({
   daysCount: z.number().int().positive().optional(),
   reason: z.string().optional()
 })
+
+// ═══ Helper de Validação Numérica de Parâmetros (NaN Guard) ═══
+export function parseSafeInt(val: any): number | null {
+  if (val === undefined || val === null || val === '') return null;
+  const num = Number(val);
+  if (isNaN(num) || !Number.isInteger(num) || num <= 0) return null;
+  return num;
+}
+
+// ═══ Orders (BoraEnkomenda) ═══
+export const updateOrderStatusSchema = z.object({
+  status: z.enum(['NOVO', 'CONFIRMADO', 'EM_PRODUCAO', 'PRONTO', 'ENTREGUE', 'CANCELADO'], {
+    message: 'Status inválido. Deve ser NOVO, CONFIRMADO, EM_PRODUCAO, PRONTO, ENTREGUE ou CANCELADO'
+  }),
+  note: z.string().max(500).optional()
+})
+
+export const updateOrderPaymentSchema = z.object({
+  depositPaid: z.boolean()
+})
+
+// ═══ Products & Categories ═══
+export const createCategorySchema = z.object({
+  name: z.string().min(2, 'Nome da categoria é obrigatório (mín. 2 caracteres)'),
+  iconUrl: z.string().optional().default('')
+})
+
+export const updateCategorySchema = z.object({
+  name: z.string().min(2).optional(),
+  iconUrl: z.string().optional()
+})
+
+export const createProductSchema = z.object({
+  name: z.string().min(2, 'Nome do produto é obrigatório'),
+  description: z.string().optional().default(''),
+  price: z.number().nonnegative('Preço deve ser positivo'),
+  categoryId: z.number().int().positive('Categoria inválida').optional().nullable(),
+  available: z.boolean().optional().default(true),
+  featured: z.boolean().optional().default(false),
+  photoUrl: z.string().optional(),
+  position: z.number().int().optional().default(0),
+  preparationTimeMinutes: z.number().int().nonnegative().optional().default(0),
+  minOrderQuantity: z.number().int().positive().optional().default(1),
+  maxDailyQuantity: z.number().int().positive().optional().nullable()
+})
+
+export const updateProductSchema = createProductSchema.partial()
+
+// ═══ Inventory ═══
+export const createInventoryItemSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório'),
+  description: z.string().optional().default(''),
+  category: z.string().optional().default('PRODUTO'),
+  unit: z.string().optional().default('unidade'),
+  costPrice: z.number().nonnegative().optional().default(0),
+  salePrice: z.number().nonnegative().optional().default(0),
+  quantity: z.number().nonnegative().optional().default(0),
+  minQuantity: z.number().nonnegative().optional().default(5),
+  photoUrl: z.string().optional().default('')
+})
+
+export const updateInventoryItemSchema = createInventoryItemSchema.partial()
+
+export const inventoryMovementSchema = z.object({
+  type: z.enum(['ENTRADA', 'SAIDA', 'AJUSTE', 'PERDA'], {
+    message: 'Tipo de movimentação deve ser ENTRADA, SAIDA, AJUSTE ou PERDA'
+  }),
+  quantity: z.number().positive('Quantidade deve ser maior que zero'),
+  reason: z.string().optional().default('')
+})
+
+// ═══ PDV (Ponto de Venda) ═══
+export const pdvSaleItemSchema = z.object({
+  name: z.string().min(1, 'Nome do item é obrigatório'),
+  quantity: z.number().positive('Quantidade deve ser maior que zero'),
+  unitPrice: z.number().nonnegative('Preço unitário não pode ser negativo'),
+  itemType: z.string().optional().default('SERVICE'),
+  inventoryItemId: z.number().int().positive().optional().nullable(),
+  serviceId: z.number().int().positive().optional().nullable()
+})
+
+export const createPdvSaleSchema = z.object({
+  bookingId: z.number().int().positive().optional().nullable(),
+  employeeId: z.number().int().positive().optional().nullable(),
+  paymentMethod: z.string().min(1, 'Método de pagamento é obrigatório'),
+  discount: z.number().nonnegative().optional().default(0),
+  notes: z.string().optional(),
+  items: z.array(pdvSaleItemSchema).min(1, 'A venda precisa ter pelo menos 1 item')
+})
+

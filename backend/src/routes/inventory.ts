@@ -1,6 +1,12 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
+import {
+  parseSafeInt,
+  createInventoryItemSchema,
+  updateInventoryItemSchema,
+  inventoryMovementSchema,
+} from '../utils/validators';
 
 export default async function inventoryRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -26,9 +32,12 @@ export default async function inventoryRoutes(app: FastifyInstance) {
   // ── POST /api/inventory — Criar item ──────────────────────────────────
   app.post('/', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number };
-    const { name, description, category, unit, costPrice, salePrice, quantity, minQuantity, photoUrl } = request.body as any;
+    const validation = createInventoryItemSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+    }
 
-    if (!name?.trim()) return reply.status(400).send({ error: 'Nome é obrigatório.' });
+    const { name, description, category, unit, costPrice, salePrice, quantity, minQuantity, photoUrl } = validation.data;
 
     const item = await prisma.inventoryItem.create({
       data: {
@@ -63,9 +72,17 @@ export default async function inventoryRoutes(app: FastifyInstance) {
   // ── PATCH /api/inventory/:id — Atualizar item ─────────────────────────
   app.patch('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const itemId = parseInt(id);
-    const body = request.body as any;
+    const itemId = parseSafeInt((request.params as any)?.id);
+    if (!itemId) {
+      return reply.status(400).send({ error: 'ID de item inválido' });
+    }
+
+    const validation = updateInventoryItemSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+    }
+
+    const body = validation.data;
 
     const item = await prisma.inventoryItem.findFirst({
       where: { id: itemId, adminId: user.id },
@@ -75,14 +92,14 @@ export default async function inventoryRoutes(app: FastifyInstance) {
     const updated = await prisma.inventoryItem.update({
       where: { id: itemId },
       data: {
-        name: body.name?.trim() || item.name,
-        description: body.description !== undefined ? body.description.trim() : item.description,
-        category: body.category || item.category,
-        unit: body.unit || item.unit,
-        costPrice: body.costPrice !== undefined ? Number(body.costPrice) : item.costPrice,
-        salePrice: body.salePrice !== undefined ? Number(body.salePrice) : item.salePrice,
-        minQuantity: body.minQuantity !== undefined ? Number(body.minQuantity) : item.minQuantity,
-        photoUrl: body.photoUrl !== undefined ? body.photoUrl : item.photoUrl,
+        ...(body.name !== undefined && { name: body.name.trim() }),
+        ...(body.description !== undefined && { description: body.description.trim() }),
+        ...(body.category !== undefined && { category: body.category }),
+        ...(body.unit !== undefined && { unit: body.unit }),
+        ...(body.costPrice !== undefined && { costPrice: Number(body.costPrice) }),
+        ...(body.salePrice !== undefined && { salePrice: Number(body.salePrice) }),
+        ...(body.minQuantity !== undefined && { minQuantity: Number(body.minQuantity) }),
+        ...(body.photoUrl !== undefined && { photoUrl: body.photoUrl }),
       },
     });
 
@@ -92,13 +109,17 @@ export default async function inventoryRoutes(app: FastifyInstance) {
   // ── POST /api/inventory/:id/movement — Registrar movimentação ─────────
   app.post('/:id/movement', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const itemId = parseInt(id);
-    const { type, quantity, reason } = request.body as any;
+    const itemId = parseSafeInt((request.params as any)?.id);
+    if (!itemId) {
+      return reply.status(400).send({ error: 'ID de item inválido' });
+    }
 
-    const validTypes = ['ENTRADA', 'SAIDA', 'AJUSTE'];
-    if (!validTypes.includes(type)) return reply.status(400).send({ error: 'Tipo inválido. Use ENTRADA, SAIDA ou AJUSTE.' });
-    if (!quantity || Number(quantity) <= 0) return reply.status(400).send({ error: 'Quantidade deve ser maior que zero.' });
+    const validation = inventoryMovementSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados de movimentação inválidos' });
+    }
+
+    const { type, quantity, reason } = validation.data;
 
     const item = await prisma.inventoryItem.findFirst({
       where: { id: itemId, adminId: user.id },
@@ -109,6 +130,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
     let newQty = item.quantity;
     if (type === 'ENTRADA') newQty += qty;
     else if (type === 'SAIDA') newQty = Math.max(0, newQty - qty);
+    else if (type === 'PERDA') newQty = Math.max(0, newQty - qty);
     else newQty = qty; // AJUSTE: seta diretamente
 
     await prisma.$transaction([
@@ -133,8 +155,10 @@ export default async function inventoryRoutes(app: FastifyInstance) {
   // ── DELETE /api/inventory/:id — Desativar item ────────────────────────
   app.delete('/:id', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const itemId = parseInt(id);
+    const itemId = parseSafeInt((request.params as any)?.id);
+    if (!itemId) {
+      return reply.status(400).send({ error: 'ID de item inválido' });
+    }
 
     const item = await prisma.inventoryItem.findFirst({
       where: { id: itemId, adminId: user.id },

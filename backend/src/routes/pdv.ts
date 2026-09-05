@@ -1,6 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
+import { parseSafeInt, createPdvSaleSchema } from '../utils/validators';
 
 export default async function pdvRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -8,7 +9,10 @@ export default async function pdvRoutes(app: FastifyInstance) {
   // ── GET /api/pdv/sales — Histórico de vendas ─────────────────────────
   app.get('/sales', async (request: FastifyRequest) => {
     const user = request.user as { id: number };
-    const { page = '1', limit = '20', from, to } = request.query as any;
+    const query = request.query as any;
+    const pageNum = parseSafeInt(query?.page) || 1;
+    const limitNum = Math.min(parseSafeInt(query?.limit) || 20, 100);
+    const { from, to } = query || {};
 
     const where: any = { adminId: user.id };
     if (from || to) {
@@ -26,13 +30,13 @@ export default async function pdvRoutes(app: FastifyInstance) {
         where,
         include: { items: true },
         orderBy: { createdAt: 'desc' },
-        skip: (parseInt(page) - 1) * parseInt(limit),
-        take: parseInt(limit),
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
       }),
       prisma.saleTransaction.count({ where }),
     ]);
 
-    return { sales, total, page: parseInt(page), limit: parseInt(limit) };
+    return { sales, total, page: pageNum, limit: limitNum };
   });
 
   // ── GET /api/pdv/stats — Estatísticas do PDV ─────────────────────────
@@ -74,14 +78,15 @@ export default async function pdvRoutes(app: FastifyInstance) {
   // ── POST /api/pdv/sales — Criar venda ─────────────────────────────────
   app.post('/sales', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number };
-    const { bookingId, employeeId, paymentMethod, discount, notes, items } = request.body as any;
-
-    if (!items || !Array.isArray(items) || items.length === 0) {
-      return reply.status(400).send({ error: 'A venda precisa ter pelo menos 1 item.' });
+    const validation = createPdvSaleSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados da venda inválidos' });
     }
 
+    const { bookingId, employeeId, paymentMethod, discount, notes, items } = validation.data;
+
     // Calcula total
-    const subtotal = items.reduce((acc: number, i: any) => acc + (Number(i.unitPrice) * Number(i.quantity)), 0);
+    const subtotal = items.reduce((acc: number, i) => acc + (Number(i.unitPrice) * Number(i.quantity)), 0);
     const discountAmt = Number(discount) || 0;
     const total = Math.max(0, subtotal - discountAmt);
 
@@ -98,7 +103,7 @@ export default async function pdvRoutes(app: FastifyInstance) {
           notes: notes?.trim() || '',
           status: 'PAID',
           items: {
-            create: items.map((item: any) => ({
+            create: items.map((item) => ({
               name: item.name,
               quantity: Number(item.quantity) || 1,
               unitPrice: Number(item.unitPrice) || 0,
@@ -156,8 +161,10 @@ export default async function pdvRoutes(app: FastifyInstance) {
   // ── PATCH /api/pdv/sales/:id/cancel — Cancelar venda ─────────────────
   app.patch('/sales/:id/cancel', async (request: FastifyRequest, reply: FastifyReply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const saleId = parseInt(id);
+    const saleId = parseSafeInt((request.params as any)?.id);
+    if (!saleId) {
+      return reply.status(400).send({ error: 'ID de venda inválido' });
+    }
 
     const sale = await prisma.saleTransaction.findFirst({
       where: { id: saleId, adminId: user.id },

@@ -78,6 +78,11 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     const minAdvanceDays = admin.orderSettings?.minAdvanceDays || 2;
     const minDeliveryDate = addDaysBrazilian(minAdvanceDays);
 
+    const hasMercadoPago = Boolean(admin.mpAccessToken && admin.mpAccessToken.trim().length > 0);
+    // 🛡️ SEGURANÇA: Purga credenciais em memória imediatamente para impedir vazamento acidental
+    delete (admin as any).mpAccessToken;
+    delete (admin as any).pixKey;
+
     return {
       admin: {
         username: admin.username,
@@ -93,7 +98,7 @@ export default async function storefrontRoutes(app: FastifyInstance) {
         publicTheme: admin.publicTheme || 'light',
         // 🛡️ SEGURANÇA: pixKey e mpAccessToken NUNCA são expostos no GET da vitrine
         // A pixKey só trafega dentro do payload de resposta do POST /order
-        hasMercadoPago: !!(admin.mpAccessToken),
+        hasMercadoPago,
       },
       settings: admin.orderSettings || {
         storeName: admin.businessName || admin.username,

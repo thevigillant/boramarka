@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { createAuditLog } from '../utils/auditLogger';
+import { parseSafeInt, createCategorySchema, updateCategorySchema } from '../utils/validators';
 
 export default async function productRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -27,12 +28,12 @@ export default async function productRoutes(app: FastifyInstance) {
   // POST /api/products/categories — Create category
   app.post('/categories', async (request, reply) => {
     const user = request.user as { id: number };
-    const { name, iconUrl } = request.body as { name: string; iconUrl?: string };
-
-    if (!name || name.trim().length < 2) {
-      return reply.status(400).send({ error: 'Nome da categoria é obrigatório (mín. 2 caracteres)' });
+    const validation = createCategorySchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
     }
 
+    const { name, iconUrl } = validation.data;
     const count = await prisma.productCategory.count({ where: { adminId: user.id } });
 
     const category = await prisma.productCategory.create({
@@ -50,11 +51,20 @@ export default async function productRoutes(app: FastifyInstance) {
   // PUT /api/products/categories/:id — Update category
   app.put('/categories/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const { name, iconUrl } = request.body as { name?: string; iconUrl?: string };
+    const categoryId = parseSafeInt((request.params as any)?.id);
+    if (!categoryId) {
+      return reply.status(400).send({ error: 'ID de categoria inválido' });
+    }
+
+    const validation = updateCategorySchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+    }
+
+    const { name, iconUrl } = validation.data;
 
     const category = await prisma.productCategory.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: categoryId, adminId: user.id },
     });
 
     if (!category) {
@@ -62,7 +72,7 @@ export default async function productRoutes(app: FastifyInstance) {
     }
 
     const updated = await prisma.productCategory.update({
-      where: { id: parseInt(id) },
+      where: { id: categoryId },
       data: {
         ...(name && { name: name.trim() }),
         ...(iconUrl !== undefined && { iconUrl }),
@@ -75,17 +85,20 @@ export default async function productRoutes(app: FastifyInstance) {
   // DELETE /api/products/categories/:id — Delete category
   app.delete('/categories/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
+    const categoryId = parseSafeInt((request.params as any)?.id);
+    if (!categoryId) {
+      return reply.status(400).send({ error: 'ID de categoria inválido' });
+    }
 
     const category = await prisma.productCategory.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: categoryId, adminId: user.id },
     });
 
     if (!category) {
       return reply.status(404).send({ error: 'Categoria não encontrada' });
     }
 
-    await prisma.productCategory.delete({ where: { id: parseInt(id) } });
+    await prisma.productCategory.delete({ where: { id: categoryId } });
     return reply.status(204).send();
   });
 
@@ -110,10 +123,13 @@ export default async function productRoutes(app: FastifyInstance) {
   // GET /api/products/:id — Get single product
   app.get('/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
+    const productId = parseSafeInt((request.params as any)?.id);
+    if (!productId) {
+      return reply.status(400).send({ error: 'ID de produto inválido' });
+    }
 
     const product = await prisma.product.findFirst({
-      where: { id: parseInt(id), adminId: user.id },
+      where: { id: productId, adminId: user.id },
       include: {
         category: true,
         photos: { orderBy: { position: 'asc' } },
@@ -244,8 +260,10 @@ export default async function productRoutes(app: FastifyInstance) {
   // PUT /api/products/:id — Update product
   app.put('/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const productId = parseInt(id);
+    const productId = parseSafeInt((request.params as any)?.id);
+    if (!productId) {
+      return reply.status(400).send({ error: 'ID de produto inválido' });
+    }
 
     const existing = await prisma.product.findFirst({
       where: { id: productId, adminId: user.id },
@@ -361,8 +379,10 @@ export default async function productRoutes(app: FastifyInstance) {
   // DELETE /api/products/:id — Delete product
   app.delete('/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const productId = parseInt(id);
+    const productId = parseSafeInt((request.params as any)?.id);
+    if (!productId) {
+      return reply.status(400).send({ error: 'ID de produto inválido' });
+    }
 
     const product = await prisma.product.findFirst({
       where: { id: productId, adminId: user.id },
@@ -390,8 +410,8 @@ export default async function productRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const { productIds } = request.body as { productIds: number[] };
 
-    if (!Array.isArray(productIds)) {
-      return reply.status(400).send({ error: 'productIds deve ser um array de IDs' });
+    if (!Array.isArray(productIds) || productIds.some(id => !parseSafeInt(id))) {
+      return reply.status(400).send({ error: 'productIds deve ser um array de IDs numéricos válidos' });
     }
 
     await prisma.$transaction(

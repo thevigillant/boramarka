@@ -37,6 +37,7 @@ import purchaseRoutes from './routes/purchases';
 import invoiceRoutes from './routes/invoices';
 import shoppingListRoutes from './routes/shoppingLists';
 import { startReminderService } from './services/reminder';
+import { cleanupExpiredRefreshTokens } from './services/refreshTokenService';
 import fastifyStatic from '@fastify/static';
 import path from 'path';
 import fs from 'fs';
@@ -383,6 +384,22 @@ const start = async () => {
     } catch (reminderError) {
       console.error('⚠️ Falha ao iniciar serviço de lembretes (servidor continua rodando):', reminderError);
     }
+
+    // 🧹 Limpeza inicial e periódica de refresh tokens expirados/revogados (a cada 12h)
+    cleanupExpiredRefreshTokens()
+      .then(count => {
+        if (count > 0) console.log(`🧹 [CLEANUP] ${count} refresh tokens expirados/revogados limpos na inicialização.`);
+      })
+      .catch(err => console.error('⚠️ [CLEANUP] Falha na limpeza de refresh tokens:', err.message));
+
+    setInterval(async () => {
+      try {
+        const count = await cleanupExpiredRefreshTokens();
+        if (count > 0) console.log(`🧹 [CLEANUP] ${count} refresh tokens expirados/revogados limpos.`);
+      } catch (err: any) {
+        console.error('⚠️ [CLEANUP] Falha periódica de refresh tokens:', err.message);
+      }
+    }, 12 * 60 * 60 * 1000);
   } catch (err) {
     app.log.error(err);
     process.exit(1);

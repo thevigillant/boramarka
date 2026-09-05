@@ -1,58 +1,63 @@
 import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate, requirePermission } from '../plugins/auth';
-import { createTransactionSchema } from '../utils/validators';
+import { createTransactionSchema, parseSafeInt } from '../utils/validators';
 
-export default async function financeRoutes(app: FastifyInstance) {
-  app.addHook('onRequest', authenticate);
-  app.addHook('preHandler', requirePermission('canFinanceiro'));
+// 🛡️ Rate-limit e trava em memória para reconciliação financeira (evita concorrência e transações duplicadas)
+const lastReconciliationMap = new Map<number, number>();
+const activeReconciliations = new Set<number>();
 
-  // ═══════════════════════════════════════════
-  //  STATS
-  // ═══════════════════════════════════════════
-  app.get('/stats', async (request) => {
-    const user = request.user as { id: number };
+export async function reconcileFinances(adminId: number): Promise<{ reconciled: boolean; createdCount: number }> {
+  const now = Date.now();
+  const lastRun = lastReconciliationMap.get(adminId) || 0;
 
-    // Auto-reconcile remaining balance for active bookings where deposit/sinal was paid
-    const activeBookings = await prisma.booking.findMany({
-      where: {
-        timeSlot: { link: { adminId: user.id } },
-        status: { in: ['PAGO', 'CONFIRMADO'] }
-      },
-      include: {
-        timeSlot: {
-          include: {
-            link: { include: { service: true } }
-          }
-        }
-      }
-    });
+  // Debounce de 30 segundos entre reconciliações por admin
+  if (now - lastRun < 30_000 || activeReconciliations.has(adminId)) {
+    return { reconciled: false, createdCount: 0 };
+  }
 
-    // Auto-reconcile active & completed orders from BoraEnkomenda
-    const activeOrders = await prisma.order.findMany({
-      where: {
-        adminId: user.id,
-        status: { in: ['NOVO', 'CONFIRMADO', 'EM_PRODUCAO', 'PRONTO', 'ENTREGUE'] }
-      }
-    });
+  activeReconciliations.add(adminId);
+  lastReconciliationMap.set(adminId, now);
 
-    const existingTransactions = await prisma.transaction.findMany({
-      where: { adminId: user.id }
-    });
+  try {
+    let createdCount = 0;
+
+    const [activeBookings, activeOrders, existingTransactions] = await Promise.all([
+      prisma.booking.findMany({
+        where: {
+          timeSlot: { link: { adminId } },
+          status: { in: ['PAGO', 'CONFIRMADO'] },
+        },
+        include: {
+          timeSlot: {
+            include: {
+              link: { include: { service: true } },
+            },
+          },
+        },
+      }),
+      prisma.order.findMany({
+        where: {
+          adminId,
+          status: { in: ['NOVO', 'CONFIRMADO', 'EM_PRODUCAO', 'PRONTO', 'ENTREGUE'] },
+        },
+      }),
+      prisma.transaction.findMany({
+        where: { adminId },
+      }),
+    ]);
 
     // 1. Reconciliação de Agendamentos
     for (const b of activeBookings) {
-      const servicePrice = b.timeSlot.link.service?.price || 0;
+      const servicePrice = b.timeSlot?.link?.service?.price || 0;
       const fullPrice = b.totalAmount > 0 ? b.totalAmount : servicePrice;
       const paid = b.paidAmount || 0;
       const remaining = Math.max(0, fullPrice - paid);
 
       if (remaining > 0) {
-        const hasPendingTx = existingTransactions.some(t =>
-          t.clientName === b.clientName &&
-          t.type === 'receivable' &&
-          !t.paid &&
-          t.amount === remaining
+        const hasPendingTx = existingTransactions.some((t) =>
+          t.notes?.includes(`[Booking #${b.id}]`) ||
+          (t.clientName === b.clientName && t.type === 'receivable' && !t.paid && Math.abs(t.amount - remaining) < 0.01)
         );
 
         if (!hasPendingTx) {
@@ -66,9 +71,10 @@ export default async function financeRoutes(app: FastifyInstance) {
               clientName: b.clientName,
               category: 'Restante de Agendamento',
               notes: `Valor restante a ser pago no dia do atendimento (${b.timeSlot.date}) [Booking #${b.id}]`,
-              adminId: user.id
-            }
+              adminId,
+            },
           });
+          createdCount++;
         }
       }
     }
@@ -78,11 +84,10 @@ export default async function financeRoutes(app: FastifyInstance) {
       const isDelivered = ord.status === 'ENTREGUE';
 
       if (isDelivered) {
-        // Pedido entregue: garante que o valor total esteja contabilizado como pago
-        const hasPaidTx = existingTransactions.some(t =>
+        const hasPaidTx = existingTransactions.some((t) =>
           t.type === 'receivable' &&
           t.paid &&
-          (t.notes.includes(ord.orderNumber) || (t.clientName === ord.clientName && Math.abs(t.amount - ord.total) < 0.01))
+          (t.notes?.includes(ord.orderNumber) || (t.clientName === ord.clientName && Math.abs(t.amount - ord.total) < 0.01))
         );
 
         if (!hasPaidTx) {
@@ -97,18 +102,17 @@ export default async function financeRoutes(app: FastifyInstance) {
               clientName: ord.clientName,
               category: 'Venda de Encomenda',
               notes: `Pedido entregue com sucesso [${ord.orderNumber}]`,
-              adminId: user.id
-            }
+              adminId,
+            },
           });
+          createdCount++;
         }
       } else {
-        // Pedido ativo em produção / confirmado:
-        // A. Se entrada/sinal foi pago, registra entrada como recebida
         if (ord.depositPaid && ord.depositAmount > 0) {
-          const hasDepositPaidTx = existingTransactions.some(t =>
+          const hasDepositPaidTx = existingTransactions.some((t) =>
             t.type === 'receivable' &&
             t.paid &&
-            t.notes.includes(`[${ord.orderNumber}-DEP]`)
+            t.notes?.includes(`[${ord.orderNumber}-DEP]`)
           );
 
           if (!hasDepositPaidTx) {
@@ -123,16 +127,16 @@ export default async function financeRoutes(app: FastifyInstance) {
                 clientName: ord.clientName,
                 category: 'Entrada de Encomenda',
                 notes: `Entrada recebida para encomenda [${ord.orderNumber}-DEP]`,
-                adminId: user.id
-              }
+                adminId,
+              },
             });
+            createdCount++;
           }
         } else if (!ord.depositPaid && ord.depositAmount > 0) {
-          // Sinal pendente
-          const hasPendingDepositTx = existingTransactions.some(t =>
+          const hasPendingDepositTx = existingTransactions.some((t) =>
             t.type === 'receivable' &&
             !t.paid &&
-            t.notes.includes(`[${ord.orderNumber}-DEP]`)
+            t.notes?.includes(`[${ord.orderNumber}-DEP]`)
           );
 
           if (!hasPendingDepositTx) {
@@ -146,18 +150,18 @@ export default async function financeRoutes(app: FastifyInstance) {
                 clientName: ord.clientName,
                 category: 'Entrada de Encomenda',
                 notes: `Sinal a receber da encomenda [${ord.orderNumber}-DEP]`,
-                adminId: user.id
-              }
+                adminId,
+              },
             });
+            createdCount++;
           }
         }
 
-        // B. Restante na entrega (se houver)
         if (ord.remainingAmount > 0) {
-          const hasPendingRemainingTx = existingTransactions.some(t =>
+          const hasPendingRemainingTx = existingTransactions.some((t) =>
             t.type === 'receivable' &&
             !t.paid &&
-            t.notes.includes(`[${ord.orderNumber}-REM]`)
+            t.notes?.includes(`[${ord.orderNumber}-REM]`)
           );
 
           if (!hasPendingRemainingTx) {
@@ -171,16 +175,46 @@ export default async function financeRoutes(app: FastifyInstance) {
                 clientName: ord.clientName,
                 category: 'Restante de Encomenda',
                 notes: `Saldo a receber na entrega em ${ord.deliveryDate} [${ord.orderNumber}-REM]`,
-                adminId: user.id
-              }
+                adminId,
+              },
             });
+            createdCount++;
           }
         }
       }
     }
 
+    return { reconciled: true, createdCount };
+  } finally {
+    activeReconciliations.delete(adminId);
+  }
+}
+
+export default async function financeRoutes(app: FastifyInstance) {
+  app.addHook('onRequest', authenticate);
+  app.addHook('preHandler', requirePermission('canFinanceiro'));
+
+  // ═══════════════════════════════════════════
+  //  RECONCILIAÇÃO MANUAL / TRIGGER
+  // ═══════════════════════════════════════════
+  app.post('/reconcile', async (request) => {
+    const user = request.user as { id: number };
+    return reconcileFinances(user.id);
+  });
+
+  // ═══════════════════════════════════════════
+  //  STATS
+  // ═══════════════════════════════════════════
+  app.get('/stats', async (request) => {
+    const user = request.user as { id: number };
+
+    // Reconcilia em background de forma idempotente e protegida por lock
+    reconcileFinances(user.id).catch((err) => {
+      console.error('⚠️ [FINANCE] Erro na reconciliação assíncrona:', err.message);
+    });
+
     const transactions = await prisma.transaction.findMany({
-      where: { adminId: user.id }
+      where: { adminId: user.id },
     });
 
     const totalReceivable = transactions
@@ -424,8 +458,10 @@ export default async function financeRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════
   app.put('/transactions/:id/toggle', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const txId = parseInt(id);
+    const txId = parseSafeInt((request.params as any)?.id);
+    if (!txId) {
+      return reply.status(400).send({ error: 'ID de transação inválido' });
+    }
 
     const transaction = await prisma.transaction.findFirst({
       where: { id: txId, adminId: user.id },
@@ -470,8 +506,10 @@ export default async function financeRoutes(app: FastifyInstance) {
   // ═══════════════════════════════════════════
   app.delete('/transactions/:id', async (request, reply) => {
     const user = request.user as { id: number };
-    const { id } = request.params as { id: string };
-    const txId = parseInt(id);
+    const txId = parseSafeInt((request.params as any)?.id);
+    if (!txId) {
+      return reply.status(400).send({ error: 'ID de transação inválido' });
+    }
 
     try {
       await prisma.$transaction(async (tx) => {
