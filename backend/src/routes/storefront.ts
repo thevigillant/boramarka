@@ -391,7 +391,7 @@ export default async function storefrontRoutes(app: FastifyInstance) {
     });
 
     // Invalida cache da vitrine da loja
-    cache.invalidate(`storefront:${cleanUsername}`);
+    cache.invalidate(`storefront:${username.toLowerCase()}`);
 
     // ═══ Resolução dinâmica de Frontend URL para Links & Webhooks ═══
     const originHeader = (request.headers.origin as string) || (request.headers.referer ? new URL(request.headers.referer as string).origin : '');

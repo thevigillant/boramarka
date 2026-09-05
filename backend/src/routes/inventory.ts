@@ -65,7 +65,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const validation = createInventoryItemSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados inválidos' });
     }
 
     const { name, description, category, unit, costPrice, salePrice, quantity, minQuantity, photoUrl } = validation.data;
@@ -110,7 +110,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
 
     const validation = updateInventoryItemSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados inválidos' });
     }
 
     const body = validation.data;
@@ -147,7 +147,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
 
     const validation = inventoryMovementSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados de movimentação inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados de movimentação inválidos' });
     }
 
     const { type, quantity, reason, unitCost } = validation.data;

@@ -39,7 +39,7 @@ export default async function productRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const validation = createCategorySchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados inválidos' });
     }
 
     const { name, iconUrl } = validation.data;
@@ -70,7 +70,7 @@ export default async function productRoutes(app: FastifyInstance) {
 
     const validation = updateCategorySchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados inválidos' });
     }
 
     const { name, iconUrl } = validation.data;
@@ -503,7 +503,7 @@ export default async function productRoutes(app: FastifyInstance) {
 
     const validation = setProductRecipeSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados inválidos' });
     }
 
     try {

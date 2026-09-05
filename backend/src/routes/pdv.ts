@@ -80,7 +80,7 @@ export default async function pdvRoutes(app: FastifyInstance) {
     const user = request.user as { id: number };
     const validation = createPdvSaleSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados da venda inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados da venda inválidos' });
     }
 
     const { bookingId, employeeId, paymentMethod, discount, notes, items } = validation.data;

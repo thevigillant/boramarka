@@ -307,7 +307,7 @@ export default async function orderRoutes(app: FastifyInstance) {
 
     const validation = updateOrderStatusSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados de status inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados de status inválidos' });
     }
 
     const { status, note } = validation.data;
@@ -448,7 +448,7 @@ export default async function orderRoutes(app: FastifyInstance) {
 
     const validation = createOrderReturnSchema.safeParse(request.body);
     if (!validation.success) {
-      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+      return reply.status(400).send({ error: validation.error.issues[0]?.message || 'Dados inválidos' });
     }
 
     const { type, reason, refundAmount, restockItems, notes } = validation.data;
