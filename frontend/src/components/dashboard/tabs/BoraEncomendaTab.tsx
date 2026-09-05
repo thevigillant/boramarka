@@ -35,6 +35,8 @@ import {
   ChevronLeft,
   ShoppingCart,
   ChefHat,
+  Users,
+  Target,
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
@@ -42,6 +44,7 @@ import { NewProductModal } from '../modals/NewProductModal'
 import { OrderDetailModal } from '../modals/OrderDetailModal'
 import { ProductRecipeModal } from '../modals/ProductRecipeModal'
 import { BoraEncomendaComprasSubTab } from './BoraEncomendaComprasSubTab'
+import { BoraEncomendaClientsSubTab } from './BoraEncomendaClientsSubTab'
 import { EmitSalesInvoiceModal } from '../modals/EmitSalesInvoiceModal'
 import type {
   ProductData,
@@ -60,7 +63,7 @@ interface BoraEncomendaTabProps {
 }
 
 export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigateTab, showToast }: BoraEncomendaTabProps) {
-  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'products' | 'compras' | 'store' | 'reports'>('kanban')
+  const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'products' | 'compras' | 'clients' | 'store' | 'reports'>('kanban')
   const [loading, setLoading] = useState(true)
 
   // Data states
@@ -69,6 +72,14 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
   const [categories, setCategories] = useState<ProductCategoryData[]>([])
   const [settings, setSettings] = useState<OrderSettingsData | null>(null)
   const [stats, setStats] = useState<OrderStatsData | null>(null)
+
+  // Meta de faturamento mensal
+  const [monthlyGoal, setMonthlyGoal] = useState<number>(() => {
+    const saved = localStorage.getItem('boramarka_monthly_goal')
+    return saved ? parseFloat(saved) : 5000
+  })
+  const [showGoalModal, setShowGoalModal] = useState(false)
+  const [tempGoalInput, setTempGoalInput] = useState('')
 
   // Invoice emission for orders
   const [showEmitSalesModal, setShowEmitSalesModal] = useState(false)
@@ -587,8 +598,8 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
       </div>
 
       {/* ── KPI Cards (Métricas Elegantes) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-[#131826] rounded-2xl p-5 border border-slate-800/80 shadow-md">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
+        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Pedidos Ativos
@@ -597,15 +608,15 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
               <ShoppingBag className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-white">
+          <p className="text-xl sm:text-2xl font-black text-white">
             {stats?.activeOrders || 0}
           </p>
-          <span className="text-[11px] text-pink-400 font-semibold mt-1 block">
+          <span className="text-[10px] text-pink-400 font-semibold mt-1 block">
             Em fluxo de preparo
           </span>
         </div>
 
-        <div className="bg-[#131826] rounded-2xl p-5 border border-slate-800/80 shadow-md">
+        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Faturamento Total
@@ -614,15 +625,15 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-white">
+          <p className="text-xl sm:text-2xl font-black text-white">
             {formatCurrency(stats?.totalRevenue || 0)}
           </p>
-          <span className="text-[11px] text-slate-400 font-semibold mt-1 block">
+          <span className="text-[10px] text-slate-400 font-semibold mt-1 block">
             Total acumulado
           </span>
         </div>
 
-        <div className="bg-[#131826] rounded-2xl p-5 border border-slate-800/80 shadow-md">
+        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Entradas Pagas
@@ -631,15 +642,15 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
               <CheckCircle className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-emerald-400">
+          <p className="text-xl sm:text-2xl font-black text-emerald-400">
             {formatCurrency(stats?.receivedRevenue || 0)}
           </p>
-          <span className="text-[11px] text-emerald-400/80 font-semibold mt-1 block">
+          <span className="text-[10px] text-emerald-400/80 font-semibold mt-1 block">
             Recebido online
           </span>
         </div>
 
-        <div className="bg-[#131826] rounded-2xl p-5 border border-slate-800/80 shadow-md">
+        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Saldo na Entrega
@@ -648,12 +659,53 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
               <Clock className="w-4 h-4" />
             </div>
           </div>
-          <p className="text-2xl font-black text-amber-400">
+          <p className="text-xl sm:text-2xl font-black text-amber-400">
             {formatCurrency(stats?.pendingBalance || 0)}
           </p>
-          <span className="text-[11px] text-slate-400 font-semibold mt-1 block">
+          <span className="text-[10px] text-slate-400 font-semibold mt-1 block">
             A cobrar na entrega
           </span>
+        </div>
+
+        {/* 🎯 Meta Mensal de Faturamento com Barra de Progresso */}
+        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md col-span-2 sm:col-span-1 flex flex-col justify-between">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Meta Mensal
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setTempGoalInput(monthlyGoal.toString())
+                setShowGoalModal(true)
+              }}
+              className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all text-[10px]"
+              title="Ajustar Meta do Mês"
+            >
+              <Target className="w-3.5 h-3.5 text-pink-400" />
+            </button>
+          </div>
+          <div>
+            <div className="flex justify-between items-baseline">
+              <p className="text-lg sm:text-xl font-black text-white font-mono">
+                {formatCurrency(stats?.totalRevenue || 0)}
+              </p>
+              <span className="text-[11px] font-bold text-slate-400 font-mono">
+                / {formatCurrency(monthlyGoal)}
+              </span>
+            </div>
+            <div className="w-full h-1.5 bg-slate-800 rounded-full mt-2 overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-orange-500 to-pink-500 rounded-full transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.round(((stats?.totalRevenue || 0) / (monthlyGoal || 1)) * 100))}%`,
+                }}
+              />
+            </div>
+            <span className="text-[10px] text-pink-400 font-bold mt-1 block">
+              {Math.min(100, Math.round(((stats?.totalRevenue || 0) / (monthlyGoal || 1)) * 100))}% atingido
+            </span>
+          </div>
         </div>
       </div>
 
@@ -702,6 +754,18 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
           <span className="ml-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
             Mercado
           </span>
+        </button>
+
+        <button
+          onClick={() => setActiveSubTab('clients')}
+          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
+            activeSubTab === 'clients'
+              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+          }`}
+        >
+          <Users className="w-3.5 h-3.5 text-pink-400" />
+          <span>Clientes & LTV</span>
         </button>
 
         <button
@@ -1264,6 +1328,11 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
       )}
 
       {/* ═══════════════════════════════════════════════════════ */}
+      {/* 2.6. CRM & Clientes (LTV, Histórico & Preferências)    */}
+      {/* ═══════════════════════════════════════════════════════ */}
+      {activeSubTab === 'clients' && <BoraEncomendaClientsSubTab />}
+
+      {/* ═══════════════════════════════════════════════════════ */}
       {/* 3. Configurações da Loja */}
       {/* ═══════════════════════════════════════════════════════ */}
       {activeSubTab === 'store' && settings && (
@@ -1504,6 +1573,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
 
       <OrderDetailModal
         order={selectedOrder}
+        user={user}
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateOrderStatus}
         onUpdatePayment={handleUpdateOrderPayment}
@@ -1526,6 +1596,77 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
         }}
         showToast={showToast || ((m) => alert(m))}
       />
+
+      {/* ── Modal Ajuste de Meta Mensal ── */}
+      {showGoalModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
+          onClick={() => setShowGoalModal(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 w-full max-w-sm p-6 shadow-2xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <h3 className="text-base font-black text-slate-900 dark:text-white">
+                Definir Meta de Faturamento
+              </h3>
+              <button
+                onClick={() => setShowGoalModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                const val = parseFloat(tempGoalInput.replace(',', '.'))
+                if (val > 0) {
+                  setMonthlyGoal(val)
+                  localStorage.setItem('boramarka_monthly_goal', val.toString())
+                  if (showToast) showToast('Meta de faturamento mensal salva!', 'success')
+                }
+                setShowGoalModal(false)
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="block text-xs font-bold text-slate-600 dark:text-slate-400 mb-1">
+                  Meta Desejada para o Mês (R$)
+                </label>
+                <input
+                  type="number"
+                  step="50"
+                  min="100"
+                  value={tempGoalInput}
+                  onChange={(e) => setTempGoalInput(e.target.value)}
+                  placeholder="Ex: 5000"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-mono font-bold text-sm focus:outline-none focus:border-pink-500"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowGoalModal(false)}
+                  className="px-4 py-2 bg-slate-100 dark:bg-slate-800 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-gradient-to-r from-orange-500 to-pink-500 text-white rounded-xl text-xs font-black shadow-md shadow-pink-500/20"
+                >
+                  Salvar Meta
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       <EmitSalesInvoiceModal
         isOpen={showEmitSalesModal}

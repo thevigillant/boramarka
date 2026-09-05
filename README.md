@@ -65,7 +65,13 @@ A plataforma é dividida em dois pilares operacionais estritamente separados, ga
   - Cardápio digital na bio com personalização de recheios, massas, tamanhos e adicionais.
   - Cobrança de entrada/sinal Pix (ex.: 50% antecipado) com restante automático na entrega.
   - **Kanban de Produção**: Etapas automáticas (*Novo*, *Confirmado*, *Em Produção*, *Pronto*, *Entregue*).
+  - **Ficha Técnica de Produção (BOM)**: Associação de insumos por produto, apuração de custo e margem bruta, e baixa automática de estoque.
+  - **Custo Médio Ponderado (CMP)**: Recálculo contábil contínuo em cada entrada de mercadoria.
+  - **Comanda de Produção & Preparo**: Impressão direta de comanda para bancada/cozinha com checklist e detalhes de entrega.
+  - **CRM de Encomendas & LTV**: Ranking de clientes mais valiosos, histórico de compras, ticket médio e canal direto via WhatsApp.
+  - **Meta de Faturamento Mensal**: Definição e acompanhamento de metas com barra de progresso em tempo real.
   - **Lista Inteligente de Compras**: Agrupamento automático de insumos necessários por período para compras em atacado/supermercado.
+  - **Devoluções & Trocas**: Gestão de estornos com reposição de estoque e conciliação financeira automática.
   - Emissão e entrada de Notas Fiscais (NFC-e / NF-e) com atualização automática do estoque.
 - **Planos Comerciais**:
   - *Plano Ateliê*: R$ 39,90/mês
@@ -228,7 +234,7 @@ npm install
 npm run dev
 ```
 
-O frontend estará disponível em `http://localhost:5173` e o backend em `http://localhost:3333`.
+O frontend estará disponível em `http://localhost:5173` e o backend em `http://localhost:3001`.
 
 ---
 
@@ -236,7 +242,7 @@ O frontend estará disponível em `http://localhost:5173` e o backend em `http:/
 
 ### Backend (`backend/.env`)
 ```env
-PORT=3333
+PORT=3001
 DATABASE_URL="postgresql://usuario:senha@localhost:5432/boramarka?schema=public"
 JWT_SECRET="sua_chave_jwt_super_secreta_minimo_32_chars"
 SUPERADMIN_SECRET="sua_chave_mestra_superadmin"
@@ -246,7 +252,7 @@ FRONTEND_URL="http://localhost:5173"
 
 ### Frontend (`frontend/.env`)
 ```env
-VITE_API_URL="http://localhost:3333/api"
+VITE_API_URL="http://localhost:3001/api"
 ```
 
 ---

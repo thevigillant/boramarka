@@ -1,11 +1,13 @@
 import { useState } from 'react'
-import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle, Trash2, RotateCcw, Receipt } from 'lucide-react'
+import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle, Trash2, RotateCcw, Receipt, Printer } from 'lucide-react'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import { OrderReturnModal } from './OrderReturnModal'
+import { OrderPrintModal } from './OrderPrintModal'
 import type { OrderData } from '../../../types/dashboard'
 
 interface OrderDetailModalProps {
   order: OrderData | null
+  user?: any
   onClose: () => void
   onUpdateStatus: (id: number, status: string, note?: string, order?: OrderData) => Promise<void>
   onUpdatePayment: (id: number, depositPaid: boolean) => Promise<void>
@@ -18,6 +20,7 @@ interface OrderDetailModalProps {
 
 export function OrderDetailModal({
   order,
+  user,
   onClose,
   onUpdateStatus,
   onUpdatePayment,
@@ -30,6 +33,7 @@ export function OrderDetailModal({
   if (!order) return null
 
   const [showReturnModal, setShowReturnModal] = useState(false)
+  const [showPrintModal, setShowPrintModal] = useState(false)
 
   const cleanPhone = order.clientPhone.replace(/\D/g, '')
   const num = order.orderNumber.replace('#', '')
@@ -104,9 +108,20 @@ export function OrderDetailModal({
               Pedido criado em {new Date(order.createdAt).toLocaleString('pt-BR')}
             </p>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl">
-            <X className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowPrintModal(true)}
+              className="py-1.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+              title="Imprimir Comanda de Produção / Preparo"
+            >
+              <Printer className="w-3.5 h-3.5 text-pink-500" />
+              <span className="hidden sm:inline">Imprimir Comanda</span>
+            </button>
+            <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
         </div>
 
         <div className="space-y-6 pt-5">
@@ -456,15 +471,26 @@ export function OrderDetailModal({
                   </button>
                 )}
 
-                {/* 🔄 Devolução ou Troca (ERP) */}
-                <button
-                  type="button"
-                  onClick={() => setShowReturnModal(true)}
-                  className="w-full py-3 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  Registrar Devolução ou Troca (ERP)
-                </button>
+                {/* 🔄 Devolução, Troca & Impressão (ERP) */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowPrintModal(true)}
+                    className="py-3 px-4 bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800/80 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                  >
+                    <Printer className="w-3.5 h-3.5 text-pink-500" />
+                    <span>Imprimir Comanda</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowReturnModal(true)}
+                    className="py-3 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    <span>Devolução / Troca</span>
+                  </button>
+                </div>
               </>
             )}
           </div>
@@ -484,6 +510,14 @@ export function OrderDetailModal({
           }
         }}
         showToast={showToast || ((m) => alert(m))}
+      />
+
+      {/* ── Modal de Impressão de Comanda de Produção ── */}
+      <OrderPrintModal
+        order={order}
+        user={user}
+        isOpen={showPrintModal}
+        onClose={() => setShowPrintModal(false)}
       />
     </div>
   )

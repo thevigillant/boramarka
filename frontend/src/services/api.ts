@@ -1782,6 +1782,21 @@ export const api = {
   getOrderStats: () =>
     request<any>('/orders/stats'),
 
+  getOrderClients: () =>
+    request<
+      Array<{
+        clientName: string;
+        clientPhone: string;
+        clientEmail: string;
+        ordersCount: number;
+        completedCount: number;
+        totalSpent: number;
+        averageTicket: number;
+        lastOrderDate: string;
+        topProducts: Array<{ name: string; quantity: number }>;
+      }>
+    >('/orders/crm/clients'),
+
   getOrder: (id: number) =>
     request<any>(`/orders/${id}`),
 

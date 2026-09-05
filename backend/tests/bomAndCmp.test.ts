@@ -148,3 +148,103 @@ describe('ERP Validation Schemas for BOM, Movement and Returns', () => {
     expect(invalid.success).toBe(false);
   });
 });
+
+describe('ERP CRM & Customer LTV Analytics', () => {
+  function aggregateClientCRM(orders: Array<{
+    clientName: string;
+    clientPhone: string;
+    status: string;
+    total: number;
+    items: Array<{ productName: string; quantity: number }>;
+  }>) {
+    const clientsMap = new Map<string, {
+      clientName: string;
+      clientPhone: string;
+      ordersCount: number;
+      totalSpent: number;
+      productFrequency: Record<string, number>;
+    }>();
+
+    for (const order of orders) {
+      const cleanKey = order.clientPhone.replace(/\D/g, '') || order.clientName.trim().toLowerCase();
+      if (!cleanKey) continue;
+
+      if (!clientsMap.has(cleanKey)) {
+        clientsMap.set(cleanKey, {
+          clientName: order.clientName,
+          clientPhone: order.clientPhone,
+          ordersCount: 0,
+          totalSpent: 0,
+          productFrequency: {},
+        });
+      }
+
+      const client = clientsMap.get(cleanKey)!;
+      client.ordersCount += 1;
+      if (order.status !== 'CANCELADO' && order.status !== 'DEVOLVIDO') {
+        client.totalSpent += order.total;
+      }
+
+      for (const item of order.items) {
+        client.productFrequency[item.productName] =
+          (client.productFrequency[item.productName] || 0) + item.quantity;
+      }
+    }
+
+    return Array.from(clientsMap.values()).map(c => ({
+      ...c,
+      averageTicket: c.ordersCount > 0 ? Math.round((c.totalSpent / c.ordersCount) * 100) / 100 : 0,
+    })).sort((a, b) => b.totalSpent - a.totalSpent);
+  }
+
+  it('correctly calculates customer LTV and orders count while excluding canceled orders from revenue', () => {
+    const orders = [
+      {
+        clientName: 'Maria Silva',
+        clientPhone: '(11) 98888-1111',
+        status: 'ENTREGUE',
+        total: 150.0,
+        items: [{ productName: 'Bolo de Morango', quantity: 1 }],
+      },
+      {
+        clientName: 'Maria Silva',
+        clientPhone: '11988881111',
+        status: 'CONFIRMADO',
+        total: 200.0,
+        items: [{ productName: 'Bolo de Chocolate', quantity: 1 }],
+      },
+      {
+        clientName: 'Maria Silva',
+        clientPhone: '(11) 98888-1111',
+        status: 'CANCELADO',
+        total: 100.0,
+        items: [{ productName: 'Docinhos', quantity: 50 }],
+      },
+      {
+        clientName: 'João Santos',
+        clientPhone: '11977772222',
+        status: 'ENTREGUE',
+        total: 80.0,
+        items: [{ productName: 'Torta Salgada', quantity: 1 }],
+      },
+    ];
+
+    const result = aggregateClientCRM(orders);
+    expect(result.length).toBe(2);
+
+    // Maria should be ranked #1
+    expect(result[0].clientName).toBe('Maria Silva');
+    expect(result[0].ordersCount).toBe(3);
+    // 150 + 200 (canceled 100 excluded) = 350
+    expect(result[0].totalSpent).toBe(350.0);
+    // 350 / 3 = 116.67
+    expect(result[0].averageTicket).toBe(116.67);
+
+    // João should be ranked #2
+    expect(result[1].clientName).toBe('João Santos');
+    expect(result[1].totalSpent).toBe(80.0);
+    expect(result[1].ordersCount).toBe(1);
+    expect(result[1].averageTicket).toBe(80.0);
+  });
+});
+

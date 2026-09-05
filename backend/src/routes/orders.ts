@@ -165,6 +165,105 @@ export default async function orderRoutes(app: FastifyInstance) {
     };
   });
 
+  // GET /api/orders/crm/clients — Grouped customer analysis & LTV for BoraEnkomenda
+  app.get('/crm/clients', async (request) => {
+    const user = request.user as { id: number };
+
+    const orders = await prisma.order.findMany({
+      where: { adminId: user.id },
+      select: {
+        id: true,
+        orderNumber: true,
+        clientName: true,
+        clientPhone: true,
+        clientEmail: true,
+        status: true,
+        total: true,
+        createdAt: true,
+        items: {
+          select: {
+            productName: true,
+            quantity: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const clientsMap = new Map<
+      string,
+      {
+        clientName: string;
+        clientPhone: string;
+        clientEmail: string;
+        ordersCount: number;
+        completedCount: number;
+        totalSpent: number;
+        lastOrderDate: string;
+        productFrequency: Record<string, number>;
+      }
+    >();
+
+    for (const order of orders) {
+      const cleanKey =
+        order.clientPhone.replace(/\D/g, '') ||
+        order.clientName.trim().toLowerCase();
+      if (!cleanKey) continue;
+
+      if (!clientsMap.has(cleanKey)) {
+        clientsMap.set(cleanKey, {
+          clientName: order.clientName,
+          clientPhone: order.clientPhone,
+          clientEmail: order.clientEmail || '',
+          ordersCount: 0,
+          completedCount: 0,
+          totalSpent: 0,
+          lastOrderDate: order.createdAt.toISOString(),
+          productFrequency: {},
+        });
+      }
+
+      const clientData = clientsMap.get(cleanKey)!;
+      clientData.ordersCount += 1;
+      if (order.status !== 'CANCELADO' && order.status !== 'DEVOLVIDO') {
+        clientData.totalSpent += order.total;
+      }
+      if (order.status === 'ENTREGUE') {
+        clientData.completedCount += 1;
+      }
+
+      for (const item of order.items) {
+        clientData.productFrequency[item.productName] =
+          (clientData.productFrequency[item.productName] || 0) + item.quantity;
+      }
+    }
+
+    const result = Array.from(clientsMap.values()).map((c) => {
+      const topProducts = Object.entries(c.productFrequency)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([name, qty]) => ({ name, quantity: qty }));
+
+      return {
+        clientName: c.clientName,
+        clientPhone: c.clientPhone,
+        clientEmail: c.clientEmail,
+        ordersCount: c.ordersCount,
+        completedCount: c.completedCount,
+        totalSpent: Math.round(c.totalSpent * 100) / 100,
+        averageTicket:
+          c.ordersCount > 0
+            ? Math.round((c.totalSpent / c.ordersCount) * 100) / 100
+            : 0,
+        lastOrderDate: c.lastOrderDate,
+        topProducts,
+      };
+    });
+
+    result.sort((a, b) => b.totalSpent - a.totalSpent);
+    return result;
+  });
+
   // GET /api/orders/:id — Single order details
   app.get('/:id', async (request, reply) => {
     const user = request.user as { id: number };
