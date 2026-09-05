@@ -1734,6 +1734,42 @@ export const api = {
       body: JSON.stringify({ productIds }),
     }),
 
+  // ═══ 🧾 Ficha Técnica de Produção (BOM) ═══
+  getProductRecipe: (productId: number) =>
+    request<{
+      recipeItems: Array<{
+        id: number;
+        productId: number;
+        inventoryItemId: number;
+        quantity: number;
+        unit: string;
+        inventoryItem: {
+          id: number;
+          name: string;
+          unit: string;
+          costPrice: number;
+          quantity: number;
+          minQuantity: number;
+        };
+        ingredientCost: number;
+      }>;
+      totalUnitCost: number;
+      sellingPrice: number;
+      grossMargin: number;
+      marginPercentage: number;
+    }>(`/products/${productId}/recipe`),
+
+  setProductRecipe: (productId: number, items: Array<{ inventoryItemId: number; quantity: number; unit?: string }>) =>
+    request<{ success: boolean; totalUnitCost: number; grossMargin: number; marginPercentage: number }>(`/products/${productId}/recipe`, {
+      method: 'PUT',
+      body: JSON.stringify({ items }),
+    }),
+
+  deleteProductRecipeItem: (productId: number, recipeItemId: number) =>
+    request<{ success: boolean }>(`/products/${productId}/recipe/${recipeItemId}`, {
+      method: 'DELETE',
+    }),
+
   getOrders: (params?: { status?: string; startDate?: string; endDate?: string }) => {
     const query = new URLSearchParams();
     if (params?.status) query.append('status', params.status);
@@ -1763,6 +1799,25 @@ export const api = {
 
   deleteOrder: (id: number) =>
     request(`/orders/${id}`, { method: 'DELETE' }),
+
+  // ═══ 🔄 Devoluções & Trocas (ERP BoraEnkomenda) ═══
+  getOrderReturns: (orderId: number) =>
+    request<any[]>(`/orders/${orderId}/returns`),
+
+  createOrderReturn: (
+    orderId: number,
+    data: {
+      type: 'DEVOLUCAO' | 'TROCA';
+      reason: string;
+      refundAmount?: number;
+      restockItems?: boolean;
+      notes?: string;
+    }
+  ) =>
+    request<any>(`/orders/${orderId}/returns`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 
   // ═══ 🛒 Listas de Compras de Produção (BoraEnkomenda) ═══
   getShoppingLists: (params?: { status?: string; search?: string }) => {

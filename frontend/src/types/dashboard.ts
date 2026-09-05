@@ -208,7 +208,7 @@ export interface OrderData {
   deliveryTime: string
   deliveryType: 'PICKUP' | 'DELIVERY'
   deliveryAddress: string
-  status: 'NOVO' | 'CONFIRMADO' | 'EM_PRODUCAO' | 'PRONTO' | 'ENTREGUE' | 'CANCELADO'
+  status: 'NOVO' | 'CONFIRMADO' | 'EM_PRODUCAO' | 'PRONTO' | 'ENTREGUE' | 'CANCELADO' | 'DEVOLVIDO' | 'TROCA'
   notes: string
   subtotal: number
   deliveryFee: number

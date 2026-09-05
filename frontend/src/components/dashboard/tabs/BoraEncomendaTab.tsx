@@ -34,11 +34,13 @@ import {
   GripVertical,
   ChevronLeft,
   ShoppingCart,
+  ChefHat,
 } from 'lucide-react'
 import { api } from '../../../services/api'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
 import { NewProductModal } from '../modals/NewProductModal'
 import { OrderDetailModal } from '../modals/OrderDetailModal'
+import { ProductRecipeModal } from '../modals/ProductRecipeModal'
 import { BoraEncomendaComprasSubTab } from './BoraEncomendaComprasSubTab'
 import { EmitSalesInvoiceModal } from '../modals/EmitSalesInvoiceModal'
 import type {
@@ -75,6 +77,8 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
   // Modals & UI states
   const [showProductModal, setShowProductModal] = useState(false)
   const [editingProduct, setEditingProduct] = useState<ProductData | null>(null)
+  const [selectedProductForRecipe, setSelectedProductForRecipe] = useState<ProductData | null>(null)
+  const [showRecipeModal, setShowRecipeModal] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<OrderData | null>(null)
   const [newCategoryName, setNewCategoryName] = useState('')
   const [copiedLink, setCopiedLink] = useState(false)
@@ -801,7 +805,12 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
             }}
           >
             {kanbanColumns.map(col => {
-              const colOrders = orders.filter(o => o.status === col.key)
+              const colOrders = orders.filter(o => {
+                if (col.key === 'CANCELADO') {
+                  return o.status === 'CANCELADO' || o.status === 'DEVOLVIDO' || o.status === 'TROCA'
+                }
+                return o.status === col.key
+              })
               const isOver = dragOverColumn === col.key
 
               return (
@@ -1196,7 +1205,18 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
                   </div>
                 </div>
 
-                <div className="px-4 pb-4 pt-0 flex gap-2 border-t border-slate-800/80 mt-1 pt-3">
+                <div className="px-4 pb-4 pt-0 flex gap-1.5 border-t border-slate-800/80 mt-1 pt-3">
+                  <button
+                    onClick={() => {
+                      setSelectedProductForRecipe(prod)
+                      setShowRecipeModal(true)
+                    }}
+                    className="flex-1 py-2 text-xs font-bold text-orange-400 hover:text-orange-300 hover:bg-orange-500/10 rounded-xl transition-all flex items-center justify-center gap-1 border border-orange-500/20"
+                    title="Ficha Técnica / Receita de Insumos (BOM)"
+                  >
+                    <ChefHat className="w-3.5 h-3.5" />
+                    <span>Receita</span>
+                  </button>
                   <button
                     onClick={() => {
                       setEditingProduct(prod)
@@ -1208,9 +1228,10 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
                   </button>
                   <button
                     onClick={() => handleDeleteProduct(prod.id)}
-                    className="flex-1 py-2 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all"
+                    className="py-2 px-2.5 text-xs font-bold text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded-xl transition-all"
+                    title="Excluir Produto"
                   >
-                    Excluir
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -1493,6 +1514,17 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
           setSelectedOrderForInvoice(order)
           setShowEmitSalesModal(true)
         }}
+        showToast={showToast}
+      />
+
+      <ProductRecipeModal
+        product={selectedProductForRecipe}
+        isOpen={showRecipeModal}
+        onClose={() => {
+          setShowRecipeModal(false)
+          setSelectedProductForRecipe(null)
+        }}
+        showToast={showToast || ((m) => alert(m))}
       />
 
       <EmitSalesInvoiceModal

@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { X, Calendar, Clock, MapPin, Phone, MessageSquare, CheckCircle, Package, Truck, AlertCircle, Trash2, RotateCcw, Receipt } from 'lucide-react'
 import { formatCurrency, formatImageUrl } from '../../../utils/dashboardHelpers'
+import { OrderReturnModal } from './OrderReturnModal'
 import type { OrderData } from '../../../types/dashboard'
 
 interface OrderDetailModalProps {
@@ -11,6 +13,7 @@ interface OrderDetailModalProps {
   onRestoreOrder?: (id: number, orderNumber?: string) => Promise<void>
   onPermanentDelete?: (id: number, orderNumber?: string) => Promise<void>
   onEmitInvoice?: (order: OrderData) => void
+  showToast?: (msg: string, type?: 'success' | 'error') => void
 }
 
 export function OrderDetailModal({
@@ -22,8 +25,11 @@ export function OrderDetailModal({
   onRestoreOrder,
   onPermanentDelete,
   onEmitInvoice,
+  showToast,
 }: OrderDetailModalProps) {
   if (!order) return null
+
+  const [showReturnModal, setShowReturnModal] = useState(false)
 
   const cleanPhone = order.clientPhone.replace(/\D/g, '')
   const num = order.orderNumber.replace('#', '')
@@ -36,6 +42,8 @@ export function OrderDetailModal({
     PRONTO: 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300',
     ENTREGUE: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-300',
     CANCELADO: 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-300',
+    DEVOLVIDO: 'bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border-red-300',
+    TROCA: 'bg-blue-100 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-300',
   }
 
   const statusLabels: Record<string, string> = {
@@ -45,6 +53,8 @@ export function OrderDetailModal({
     PRONTO: 'Pronto p/ Entrega',
     ENTREGUE: 'Entregue',
     CANCELADO: 'Cancelado / Lixeira',
+    DEVOLVIDO: 'Devolvido / Reembolsado',
+    TROCA: 'Troca de Produto',
   }
 
   const nextStatusOptions: Record<string, { label: string; next: string }> = {
@@ -445,11 +455,36 @@ export function OrderDetailModal({
                     Mover Pedido para a Lixeira / Cancelar
                   </button>
                 )}
+
+                {/* 🔄 Devolução ou Troca (ERP) */}
+                <button
+                  type="button"
+                  onClick={() => setShowReturnModal(true)}
+                  className="w-full py-3 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 rounded-2xl font-bold text-xs transition-all flex items-center justify-center gap-2"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  Registrar Devolução ou Troca (ERP)
+                </button>
               </>
             )}
           </div>
         </div>
       </div>
+
+      {/* ── Modal de Devolução / Troca ── */}
+      <OrderReturnModal
+        order={order}
+        isOpen={showReturnModal}
+        onClose={() => setShowReturnModal(false)}
+        onSuccess={async () => {
+          setShowReturnModal(false)
+          onClose()
+          if (onUpdateStatus) {
+            await onUpdateStatus(order.id, order.status, undefined, order)
+          }
+        }}
+        showToast={showToast || ((m) => alert(m))}
+      />
     </div>
   )
 }

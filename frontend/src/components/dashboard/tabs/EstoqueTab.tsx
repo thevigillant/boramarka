@@ -71,6 +71,7 @@ export function EstoqueTab({ showToast, companyCnpj }: EstoqueTabProps) {
   // Movement Form
   const [moveType, setMoveType] = useState<'ENTRADA' | 'SAIDA' | 'AJUSTE'>('ENTRADA')
   const [moveQuantity, setMoveQuantity] = useState<number | string>('')
+  const [moveUnitCost, setMoveUnitCost] = useState<number | string>('')
   const [moveReason, setMoveReason] = useState('')
   const [moveSubmitting, setMoveSubmitting] = useState(false)
 
@@ -123,6 +124,7 @@ export function EstoqueTab({ showToast, companyCnpj }: EstoqueTabProps) {
     setSelectedItemForMove(item)
     setMoveType('ENTRADA')
     setMoveQuantity('')
+    setMoveUnitCost(item.costPrice || '')
     setMoveReason('')
     setShowMovementModal(true)
   }
@@ -180,11 +182,13 @@ export function EstoqueTab({ showToast, companyCnpj }: EstoqueTabProps) {
 
     setMoveSubmitting(true)
     try {
+      const cost = moveType === 'ENTRADA' && moveUnitCost !== '' && !isNaN(Number(moveUnitCost)) ? Number(moveUnitCost) : undefined
       await api.request(`/inventory/${selectedItemForMove.id}/movement`, {
         method: 'POST',
         body: JSON.stringify({
           type: moveType,
           quantity: qty,
+          unitCost: cost,
           reason: moveReason || `Movimentação manual (${moveType})`,
         }),
       })
@@ -438,7 +442,7 @@ export function EstoqueTab({ showToast, companyCnpj }: EstoqueTabProps) {
               <tr>
                 <th className="py-3 px-4">Item / Categoria</th>
                 <th className="py-3 px-4 text-center">Quantidade</th>
-                <th className="py-3 px-4">Preço Custo</th>
+                <th className="py-3 px-4" title="Custo Médio Ponderado (CMP) calculado pelo ERP">Custo Médio (CMP)</th>
                 <th className="py-3 px-4">Preço Venda</th>
                 <th className="py-3 px-4 text-center">Status</th>
                 <th className="py-3 px-4 text-right">Ações</th>
@@ -735,6 +739,26 @@ export function EstoqueTab({ showToast, companyCnpj }: EstoqueTabProps) {
                   required
                 />
               </div>
+
+              {moveType === 'ENTRADA' && (
+                <div>
+                  <label className="block font-bold text-slate-600 dark:text-slate-400 mb-1">
+                    Custo Unitário da Entrada (R$)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={moveUnitCost}
+                    onChange={e => setMoveUnitCost(e.target.value)}
+                    placeholder="Ex: 15.00"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white font-medium focus:outline-none focus:border-pink-500"
+                  />
+                  <p className="text-[10px] text-slate-400 mt-1">
+                    💡 O sistema recalcula automaticamente o Custo Médio Ponderado (CMP) do item com base neste lote.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="block font-bold text-slate-600 dark:text-slate-400 mb-1">Motivo da Movimentação</label>
