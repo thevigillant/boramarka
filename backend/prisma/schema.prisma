@@ -847,6 +847,7 @@ model Product {
   photos              ProductPhoto[]
   customFields        ProductCustomField[]
   orderItems          OrderItem[]
+  recipeItems         ProductRecipeItem[]
 
   @@index([adminId])
   @@index([categoryId])
@@ -915,6 +916,7 @@ model Order {
   items            OrderItem[]
   statusLogs       OrderStatusLog[]
   shoppingLists    ShoppingList[]
+  returns          OrderReturn[]
 
   @@index([adminId])
   @@index([deliveryDate])
@@ -1009,6 +1011,7 @@ model InventoryItem {
   saleItems     SaleItem[]
   purchaseItems PurchaseItem[]
   invoiceItems  InvoiceItem[]
+  recipeUsages  ProductRecipeItem[]
 
   @@index([adminId])
   @@index([adminId, active])
@@ -1019,6 +1022,7 @@ model StockMovement {
   id          Int           @id @default(autoincrement())
   type        String        // ENTRADA | SAIDA | AJUSTE
   quantity    Int
+  unitCost    Float?        @default(0.0) @map("unit_cost")
   reason      String        @default("")
   createdAt   DateTime      @default(now()) @map("created_at")
 
@@ -1311,4 +1315,45 @@ model ShoppingListItem {
 
   @@index([shoppingListId])
   @@map("shopping_list_items")
+}
+
+
+// ═══════════════════════════════════════════════════════════════
+// ERP BOM (Ficha Técnica de Produção / Receita) & Devoluções
+// ═══════════════════════════════════════════════════════════════
+
+model ProductRecipeItem {
+  id              Int           @id @default(autoincrement())
+  quantity        Float         @default(1.0)
+  unit            String        @default("unidade")
+
+  productId       Int           @map("product_id")
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  inventoryItemId Int           @map("inventory_item_id")
+  inventoryItem   InventoryItem @relation(fields: [inventoryItemId], references: [id], onDelete: Cascade)
+
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @default(now()) @map("updated_at")
+
+  @@unique([productId, inventoryItemId])
+  @@index([productId])
+  @@index([inventoryItemId])
+  @@map("product_recipe_items")
+}
+
+model OrderReturn {
+  id              Int           @id @default(autoincrement())
+  type            String        @default("DEVOLUCAO") // DEVOLUCAO | TROCA
+  reason          String        @default("")
+  refundAmount    Float         @default(0.0) @map("refund_amount")
+  restockItems    Boolean       @default(true) @map("restock_items")
+  notes           String        @default("")
+  createdAt       DateTime      @default(now()) @map("created_at")
+
+  orderId         Int           @map("order_id")
+  order           Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@map("order_returns")
 }

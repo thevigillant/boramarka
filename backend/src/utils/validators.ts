@@ -263,6 +263,7 @@ export const inventoryMovementSchema = z.object({
     message: 'Tipo de movimentação deve ser ENTRADA, SAIDA, AJUSTE ou PERDA'
   }),
   quantity: z.number().positive('Quantidade deve ser maior que zero'),
+  unitCost: z.number().nonnegative('Custo unitário não pode ser negativo').optional(),
   reason: z.string().optional().default('')
 })
 
@@ -283,5 +284,27 @@ export const createPdvSaleSchema = z.object({
   discount: z.number().nonnegative().optional().default(0),
   notes: z.string().optional(),
   items: z.array(pdvSaleItemSchema).min(1, 'A venda precisa ter pelo menos 1 item')
+})
+
+// ═══ BOM (Ficha Técnica / Receita de Produção) ═══
+export const recipeItemInputSchema = z.object({
+  inventoryItemId: z.number().int().positive('ID do insumo inválido'),
+  quantity: z.number().positive('Quantidade do insumo deve ser maior que zero'),
+  unit: z.string().optional().default('unidade')
+})
+
+export const setProductRecipeSchema = z.object({
+  items: z.array(recipeItemInputSchema)
+})
+
+// ═══ Devoluções & Trocas (Order Returns) ═══
+export const createOrderReturnSchema = z.object({
+  type: z.enum(['DEVOLUCAO', 'TROCA'], {
+    message: 'Tipo deve ser DEVOLUCAO ou TROCA'
+  }).default('DEVOLUCAO'),
+  reason: z.string().min(3, 'Motivo da devolução/troca é obrigatório'),
+  refundAmount: z.number().nonnegative().optional().default(0),
+  restockItems: z.boolean().optional().default(true),
+  notes: z.string().optional().default('')
 })
 

@@ -2,7 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { createAuditLog } from '../utils/auditLogger';
-import { parseSafeInt, updateOrderStatusSchema, updateOrderPaymentSchema } from '../utils/validators';
+import { parseSafeInt, updateOrderStatusSchema, updateOrderPaymentSchema, createOrderReturnSchema } from '../utils/validators';
+import { sendWhatsAppMessage } from '../services/whatsapp';
+import { consumeIngredientsForOrder, returnIngredientsForOrder } from '../services/bomService';
 
 export default async function orderRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -239,6 +241,36 @@ export default async function orderRoutes(app: FastifyInstance) {
       return o;
     });
 
+    // Se avançou para EM_PRODUCAO, baixa insumos da Ficha Técnica automaticamente
+    if (status === 'EM_PRODUCAO' && oldStatus !== 'EM_PRODUCAO') {
+      try {
+        await consumeIngredientsForOrder(order.id, user.id);
+      } catch (err) {
+        // silencioso se não houver insumos cadastrados
+      }
+    }
+
+    // Notificação WhatsApp automática ao cliente (não-bloqueante)
+    if (order.clientPhone) {
+      const statusDescriptions: Record<string, string> = {
+        CONFIRMADO: 'foi confirmado com sucesso!',
+        EM_PRODUCAO: 'entrou em produção / preparo artesanal!',
+        PRONTO: order.deliveryType === 'DELIVERY'
+          ? 'está pronto e saindo para entrega!'
+          : 'está pronto para retirada no local!',
+        ENTREGUE: 'foi concluído e entregue com sucesso! Agradecemos pela preferência.',
+        CANCELADO: 'foi cancelado.',
+        DEVOLVIDO: 'foi registrado como devolução.',
+        TROCA: 'foi registrado para troca de itens.',
+      };
+
+      const desc = statusDescriptions[status];
+      if (desc) {
+        const msg = `Olá, *${order.clientName}*!\n\nAtualização do seu pedido *${order.orderNumber}*:\nStatus: ${desc}\n${note ? `\nObservação: ${note}\n` : ''}\nQualquer dúvida, estamos à disposição!`;
+        sendWhatsAppMessage(order.clientPhone, msg).catch(() => {});
+      }
+    }
+
     await createAuditLog(request, {
       action: 'UPDATE_ORDER_STATUS',
       entity: 'ORDER',
@@ -279,6 +311,128 @@ export default async function orderRoutes(app: FastifyInstance) {
     });
 
     return updated;
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // Devoluções e Trocas (Order Returns & Exchanges)
+  // ═══════════════════════════════════════════════════════════
+
+  // GET /api/orders/:id/returns — List returns for this order
+  app.get('/:id/returns', async (request, reply) => {
+    const user = request.user as { id: number };
+    const orderId = parseSafeInt((request.params as any)?.id);
+    if (!orderId) {
+      return reply.status(400).send({ error: 'ID de pedido inválido' });
+    }
+
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, adminId: user.id },
+      include: {
+        returns: { orderBy: { createdAt: 'desc' } },
+      },
+    });
+
+    if (!order) {
+      return reply.status(404).send({ error: 'Pedido não encontrado' });
+    }
+
+    return order.returns;
+  });
+
+  // POST /api/orders/:id/returns — Register return / exchange
+  app.post('/:id/returns', async (request, reply) => {
+    const user = request.user as { id: number };
+    const orderId = parseSafeInt((request.params as any)?.id);
+    if (!orderId) {
+      return reply.status(400).send({ error: 'ID de pedido inválido' });
+    }
+
+    const validation = createOrderReturnSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+    }
+
+    const { type, reason, refundAmount, restockItems, notes } = validation.data;
+
+    const order = await prisma.order.findFirst({
+      where: { id: orderId, adminId: user.id },
+    });
+
+    if (!order) {
+      return reply.status(404).send({ error: 'Pedido não encontrado' });
+    }
+
+    const newStatus = type === 'TROCA' ? 'TROCA' : 'DEVOLVIDO';
+    const oldStatus = order.status;
+
+    const orderReturn = await prisma.$transaction(async (tx) => {
+      const ret = await tx.orderReturn.create({
+        data: {
+          orderId: order.id,
+          type,
+          reason: reason.trim(),
+          refundAmount: Number(refundAmount) || 0,
+          restockItems: !!restockItems,
+          notes: notes?.trim() || '',
+        },
+      });
+
+      await tx.order.update({
+        where: { id: order.id },
+        data: { status: newStatus },
+      });
+
+      await tx.orderStatusLog.create({
+        data: {
+          orderId: order.id,
+          oldStatus,
+          newStatus,
+          note: `Registrada ${type.toLowerCase()}: ${reason}`,
+        },
+      });
+
+      // Se houver estorno financeiro, registra transação de despesa
+      if (refundAmount && refundAmount > 0) {
+        await tx.transaction.create({
+          data: {
+            adminId: user.id,
+            description: `Estorno Pedido ${order.orderNumber} (${type})`,
+            amount: Number(refundAmount),
+            type: 'EXPENSE',
+            category: 'ESTORNO',
+            paid: true,
+            dueDate: new Date().toISOString().split('T')[0],
+          },
+        });
+      }
+
+      return ret;
+    });
+
+    // Se solicitado estorno dos insumos para o estoque
+    if (restockItems) {
+      try {
+        await returnIngredientsForOrder(order.id, user.id);
+      } catch (err) {
+        // silencioso
+      }
+    }
+
+    // Notifica cliente via WhatsApp
+    if (order.clientPhone) {
+      const msg = `Olá, *${order.clientName}*!\n\nSeu pedido *${order.orderNumber}* teve registro de *${type === 'TROCA' ? 'Troca' : 'Devolução'}*.\nMotivo: ${reason}\n${refundAmount && refundAmount > 0 ? `Valor reembolsado: R$ ${Number(refundAmount).toFixed(2)}\n` : ''}\nEstamos à disposição para qualquer suporte!`;
+      sendWhatsAppMessage(order.clientPhone, msg).catch(() => {});
+    }
+
+    await createAuditLog(request, {
+      action: 'ORDER_RETURN',
+      entity: 'ORDER',
+      entityId: order.id,
+      details: `Registrou ${type} para o pedido "${order.orderNumber}". Motivo: ${reason}`,
+      adminId: user.id,
+    });
+
+    return reply.status(201).send(orderReturn);
   });
 
   // DELETE /api/orders/:id — Delete order

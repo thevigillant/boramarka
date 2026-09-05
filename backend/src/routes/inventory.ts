@@ -150,7 +150,7 @@ export default async function inventoryRoutes(app: FastifyInstance) {
       return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados de movimentação inválidos' });
     }
 
-    const { type, quantity, reason } = validation.data;
+    const { type, quantity, reason, unitCost } = validation.data;
 
     const item = await prisma.inventoryItem.findFirst({
       where: { id: itemId, adminId: user.id },
@@ -159,10 +159,28 @@ export default async function inventoryRoutes(app: FastifyInstance) {
 
     const qty = Number(quantity);
     let newQty = item.quantity;
-    if (type === 'ENTRADA') newQty += qty;
-    else if (type === 'SAIDA') newQty = Math.max(0, newQty - qty);
-    else if (type === 'PERDA') newQty = Math.max(0, newQty - qty);
-    else newQty = qty; // AJUSTE: seta diretamente
+    let newCostPrice = item.costPrice;
+
+    if (type === 'ENTRADA') {
+      newQty += qty;
+      const batchCost = unitCost !== undefined ? Number(unitCost) : null;
+      if (batchCost !== null && batchCost >= 0) {
+        // Custo Médio Ponderado (CMP)
+        // CMP = ((estoque_anterior * custo_anterior) + (qtd_entrada * custo_lote)) / novo_estoque_total
+        const currentTotal = item.quantity > 0 ? (item.quantity * item.costPrice) : 0;
+        const incomingTotal = qty * batchCost;
+        if (newQty > 0) {
+          newCostPrice = Math.round(((currentTotal + incomingTotal) / newQty) * 100) / 100;
+        }
+      }
+    } else if (type === 'SAIDA' || type === 'PERDA') {
+      newQty = Math.max(0, newQty - qty);
+    } else {
+      newQty = qty; // AJUSTE
+      if (unitCost !== undefined && Number(unitCost) >= 0) {
+        newCostPrice = Number(unitCost);
+      }
+    }
 
     await prisma.$transaction([
       prisma.stockMovement.create({
@@ -170,12 +188,16 @@ export default async function inventoryRoutes(app: FastifyInstance) {
           itemId,
           type,
           quantity: qty,
+          unitCost: unitCost !== undefined ? Number(unitCost) : item.costPrice,
           reason: reason?.trim() || '',
         },
       }),
       prisma.inventoryItem.update({
         where: { id: itemId },
-        data: { quantity: newQty },
+        data: {
+          quantity: newQty,
+          costPrice: newCostPrice,
+        },
       }),
     ]);
 

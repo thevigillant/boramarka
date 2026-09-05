@@ -2,8 +2,9 @@ import { FastifyInstance } from 'fastify';
 import { prisma } from '../db';
 import { authenticate } from '../plugins/auth';
 import { createAuditLog } from '../utils/auditLogger';
-import { parseSafeInt, createCategorySchema, updateCategorySchema } from '../utils/validators';
+import { parseSafeInt, createCategorySchema, updateCategorySchema, setProductRecipeSchema } from '../utils/validators';
 import { cache } from '../utils/cache';
+import { getRecipeForProduct, setRecipeForProduct, deleteRecipeItem } from '../services/bomService';
 
 export default async function productRoutes(app: FastifyInstance) {
   app.addHook('onRequest', authenticate);
@@ -470,5 +471,70 @@ export default async function productRoutes(app: FastifyInstance) {
 
     cache.invalidate('storefront');
     return { success: true };
+  });
+
+  // ═══════════════════════════════════════════════════════════
+  // Ficha Técnica / BOM (Bill of Materials) do Produto
+  // ═══════════════════════════════════════════════════════════
+
+  // GET /api/products/:id/recipe — Consultar ficha técnica e margens
+  app.get('/:id/recipe', async (request, reply) => {
+    const user = request.user as { id: number };
+    const productId = parseSafeInt((request.params as any)?.id);
+    if (!productId) {
+      return reply.status(400).send({ error: 'ID de produto inválido' });
+    }
+
+    const recipe = await getRecipeForProduct(productId, user.id);
+    if (!recipe) {
+      return reply.status(404).send({ error: 'Produto não encontrado' });
+    }
+
+    return recipe;
+  });
+
+  // PUT /api/products/:id/recipe — Salvar / atualizar ficha técnica completa
+  app.put('/:id/recipe', async (request, reply) => {
+    const user = request.user as { id: number };
+    const productId = parseSafeInt((request.params as any)?.id);
+    if (!productId) {
+      return reply.status(400).send({ error: 'ID de produto inválido' });
+    }
+
+    const validation = setProductRecipeSchema.safeParse(request.body);
+    if (!validation.success) {
+      return reply.status(400).send({ error: validation.error.errors[0]?.message || 'Dados inválidos' });
+    }
+
+    try {
+      const updated = await setRecipeForProduct(productId, validation.data.items, user.id);
+      await createAuditLog(request, {
+        action: 'UPDATE_PRODUCT_RECIPE',
+        entity: 'PRODUCT',
+        entityId: productId,
+        details: `Atualizou a ficha técnica do produto #${productId} com ${validation.data.items.length} insumo(s)`,
+        adminId: user.id,
+      });
+      return updated;
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message || 'Erro ao atualizar ficha técnica' });
+    }
+  });
+
+  // DELETE /api/products/:id/recipe/:recipeItemId — Remover insumo da ficha técnica
+  app.delete('/:id/recipe/:recipeItemId', async (request, reply) => {
+    const user = request.user as { id: number };
+    const productId = parseSafeInt((request.params as any)?.id);
+    const recipeItemId = parseSafeInt((request.params as any)?.recipeItemId);
+    if (!productId || !recipeItemId) {
+      return reply.status(400).send({ error: 'IDs inválidos' });
+    }
+
+    const deleted = await deleteRecipeItem(productId, recipeItemId, user.id);
+    if (!deleted) {
+      return reply.status(404).send({ error: 'Insumo ou produto não encontrado' });
+    }
+
+    return reply.status(204).send();
   });
 }
