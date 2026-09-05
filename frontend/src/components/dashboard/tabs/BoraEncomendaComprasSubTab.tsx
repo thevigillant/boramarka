@@ -24,6 +24,7 @@ import {
 import { OrderData, ShoppingListData, ShoppingListItemData } from '../../../types/dashboard'
 import { api } from '../../../services/api'
 import { NewShoppingListModal } from '../modals/NewShoppingListModal'
+import { ConfirmModal } from '../../common/ConfirmModal'
 import {
   calculateShoppingProgress,
   formatShoppingListForWhatsApp,
@@ -58,6 +59,7 @@ export function BoraEncomendaComprasSubTab({
   const [searchTerm, setSearchTerm] = useState('')
   const [copiedWhatsapp, setCopiedWhatsapp] = useState(false)
   const [generatingFromOrders, setGeneratingFromOrders] = useState(false)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
 
   // In-line fast adder state
   const [quickName, setQuickName] = useState('')
@@ -254,10 +256,14 @@ export function BoraEncomendaComprasSubTab({
   }
 
   // Excluir lista
-  const handleDeleteList = async () => {
+  const handleDeleteList = () => {
     if (!activeList) return
-    if (!confirm(`Deseja realmente excluir a lista "${activeList.title}"?`)) return
+    setDeleteConfirmOpen(true)
+  }
 
+  const confirmDeleteList = async () => {
+    if (!activeList) return
+    setDeleteConfirmOpen(false)
     try {
       await api.deleteShoppingList(activeList.id)
       const remaining = lists.filter((l) => l.id !== activeList.id)
@@ -789,6 +795,18 @@ export function BoraEncomendaComprasSubTab({
         }}
         orders={orders}
         showToast={showToast}
+      />
+
+      {/* ── Modal de Confirmação do Sistema ── */}
+      <ConfirmModal
+        isOpen={deleteConfirmOpen}
+        title="Excluir Lista de Compras"
+        message={`Deseja realmente excluir a lista "${activeList?.title || 'Selecionada'}"?\n\nTodos os itens associados serão removidos permanentemente.`}
+        type="danger"
+        confirmText="Excluir Lista"
+        cancelText="Cancelar"
+        onConfirm={confirmDeleteList}
+        onCancel={() => setDeleteConfirmOpen(false)}
       />
     </div>
   )

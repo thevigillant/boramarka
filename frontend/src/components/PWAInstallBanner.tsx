@@ -20,6 +20,13 @@ export default function PWAInstallBanner() {
     
     setIsIOS(isIPhoneOrIPad);
 
+    // Suppress intrusive floating banner on dashboard / backoffice to avoid covering buttons and tabs
+    const currentPath = window.location.pathname;
+    if (currentPath.startsWith('/dashboard') || currentPath.startsWith('/superadmin') || currentPath.startsWith('/portal')) {
+      setShowBanner(false);
+      return;
+    }
+
     // Check if dismissed recently (within 7 days)
     const dismissedAt = localStorage.getItem('pwa_banner_dismissed');
     if (dismissedAt) {

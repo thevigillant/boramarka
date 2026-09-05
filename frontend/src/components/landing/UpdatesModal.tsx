@@ -228,9 +228,9 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
       <div className="relative w-full max-w-2xl max-h-[92vh] sm:max-h-[85vh] bg-[#0E1424] border border-slate-800/90 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 animate-scale-in">
         
         {/* Top Header */}
-        <div className="relative p-3.5 sm:p-5 border-b border-slate-800/80 bg-[#12192D] flex items-center justify-between gap-3">
+        <div className="relative p-4 sm:p-5 border-b border-slate-800/80 bg-[#12192D] flex items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2.5 sm:gap-3.5 min-w-0">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-violet-600/20 via-pink-600/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-sm shrink-0">
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-violet-600/20 via-pink-600/20 to-orange-500/20 border border-pink-500/30 flex items-center justify-center text-pink-400 shadow-sm shrink-0">
               <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div className="min-w-0">
@@ -259,12 +259,12 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
         </div>
 
         {/* Sub Navigation (Segmented Control com Scroll Suave) */}
-        <div className="px-3 sm:px-5 py-2 sm:py-2.5 border-b border-slate-800/80 bg-[#0B101D] overflow-x-auto no-scrollbar">
-          <div className="inline-flex items-center p-0.5 sm:p-1 bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-800 gap-1">
+        <div className="px-3 sm:px-5 py-2.5 sm:py-3 border-b border-slate-800/80 bg-[#0B101D] overflow-x-auto no-scrollbar shrink-0">
+          <div className="inline-flex items-center p-1 bg-slate-900 rounded-xl sm:rounded-2xl border border-slate-800 gap-1">
             <button
               type="button"
               onClick={() => setSelectedCategory('ALL')}
-              className={`inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center justify-center px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'ALL'
                   ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
@@ -275,7 +275,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
             <button
               type="button"
               onClick={() => setSelectedCategory('MAJOR')}
-              className={`inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center justify-center px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'MAJOR'
                   ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
@@ -286,7 +286,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
             <button
               type="button"
               onClick={() => setSelectedCategory('SECURITY')}
-              className={`inline-flex items-center justify-center px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+              className={`inline-flex items-center justify-center px-3 sm:px-4 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'SECURITY'
                   ? 'bg-slate-800 text-white shadow-sm border border-slate-700/80'
                   : 'text-slate-400 hover:text-slate-200 border border-transparent'
@@ -298,7 +298,7 @@ export function UpdatesModal({ isOpen, onClose }: UpdatesModalProps) {
         </div>
 
         {/* Updates List (Scrollable com paddings refinados) */}
-        <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3 sm:space-y-4 bg-[#090D18] custom-scrollbar">
+        <div className="flex-1 min-h-0 overflow-y-auto p-3.5 sm:p-5 space-y-3 sm:space-y-4 bg-[#090D18] custom-scrollbar">
           {filteredUpdates.map((item) => {
             const IconComponent = item.icon
             return (

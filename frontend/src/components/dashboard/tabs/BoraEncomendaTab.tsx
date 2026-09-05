@@ -48,6 +48,7 @@ import { BoraEncomendaComprasSubTab } from './BoraEncomendaComprasSubTab'
 import { BoraEncomendaClientsSubTab } from './BoraEncomendaClientsSubTab'
 import { BoraEncomendaCalendarSubTab } from './BoraEncomendaCalendarSubTab'
 import { EmitSalesInvoiceModal } from '../modals/EmitSalesInvoiceModal'
+import { ConfirmModal } from '../../common/ConfirmModal'
 import type {
   ProductData,
   ProductCategoryData,
@@ -67,6 +68,37 @@ interface BoraEncomendaTabProps {
 export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigateTab, showToast }: BoraEncomendaTabProps) {
   const [activeSubTab, setActiveSubTab] = useState<'kanban' | 'calendar' | 'products' | 'compras' | 'clients' | 'store' | 'reports'>('kanban')
   const [loading, setLoading] = useState(true)
+
+  // Custom Enterprise Confirmation Modal (substitui window.confirm)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean
+    title: string
+    message: string
+    type?: 'danger' | 'warning' | 'info'
+    confirmText?: string
+    cancelText?: string
+    onConfirm: () => void
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  })
+
+  // Horizontal Sub Navigation drag & scroll controls
+  const subNavRef = useRef<HTMLDivElement>(null)
+  const [isDraggingNav, setIsDraggingNav] = useState(false)
+  const [navStartX, setNavStartX] = useState(0)
+  const [navScrollLeft, setNavScrollLeft] = useState(0)
+
+  const scrollSubNav = (direction: 'left' | 'right') => {
+    if (!subNavRef.current) return
+    const scrollAmount = 240
+    subNavRef.current.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    })
+  }
 
   // Data states
   const [orders, setOrders] = useState<OrderData[]>([])
@@ -237,9 +269,19 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
   }
 
   async function handleDeleteProduct(id: number) {
-    if (!confirm('Tem certeza que deseja excluir este produto do cardápio?')) return
-    await api.deleteProduct(id)
-    loadData()
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Excluir Produto',
+      message: 'Tem certeza que deseja excluir este produto do cardápio?',
+      type: 'danger',
+      confirmText: 'Excluir Produto',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+        await api.deleteProduct(id)
+        loadData()
+      },
+    })
   }
 
   // Handlers para Categorias
@@ -253,10 +295,20 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
   }
 
   async function handleDeleteCategory(id: number) {
-    if (!confirm('Excluir esta categoria? Os produtos associados ficarão sem categoria.')) return
-    await api.deleteProductCategory(id)
-    const updated = await api.getProductCategories()
-    setCategories(updated || [])
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Excluir Categoria',
+      message: 'Excluir esta categoria? Os produtos associados ficarão sem categoria.',
+      type: 'danger',
+      confirmText: 'Excluir Categoria',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+        await api.deleteProductCategory(id)
+        const updated = await api.getProductCategories()
+        setCategories(updated || [])
+      },
+    })
   }
 
   // Handlers para Pedidos
@@ -285,18 +337,28 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
 
   async function handleMoveToTrash(id: number, orderNumber?: string, directOrder?: OrderData) {
     const targetOrder = directOrder || orders.find(o => o.id === id) || (selectedOrder?.id === id ? selectedOrder : null)
-    const proceed = confirm(`Mover o pedido ${orderNumber || targetOrder?.orderNumber || `#${id}`} para a Lixeira / Cancelados?\n\nVocê poderá avisar o cliente no WhatsApp que o pedido foi pausado.`)
-    if (!proceed) return
-    await api.updateOrderStatus(id, 'CANCELADO', 'Movido para a lixeira pelo profissional')
-    const updatedOrders = await api.getOrders()
-    setOrders(updatedOrders || [])
-    if (selectedOrder && selectedOrder.id === id) {
-      const single = await api.getOrder(id)
-      setSelectedOrder(single)
-    }
-    if (targetOrder) {
-      triggerWhatsAppNotification(targetOrder, 'CANCELADO')
-    }
+    const orderTag = orderNumber || targetOrder?.orderNumber || `#${id}`
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Mover Pedido para a Lixeira',
+      message: `Mover o pedido ${orderTag} para a Lixeira / Cancelados?\n\nVocê poderá avisar o cliente no WhatsApp que o pedido foi pausado.`,
+      type: 'danger',
+      confirmText: 'Mover para Lixeira',
+      cancelText: 'Voltar',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+        await api.updateOrderStatus(id, 'CANCELADO', 'Movido para a lixeira pelo profissional')
+        const updatedOrders = await api.getOrders()
+        setOrders(updatedOrders || [])
+        if (selectedOrder && selectedOrder.id === id) {
+          const single = await api.getOrder(id)
+          setSelectedOrder(single)
+        }
+        if (targetOrder) {
+          triggerWhatsAppNotification(targetOrder, 'CANCELADO')
+        }
+      },
+    })
   }
 
   async function handleRestoreOrder(id: number, orderNumber?: string) {
@@ -310,14 +372,24 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
   }
 
   async function handlePermanentDeleteOrder(id: number, orderNumber?: string) {
-    const proceed = confirm(`⚠️ EXCLUSÃO PERMANENTE:\n\nTem certeza que deseja excluir o pedido ${orderNumber || `#${id}`} definitivamente do sistema? Esta ação não pode ser desfeita.`)
-    if (!proceed) return
-    await api.deleteOrder(id)
-    if (selectedOrder && selectedOrder.id === id) {
-      setSelectedOrder(null)
-    }
-    const updatedOrders = await api.getOrders()
-    setOrders(updatedOrders || [])
+    const orderTag = orderNumber || `#${id}`
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Exclusão Permanente',
+      message: `⚠️ EXCLUSÃO PERMANENTE:\n\nTem certeza que deseja excluir o pedido ${orderTag} definitivamente do sistema? Esta ação não pode ser desfeita.`,
+      type: 'danger',
+      confirmText: 'Excluir Definitivamente',
+      cancelText: 'Cancelar',
+      onConfirm: async () => {
+        setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+        await api.deleteOrder(id)
+        if (selectedOrder && selectedOrder.id === id) {
+          setSelectedOrder(null)
+        }
+        const updatedOrders = await api.getOrders()
+        setOrders(updatedOrders || [])
+      },
+    })
   }
 
   // ── Drag and Drop de Pedidos & Arraste do Tabuleiro (Board Drag-to-Scroll) ──
@@ -457,14 +529,21 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
 
     // Alerta de segurança se for mover para EM_PRODUCAO sem entrada paga
     if (targetStatus === 'EM_PRODUCAO' && !order.depositPaid) {
-      const proceed = confirm(
-        '⚠️ ALERTA DE SEGURANÇA:\n\nA entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?'
-      )
-      if (!proceed) {
-        setDraggedOrderId(null)
-        setDragOverColumn(null)
-        return
-      }
+      setDraggedOrderId(null)
+      setDragOverColumn(null)
+      setConfirmDialog({
+        isOpen: true,
+        title: 'Alerta de Segurança Financeira',
+        message: 'A entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?',
+        type: 'warning',
+        confirmText: 'Iniciar Produção',
+        cancelText: 'Aguardar Entrada',
+        onConfirm: async () => {
+          setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+          await handleUpdateOrderStatus(order.id, targetStatus, `Movido via Kanban para ${targetStatus}`, order)
+        },
+      })
+      return
     }
 
     setDraggedOrderId(null)
@@ -601,80 +680,80 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
         </div>
       </div>
 
-      {/* ── KPI Cards (Métricas Elegantes) ── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3.5">
-        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+      {/* ── KPI Cards (Métricas Elegantes e Compactas em Mobile) ── */}
+      <div className="flex sm:grid sm:grid-cols-3 lg:grid-cols-5 gap-3 overflow-x-auto no-scrollbar pb-1 sm:pb-0">
+        <div className="bg-[#131826] rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 shadow-md shrink-0 w-[160px] sm:w-auto">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Pedidos Ativos
             </span>
-            <div className="p-2 rounded-xl bg-pink-500/10 text-pink-400">
-              <ShoppingBag className="w-4 h-4" />
+            <div className="p-1.5 sm:p-2 rounded-xl bg-pink-500/10 text-pink-400">
+              <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <p className="text-xl sm:text-2xl font-black text-white">
+          <p className="text-lg sm:text-2xl font-black text-white">
             {stats?.activeOrders || 0}
           </p>
-          <span className="text-[10px] text-pink-400 font-semibold mt-1 block">
+          <span className="text-[9px] sm:text-[10px] text-pink-400 font-semibold mt-0.5 block">
             Em fluxo de preparo
           </span>
         </div>
 
-        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Faturamento Total
+        <div className="bg-[#131826] rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 shadow-md shrink-0 w-[160px] sm:w-auto">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Faturamento
             </span>
-            <div className="p-2 rounded-xl bg-purple-500/10 text-purple-400">
-              <DollarSign className="w-4 h-4" />
+            <div className="p-1.5 sm:p-2 rounded-xl bg-purple-500/10 text-purple-400">
+              <DollarSign className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <p className="text-xl sm:text-2xl font-black text-white">
+          <p className="text-lg sm:text-2xl font-black text-white">
             {formatCurrency(stats?.totalRevenue || 0)}
           </p>
-          <span className="text-[10px] text-slate-400 font-semibold mt-1 block">
+          <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold mt-0.5 block">
             Total acumulado
           </span>
         </div>
 
-        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+        <div className="bg-[#131826] rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 shadow-md shrink-0 w-[160px] sm:w-auto">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Entradas Pagas
             </span>
-            <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
-              <CheckCircle className="w-4 h-4" />
+            <div className="p-1.5 sm:p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+              <CheckCircle className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <p className="text-xl sm:text-2xl font-black text-emerald-400">
+          <p className="text-lg sm:text-2xl font-black text-emerald-400">
             {formatCurrency(stats?.receivedRevenue || 0)}
           </p>
-          <span className="text-[10px] text-emerald-400/80 font-semibold mt-1 block">
+          <span className="text-[9px] sm:text-[10px] text-emerald-400/80 font-semibold mt-0.5 block">
             Recebido online
           </span>
         </div>
 
-        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Saldo na Entrega
+        <div className="bg-[#131826] rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 shadow-md shrink-0 w-[160px] sm:w-auto">
+          <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+              Saldo Entrega
             </span>
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400">
-              <Clock className="w-4 h-4" />
+            <div className="p-1.5 sm:p-2 rounded-xl bg-amber-500/10 text-amber-400">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </div>
           </div>
-          <p className="text-xl sm:text-2xl font-black text-amber-400">
+          <p className="text-lg sm:text-2xl font-black text-amber-400">
             {formatCurrency(stats?.pendingBalance || 0)}
           </p>
-          <span className="text-[10px] text-slate-400 font-semibold mt-1 block">
-            A cobrar na entrega
+          <span className="text-[9px] sm:text-[10px] text-slate-400 font-semibold mt-0.5 block">
+            Cobrar na entrega
           </span>
         </div>
 
         {/* 🎯 Meta Mensal de Faturamento com Barra de Progresso */}
-        <div className="bg-[#131826] rounded-2xl p-4 sm:p-5 border border-slate-800/80 shadow-md col-span-2 sm:col-span-1 flex flex-col justify-between">
+        <div className="bg-[#131826] rounded-2xl p-3.5 sm:p-5 border border-slate-800/80 shadow-md shrink-0 w-[190px] sm:w-auto flex flex-col justify-between">
           <div className="flex items-center justify-between mb-1.5">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+            <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               Meta Mensal
             </span>
             <button
@@ -683,7 +762,7 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
                 setTempGoalInput(monthlyGoal.toString())
                 setShowGoalModal(true)
               }}
-              className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all text-[10px]"
+              className="p-1 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all text-[10px] cursor-pointer"
               title="Ajustar Meta do Mês"
             >
               <Target className="w-3.5 h-3.5 text-pink-400" />
@@ -691,10 +770,10 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
           </div>
           <div>
             <div className="flex justify-between items-baseline">
-              <p className="text-lg sm:text-xl font-black text-white font-mono">
+              <p className="text-base sm:text-xl font-black text-white font-mono">
                 {formatCurrency(stats?.totalRevenue || 0)}
               </p>
-              <span className="text-[11px] font-bold text-slate-400 font-mono">
+              <span className="text-[10px] sm:text-[11px] font-bold text-slate-400 font-mono">
                 / {formatCurrency(monthlyGoal)}
               </span>
             </div>
@@ -706,123 +785,174 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
                 }}
               />
             </div>
-            <span className="text-[10px] text-pink-400 font-bold mt-1 block">
+            <span className="text-[9px] sm:text-[10px] text-pink-400 font-bold mt-1 block">
               {Math.min(100, Math.round(((stats?.totalRevenue || 0) / (monthlyGoal || 1)) * 100))}% atingido
             </span>
           </div>
         </div>
       </div>
 
-      {/* ── Sub Navigation (Pill Tabs Modernas) ── */}
-      <div className="bg-[#131826] p-1.5 rounded-2xl border border-slate-800/80 flex gap-1.5 overflow-x-auto no-scrollbar">
+      {/* ── Sub Navigation (Pill Tabs com Arraste Suave e Setas Laterais) ── */}
+      <div className="relative group/subnav">
+        {/* Seta Scroll Esquerda */}
         <button
-          onClick={() => setActiveSubTab('kanban')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'kanban'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
+          type="button"
+          onClick={() => scrollSubNav('left')}
+          className="hidden sm:flex absolute -left-3.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#131826]/95 border border-slate-700/90 text-slate-300 hover:text-white items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
+          title="Rolar abas para a esquerda"
         >
-          <LayoutGrid className="w-3.5 h-3.5 text-pink-400" />
-          <span>Kanban de Produção</span>
-          <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-slate-300">
-            {orders.length}
-          </span>
+          <ChevronLeft className="w-4 h-4" />
         </button>
 
-        <button
-          onClick={() => setActiveSubTab('calendar')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'calendar'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+        {/* Barra de Abas Scrollable & Draggable */}
+        <div
+          ref={subNavRef}
+          onWheel={(e) => {
+            if (e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY * 0.9
+            }
+          }}
+          onMouseDown={(e) => {
+            setIsDraggingNav(true)
+            setNavStartX(e.pageX - (subNavRef.current?.offsetLeft || 0))
+            setNavScrollLeft(subNavRef.current?.scrollLeft || 0)
+          }}
+          onMouseMove={(e) => {
+            if (!isDraggingNav || !subNavRef.current) return
+            e.preventDefault()
+            const x = e.pageX - subNavRef.current.offsetLeft
+            const walk = (x - navStartX) * 1.5
+            subNavRef.current.scrollLeft = navScrollLeft - walk
+          }}
+          onMouseUp={() => setIsDraggingNav(false)}
+          onMouseLeave={() => setIsDraggingNav(false)}
+          className={`bg-[#131826] p-1.5 rounded-2xl border border-slate-800/80 flex gap-1.5 overflow-x-auto scroll-smooth select-none transition-all ${
+            isDraggingNav ? 'cursor-grabbing' : 'cursor-grab'
           }`}
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#334155 transparent',
+          }}
         >
-          <Calendar className="w-3.5 h-3.5 text-pink-400" />
-          <span>Calendário & Capacidade</span>
-          {settings?.maxOrdersPerDay && settings.maxOrdersPerDay > 0 ? (
-            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
-              {settings.maxOrdersPerDay}/dia
-            </span>
-          ) : null}
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('products')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'products'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <Layers className="w-3.5 h-3.5 text-pink-400" />
-          <span>Cardápio & Produtos</span>
-          <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-slate-300">
-            {products.length}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('compras')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'compras'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <ShoppingCart className="w-3.5 h-3.5 text-pink-400" />
-          <span>Lista de Compras</span>
-          <span className="ml-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
-            Mercado
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('clients')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'clients'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <Users className="w-3.5 h-3.5 text-pink-400" />
-          <span>Clientes & LTV</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('store')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'store'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <Settings className="w-3.5 h-3.5 text-pink-400" />
-          <span>Configurações da Loja</span>
-        </button>
-
-        <button
-          onClick={() => setActiveSubTab('reports')}
-          className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap ${
-            activeSubTab === 'reports'
-              ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
-              : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
-          }`}
-        >
-          <BarChart3 className="w-3.5 h-3.5 text-pink-400" />
-          <span>Relatórios</span>
-        </button>
-
-        {onNavigateTab && (
           <button
-            onClick={() => onNavigateTab('financeiro')}
-            className="py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap text-emerald-400 hover:text-white hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer ml-auto"
-            title="Ir para o Financeiro Completo (Notas Fiscais, Compras, Fluxo de Caixa)"
+            onClick={() => setActiveSubTab('kanban')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'kanban'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
           >
-            <DollarSign className="w-3.5 h-3.5" />
-            <span>Financeiro & Compras ➜</span>
+            <LayoutGrid className="w-3.5 h-3.5 text-pink-400" />
+            <span>Kanban de Produção</span>
+            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-slate-300">
+              {orders.length}
+            </span>
           </button>
-        )}
+
+          <button
+            onClick={() => setActiveSubTab('calendar')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'calendar'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 text-pink-400" />
+            <span>Calendário & Capacidade</span>
+            {settings?.maxOrdersPerDay && settings.maxOrdersPerDay > 0 ? (
+              <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
+                {settings.maxOrdersPerDay}/dia
+              </span>
+            ) : null}
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('products')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'products'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 text-pink-400" />
+            <span>Cardápio & Produtos</span>
+            <span className="ml-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-slate-300">
+              {products.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('compras')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'compras'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <ShoppingCart className="w-3.5 h-3.5 text-pink-400" />
+            <span>Lista de Compras</span>
+            <span className="ml-1 text-[10px] font-black px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300">
+              Mercado
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('clients')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'clients'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-pink-400" />
+            <span>Clientes & LTV</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('store')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'store'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <Settings className="w-3.5 h-3.5 text-pink-400" />
+            <span>Configurações da Loja</span>
+          </button>
+
+          <button
+            onClick={() => setActiveSubTab('reports')}
+            className={`py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'reports'
+                ? 'bg-slate-800 text-white shadow-sm border border-slate-700'
+                : 'text-slate-400 hover:text-white hover:bg-slate-800/50'
+            }`}
+          >
+            <BarChart3 className="w-3.5 h-3.5 text-pink-400" />
+            <span>Relatórios</span>
+          </button>
+
+          {onNavigateTab && (
+            <button
+              onClick={() => onNavigateTab('financeiro')}
+              className="py-2.5 px-5 rounded-xl font-bold text-xs flex items-center gap-2 transition-all whitespace-nowrap text-emerald-400 hover:text-white hover:bg-emerald-500/20 border border-emerald-500/20 cursor-pointer ml-auto"
+              title="Ir para o Financeiro Completo (Notas Fiscais, Compras, Fluxo de Caixa)"
+            >
+              <DollarSign className="w-3.5 h-3.5" />
+              <span>Financeiro & Compras ➜</span>
+            </button>
+          )}
+        </div>
+
+        {/* Seta Scroll Direita */}
+        <button
+          type="button"
+          onClick={() => scrollSubNav('right')}
+          className="hidden sm:flex absolute -right-3.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-[#131826]/95 border border-slate-700/90 text-slate-300 hover:text-white items-center justify-center shadow-xl transition-all hover:scale-110 active:scale-95 cursor-pointer backdrop-blur-md"
+          title="Rolar abas para a direita"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
 
       {/* ═══════════════════════════════════════════════════════ */}
@@ -1088,14 +1218,23 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
                               onClick={async (e) => {
                                 e.stopPropagation()
                                 if (!order.depositPaid) {
-                                  const proceed = confirm(
-                                    '⚠️ ALERTA DE SEGURANÇA:\n\nA entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não pague. Deseja iniciar a produção mesmo assim?'
-                                  )
-                                  if (!proceed) return
+                                  setConfirmDialog({
+                                    isOpen: true,
+                                    title: 'Alerta de Sinal Pendente',
+                                    message: 'A entrada deste pedido ainda NÃO foi confirmada na sua conta bancária!\n\nIniciar a produção agora pode gerar prejuízo caso o cliente não conclua o pagamento. Deseja iniciar a produção mesmo assim?',
+                                    type: 'warning',
+                                    confirmText: 'Iniciar Produção',
+                                    cancelText: 'Aguardar Sinal',
+                                    onConfirm: async () => {
+                                      setConfirmDialog(prev => ({ ...prev, isOpen: false }))
+                                      await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo', order)
+                                    },
+                                  })
+                                  return
                                 }
                                 await handleUpdateOrderStatus(order.id, 'EM_PRODUCAO', 'Iniciado preparo', order)
                               }}
-                              className="w-full mt-2.5 py-2 px-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 active:scale-95"
+                              className="w-full mt-2.5 py-2 px-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-black text-[11px] transition-all flex items-center justify-center gap-1.5 shadow-md shadow-purple-500/20 active:scale-95 cursor-pointer"
                             >
                               <Clock className="w-3.5 h-3.5" /> Iniciar Produção
                             </button>
@@ -1818,6 +1957,18 @@ export function BoraEncomendaTab({ user, subscription, setShowPaywall, onNavigat
           setShowPrintModal(false)
           setOrderToPrint(null)
         }}
+      />
+
+      {/* Modal Corporativo de Confirmação do Sistema (Enterprise Grade) */}
+      <ConfirmModal
+        isOpen={confirmDialog.isOpen}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        type={confirmDialog.type || 'warning'}
+        confirmText={confirmDialog.confirmText}
+        cancelText={confirmDialog.cancelText}
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, isOpen: false }))}
       />
     </div>
   )
